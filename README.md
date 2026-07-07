@@ -303,6 +303,29 @@ keel/
 
 ---
 
+## CodeGraph (Intelligent Codebase Analysis)
+
+**Unified knowledge graph of your entire codebase**
+
+### What It Does:
+- 🧠 Maps all files, classes, functions, dependencies
+- 📊 Identifies circular dependencies & technical debt
+- 🎯 Impact analysis before making changes
+- 🔐 Security analysis through data flow tracing
+- 📈 Architecture validation & optimization
+- 📚 Automatic documentation generation
+
+### Quick Start:
+```bash
+/keel codegraph --generate
+/keel codegraph --query="What depends on SubscriptionService?"
+/keel codegraph --visualize=dependency-graph
+```
+
+→ See **[CODEGRAPH-GUIDE.md](.claude/CODEGRAPH-GUIDE.md)** — Complete reference
+
+---
+
 ## MCP Setup (Tool Integrations)
 
 **Connect Keel to your favorite tools:**

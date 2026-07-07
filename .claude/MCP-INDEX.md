@@ -8,8 +8,9 @@
 
 | Document | Purpose | Time | Audience |
 |----------|---------|------|----------|
-| **[MCP-QUICK-START.md](MCP-QUICK-START.md)** | Setup in 5 minutes | 5 min | Everyone (start here!) |
-| **[MCP-SETUP-WIZARD.md](MCP-SETUP-WIZARD.md)** | Detailed integration guide | 30 min | Deep dive users |
+| **[CODEGRAPH-GUIDE.md](CODEGRAPH-GUIDE.md)** | Intelligent codebase analysis | 20 min | All developers (start here!) |
+| **[MCP-QUICK-START.md](MCP-QUICK-START.md)** | Setup MCP in 5 minutes | 5 min | Tool integration users |
+| **[MCP-SETUP-WIZARD.md](MCP-SETUP-WIZARD.md)** | Detailed MCP integration | 30 min | Deep dive users |
 | **[MCP-INTEGRATION-MATRIX.md](MCP-INTEGRATION-MATRIX.md)** | Phase-by-phase workflow | 15 min | Understanding integrations |
 | **[mcp-templates/](mcp-templates/)** | Configuration templates | Ref | Configuration |
 
