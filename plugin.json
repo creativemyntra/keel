@@ -1,27 +1,25 @@
 {
-  "$schema": "https://github.com/creativemyntra/keel/raw/main/plugin-schema.json",
   "name": "keel",
-  "displayName": "Keel AI-SDLC Framework",
   "version": "2.1.0",
+  "displayName": "Keel AI-SDLC Framework",
+  "description": "Complete AI-SDLC pipeline automation with 8 autonomous agents",
   "author": "Amar Singh",
   "license": "MIT",
-  "description": "Complete AI-SDLC pipeline automation with 8 autonomous agents",
-  "homepage": "https://github.com/creativemyntra/keel",
-  "repository": "https://github.com/creativemyntra/keel",
-  "bugs": "https://github.com/creativemyntra/keel/issues",
-  "keywords": ["ai-sdlc", "code-generation", "automation", "testing", "security", "tdd", "devops"],
   "type": "plugin",
-  "category": "development",
-  "installation": {
-    "claudeCode": "/plugin add marketplace keel",
-    "npm": "npm install -g @amarsingh/keel",
-    "docker": "docker pull amarsingh/keel:latest",
-    "githubAction": "uses: amarsingh/keel@v2.1.0"
+  "main": "bin/keel.js",
+  "commands": {
+    "init": "Initialize new project",
+    "brainstorm": "Generate ideas",
+    "req": "Create requirements",
+    "design": "Design architecture",
+    "tdd-red": "Write failing tests",
+    "tdd-green": "Write code to pass tests",
+    "tdd-refactor": "Refactor code",
+    "test": "Run comprehensive tests",
+    "sec": "Security scanning",
+    "deploy": "Deploy to production"
   },
-  "integrations": ["jira", "github", "slack", "playwright"],
-  "requirements": {
-    "git": ">=2.0.0",
-    "node": ">=16.0.0",
-    "npm": ">=7.0.0"
-  }
+  "repository": "https://github.com/creativemyntra/keel",
+  "homepage": "https://github.com/creativemyntra/keel#readme",
+  "keywords": ["ai-sdlc", "automation", "testing", "security", "tdd"]
 }
