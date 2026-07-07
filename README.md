@@ -17,6 +17,61 @@
 
 ---
 
+## Installation & Authentication
+
+### Option 1: Claude Code Skill (Recommended)
+**No external API key needed.** Uses your Claude subscription directly.
+
+```bash
+# Install as Claude Code skill
+cd ~/.claude/skills
+git clone https://github.com/creativemyntra/keel.git
+```
+
+Then use in Claude Code:
+```
+/keel init --mode=new --stack=cakephp
+```
+
+✅ **Benefits:**
+- Uses your Claude subscription
+- No separate API key management
+- Integrated with Claude Code features
+- Recommended for individuals & teams
+
+### Option 2: GitHub Action
+**For CI/CD pipelines.** Requires your Anthropic API key (optional).
+
+```yaml
+- uses: creativemyntra/keel@v2.1.0
+  with:
+    phase: 'dev'
+    story-id: 'KEEL-42'
+    # Optional: Provide API key if using outside Claude Code
+    claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+**How API Key Works:**
+- Your Anthropic API key is tied to your Claude subscription
+- Tokens used count against your subscription quota
+- Costs are the same as using Claude Code directly
+- No additional charges
+
+✅ **Benefits:**
+- Automate development in CI/CD pipelines
+- Integrate with GitHub Actions workflows
+- Scale across teams & repos
+
+### Option 3: Claude API Direct
+**For custom integrations.** Requires API key from your Claude subscription.
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+/keel dev --story=KEEL-42
+```
+
+---
+
 ## Quick Start
 
 ### 1. Initialize Project

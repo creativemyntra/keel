@@ -1,5 +1,5 @@
 name: 'Keel AI-SDLC Framework'
-description: 'Complete AI-SDLC pipeline: Brainstorm → Requirements → Design → Code → Test → Security → Deploy'
+description: 'Complete AI-SDLC pipeline using Claude AI: Brainstorm → Requirements → Design → Code → Test → Security → Deploy'
 author: 'Amar Singh'
 
 branding:
@@ -36,6 +36,9 @@ inputs:
     description: 'Stack (cakephp, laravel, django, rails) - default: cakephp'
     required: false
     default: 'cakephp'
+  claude-api-key:
+    description: 'Optional: Anthropic API key for GitHub Action execution (uses your Claude subscription). Leave empty to use Claude Code native integration.'
+    required: false
 
 outputs:
   result:
