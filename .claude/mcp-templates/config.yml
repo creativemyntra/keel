@@ -1,0 +1,193 @@
+---
+# MCP Registry Configuration
+# Auto-loaded by Keel framework
+
+mcps:
+  # Tier 1: Recommended (Required for Phase 1-5)
+  github:
+    enabled: true
+    priority: 1
+    config_file: .mcp/github.yml
+    retry_policy:
+      max_attempts: 3
+      backoff_multiplier: 2
+
+  jira:
+    enabled: true
+    priority: 1
+    config_file: .mcp/jira.yml
+    retry_policy:
+      max_attempts: 3
+      backoff_multiplier: 2
+
+  playwright:
+    enabled: true
+    priority: 1
+    config_file: .mcp/playwright.yml
+    retry_policy:
+      max_attempts: 2
+      backoff_multiplier: 2
+
+  sonarqube:
+    enabled: true
+    priority: 1
+    config_file: .mcp/sonarqube.yml
+    retry_policy:
+      max_attempts: 3
+      backoff_multiplier: 2
+
+  # Tier 2: Enhanced (Optional for better integrations)
+  slack:
+    enabled: false  # Set to true after setup
+    priority: 2
+    config_file: .mcp/slack.yml
+    retry_policy:
+      max_attempts: 3
+      backoff_multiplier: 2
+
+  confluence:
+    enabled: false  # Set to true after setup
+    priority: 2
+    config_file: .mcp/confluence.yml
+    retry_policy:
+      max_attempts: 3
+      backoff_multiplier: 2
+
+  linear:
+    enabled: false
+    priority: 2
+    config_file: .mcp/linear.yml
+
+  datadog:
+    enabled: false
+    priority: 2
+    config_file: .mcp/datadog.yml
+
+  # Tier 3: Advanced (Domain-specific)
+  pagerduty:
+    enabled: false
+    priority: 3
+    config_file: .mcp/pagerduty.yml
+
+  stripe:
+    enabled: false
+    priority: 3
+    config_file: .mcp/stripe.yml
+
+  aws:
+    enabled: false
+    priority: 3
+    config_file: .mcp/aws.yml
+
+# Global defaults for all MCPs
+defaults:
+  timeout: 30000                    # 30 seconds
+  connect_timeout: 10000            # 10 seconds
+  retry_attempts: 3
+  retry_backoff: 2                  # Exponential backoff
+  cache_ttl: 300                    # 5 minutes cache
+  max_parallel_requests: 10
+
+# Validation & health checks
+health_check:
+  enabled: true
+  interval: 3600                    # Check every hour
+  on_startup: true
+  alert_on_failure: true
+
+# Notification & alerting
+notifications:
+  enabled: true
+  channels:
+    slack: true
+    email: false
+    sms: false
+
+  alert_on:
+    mcp_connection_failure: true
+    rate_limit_exceeded: true
+    auth_failure: true
+    timeout: true
+
+# Monitoring & observability
+monitoring:
+  enabled: true
+  track_latency: true
+  track_errors: true
+  track_rate_limits: true
+  log_all_requests: false           # GDPR: set to false in production
+
+  metrics:
+    - "mcp_call_duration"
+    - "mcp_error_rate"
+    - "mcp_cache_hit_rate"
+    - "mcp_rate_limit_usage"
+
+# Logging
+logging:
+  level: "info"
+  format: "json"
+  destination: "stdout"
+  log_file: "logs/mcp.log"
+
+  sensitive_fields:
+    - "token"
+    - "api_key"
+    - "api_token"
+    - "password"
+    - "secret"
+    - "webhook_secret"
+
+  redact_sensitive: true
+  retention_days: 30
+
+# Security
+security:
+  tls_verify: true
+  allowed_hosts:
+    - "github.com"
+    - "api.github.com"
+    - "atlassian.net"
+    - "sonarqube.example.com"
+    - "slack.com"
+
+  forbidden_operations:
+    - "delete_repository"
+    - "force_push"
+    - "delete_database"
+
+# Feature flags
+features:
+  auto_retry: true
+  caching: true
+  parallel_requests: true
+  streaming_responses: false        # If supported
+  webhook_validation: true
+
+# Environment-specific overrides
+environments:
+  development:
+    defaults:
+      timeout: 60000
+      cache_ttl: 60
+      log_all_requests: true
+      alert_on_failure: false
+
+  staging:
+    defaults:
+      timeout: 30000
+      cache_ttl: 300
+      log_all_requests: false
+      alert_on_failure: true
+
+  production:
+    defaults:
+      timeout: 30000
+      cache_ttl: 600
+      log_all_requests: false
+      alert_on_failure: true
+      tls_verify: true
+
+# Version info
+version: "1.0.0"
+generated: "2026-07-07"

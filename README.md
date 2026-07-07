@@ -303,6 +303,29 @@ keel/
 
 ---
 
+## MCP Setup (Tool Integrations)
+
+**Connect Keel to your favorite tools:**
+
+### Quick Start (5 minutes)
+```bash
+/keel setup-mcp --mode=quick
+```
+
+Integrations included:
+- ✅ **GitHub** — Repository & PR management
+- ✅ **Jira** — Issue tracking & sprint planning
+- ✅ **Playwright** — E2E testing & browser automation
+- ✅ **SonarQube** — Code quality & security scanning
+- ✅ **Slack** — Team notifications
+- ✅ **Confluence** — Documentation & runbooks
+
+### Documentation
+→ See **[MCP-QUICK-START.md](.claude/MCP-QUICK-START.md)** — Get started in 5 min  
+→ See **[MCP-SETUP-WIZARD.md](.claude/MCP-SETUP-WIZARD.md)** — Complete integration guide
+
+---
+
 ## Getting Help
 
 ### For Detailed Agent Specifications
@@ -310,6 +333,10 @@ keel/
 
 ### For Quick Command Reference
 → See **[KEEL-QUICK-REFERENCE.md](KEEL-QUICK-REFERENCE.md)**
+
+### For MCP Setup & Integration
+→ See **[MCP-QUICK-START.md](.claude/MCP-QUICK-START.md)** (5 min setup)  
+→ See **[MCP-SETUP-WIZARD.md](.claude/MCP-SETUP-WIZARD.md)** (detailed guide)
 
 ### For Governance Rules
 → See **[CLAUDE.md](CLAUDE.md)**
