@@ -1,101 +1,30 @@
 {
-  "name": "keel",
-  "displayName": "Keel AI-SDLC Framework",
-  "version": "2.1.0",
-  "author": "Amar Singh",
-  "license": "MIT",
-  "description": "Complete AI-SDLC pipeline automation with 8 autonomous agents",
-  "homepage": "https://github.com/creativemyntra/keel",
-  "repository": "https://github.com/creativemyntra/keel",
-  "bugs": "https://github.com/creativemyntra/keel/issues",
-  "keywords": ["ai-sdlc", "code-generation", "automation", "testing", "security", "tdd", "devops"],
-  "type": "plugin",
-  "category": "development",
-  "rating": 4.8,
-  "installation": {
-    "methods": [
-      {
-        "type": "git",
-        "command": "git clone https://github.com/creativemyntra/keel.git ~/.claude/skills/keel-framework"
-      },
-      {
-        "type": "npm",
-        "command": "npm install -g @amarsingh/keel"
-      },
-      {
-        "type": "docker",
-        "command": "docker pull amarsingh/keel:latest"
-      },
-      {
-        "type": "github-action",
-        "usage": "uses: amarsingh/keel@v2.1.0"
-      }
-    ]
+  "name": "keel-marketplace",
+  "description": "Keel AI-SDLC plugin marketplace by Amar Singh (@creativemyntra). Provides the full keel pipeline for Claude Code and Claude Desktop.",
+  "owner": {
+    "name": "Amar Singh",
+    "handle": "creativemyntra",
+    "url": "https://github.com/creativemyntra"
   },
-  "commands": [
+  "plugins": [
     {
-      "name": "init",
-      "description": "Initialize new project",
-      "usage": "/keel init --mode=new --stack=cakephp"
-    },
-    {
-      "name": "brainstorm",
-      "description": "Generate ideas",
-      "usage": "/keel brainstorm --goal='Your goal'"
-    },
-    {
-      "name": "req",
-      "description": "Create requirements",
-      "usage": "/keel req --story=FEAT-1 --feature='Description'"
-    },
-    {
-      "name": "design",
-      "description": "Design architecture",
-      "usage": "/keel design --story=FEAT-1"
-    },
-    {
-      "name": "tdd-red",
-      "description": "TDD Red phase",
-      "usage": "/keel tdd-red --story=FEAT-1"
-    },
-    {
-      "name": "tdd-green",
-      "description": "TDD Green phase",
-      "usage": "/keel tdd-green --story=FEAT-1"
-    },
-    {
-      "name": "tdd-refactor",
-      "description": "TDD Refactor phase",
-      "usage": "/keel tdd-refactor --story=FEAT-1"
-    },
-    {
-      "name": "test",
-      "description": "Run tests",
-      "usage": "/keel test --story=FEAT-1 --coverage-target=85"
-    },
-    {
-      "name": "sec",
-      "description": "Security scan",
-      "usage": "/keel sec --story=FEAT-1"
-    },
-    {
-      "name": "deploy",
-      "description": "Deploy",
-      "usage": "/keel deploy --story=FEAT-1 --rollout=canary"
+      "name": "keel",
+      "displayName": "Keel AI-SDLC",
+      "source": ".",
+      "description": "Complete AI-SDLC pipeline for Claude Code and Claude Desktop. 8 autonomous agents: Brainstorm → Requirements → Design → TDD → QA → Security → Deploy → Release.",
+      "version": "3.0.0",
+      "tags": [
+        "sdlc",
+        "agile",
+        "scrum",
+        "php",
+        "cakephp",
+        "tdd",
+        "qa",
+        "devops"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/creativemyntra/keel"
     }
-  ],
-  "features": [
-    "8 Autonomous Agents",
-    "TDD Workflow",
-    "Auto-generated Tests",
-    "Security Scanning",
-    "Enterprise Grade"
-  ],
-  "requirements": {
-    "git": ">=2.0.0",
-    "node": ">=16.0.0",
-    "npm": ">=7.0.0"
-  },
-  "documentation": "https://github.com/creativemyntra/keel#readme",
-  "support": "https://github.com/creativemyntra/keel/issues"
+  ]
 }

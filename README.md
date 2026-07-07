@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v2.1.0
+# Keel AI-SDLC Framework v3.0.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -10,12 +10,14 @@ From ideation to production deployment in **2 hours** (vs 2 weeks manually).
 ## ⚡ Quick Start (30 seconds)
 
 ```bash
-# 1. Install plugin to Claude Code
-/plugin add marketplace keel
+# 1. Install plugin to Claude Code (Recommended: Git Clone)
+git clone https://github.com/creativemyntra/keel.git ~/.claude/skills/keel-framework
 
-# 2. Verify installation
+# 2. Restart Claude Code terminal
+
+# 3. Verify installation
 /keel --version
-# → Keel AI-SDLC Framework v2.1.0 ✅
+# → Keel AI-SDLC Framework v3.0.0 ✅
 
 # 3. Initialize your project
 /keel init --mode=new --stack=cakephp
@@ -53,8 +55,8 @@ It automates the entire software development process using 8 specialized autonom
 
 ### ✨ Key Features
 
-✅ **One-Command Installation** — `/plugin add marketplace keel`  
-✅ **Zero Configuration** — Works immediately after install  
+✅ **Quick Installation** — `git clone` to `~/.claude/skills/keel-framework`  
+✅ **Zero Configuration** — Works immediately after restart  
 ✅ **8 Autonomous Agents** — Specialized for each phase  
 ✅ **TDD Workflow** — Red → Green → Refactor  
 ✅ **Auto-Generated Tests** — 87%+ coverage automatic  
@@ -68,23 +70,23 @@ It automates the entire software development process using 8 specialized autonom
 
 ## 📥 Installation
 
-### Method 1: Claude Code Plugin (Recommended) ⭐
+### Method 1: Claude Code Skill (Recommended) ⭐
 
-**One-command installation with zero configuration.**
+**Git clone installation to Claude Code skills directory.**
 
 ```bash
-/plugin add marketplace keel
+git clone https://github.com/creativemyntra/keel.git ~/.claude/skills/keel-framework
 ```
 
-That's it! The plugin will:
-- ✅ Download automatically
+Restart Claude Code terminal. That's it! The plugin will:
+- ✅ Be auto-discovered by Claude Code
 - ✅ Create configuration directories
 - ✅ Be ready to use immediately
 
 **Verify:**
 ```bash
 /keel --version
-# Output: Keel AI-SDLC Framework v2.1.0 ✅
+# Output: Keel AI-SDLC Framework v3.0.0 ✅
 ```
 
 ### Method 2: npm Global Package

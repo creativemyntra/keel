@@ -1,0 +1,33 @@
+{
+  "plugin": {
+    "name": "keel",
+    "version": "3.0.0"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(vendor/bin/phpunit:*)",
+      "Bash(vendor/bin/phpcs:*)",
+      "Bash(vendor/bin/phpstan:*)",
+      "Bash(composer:*)",
+      "Bash(npx playwright:*)",
+      "Read(**)",
+      "Write(src/**)",
+      "Write(tests/**)",
+      "Write(docs/**)",
+      "Write(config/routes.php)",
+      "Edit(**)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git checkout -- .:*)",
+      "Bash(git branch -D:*)",
+      "Bash(rm -rf:*)"
+    ]
+  },
+  "env": {
+    "KEEL_VERSION": "3.0.0",
+    "KEEL_STACK": "cakephp"
+  }
+}
