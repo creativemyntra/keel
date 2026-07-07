@@ -2,6 +2,28 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.0.0] - 2026-07-07 - MAJOR RELEASE
+
+### Breaking Changes
+- Plugin manifest (`plugin.json`) fully restructured with marketplace metadata — update any tooling that reads the old flat `commands` object (now an array)
+- Distribution channels consolidated: npm package, Docker image, GHCR, and GitHub Action all versioned under `v3.0.0`
+
+### Added
+- Full Claude Code Plugin Marketplace support (`/plugin add marketplace keel`)
+- `marketplace` block in `plugin.json` with category, pricing, install command, and min version
+- `commands[]`, `skills[]`, `agents[]`, `distribution`, and `files` include/exclude arrays in manifest
+- `.github/workflows/release.yml` — automated release pipeline (npm + Docker Hub + GHCR + GitHub Release + `.plugin` bundle)
+- `bin/package-plugin.sh` — local `.plugin` bundle packaging with SHA-256 checksum
+- Multi-arch Docker builds (`linux/amd64` + `linux/arm64`)
+- npm provenance attestation on publish
+- Automated Docker Hub description sync from README on release
+
+### Changed
+- `plugin.json` version bumped 2.1.0 → 3.0.0
+- `package.json` version bumped 2.1.0 → 3.0.0
+
+---
+
 ## [2.1.0] - 2026-07-07 - PRODUCTION READY
 
 ### Added

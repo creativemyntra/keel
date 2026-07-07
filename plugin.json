@@ -1,7 +1,7 @@
 {
   "name": "keel",
   "displayName": "Keel AI-SDLC Framework",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Complete AI-SDLC pipeline for Claude Code. 8 autonomous agents take you from idea to production in 2 hours: Brainstorm → Requirements → Design → TDD → Test → Security → Deploy.",
   "author": "Amar Singh",
   "email": "support@creativemyntra.com",
@@ -248,7 +248,7 @@
       "registry": "docker.io"
     },
     "githubAction": {
-      "uses": "creativemyntra/keel@v2.1.0"
+      "uses": "creativemyntra/keel@v3.0.0"
     },
     "githubPackages": {
       "image": "ghcr.io/creativemyntra/keel"
