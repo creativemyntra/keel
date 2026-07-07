@@ -1,0 +1,79 @@
+{
+  "name": "@amarsingh/keel",
+  "version": "2.1.0",
+  "description": "Keel AI-SDLC Framework - Complete AI-powered software development lifecycle automation",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "keel": "./bin/keel.js"
+  },
+  "scripts": {
+    "start": "node ./bin/keel.js",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "jest tests/unit --coverage",
+    "test:integration": "jest tests/integration",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "postinstall": "bash ./post-install.sh"
+  },
+  "keywords": [
+    "ai-sdlc",
+    "code-generation",
+    "automation",
+    "testing",
+    "security",
+    "development",
+    "tdd",
+    "devops",
+    "agents",
+    "ai-powered",
+    "claude",
+    "plugin"
+  ],
+  "author": "Amar Singh",
+  "license": "MIT",
+  "homepage": "https://github.com/creativemyntra/keel",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/creativemyntra/keel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/creativemyntra/keel/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  },
+  "dependencies": {
+    "commander": "^11.0.0",
+    "chalk": "^5.3.0",
+    "ora": "^7.0.1",
+    "inquirer": "^8.2.5",
+    "axios": "^1.6.0",
+    "yaml": "^2.3.4",
+    "fs-extra": "^11.2.0",
+    "path-exists": "^5.0.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.3",
+    "@babel/core": "^7.23.3"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    ".claude/",
+    "post-install.sh",
+    "setup-integrations.sh",
+    "plugin.json",
+    "action.yml",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
