@@ -1,0 +1,287 @@
+name: Release & Distribute Keel
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'           # Triggers on: git tag v2.1.0 && git push --tags
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 2.1.1) — leave blank to use tag'
+        required: false
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20'
+  PLUGIN_NAME: keel
+  NPM_PACKAGE: '@amarsingh/keel'
+  DOCKER_IMAGE: amarsingh/keel
+  GHCR_IMAGE: ghcr.io/creativemyntra/keel
+
+jobs:
+  # ─────────────────────────────────────────────
+  # 1. Validate & determine version
+  # ─────────────────────────────────────────────
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag:     ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$VERSION"  >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION"     >> "$GITHUB_OUTPUT"
+          echo "Releasing version: $VERSION"
+
+      - name: Validate plugin.json version matches tag
+        run: |
+          PLUGIN_VERSION=$(node -p "require('./plugin.json').version")
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+          if [ "$PLUGIN_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ plugin.json version ($PLUGIN_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "✅ Version match: $PLUGIN_VERSION"
+
+  # ─────────────────────────────────────────────
+  # 2. Build plugin bundle (.plugin zip)
+  # ─────────────────────────────────────────────
+  build-plugin:
+    name: Build Plugin Bundle
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package .plugin bundle
+        run: bash bin/package-plugin.sh ${{ needs.prepare.outputs.version }}
+
+      - name: Verify bundle
+        run: |
+          BUNDLE="dist/keel-${{ needs.prepare.outputs.version }}.plugin"
+          if [ ! -f "$BUNDLE" ]; then
+            echo "❌ Plugin bundle not found: $BUNDLE"
+            exit 1
+          fi
+          echo "✅ Bundle created: $BUNDLE ($(du -sh $BUNDLE | cut -f1))"
+          unzip -l "$BUNDLE" | head -30
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-bundle
+          path: dist/*.plugin
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # 3. Publish to npm
+  # ─────────────────────────────────────────────
+  publish-npm:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    needs: [prepare, build-plugin]
+    environment: npm-publish
+    permissions:
+      id-token: write   # for npm provenance
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Bump version in package.json
+        run: |
+          npm version ${{ needs.prepare.outputs.version }} --no-git-tag-version
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Publish to npm
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify npm publish
+        run: |
+          sleep 10
+          npm info ${{ env.NPM_PACKAGE }}@${{ needs.prepare.outputs.version }} version
+
+  # ─────────────────────────────────────────────
+  # 4. Build & push Docker image
+  # ─────────────────────────────────────────────
+  publish-docker:
+    name: Build & Push Docker
+    runs-on: ubuntu-latest
+    needs: [prepare, build-plugin]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU (multi-arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.DOCKER_IMAGE }}
+            ${{ env.GHCR_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.prepare.outputs.tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.tag }}
+            type=semver,pattern={{major}},value=${{ needs.prepare.outputs.tag }}
+            type=raw,value=latest
+
+      - name: Build & push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ needs.prepare.outputs.version }}
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.DOCKER_IMAGE }}
+          short-description: 'Keel AI-SDLC Framework — 8 agents, idea to production in 2 hours'
+          readme-filepath: ./README.md
+
+  # ─────────────────────────────────────────────
+  # 5. Create GitHub Release
+  # ─────────────────────────────────────────────
+  github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare, build-plugin, publish-npm, publish-docker]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download plugin bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-bundle
+          path: dist/
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          NOTES=$(awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md)
+          if [ -z "$NOTES" ]; then
+            NOTES="See CHANGELOG.md for full details."
+          fi
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: "Keel ${{ needs.prepare.outputs.tag }}"
+          body: |
+            ## Keel AI-SDLC Framework ${{ needs.prepare.outputs.tag }}
+
+            ${{ steps.changelog.outputs.notes }}
+
+            ---
+
+            ### Install
+
+            **Claude Code Plugin (recommended)**
+            ```
+            /plugin add marketplace keel
+            ```
+
+            **npm**
+            ```
+            npm install -g ${{ env.NPM_PACKAGE }}@${{ needs.prepare.outputs.version }}
+            ```
+
+            **Docker**
+            ```
+            docker pull ${{ env.DOCKER_IMAGE }}:${{ needs.prepare.outputs.version }}
+            ```
+
+            **GitHub Action**
+            ```yaml
+            uses: creativemyntra/keel@${{ needs.prepare.outputs.tag }}
+            ```
+          files: |
+            dist/keel-${{ needs.prepare.outputs.version }}.plugin
+          draft: false
+          prerelease: ${{ contains(needs.prepare.outputs.version, '-') }}
+          generate_release_notes: false
+          make_latest: ${{ !contains(needs.prepare.outputs.version, '-') }}
+
+  # ─────────────────────────────────────────────
+  # 6. Notify on failure
+  # ─────────────────────────────────────────────
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [publish-npm, publish-docker, github-release]
+    if: failure()
+    steps:
+      - name: Post failure summary
+        run: |
+          echo "## ❌ Release Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "One or more distribution jobs failed. Check the job logs above." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| npm publish | ${{ needs.publish-npm.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker push | ${{ needs.publish-docker.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GitHub Release | ${{ needs.github-release.result }} |" >> $GITHUB_STEP_SUMMARY

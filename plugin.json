@@ -1,25 +1,257 @@
 {
   "name": "keel",
-  "version": "2.1.0",
   "displayName": "Keel AI-SDLC Framework",
-  "description": "Complete AI-SDLC pipeline automation with 8 autonomous agents",
+  "version": "2.1.0",
+  "description": "Complete AI-SDLC pipeline for Claude Code. 8 autonomous agents take you from idea to production in 2 hours: Brainstorm → Requirements → Design → TDD → Test → Security → Deploy.",
   "author": "Amar Singh",
+  "email": "support@creativemyntra.com",
   "license": "MIT",
   "type": "plugin",
   "main": "bin/keel.js",
-  "commands": {
-    "init": "Initialize new project",
-    "brainstorm": "Generate ideas",
-    "req": "Create requirements",
-    "design": "Design architecture",
-    "tdd-red": "Write failing tests",
-    "tdd-green": "Write code to pass tests",
-    "tdd-refactor": "Refactor code",
-    "test": "Run comprehensive tests",
-    "sec": "Security scanning",
-    "deploy": "Deploy to production"
+  "homepage": "https://github.com/creativemyntra/keel",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/creativemyntra/keel.git"
   },
-  "repository": "https://github.com/creativemyntra/keel",
-  "homepage": "https://github.com/creativemyntra/keel#readme",
-  "keywords": ["ai-sdlc", "automation", "testing", "security", "tdd"]
+  "bugs": {
+    "url": "https://github.com/creativemyntra/keel/issues"
+  },
+  "keywords": [
+    "ai-sdlc",
+    "agile",
+    "tdd",
+    "code-generation",
+    "testing",
+    "security",
+    "deployment",
+    "jira",
+    "github",
+    "cakephp",
+    "laravel",
+    "django",
+    "rails",
+    "canary",
+    "automated-development",
+    "scrum",
+    "sprint-planning",
+    "product-owner"
+  ],
+
+  "marketplace": {
+    "id": "keel",
+    "category": "Engineering",
+    "subcategory": "DevOps & SDLC",
+    "tags": ["agile", "tdd", "ci-cd", "automation", "code-generation"],
+    "icon": "⚙️",
+    "color": "blue",
+    "featured": false,
+    "screenshots": [],
+    "longDescription": "Keel is a production-ready AI-SDLC plugin that automates your entire development lifecycle with 8 specialized agents. Initialize, plan, design, build with TDD, test, scan for security issues, and deploy to production — all from Claude Code. Supports CakePHP, Laravel, Django, and Rails. Optional integrations with Jira, GitHub, Slack, and Playwright.",
+    "installCommand": "/plugin add marketplace keel",
+    "minClaudeCodeVersion": "1.0.0",
+    "pricing": "free"
+  },
+
+  "commands": [
+    {
+      "name": "keel",
+      "description": "Root Keel command — run /keel --help for all subcommands",
+      "aliases": []
+    },
+    {
+      "name": "keel:init",
+      "description": "Scaffold a new project or add Keel to an existing one",
+      "usage": "/keel init --mode=new|existing --stack=cakephp|laravel|django|rails"
+    },
+    {
+      "name": "keel:brainstorm",
+      "description": "Generate feature ideas from a business goal",
+      "usage": "/keel brainstorm --goal=\"Your goal\""
+    },
+    {
+      "name": "keel:req",
+      "description": "Create BDD requirements, acceptance criteria, and API spec",
+      "usage": "/keel req --story=FEAT-1 --feature=\"Description\""
+    },
+    {
+      "name": "keel:design",
+      "description": "Generate system architecture and database schema",
+      "usage": "/keel design --story=FEAT-1"
+    },
+    {
+      "name": "keel:tdd-red",
+      "description": "Write failing tests (TDD Red phase)",
+      "usage": "/keel tdd-red --story=FEAT-1"
+    },
+    {
+      "name": "keel:tdd-green",
+      "description": "Write implementation to pass tests (TDD Green phase)",
+      "usage": "/keel tdd-green --story=FEAT-1"
+    },
+    {
+      "name": "keel:tdd-refactor",
+      "description": "Refactor code while keeping tests green",
+      "usage": "/keel tdd-refactor --story=FEAT-1"
+    },
+    {
+      "name": "keel:test",
+      "description": "Run comprehensive test suite with coverage target",
+      "usage": "/keel test --story=FEAT-1 --coverage-target=85"
+    },
+    {
+      "name": "keel:sec",
+      "description": "OWASP + PCI security scan",
+      "usage": "/keel sec --story=FEAT-1"
+    },
+    {
+      "name": "keel:deploy",
+      "description": "Deploy with canary, blue-green, or instant rollout",
+      "usage": "/keel deploy --story=FEAT-1 --rollout=canary"
+    }
+  ],
+
+  "skills": [
+    {
+      "name": "keel:sprint-planning",
+      "path": ".claude-plugin/skills/sprint-planning",
+      "description": "Generate sprint plans from backlog and team capacity"
+    },
+    {
+      "name": "keel:create-prd",
+      "path": ".claude-plugin/skills/create-prd",
+      "description": "Generate a PRD from a raw feature request"
+    },
+    {
+      "name": "keel:analyze-story",
+      "path": ".claude-plugin/skills/analyze-story",
+      "description": "Elaborate a backlog story through a Business Analyst lens"
+    },
+    {
+      "name": "keel:investigate-defect",
+      "path": ".claude-plugin/skills/investigate-defect",
+      "description": "Structured defect investigation with RCA output"
+    },
+    {
+      "name": "keel:create-mom",
+      "path": ".claude-plugin/skills/create-mom",
+      "description": "Generate Minutes of Meeting from notes or transcript"
+    },
+    {
+      "name": "keel:generate-tests",
+      "path": ".claude-plugin/skills/generate-tests",
+      "description": "Generate five required test categories for a feature"
+    },
+    {
+      "name": "keel:e2e-test",
+      "path": ".claude-plugin/skills/e2e-test",
+      "description": "Generate or run Playwright E2E tests for a user flow"
+    },
+    {
+      "name": "keel:review-code",
+      "path": ".claude-plugin/skills/review-code",
+      "description": "QA and Security review on staged changes"
+    },
+    {
+      "name": "keel:release-check",
+      "path": ".claude-plugin/skills/release-check",
+      "description": "Full release-readiness check before deployment"
+    },
+    {
+      "name": "keel:implement-feature",
+      "path": ".claude-plugin/skills/implement-feature",
+      "description": "Run the full pipeline from approved design to tested implementation"
+    }
+  ],
+
+  "agents": [
+    { "name": "keel:orchestrator",      "role": "Routes all AI-SDLC work" },
+    { "name": "keel:product-owner",     "role": "Requirements, acceptance criteria, scope" },
+    { "name": "keel:business-analyst",  "role": "Functional specs, data flows, edge cases" },
+    { "name": "keel:solution-architect","role": "Architecture, scalability, technical risk" },
+    { "name": "keel:software-engineer", "role": "Feature implementation" },
+    { "name": "keel:qa-engineer",       "role": "Validation against acceptance criteria" },
+    { "name": "keel:security-engineer", "role": "Threat modeling, OWASP, compliance" },
+    { "name": "keel:release-manager",   "role": "Release readiness and go/no-go" }
+  ],
+
+  "mcpServers": {},
+
+  "optionalIntegrations": [
+    {
+      "name": "jira",
+      "description": "Sync story details and update issue status automatically",
+      "setupCommand": "bash ~/.claude/skills/keel-framework/setup-integrations.sh jira"
+    },
+    {
+      "name": "github",
+      "description": "Push code, create PRs, and link to GitHub issues",
+      "setupCommand": "bash ~/.claude/skills/keel-framework/setup-integrations.sh github"
+    },
+    {
+      "name": "slack",
+      "description": "Notify team on phase completion and post deployment status",
+      "setupCommand": "bash ~/.claude/skills/keel-framework/setup-integrations.sh slack"
+    },
+    {
+      "name": "playwright",
+      "description": "End-to-end browser testing",
+      "setupCommand": "Pre-configured — customise via ~/.keel/config/playwright.yml"
+    }
+  ],
+
+  "installHook": "post-install.sh",
+  "uninstallHook": null,
+
+  "files": {
+    "include": [
+      ".claude-plugin/**",
+      ".claude/**",
+      "bin/**",
+      "docs/**",
+      "stack-profiles/**",
+      "plugin.json",
+      "action.yml",
+      "package.json",
+      "post-install.sh",
+      "plugin-setup.sh",
+      "setup-integrations.sh",
+      "setup-wizard.sh",
+      "README.md",
+      "CHANGELOG.md",
+      "LICENSE",
+      ".env.example",
+      "agent-output-schema.json",
+      "Dockerfile"
+    ],
+    "exclude": [
+      ".git/**",
+      "node_modules/**",
+      ".env",
+      ".keel/secrets/**",
+      "*.log",
+      "*.tmp"
+    ]
+  },
+
+  "engines": {
+    "claudeCode": ">=1.0.0",
+    "node": ">=18.0.0"
+  },
+
+  "distribution": {
+    "npm": {
+      "package": "@amarsingh/keel",
+      "registry": "https://registry.npmjs.org"
+    },
+    "docker": {
+      "image": "amarsingh/keel",
+      "registry": "docker.io"
+    },
+    "githubAction": {
+      "uses": "creativemyntra/keel@v2.1.0"
+    },
+    "githubPackages": {
+      "image": "ghcr.io/creativemyntra/keel"
+    }
+  }
 }
