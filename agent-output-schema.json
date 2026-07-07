@@ -1,0 +1,180 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Output Schema — Keel AI-SDLC Handoff Contract",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "agent",
+    "skill_version",
+    "story_id",
+    "branch",
+    "timestamp",
+    "model_used",
+    "tokens",
+    "confidence",
+    "status",
+    "findings",
+    "lane2_ready"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Semantic version of this schema (e.g., '1.0.0')",
+      "example": "1.0.0"
+    },
+    "agent": {
+      "type": "string",
+      "description": "Agent skill name (e.g., 'init-agent', 'req-agent', 'design-agent')",
+      "example": "init-agent"
+    },
+    "skill_version": {
+      "type": "string",
+      "description": "Semantic version of the agent skill",
+      "example": "0.1.0"
+    },
+    "story_id": {
+      "type": "string",
+      "description": "Jira story or issue ID, or 'phase-1-init' for bootstrap runs",
+      "example": "KEEL-42"
+    },
+    "branch": {
+      "type": "string",
+      "description": "Git branch name where agent wrote changes",
+      "example": "keel/init"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 UTC timestamp of agent completion",
+      "example": "2026-07-06T15:30:45Z"
+    },
+    "model_used": {
+      "type": "string",
+      "description": "LLM model ID (wrapper-populated, never agent-self-reported)",
+      "example": "claude-opus-4.1"
+    },
+    "tokens": {
+      "type": "object",
+      "required": ["input", "output", "cached"],
+      "properties": {
+        "input": {
+          "type": "integer",
+          "description": "Tokens consumed by input context (wrapper-populated)"
+        },
+        "output": {
+          "type": "integer",
+          "description": "Tokens generated in agent response (wrapper-populated)"
+        },
+        "cached": {
+          "type": "integer",
+          "description": "Tokens retrieved from prompt cache (wrapper-populated)"
+        }
+      }
+    },
+    "estimated_cost_usd": {
+      "type": "number",
+      "description": "Execution cost in USD (wrapper-populated, never self-reported)",
+      "example": 0.042
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "description": "Confidence level derived by rule (never self-asserted). high = 0 findings AND coverage ≥ target AND fallback_triggered = false; medium = only LOW/INFO findings, or 1 coverage-retry occurred; low = any HIGH finding unresolved, fallback_triggered = true, or 2nd coverage-retry occurred."
+    },
+    "fallback_triggered": {
+      "type": "boolean",
+      "description": "True if fallback agent was invoked due to gaps or high-severity findings"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "partial", "blocked"],
+      "description": "success = all deliverables complete; partial = some deliverables with known gaps; blocked = unresolvable blocker"
+    },
+    "human_review_required": {
+      "type": "boolean",
+      "description": "True if human review/approval needed before next lane"
+    },
+    "lane2_ready": {
+      "type": "boolean",
+      "description": "True if output passes all gating criteria for downstream agent intake (Phase 2+). Never assume lane2_ready = true; explicit validation required."
+    },
+    "sec_scan_ref": {
+      "type": "string",
+      "description": "Reference to security scan output (e.g., SAST report URL, baseline comparison)",
+      "example": "scan-2026-07-06-init.sarif"
+    },
+    "findings": {
+      "type": "array",
+      "description": "Quality/coverage/security findings, ordered by severity",
+      "items": {
+        "type": "object",
+        "required": ["severity", "basis", "category", "description"],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["HIGH", "MEDIUM", "LOW", "INFO"],
+            "description": "HIGH = blocks release/lane2; MEDIUM = risk mitigatable in next lane; LOW = nice-to-have; INFO = observation"
+          },
+          "basis": {
+            "type": "string",
+            "enum": ["verified", "estimate"],
+            "description": "verified = confirmed by test/scan; estimate = inferred (requires assumptions array)"
+          },
+          "assumptions": {
+            "type": "array",
+            "description": "Required if basis='estimate'. State assumptions that, if wrong, invalidate the finding.",
+            "items": {
+              "type": "string"
+            },
+            "example": ["build succeeds", "no hidden dependencies"]
+          },
+          "category": {
+            "type": "string",
+            "description": "Category: code-quality, coverage-gap, security, performance, docs, architecture, test",
+            "example": "coverage-gap"
+          },
+          "description": {
+            "type": "string",
+            "description": "Concise problem statement"
+          },
+          "file": {
+            "type": "string",
+            "description": "Repo-relative path (optional if finding is global)",
+            "example": "src/Model/User.php"
+          },
+          "line": {
+            "type": "integer",
+            "description": "1-indexed line number (optional)"
+          },
+          "suggested_action": {
+            "type": "string",
+            "description": "Actionable next step for resolver"
+          }
+        }
+      }
+    },
+    "artifacts_written": {
+      "type": "array",
+      "description": "Files created/modified by agent",
+      "items": {
+        "type": "string"
+      },
+      "example": [".claude/skills/init-agent/SKILL.md", "stack-profiles/cakephp.md"]
+    },
+    "artifacts_read": {
+      "type": "array",
+      "description": "Files read as context during execution",
+      "items": {
+        "type": "string"
+      }
+    },
+    "blocking_issues": {
+      "type": "array",
+      "description": "Jira/GitHub issues blocking this execution or downstream lane2",
+      "items": {
+        "type": "string"
+      },
+      "example": []
+    }
+  }
+}

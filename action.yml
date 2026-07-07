@@ -1,0 +1,132 @@
+name: 'Keel AI-SDLC Framework'
+description: 'Complete AI-SDLC pipeline: Brainstorm → Requirements → Design → Code → Test → Security → Deploy'
+author: 'Amar Singh'
+
+branding:
+  icon: 'zap'
+  color: 'blue'
+
+inputs:
+  phase:
+    description: 'Phase to execute (init, brainstorm, req, design, dev, test, sec, deploy)'
+    required: true
+    default: 'init'
+  story-id:
+    description: 'Story ID (e.g., KEEL-42)'
+    required: false
+  goal:
+    description: 'Business goal for brainstorm phase'
+    required: false
+  feature:
+    description: 'Feature description for requirement phase'
+    required: false
+  scope:
+    description: 'Scope for development phases (all, api, services, models, migrations, unit, integration, performance, security, sast, dependencies, owasp, pci)'
+    required: false
+    default: 'all'
+  mode:
+    description: 'Execution mode (plan, execute, interactive, batch, diverge, converge, both)'
+    required: false
+    default: 'interactive'
+  rollout:
+    description: 'Rollout strategy for deployment (canary, blue-green, immediate)'
+    required: false
+    default: 'canary'
+  stack:
+    description: 'Stack (cakephp, laravel, django, rails) - default: cakephp'
+    required: false
+    default: 'cakephp'
+
+outputs:
+  result:
+    description: 'Result of phase execution (JSON output schema)'
+  confidence:
+    description: 'Confidence level (high, medium, low)'
+  lane2-ready:
+    description: 'Whether output is ready for next phase'
+  branch:
+    description: 'Feature branch created (e.g., keel/req/KEEL-42)'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Initialize Keel Framework
+      if: inputs.phase == 'init'
+      shell: bash
+      run: |
+        echo "Initializing Keel AI-SDLC Framework..."
+        /keel init --mode=new --stack=${{ inputs.stack }}
+
+    - name: Run Brainstorm Phase
+      if: inputs.phase == 'brainstorm'
+      shell: bash
+      run: |
+        echo "Running brainstorm phase..."
+        /keel brainstorm --goal="${{ inputs.goal }}" --mode=${{ inputs.mode }}
+
+    - name: Run Requirements Phase
+      if: inputs.phase == 'req'
+      shell: bash
+      run: |
+        echo "Running requirements phase..."
+        /keel req --story=${{ inputs.story-id }} --feature="${{ inputs.feature }}" --mode=${{ inputs.mode }}
+
+    - name: Run Design Phase
+      if: inputs.phase == 'design'
+      shell: bash
+      run: |
+        echo "Running design phase..."
+        /keel design --story=${{ inputs.story-id }} --focus=${{ inputs.scope }}
+
+    - name: Run Development Phase
+      if: inputs.phase == 'dev'
+      shell: bash
+      run: |
+        echo "Running development phase..."
+        /keel dev --story=${{ inputs.story-id }} --scope=${{ inputs.scope }}
+
+    - name: Run Testing Phase
+      if: inputs.phase == 'test'
+      shell: bash
+      run: |
+        echo "Running testing phase..."
+        /keel test --story=${{ inputs.story-id }} --scope=${{ inputs.scope }}
+
+    - name: Run Security Phase
+      if: inputs.phase == 'sec'
+      shell: bash
+      run: |
+        echo "Running security phase..."
+        /keel sec --story=${{ inputs.story-id }} --scope=${{ inputs.scope }}
+
+    - name: Run Deployment Phase
+      if: inputs.phase == 'deploy'
+      shell: bash
+      run: |
+        echo "Running deployment phase..."
+        /keel deploy --story=${{ inputs.story-id }} --mode=${{ inputs.mode }} --rollout=${{ inputs.rollout }}
+
+    - name: Upload Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: keel-output-${{ inputs.phase }}
+        path: |
+          docs/requirements/
+          docs/design/
+          docs/deployment/
+          docs/security/
+          docs/brainstorms/
+
+# Marketplace metadata
+keywords:
+  - ai-sdlc
+  - code-generation
+  - testing
+  - security
+  - deployment
+  - automated-development
+
+documentation: 'https://github.com/creativemyntra/keel#readme'
+repository: 'https://github.com/creativemyntra/keel'
+issues: 'https://github.com/creativemyntra/keel/issues'

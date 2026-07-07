@@ -1,0 +1,60 @@
+# Dependencies
+/vendor/
+composer.lock
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.sublime-project
+.sublime-workspace
+
+# Build & Artifacts
+/build/
+/dist/
+*.log
+*.tmp
+
+# Test coverage
+/coverage/
+/build/coverage/
+build/clover.xml
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.bak
+*.swp
+*.swo
+*~
+.temp/
+
+# Project-specific
+/state/ (reserved for audit-agent only)
+.ai-sdlc/ (reserved for framework)
+
+# Generated files (should be committed for framework, but not for user projects)
+# Keep these in keel:
+# - /docs/requirements/
+# - /docs/design/
+# - /docs/deployment/
+# - /docs/security/
+# - /docs/brainstorms/
