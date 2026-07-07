@@ -25,7 +25,7 @@
 ```bash
 # Install as Claude Code skill
 cd ~/.claude/skills
-git clone https://github.com/creativemyntra/keel.git
+git clone https://github.com/amarsingh/keel.git
 ```
 
 Then use in Claude Code:
@@ -43,7 +43,7 @@ Then use in Claude Code:
 **For CI/CD pipelines.** Requires your Anthropic API key (optional).
 
 ```yaml
-- uses: creativemyntra/keel@v2.1.0
+- uses: amarsingh/keel@v2.1.0
   with:
     phase: 'dev'
     story-id: 'KEEL-42'

@@ -19,7 +19,7 @@ The **MIT License** is one of the most popular open-source licenses. It's:
 ```
 MIT License
 
-Copyright (c) 2026 Amar Singh, Creative Myntra
+Copyright (c) 2026 Amar Singh
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -188,7 +188,7 @@ Users **must keep** the license and copyright notice.
 ```
 MIT License
 
-Copyright (c) 2026 Amar Singh, Creative Myntra
+Copyright (c) 2026 Amar Singh
 
 [Full MIT license text]
 ```
@@ -250,7 +250,7 @@ Keel is licensed under the MIT License - see the [LICENSE](LICENSE) file for det
 /**
  * Keel AI-SDLC Framework
  *
- * Copyright (c) 2026 Amar Singh, Creative Myntra
+ * Copyright (c) 2026 Amar Singh
  * Licensed under the MIT License
  * See LICENSE file in repository root for details.
  * 
@@ -316,7 +316,7 @@ See [Keel License](https://github.com/creativemyntra/keel/blob/master/LICENSE)
 ### Keel Framework Attribution
 
 Keel AI-SDLC Framework
-Copyright (c) 2026 Amar Singh, Creative Myntra
+Copyright (c) 2026 Amar Singh
 Licensed under the MIT License
 ```
 
