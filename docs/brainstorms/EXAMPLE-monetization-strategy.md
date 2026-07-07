@@ -1,4 +1,4 @@
-# Brainstorm: Monetization Strategy for Hart 30
+# Brainstorm: Monetization Strategy
 
 **Status:** Converged | **Epic:** KEEL-E1 (Monetization Phase 1) | **Mode:** both (diverge + converge) | **Phase:** 1.5 (Ideation)
 
@@ -8,7 +8,7 @@
 
 ## Problem Statement
 
-Hart 30 is a free SaaS platform with 50K+ users but zero recurring revenue. Competitors are monetizing successfully, and we need a sustainable business model to fund product development and customer support. Current churn of free users is high; we need to retain engaged users via value-for-money paid tiers while converting 2-5% of free users to paying customers.
+The platform is a free SaaS product with 50K+ users but zero recurring revenue. Competitors are monetizing successfully, and we need a sustainable business model to fund product development and customer support. Current churn of free users is high; we need to retain engaged users via value-for-money paid tiers while converting 2-5% of free users to paying customers.
 
 **Current State:**
 - Free users only; ad-hoc feature requests from power users
@@ -63,7 +63,7 @@ Hart 30 is a free SaaS platform with 50K+ users but zero recurring revenue. Comp
 
 **Idea:**
 
-Hart 30 offers three subscription tiers accessible via credit card payment:
+The platform offers three subscription tiers accessible via credit card payment:
 
 1. **Free Tier** (current): Basic reporting, 10 API calls/day, community support
 2. **Monthly Premium** ($29/month): Advanced analytics, 1000 API calls/day, email support, priority feature requests
@@ -136,7 +136,7 @@ Revenue model is predictable MRR; easy to forecast + scale. Stripe ecosystem int
 
 **Idea:**
 
-Instead of recurring subscriptions, Hart 30 sells consumable credits:
+Instead of recurring subscriptions, the platform sells consumable credits:
 - **API Call Credits:** Users buy 5000 API calls for $10 (top-up anytime)
 - **Feature Unlock Credits:** Users pay $10 to unlock "Advanced Analytics" for 30 days (then expires)
 - **Report Export Credits:** Users pay $2 per premium report export (instead of unlimited exports)
@@ -203,7 +203,7 @@ Revenue is less predictable (higher variance month-to-month) but may appeal to c
 
 **Idea:**
 
-Hart 30 free tier has hard limits:
+The platform's free tier has hard limits:
 - **Free:** 100 API calls/month, max 10 reports/day, basic reporting
 - **Premium ($29/mo):** Unlimited API, unlimited reports, advanced analytics
 
@@ -521,7 +521,7 @@ Rate each concept on three dimensions (1-10 scale):
 
 **User Story (Rough):**
 ```
-As a power user of Hart 30,
+As a power user of the platform,
 I want to subscribe to a paid monthly plan ($29/month),
 so that I can access advanced features (premium analytics, priority support, unlimited API) 
 and support the product I love
@@ -529,7 +529,7 @@ and support the product I love
 
 **Problem Solved:**
 - Power users (10% of free base) need premium features not available in free tier
-- Hart 30 needs recurring revenue to fund product development + customer support
+- Platform needs recurring revenue to fund product development + customer support
 - Users expect industry-standard subscription model (not one-time purchases or credits)
 
 **Rough Acceptance Criteria:**

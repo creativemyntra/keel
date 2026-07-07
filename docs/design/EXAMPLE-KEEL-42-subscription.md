@@ -10,9 +10,9 @@
 
 ## Overview
 
-**Design Scope:** Complete subscription system for Hart 30 enabling recurring revenue through monthly and annual plans.
+**Design Scope:** Complete subscription system enabling recurring revenue through monthly and annual plans.
 
-**Problem Solved:** Hart 30 has 50K+ free users but zero monetization. Power users (10% of base) are ready to pay for premium features. This design specifies the architecture to capture that revenue reliably, securely, and at scale.
+**Problem Solved:** Platform has 50K+ free users but zero monetization. Power users (10% of base) are ready to pay for premium features. This design specifies the architecture to capture that revenue reliably, securely, and at scale.
 
 **Approach:** Synchronous payment processing (Stripe handles payment + subscription) with asynchronous webhook notifications for eventual consistency. Feature flags gate premium features. Local DB is source-of-truth; Stripe is secondary (reconciliation via cron job Phase 4+).
 
@@ -67,11 +67,11 @@
 ```yaml
 openapi: 3.0.0
 info:
-  title: Hart 30 Subscription API
+  title: Subscription API
   version: 1.0.0
   description: Manage recurring subscriptions and payments
 servers:
-  - url: https://api.hart30.io/v1
+  - url: https://api.example.com/v1
     description: Production
 
 paths:
@@ -1067,7 +1067,7 @@ public function rateLimit($user_id) {
 **Phase 2: Code Deployment (Day 2, Low-traffic hours)**
 1. Deploy API code (controllers, services, models)
 2. Deploy feature: subscription endpoints initially disabled (feature flag off)
-3. Verify no errors in logs: `tail -f /var/log/hart30/production.log`
+3. Verify no errors in logs: `tail -f /var/log/app/production.log`
 
 **Phase 3: Validation (Day 2, 2-4 hours)**
 1. Manual smoke test (Postman):

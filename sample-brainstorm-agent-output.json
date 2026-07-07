@@ -23,7 +23,7 @@
       "severity": "INFO",
       "basis": "verified",
       "category": "architecture",
-      "description": "Concept 1 (Subscription) aligns with Hart 30 SMB target segment and proven SaaS monetization model",
+      "description": "Concept 1 (Subscription) aligns with SMB target segment and proven SaaS monetization model",
       "suggested_action": "Proceed with req-agent for detailed requirements (KEEL-42)"
     },
     {
@@ -188,7 +188,7 @@
       "concept_id": "concept-04-enterprise",
       "feature_name": "Enterprise Licensing & Admin Console",
       "story_id": "KEEL-50",
-      "user_story": "As an enterprise IT admin, I want to manage user seats and SSO access, so my organization can use Hart 30 with compliance controls",
+      "user_story": "As an enterprise IT admin, I want to manage user seats and SSO access, so my organization can use our platform with compliance controls",
       "rough_ac_count": 5,
       "data_entities": ["License", "User", "AdminAuditLog", "SSOConfiguration"],
       "external_integrations": ["Stripe API", "SAML Provider (Okta, Azure AD)"],

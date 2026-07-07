@@ -4,7 +4,7 @@
 
 ## Summary
 
-Users need the ability to subscribe to recurring monthly or annual plans to access premium features. This is the core monetization feature for Hart 30 platform, enabling SaaS business model and generating recurring revenue. Without this, we cannot convert free users to paying customers.
+Users need the ability to subscribe to recurring monthly or annual plans to access premium features. This is the core monetization feature for the platform, enabling SaaS business model and generating recurring revenue. Without this, we cannot convert free users to paying customers.
 
 **Who:** Free users ready to upgrade to premium access  
 **What:** Subscribe to monthly/annual plan with credit card payment  

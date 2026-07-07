@@ -68,8 +68,8 @@ mode: production-deployment
 ```bash
 # AWS RDS backup (pre-deployment safety)
 aws rds create-db-snapshot \
-  --db-instance-identifier hart30-prod \
-  --db-snapshot-identifier hart30-prod-pre-keel42-20260720
+  --db-instance-identifier app-prod \
+  --db-snapshot-identifier app-prod-pre-keel42-20260720
 ```
 
 **Step 1.2: Run Migration**
@@ -104,12 +104,12 @@ bin/cake migrations rollback --target=20260714_999
 **Step 2.1: Deploy API Code**
 - Deploy updated controllers, services, models to production
 - Feature flag: subscription_enabled = false (disabled initially)
-- Verify no errors in logs: `tail -f /var/log/hart30/production.log`
+- Verify no errors in logs: `tail -f /var/log/app/production.log`
 
 **Step 2.2: Health Check**
 ```bash
 # Verify API is responsive
-curl -s https://api.hart30.io/health
+curl -s https://api.example.com/health
 # Response: HTTP 200 OK
 ```
 
@@ -160,8 +160,8 @@ curl -s https://api.hart30.io/health
    
    # OR restore from pre-deployment backup
    aws rds restore-db-instance-from-db-snapshot \
-     --db-instance-identifier hart30-prod \
-     --db-snapshot-identifier hart30-prod-pre-keel42-20260720
+     --db-instance-identifier app-prod \
+     --db-snapshot-identifier app-prod-pre-keel42-20260720
    ```
 
 4. **Post-Incident:**
@@ -229,7 +229,7 @@ curl -s https://api.hart30.io/health
 **Symptoms:** Stripe webhooks not being processed; subscriptions not syncing
 
 **Investigation:**
-1. Verify webhook endpoint is responsive: `curl -s https://api.hart30.io/webhooks/stripe`
+1. Verify webhook endpoint is responsive: `curl -s https://api.example.com/webhooks/stripe`
 2. Check webhook event queue (if async job queue)
 3. Verify webhook secret is correctly configured
 

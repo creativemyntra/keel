@@ -46,7 +46,7 @@
 
 [Summary of API scope and philosophy]
 
-**Base URL:** `https://api.hart30.io/v1`  
+**Base URL:** `https://api.example.com/v1`  
 **Auth:** Bearer token (JWT from user session) — required for all endpoints  
 **Content-Type:** `application/json`  
 **Versioning:** API v1.0 (stable for Phase 5+)
@@ -56,10 +56,10 @@
 ```yaml
 openapi: 3.0.0
 info:
-  title: Hart 30 [Feature] API
+  title: [Feature] API
   version: 1.0.0
 servers:
-  - url: https://api.hart30.io/v1
+  - url: https://api.example.com/v1
     description: Production
 
 paths:

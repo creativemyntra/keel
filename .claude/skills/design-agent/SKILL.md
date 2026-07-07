@@ -115,10 +115,10 @@ Embedded or linked specification:
 ```yaml
 openapi: 3.0.0
 info:
-  title: Hart 30 Subscription API
+  title: Subscription API
   version: 1.0.0
 servers:
-  - url: https://api.hart30.io/v1
+  - url: https://api.example.com/v1
 
 paths:
   /subscriptions:
