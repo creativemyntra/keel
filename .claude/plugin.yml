@@ -80,7 +80,7 @@ installation:
     path: .claude/skills/keel-framework
     installCommand: git clone https://github.com/creativemyntra/keel.git ~/.claude/skills/keel-framework
     verifyCommand: /keel --version
-    postInstallScript: setup-wizard.sh
+    postInstallScript: post-install.sh
 
   # Secondary: npm Package
   npm:
