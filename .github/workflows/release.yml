@@ -96,6 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [prepare, build-plugin]
     environment: npm-publish
+    continue-on-error: true   # distribution channel — must not block the GitHub Release
     permissions:
       id-token: write   # for npm provenance
     steps:
@@ -105,10 +106,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: npm install --ignore-scripts
 
       - name: Bump version in package.json
         run: |
@@ -131,6 +131,7 @@ jobs:
     name: Build & Push Docker
     runs-on: ubuntu-latest
     needs: [prepare, build-plugin]
+    continue-on-error: true   # distribution channel — must not block the GitHub Release
     permissions:
       contents: read
       packages: write
@@ -197,7 +198,7 @@ jobs:
   github-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [prepare, build-plugin, publish-npm, publish-docker]
+    needs: [prepare, build-plugin]
     permissions:
       contents: write
     steps:
@@ -272,7 +273,7 @@ jobs:
     name: Notify on Failure
     runs-on: ubuntu-latest
     needs: [publish-npm, publish-docker, github-release]
-    if: failure()
+    if: always() && (needs.github-release.result == 'failure' || needs.publish-npm.result != 'success' || needs.publish-docker.result != 'success')
     steps:
       - name: Post failure summary
         run: |
