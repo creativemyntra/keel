@@ -34,46 +34,6 @@
     "pricing": "free"
   },
 
-  "commands": [
-    { "name": "keel",           "description": "Root Keel command — run /keel --help for all subcommands" },
-    { "name": "keel:init",      "description": "Scaffold a new project or add Keel to an existing one" },
-    { "name": "keel:brainstorm","description": "Generate feature ideas from a business goal" },
-    { "name": "keel:req",       "description": "Create BDD requirements, acceptance criteria, and API spec" },
-    { "name": "keel:design",    "description": "Generate system architecture, DB schema, and API contracts" },
-    { "name": "keel:tdd-red",   "description": "Write failing tests (TDD Red phase)" },
-    { "name": "keel:tdd-green", "description": "Write implementation to pass tests (TDD Green phase)" },
-    { "name": "keel:tdd-refactor","description": "Refactor code while keeping tests green" },
-    { "name": "keel:test",      "description": "Run comprehensive test suite with coverage reporting" },
-    { "name": "keel:sec",       "description": "OWASP Top 10 + PCI-DSS security scan" },
-    { "name": "keel:deploy",    "description": "Deploy with canary, blue-green, or instant rollout" }
-  ],
-
-  "skills": [
-    { "name": "keel:sprint-planning",    "description": "Generate sprint plans from backlog and team capacity" },
-    { "name": "keel:create-prd",         "description": "Generate a PRD from a raw feature request" },
-    { "name": "keel:analyze-story",      "description": "Elaborate a backlog story through a Business Analyst lens" },
-    { "name": "keel:investigate-defect", "description": "Structured defect investigation with RCA output" },
-    { "name": "keel:create-mom",         "description": "Generate Minutes of Meeting from notes or transcript" },
-    { "name": "keel:generate-tests",     "description": "Generate five required test categories for a feature" },
-    { "name": "keel:e2e-test",           "description": "Generate or run Playwright E2E tests for a user flow" },
-    { "name": "keel:review-code",        "description": "QA and Security review on staged changes" },
-    { "name": "keel:release-check",      "description": "Full release-readiness check before deployment" },
-    { "name": "keel:implement-feature",  "description": "Run the full pipeline from approved design to tested implementation" }
-  ],
-
-  "agents": [
-    { "name": "keel:orchestrator",       "description": "Routes all AI-SDLC work, enforces phase gates" },
-    { "name": "keel:product-owner",      "description": "Requirements, acceptance criteria, scope" },
-    { "name": "keel:business-analyst",   "description": "Functional specs, data flows, edge cases" },
-    { "name": "keel:solution-architect", "description": "Architecture, scalability, technical risk" },
-    { "name": "keel:software-engineer",  "description": "TDD implementation (Red → Green → Refactor)" },
-    { "name": "keel:qa-engineer",        "description": "Validation against acceptance criteria" },
-    { "name": "keel:security-engineer",  "description": "Threat modeling, OWASP, compliance" },
-    { "name": "keel:technical-writer",   "description": "Docs, changelogs, runbooks" },
-    { "name": "keel:release-manager",    "description": "Release readiness and go/no-go" },
-    { "name": "keel:scrum-master",       "description": "Sprint health, ceremonies, velocity" }
-  ],
-
   "mcpServers": {},
 
   "optionalIntegrations": [
