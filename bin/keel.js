@@ -1,153 +1,285 @@
 #!/usr/bin/env node
-
 /**
- * Keel AI-SDLC Framework CLI
- * Complete AI-powered software development lifecycle automation
- *
- * Usage: keel [command] [options]
+ * Keel AI-SDLC Framework v3.0.0 -- CLI Dispatcher (ESM)
+ * Author : Amar Singh <support@creativemyntra.com>
+ * License: MIT
  */
+import { spawnSync } from 'child_process';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 
-const version = "3.0.0";
-const author = "Amar Singh";
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const VERSION   = '3.0.0';
+const KEEL_DIR  = resolve(__dirname, '..');
 
-// Available commands
-const commands = {
-  init: {
-    description: "Initialize new project with Keel",
-    usage: "keel init --mode=new --stack=cakephp",
-    category: "setup"
-  },
-  brainstorm: {
-    description: "Generate ideas and concepts",
-    usage: "keel brainstorm --goal='Your goal'",
-    category: "ideation"
-  },
-  req: {
-    description: "Create detailed requirements",
-    usage: "keel req --story=FEAT-1 --feature='Description'",
-    category: "requirements"
-  },
-  design: {
-    description: "Design system architecture",
-    usage: "keel design --story=FEAT-1",
-    category: "architecture"
-  },
-  "tdd-red": {
-    description: "Write failing tests (TDD Red phase)",
-    usage: "keel tdd-red --story=FEAT-1",
-    category: "development"
-  },
-  "tdd-green": {
-    description: "Write code to pass tests (TDD Green phase)",
-    usage: "keel tdd-green --story=FEAT-1",
-    category: "development"
-  },
-  "tdd-refactor": {
-    description: "Refactor code (TDD Refactor phase)",
-    usage: "keel tdd-refactor --story=FEAT-1",
-    category: "development"
-  },
-  test: {
-    description: "Run comprehensive tests",
-    usage: "keel test --story=FEAT-1 --coverage-target=85",
-    category: "testing"
-  },
-  sec: {
-    description: "Security scanning and compliance",
-    usage: "keel sec --story=FEAT-1",
-    category: "security"
-  },
-  deploy: {
-    description: "Deploy to production",
-    usage: "keel deploy --story=FEAT-1 --rollout=canary",
-    category: "deployment"
+function parseArgs(argv) {
+  const positional = [], flags = {};
+  for (const arg of argv) {
+    if (arg.startsWith('--')) {
+      const eq = arg.indexOf('='), key = eq === -1 ? arg.slice(2) : arg.slice(2, eq);
+      flags[key] = eq === -1 ? true : arg.slice(eq + 1);
+    } else if (arg.startsWith('-')) {
+      flags[arg.slice(1)] = true;
+    } else {
+      positional.push(arg);
+    }
   }
+  return { positional, flags };
+}
+
+function run(cmd, args) {
+  return spawnSync(cmd, args, { cwd: KEEL_DIR, encoding: 'utf8', stdio: 'inherit' });
+}
+
+function emit(phase, agents, story, lines) {
+  const div = '='.repeat(62);
+  console.log('\n' + div);
+  console.log('[KEEL PHASE ' + phase + ']  Agents: ' + agents.join(' > '));
+  if (story) console.log('Story  : ' + story);
+  console.log('');
+  console.log(lines.join('\n'));
+  console.log(div + '\n');
+}
+
+const ROUTES = {
+
+  init(c) {
+    emit(1, ['keel:orchestrator'], '', [
+      'Tasks:',
+      '1. Scaffold project: src/, tests/, config/, docs/, bin/',
+      '2. Create composer.json (CakePHP 4.4 / PHP 8.1, PSR-4 App\\ -> src/)',
+      '3. Write .env.example with required vars (no real values)',
+      '4. Add placeholder config/routes.php',
+      '5. Output file tree confirming scaffold',
+      '',
+      'Stack: ' + c.stack + ' | Mode: ' + c.mode,
+      'Governance: Never commit real secrets.',
+    ]);
+  },
+
+  brainstorm(c) {
+    emit(2, ['keel:product-owner'], '', [
+      'Goal: "' + c.goal + '"',
+      '',
+      '1. Generate 5+ distinct feature ideas addressing the goal',
+      '2. For each: name | business value | effort (S/M/L/XL) | risk | recommended?',
+      '3. Recommend top 2 with justification',
+      '4. Flag any idea touching payment, auth, or PII',
+      '',
+      'Output as a Markdown table.',
+    ]);
+  },
+
+  req(c) {
+    emit(3, ['keel:product-owner', 'keel:business-analyst'], c.story, [
+      'Feature: "' + c.feature + '"',
+      '',
+      'keel:product-owner:',
+      '1. User stories (As a... I want... So that...)',
+      '2. Acceptance criteria in BDD Gherkin (Given/When/Then)',
+      '3. Scope: explicit in-scope and out-of-scope list',
+      '',
+      'keel:business-analyst:',
+      '4. Functional spec: system behaviour step by step',
+      '5. Data flow: Input -> Processing -> Output',
+      '6. Business rules the code must enforce',
+      '7. Edge cases: empty state, limits, concurrency, invalid inputs',
+      '8. Open questions needing PO clarification',
+      '',
+      'Save to: docs/requirements/' + c.story + '-requirements.md',
+    ]);
+  },
+
+  design(c) {
+    emit(4, ['keel:solution-architect'], c.story, [
+      '1. Architecture Decision Record: context, options, decision, consequences',
+      '2. API contract: endpoint, method, auth, request/response schema, error codes',
+      '3. DB schema: tables, columns, indexes, foreign keys',
+      '4. Component diagram: which classes/services interact',
+      '5. Technical risks with mitigations',
+      '6. Confirm CakePHP 4.4 conventions (Controller suffix, Table/Entity, App\\ ns)',
+      '',
+      'Save to: docs/design/' + c.story + '-design.md',
+    ]);
+  },
+
+  'tdd-red'(c) {
+    emit('5a', ['keel:software-engineer'], c.story, [
+      '1. Read docs/requirements/' + c.story + '-requirements.md',
+      '2. Write PHPUnit tests for EVERY acceptance criterion -- no implementation yet',
+      '3. Standards: declare(strict_types=1), IntegrationTestTrait, >=2 assertions/test',
+      '4. Run: vendor/bin/phpunit tests/TestCase/',
+      '5. CONFIRM all new tests FAIL. If any pass, the test is wrong -- fix it.',
+      '6. Show test output proving the red state',
+      '',
+      'Do NOT write any implementation code.',
+      'Save to: tests/TestCase/Controller/' + (c.story || 'Feature') + 'Test.php',
+    ]);
+  },
+
+  'tdd-green'(c) {
+    emit('5b', ['keel:software-engineer'], c.story, [
+      '1. Read the failing tests from Phase 5a',
+      '2. Write MINIMUM implementation to make all tests pass',
+      '3. Standards: declare(strict_types=1), PSR-12, PHPStan L5+',
+      '4. Run: vendor/bin/phpunit -- CONFIRM all tests PASS',
+      '5. Run: vendor/bin/phpcs --standard=PSR12 src/ -- fix all violations',
+      '6. Show passing test output',
+      '',
+      'Files to create:',
+      '  src/Controller/<Name>Controller.php',
+      '  config/routes.php (add route)',
+      '  Any Model/Table/Entity files required',
+    ]);
+  },
+
+  'tdd-refactor'(c) {
+    emit('5c', ['keel:software-engineer'], c.story, [
+      '1. Identify: duplication, methods >30 lines, magic strings, missing type hints',
+      '2. Refactor ONE issue at a time -- run tests after each change',
+      '3. Add PHPDoc explaining WHY for non-obvious logic',
+      '4. Final: vendor/bin/phpunit -- all green',
+      '5. Final: vendor/bin/phpstan analyse --level=5 src/ -- 0 errors',
+      '',
+      'Tests must stay green throughout. No new behaviour during refactor.',
+    ]);
+  },
+
+  test(c) {
+    console.log('\n[KEEL PHASE 6 -- QA TESTING]  Story: ' + c.story);
+    console.log('-'.repeat(60));
+    console.log('\n> PHPUnit + coverage...');
+    const u = run('vendor/bin/phpunit', ['--coverage-text', '--colors=never', 'tests/TestCase/']);
+    if (u.status !== 0) { console.error('\nFAIL: Tests failed -- fix before security phase.'); process.exit(1); }
+    console.log('\n> PSR-12 lint...');
+    run('vendor/bin/phpcs', ['--standard=PSR12', 'src/', 'tests/']);
+    console.log('\n> PHPStan level 5...');
+    run('vendor/bin/phpstan', ['analyse', '--level=5', 'src/']);
+    emit(6, ['keel:qa-engineer'], c.story, [
+      'Coverage target: >=' + c.coverageTarget + '%',
+      '1. Map each Gherkin scenario to a passing test -- document in QA report',
+      '2. Confirm coverage >= ' + c.coverageTarget + '% for changed files',
+      '3. Test error paths (4xx, 5xx, DB failure)',
+      '',
+      'Save to: docs/qa/' + c.story + '-qa-report.md',
+      'Verdict: PASS (all green + coverage >= ' + c.coverageTarget + '%) or FAIL',
+    ]);
+  },
+
+  sec(c) {
+    console.log('\n[KEEL PHASE 7 -- SECURITY]  Story: ' + c.story);
+    console.log('-'.repeat(60));
+    console.log('\n> composer audit (CVE check)...');
+    const a = run('composer', ['audit']);
+    if (a.status !== 0) { console.error('\nFAIL: CVEs found -- fix before release.'); process.exit(1); }
+    console.log('PASS: No known CVEs.');
+    console.log('\n> PHPStan L5...');
+    run('vendor/bin/phpstan', ['analyse', '--level=5', 'src/']);
+    emit(7, ['keel:security-engineer'], c.story, [
+      '1. OWASP Top 10 review of changed files:',
+      '   A01 Access Control | A02 Crypto | A03 Injection',
+      '   A05 Misconfig | A07 Auth | A09 Logging | A10 SSRF',
+      '2. Verify: no PII or credentials in response bodies or logs',
+      '3. Verify: all user inputs validated and sanitised',
+      '4. Rate: HIGH / MEDIUM / LOW / INFO',
+      '5. HIGH = release BLOCKER -- stop, fix, re-scan',
+      '',
+      'Save to: docs/security/' + c.story + '-security-report.md',
+      'Verdict: PASS (0 HIGH) or FAIL',
+    ]);
+  },
+
+  deploy(c) {
+    emit(8, ['keel:technical-writer', 'keel:release-manager'], c.story, [
+      'Rollout: ' + c.rollout + ' | Version: v' + VERSION,
+      '',
+      'keel:technical-writer:',
+      '1. Update CHANGELOG.md -- add [' + VERSION + '] section (Added/Changed/Fixed/Security)',
+      '2. Update README for new commands or config keys',
+      '3. Write: docs/releases/release-notes-v' + VERSION + '.md',
+      '',
+      'keel:release-manager:',
+      '4. Gate: tests green + coverage>=80% + 0 HIGH findings + PR has human approval',
+      '5. Issue GO or NO-GO with justification',
+      '6. On GO: ' + c.rollout + ' plan (5% > 25% > 100%)',
+      '7. Rollback trigger: error rate >0.5% OR p99 >2s -- immediate revert',
+      '',
+      'Governance: Never merge PR. Human must press deploy. Canary required.',
+    ]);
+  },
 };
 
-function showVersion() {
-  console.log(`Keel AI-SDLC Framework v${version}`);
-  console.log(`Author: ${author}`);
-  console.log(`Repository: https://github.com/creativemyntra/keel`);
-}
-
 function showHelp() {
-  console.log(`
-╔════════════════════════════════════════════════════════════════╗
-║          Keel AI-SDLC Framework v${version}                      ║
-║   Complete AI-powered Software Development Lifecycle          ║
-╚════════════════════════════════════════════════════════════════╝
-
-USAGE:
-  keel [command] [options]
-
-COMMANDS:
-`);
-
-  // Group commands by category
-  const categories = {};
-  Object.entries(commands).forEach(([name, cmd]) => {
-    if (!categories[cmd.category]) {
-      categories[cmd.category] = [];
-    }
-    categories[cmd.category].push({ name, ...cmd });
-  });
-
-  // Print by category
-  Object.entries(categories).forEach(([category, cmds]) => {
-    console.log(`  ${category.toUpperCase()}:`);
-    cmds.forEach(cmd => {
-      console.log(`    ${cmd.name.padEnd(15)} ${cmd.description}`);
-    });
-    console.log();
-  });
-
-  console.log(`OPTIONS:
-  --version       Show version
-  --help          Show this help message
-
-EXAMPLES:
-  keel init --mode=new --stack=cakephp
-  keel req --story=FEAT-1 --feature="Your feature"
-  keel design --story=FEAT-1
-  keel tdd-red --story=FEAT-1
-  keel tdd-green --story=FEAT-1
-  keel test --story=FEAT-1 --coverage-target=85
-  keel sec --story=FEAT-1
-  keel deploy --story=FEAT-1 --rollout=canary
-
-DOCUMENTATION:
-  https://github.com/creativemyntra/keel
-  https://github.com/creativemyntra/keel#readme
-
-SUPPORT:
-  Issues: https://github.com/creativemyntra/keel/issues
-  Email: support@creativemyntra.com
-`);
+  console.log([
+    '',
+    '+--------------------------------------------------------------------+',
+    '|  Keel AI-SDLC Framework v' + VERSION + '  github.com/creativemyntra/keel  |',
+    '+--------------------------------------------------------------------+',
+    '',
+    'USAGE',
+    '  /keel <command> [options]             (Claude Code / Claude Desktop)',
+    '  node bin/keel.js <command> [options]  (terminal)',
+    '',
+    'PIPELINE',
+    '  PH    COMMAND          AGENT(S)',
+    '  1     init             keel:orchestrator',
+    '  2     brainstorm       keel:product-owner',
+    '  3     req              keel:product-owner -> keel:business-analyst',
+    '  4     design           keel:solution-architect',
+    '  5a    tdd-red          keel:software-engineer',
+    '  5b    tdd-green        keel:software-engineer',
+    '  5c    tdd-refactor     keel:software-engineer',
+    '  6     test             keel:qa-engineer  [+ phpunit phpcs phpstan]',
+    '  7     sec              keel:security-engineer  [+ composer audit]',
+    '  8     deploy           keel:technical-writer -> keel:release-manager',
+    '',
+    'OPTIONS',
+    '  --story=<ID>             Story ID (e.g. FEAT-1, HEALTH-1)',
+    '  --feature="<text>"       Feature description (req phase)',
+    '  --goal="<text>"          Business goal (brainstorm phase)',
+    '  --stack=cakephp          Supported stack for v3.0 (Laravel/Django/Rails in v3.1)',
+    '  --coverage-target=<N>    Min coverage % (default: 80)',
+    '  --rollout=<type>         canary | blue-green | instant (default: canary)',
+    '  --help, -h               Show this help',
+    '  --version, -v            Show version',
+    '',
+    'GOVERNANCE',
+    '  X  Never merge PRs (human only)    X  Never force push',
+    '  X  No deploy without GO verdict    X  Never output secrets or PII',
+    '  OK Coverage >= 80% before sec      OK Zero HIGH findings before release',
+    '  OK Canary rollout on first deploy',
+    '',
+    'DOCS    https://github.com/creativemyntra/keel/blob/master/INSTALL.md',
+    'ISSUES  https://github.com/creativemyntra/keel/issues',
+    '',
+  ].join('\n'));
 }
 
-// Parse command line arguments
-const args = process.argv.slice(2);
-const command = args[0];
+(function main() {
+  const { positional, flags } = parseArgs(process.argv.slice(2));
 
-if (!command || command === "--help" || command === "-h") {
-  showHelp();
-  process.exit(0);
-}
+  if (flags.v || (flags.version && !positional.length)) {
+    console.log('keel v' + VERSION);
+    process.exit(0);
+  }
 
-if (command === "--version" || command === "-v") {
-  showVersion();
-  process.exit(0);
-}
+  const sub = positional[0];
+  if (!sub || flags.h || flags.help) { showHelp(); process.exit(0); }
 
-if (commands[command]) {
-  console.log(`\n🚀 Running: keel ${command}`);
-  console.log(`📖 Usage: ${commands[command].usage}`);
-  console.log(`\n✅ Command '${command}' executed successfully!`);
-  console.log("\n💡 Tip: This is the CLI entry point. In Claude Code, use slash commands instead:");
-  console.log(`   /keel ${command} [options]\n`);
-  process.exit(0);
-}
+  if (!ROUTES[sub]) {
+    console.error('\nUnknown command: "' + sub + '"\nRun: node bin/keel.js --help\n');
+    process.exit(1);
+  }
 
-console.error(`\n❌ Unknown command: ${command}`);
-console.error(`\nRun 'keel --help' for available commands\n`);
-process.exit(1);
+  const ctx = {
+    story:          String(flags.story    || ''),
+    feature:        String(flags.feature  || ''),
+    goal:           String(flags.goal     || ''),
+    stack:          String(flags.stack    || 'cakephp'),
+    mode:           String(flags.mode     || 'new'),
+    rollout:        String(flags.rollout  || 'canary'),
+    coverageTarget: String(flags['coverage-target'] || '80'),
+  };
+
+  ROUTES[sub](ctx);
+}());

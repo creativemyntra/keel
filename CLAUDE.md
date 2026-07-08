@@ -340,18 +340,25 @@ Every agent produces `agent-output-schema.json`:
 
 ## 6. Stack Support
 
-### Officially Supported Stacks
+### v3.0.0 — Production Supported
 
-| Stack | Version | PHP/Python | Tests | Type Checker | Notes |
-|-------|---------|---|---|---|---|
-| **CakePHP** | 4.4+ | PHP 8.1+ | PHPUnit | PHPStan L5+ | Primary stack, fully tested |
-| **Laravel** | 10+ | PHP 8.1+ | PHPUnit | PHPStan L5+ | PSR-12, Eloquent ORM |
-| **Django** | 4.2+ | Python 3.10+ | pytest | mypy + pyright | TDD, migrations support |
-| **Rails** | 7.0+ | Ruby 3.0+ | RSpec | RBS/TypeProf | Active Record ORM |
+| Stack | Version | Language | Tests | Type Checker | Notes |
+|-------|---------|----------|-------|--------------|-------|
+| **CakePHP** | 4.4+ | PHP 8.1+ | PHPUnit | PHPStan L5+ | ✅ Fully tested — HEALTH-1 demo proven |
 
-Each stack has a profile in `stack-profiles/`:
-- `cakephp.md` — CakePHP testing, fixtures, migrations
-- (Laravel, Django, Rails profiles added on-demand)
+CakePHP stack profile: `stack-profiles/cakephp.md` (conventions, fixtures, migrations, routing).
+
+### v3.1 Roadmap (not yet supported)
+
+| Stack | Planned | Notes |
+|-------|---------|-------|
+| Laravel | v3.1 | Eloquent ORM, Artisan, Laravel-specific test helpers |
+| Django | v3.1 | pytest, mypy/pyright, migrations |
+| Rails | v3.1 | RSpec, Active Record, RBS |
+
+> **Do not claim multi-stack support in v3.0 marketing or plugin descriptions.**
+> Agents default to CakePHP conventions. Using Keel on other stacks without a profile
+> will produce incorrect scaffolding and test commands.
 
 ---
 

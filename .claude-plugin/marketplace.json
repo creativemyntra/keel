@@ -11,7 +11,7 @@
       "name": "keel",
       "displayName": "Keel AI-SDLC",
       "source": ".",
-      "description": "Complete AI-SDLC pipeline for Claude Code and Claude Desktop. 8 autonomous agents: Brainstorm → Requirements → Design → TDD → QA → Security → Deploy → Release.",
+      "description": "Complete AI-SDLC pipeline for Claude Code and Claude Desktop. 8 autonomous agents: Brainstorm -> Requirements -> Design -> TDD -> QA -> Security -> Deploy -> Release. v3.0 stack: CakePHP 4.4 / PHP 8.1 (production-proven). Laravel/Django/Rails on v3.1 roadmap.",
       "version": "3.0.0",
       "tags": [
         "sdlc",
