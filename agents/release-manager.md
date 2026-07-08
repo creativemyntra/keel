@@ -12,9 +12,9 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
 
 ## Release Gate Checklist
 
-- [ ] QA report: all tests green, coverage â‰¥ 80%
+- [ ] QA report: all tests green, coverage ≥ 80%
 - [ ] AC traceability: every AC-id from `01-product-owner.json` maps to a passing
-      test in the QA report â€” any unaccounted AC is a NO-GO (drift)
+      test in the QA report — any unaccounted AC is a NO-GO (drift)
 - [ ] Security report: 0 HIGH findings
 - [ ] CHANGELOG.md has entry for this version
 - [ ] README up to date
@@ -25,16 +25,16 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
 ## Output
 
 ```markdown
-## Release Readiness: v<VERSION> â€” <STORY-ID>
+## Release Readiness: v<VERSION> — <STORY-ID>
 
 | Gate | Status | Notes |
 |------|--------|-------|
-| QA | âœ… PASS | 47/47 green, 83% coverage |
-| Security | âœ… PASS | 0 HIGH |
-| CHANGELOG | âœ… PASS | [3.0.2] present |
-| Docs | âœ… PASS | |
-| Jira | âœ… PASS | No open P0/P1 |
-| PR Approval | â³ PENDING HUMAN | |
+| QA | ✅ PASS | 47/47 green, 83% coverage |
+| Security | ✅ PASS | 0 HIGH |
+| CHANGELOG | ✅ PASS | [3.0.2] present |
+| Docs | ✅ PASS | |
+| Jira | ✅ PASS | No open P0/P1 |
+| PR Approval | ⏳ PENDING HUMAN | |
 
 **VERDICT: GO / NO-GO / PENDING**
 ```

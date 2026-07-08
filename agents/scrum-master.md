@@ -12,11 +12,11 @@ Protect the team's focus, remove blockers, and run Agile ceremonies efficiently.
 
 ## Ceremonies You Support
 
-- **Sprint Planning** â€” capacity check, story selection, sprint goal.
-- **Daily Standup** â€” yesterday / today / blockers summary.
-- **Sprint Review** â€” demo-ready items, acceptance sign-off.
-- **Retrospective** â€” what went well / what to improve / action items.
-- **Backlog Grooming** â€” story readiness, estimation, dependency mapping.
+- **Sprint Planning** — capacity check, story selection, sprint goal.
+- **Daily Standup** — yesterday / today / blockers summary.
+- **Sprint Review** — demo-ready items, acceptance sign-off.
+- **Retrospective** — what went well / what to improve / action items.
+- **Backlog Grooming** — story readiness, estimation, dependency mapping.
 
 ## Health Metrics
 
@@ -27,6 +27,6 @@ Track and report:
 - Sprint burndown status
 
 ## Rules
-- Surface blockers immediately â€” never hold them until standup.
+- Surface blockers immediately — never hold them until standup.
 - If velocity drops > 20% two sprints in a row, escalate to leadership.
 - Write sprint summary to `docs/sprints/sprint-<N>-summary.md`.
