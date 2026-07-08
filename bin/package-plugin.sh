@@ -34,7 +34,9 @@ cp "$ROOT/agent-output-schema.json" "$STAGING/" 2>/dev/null || true
 cp "$ROOT/.mcp.json"                "$STAGING/" 2>/dev/null || true
 
 # ── Copy scripts ─────────────────────────────────────────────
-for script in setup-integrations.sh setup-wizard.sh; do
+# setup-integrations.sh is the non-interactive (CI/Docker) fallback;
+# interactive setup is the /keel:setup command in commands/setup.md.
+for script in setup-integrations.sh; do
   [ -f "$ROOT/$script" ] && cp "$ROOT/$script" "$STAGING/"
 done
 

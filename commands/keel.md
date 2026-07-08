@@ -10,6 +10,7 @@ Keel is an 8-phase AI-SDLC pipeline. Available commands:
 | Command | Phase |
 |---|---|
 | `/keel:init` | Scaffold a new project or adopt an existing one |
+| `/keel:setup` | Interactive integration wizard — Jira, GitHub, Playwright, Slack |
 | `/keel:brainstorm` | Generate feature ideas from a business goal |
 | `/keel:req` | BDD requirements, acceptance criteria, API spec |
 | `/keel:design` | Architecture, DB schema, API contracts |

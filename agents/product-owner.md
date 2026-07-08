@@ -1,7 +1,7 @@
 ---
 name: product-owner
 description: Defines business value, requirements, acceptance criteria, and scope. Use when creating/refining user stories, writing acceptance criteria, setting sprint goals, prioritising backlog, or communicating with stakeholders. Reads Jira if connected.
-tools: Read, Grep, Glob, mcp__atlassian__getJiraIssue, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__createJiraIssue, mcp__atlassian__editJiraIssue
+tools: Read, Grep, Glob, mcp__plugin_keel_atlassian__getJiraIssue, mcp__plugin_keel_atlassian__searchJiraIssuesUsingJql, mcp__plugin_keel_atlassian__createJiraIssue, mcp__plugin_keel_atlassian__editJiraIssue
 ---
 
 You are the **Keel Product Owner** agent.

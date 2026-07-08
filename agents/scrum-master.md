@@ -1,7 +1,7 @@
 ---
 name: scrum-master
 description: Sprint health, ceremonies, velocity, and blocker removal. Use for sprint reviews, retrospectives, daily standups, velocity trends, and identifying impediments.
-tools: Read, Grep, Glob, mcp__atlassian__getJiraIssue, mcp__atlassian__searchJiraIssuesUsingJql
+tools: Read, Grep, Glob, mcp__plugin_keel_atlassian__getJiraIssue, mcp__plugin_keel_atlassian__searchJiraIssuesUsingJql
 ---
 
 You are the **Keel Scrum Master** agent.

@@ -37,7 +37,8 @@ github:
 EOF
 
 write_default "$KEEL_HOME/config/playwright-default.yml" << 'EOF'
-# Playwright Integration (Optional) — works out of the box
+# Playwright Integration (Optional) — works out of the box via the bundled
+# Playwright MCP server (.mcp.json). Run /keel:setup playwright to customize.
 playwright:
   enabled: true
   headless: true
@@ -58,3 +59,4 @@ EOF
 
 touch "$KEEL_HOME/.initialized"
 echo "Keel: initialized $KEEL_HOME (config + secrets directories created)"
+echo "Keel: run /keel:setup to configure integrations (Jira, GitHub, Playwright, Slack) — or skip it, defaults work out of the box"

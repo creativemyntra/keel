@@ -2,6 +2,23 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.3.0] - 2026-07-08 - INTERACTIVE MCP SETUP WIZARD
+
+### Added
+- **`/keel:setup` interactive integration wizard** (`commands/setup.md`) — step-by-step setup for Jira, GitHub, Playwright, and Slack inside Claude Code. Every integration offers **Configure now / Use default / Skip (set up later)**; re-runnable per integration (`/keel:setup jira`) and `/keel:setup status` shows current state. Works on Windows/macOS/Linux (no bash dependency).
+- **Bundled Playwright MCP server** in `.mcp.json` (`npx @playwright/mcp@latest --headless`) — E2E browser tooling works out of the box; tools exposed as `mcp__plugin_keel_playwright__*`.
+- **Setup audit trail** — every wizard decision is appended to `~/.keel/config/setup-audit.log` (append-only: timestamp | integration | action).
+- **`docs/MCP-SETUP.md`** — the step-by-step integration guide the README previously linked to but never shipped.
+- SessionStart hook now points new installs at `/keel:setup` after initializing `~/.keel`.
+
+### Fixed
+- **Agent MCP tool names** — Jira-aware agents (product-owner, business-analyst, scrum-master, release-manager) referenced `mcp__atlassian__*`, but plugin-bundled servers are namespaced `mcp__plugin_keel_atlassian__*`; the declared tools could never resolve. Corrected in all four agent frontmatter blocks.
+- Dead references removed: `.env.example` pointed at nonexistent `/keel test-mcp`, `/keel setup-mcp`, and `.claude/MCP-QUICK-START.md`; README "Documentation" section linked ~15 files that don't exist in the repo (`.claude/MCP-SETUP-WIZARD.md`, `.claude/SETUP-WIZARD-VALIDATION.md`, etc.) — replaced with links to real files.
+- README/INSTALL integration instructions no longer point at wrong paths (`bash ~/setup-integrations.sh`).
+
+### Removed
+- **`setup-wizard.sh`** — the legacy bash wizard performed the pre-plugin install (git clone into `~/.claude/skills/`), never registered any MCP server, wrote config files nothing reads, collected a Slack webhook without saving it, and referenced unpublished npm/Docker artifacts with mixed versions. Superseded by `/keel:setup`. (`setup-integrations.sh` is kept as the non-interactive CI/Docker fallback.)
+
 ## [3.2.0] - 2026-07-08 - AGENTIC ENGINEERING CONCEPTS
 
 ### Added
