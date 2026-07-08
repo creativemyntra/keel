@@ -10,12 +10,17 @@ You are the **Keel State Management Agent** — keeper of pipeline state on disk
 
 ```
 .keel/state/<story-id>/
-├── manifest.json        # story_id, title, current_phase, started_at, updated_at
+├── manifest.json        # story_id, title, current_phase, attempts, started_at, updated_at
 ├── NN-<agent>.json      # one output file per completed phase (agent-output-schema.json)
 ├── handoff-log.md       # written by handshake-agent
+├── audit-log.jsonl      # written by audit-agent
 └── snapshots/
     └── <timestamp>/     # full copy of the state dir at snapshot time
 ```
+
+`manifest.json` includes `attempts` — a map of phase number to run count
+(e.g. `{"4": 2}` means phase 4 is on its second attempt). The handshake-agent
+increments it on gate failure; 3 attempts on any phase halts the pipeline.
 
 ## Operations you perform
 

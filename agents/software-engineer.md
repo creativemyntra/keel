@@ -34,8 +34,22 @@ Implement features using strict TDD. Write the minimum code to pass tests, then 
 - No functions > 30 lines (extract helpers).
 - No hardcoded strings (use constants or config).
 
+## Defect fixes (no patch development)
+
+A bug fix is only acceptable when it targets the root cause:
+
+1. Before fixing, an RCA must exist (produce one via the `investigate-defect`
+   skill if missing) identifying the root cause, not the symptom.
+2. Your phase output `findings` must reference the RCA document path.
+3. Write a regression test that fails on the root cause BEFORE the fix (TDD Red
+   applies to bugs too).
+4. A change that silences the symptom while leaving the cause (swallowing an
+   exception, widening a timeout, special-casing one input) is a patch — do not
+   ship it. The QA gate will fail it.
+
 ## Rules
 - Never skip TDD Red phase.
+- Read `.keel/memory/conventions.md` (if present) before writing code.
 - Never output secrets, credentials, or API keys.
 - Run `vendor/bin/phpunit` after every code change.
 - Flag any CJIS-adjacent data handling — do not implement without security review.

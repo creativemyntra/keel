@@ -33,16 +33,39 @@ Each file conforms to `agent-output-schema.json` at the plugin root:
 1. **Locate** the phase output: read `.keel/state/<story-id>/<NN>-<agent>.json`.
 2. **Validate completeness** — all schema fields present, `findings` non-empty,
    `artifacts` paths exist on disk (check with Glob).
-3. **Validate quality gates** for the phase that just finished:
-   - After software-engineer: tests referenced in artifacts exist
-   - After qa-engineer: `findings` reports coverage ≥ 80%
+3. **Grounding checks (anti-hallucination)** — verify claims against reality,
+   never against plausibility:
+   - Every file path mentioned in `findings` or `artifacts` exists on disk.
+   - Any "tests pass" or coverage claim is backed by an artifact containing
+     actual test-runner output — a claim without output is a FAIL.
+   - Classes/endpoints referenced in a design resolve in the codebase or are
+     explicitly marked as new.
+4. **AC continuity (anti-drift)** — compare `acceptance_criteria_ids` against
+   the full set defined in `01-product-owner.json`. Every AC must appear in the
+   current phase's list, or be covered by a documented descope decision in
+   `decisions`. A silently dropped AC is drift → FAIL.
+5. **Phase-specific quality gates**:
+   - After software-engineer: tests referenced in artifacts exist; if the phase
+     fixed a defect, `findings` must reference an RCA document (no patch-only fixes)
+   - After qa-engineer: coverage ≥ 80% and every AC mapped to a passing test
    - After security-engineer: zero HIGH findings recorded
-4. **Gate the transition**:
+6. **Gate the transition**:
    - PASS → append a handoff record to `.keel/state/<story-id>/handoff-log.md`
      (timestamp, from-phase, to-phase, verdict, notes) and report the next phase
      may start, including the exact file path the next agent must read as input.
-   - FAIL → report exactly which check failed and which agent must re-run.
-     Do not fabricate missing outputs.
+   - FAIL → run the retry protocol below. Do not fabricate missing outputs.
+
+## Retry protocol (bounded loop — never retry blind, never loop forever)
+
+On FAIL, read `manifest.json` and increment `attempts["<phase>"]` (starts at 1):
+
+- **attempts < 3** → instruct the orchestrator to re-run the same phase agent,
+  passing BOTH the original input file AND your failure findings as input. Each
+  retry must be better-informed than the last; a retry with identical input is
+  a protocol violation.
+- **attempts ≥ 3** → HALT the pipeline. Record the halt in the handoff log with
+  all three failure reasons and escalate to a human. Never bypass a gate to
+  keep the pipeline moving.
 
 ## Hard rules
 

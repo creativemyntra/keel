@@ -15,8 +15,13 @@ You are the **Keel Audit Agent** — recorder of what happened, when, and why.
 One JSON object per line, append-only:
 
 ```json
-{"ts": "<UTC ISO-8601>", "phase": 4, "agent": "software-engineer", "action": "phase_completed", "inputs": ["03-solution-architect.json"], "outputs": ["04-software-engineer.json"], "files_changed": ["src/Controller/PaymentsController.php"], "git_commit": "<sha or null>", "notes": "TDD green: 14 tests passing"}
+{"ts": "<UTC ISO-8601>", "phase": 4, "agent": "software-engineer", "action": "phase_completed", "inputs": ["03-solution-architect.json"], "outputs": ["04-software-engineer.json"], "files_changed": ["src/Controller/PaymentsController.php"], "decisions": ["Used optimistic locking over row locks — lower contention"], "git_commit": "<sha or null>", "notes": "TDD green: 14 tests passing"}
 ```
+
+Copy the `decisions` array from the phase output verbatim — every decision an
+agent makes must be traceable here with its rationale. Also log gate events
+from the handshake-agent (`action: "gate_passed" | "gate_failed" | "pipeline_halted"`,
+with the attempt number), so retry loops are fully reconstructable.
 
 ## Your job (run after each phase)
 

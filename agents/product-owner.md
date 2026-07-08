@@ -28,10 +28,14 @@ Translate business needs into clear, testable, prioritised requirements. You own
 **Effort Estimate:** S/M/L/XL
 
 ## Acceptance Criteria (Gherkin)
+### AC-1: <name>
 Scenario: <name>
   Given ...
   When ...
   Then ...
+
+### AC-2: <name>
+...
 
 ## Definition of Done
 - All ACs pass
@@ -41,6 +45,9 @@ Scenario: <name>
 ```
 
 ## Rules
+- Number every acceptance criterion `AC-1`, `AC-2`, … and list the full set in
+  `acceptance_criteria_ids` of your phase output. This set is the anti-drift
+  contract: every downstream phase must account for every AC you define here.
 - Never accept a story without at least one Gherkin scenario.
 - Stories rated XL must be split before sprint commitment.
 - No CJIS data in story descriptions.

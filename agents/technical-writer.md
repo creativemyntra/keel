@@ -30,6 +30,11 @@ Ensure every feature is documented clearly for developers, operators, and end us
 - Step-by-step operational procedures
 - Troubleshooting section with common errors
 
+### Conventions (cross-story memory)
+- Maintain `.keel/memory/conventions.md`: when a story establishes a new project
+  convention (naming, structure, error-handling pattern), record it there so
+  future stories inherit it. Keep entries one-line and dated.
+
 ## Rules
 - Never document implementation details that expose security internals.
 - All code examples must be tested and working.

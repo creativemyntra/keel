@@ -35,11 +35,43 @@ Agents share context through files — the repository is the only shared memory:
 1. At story start, have `keel:state-management-agent` init `.keel/state/<story-id>/`.
 2. Each phase agent writes its output to `.keel/state/<story-id>/<NN>-<agent>.json`
    conforming to `agent-output-schema.json` (`phase`, `agent`, `story_id`,
-   `confidence`, `findings`, `artifacts`, `next_phase`).
+   `confidence`, `findings`, `acceptance_criteria_ids`, `decisions`, `artifacts`,
+   `next_phase`).
 3. When invoking the next phase agent, pass it the exact path of the previous
    phase's output file as its input.
 4. Between phases, run `keel:handshake-agent` to validate the output and gate the
    transition, and `keel:audit-agent` to record the audit entry.
+
+## Loop protocol (bounded retries)
+
+When the handshake gate FAILs a phase:
+
+1. The handshake-agent increments `attempts["<phase>"]` in `manifest.json`.
+2. If attempts < 3: re-invoke the SAME phase agent with two inputs — the original
+   input file AND the handshake failure findings. Never retry with identical
+   input; each attempt must incorporate what failed.
+3. If attempts ≥ 3: HALT. Summarize all failure reasons for the human and stop.
+   Never skip or weaken a gate to make progress.
+
+## Context economy rules (token discipline)
+
+- Pass **file paths**, never file contents, when invoking phase agents.
+- Each phase agent reads ONLY the previous phase's output file (plus
+  `01-product-owner.json` for the AC list) — never the whole state directory.
+- `findings` entries reference paths and identifiers; inlining file contents
+  into a phase output is a protocol violation.
+- Keep phase outputs ≤ 15 findings. Detail belongs in `artifacts` files, not
+  in the JSON.
+
+## Cross-story memory
+
+Durable knowledge lives in `.keel/memory/` (committed to git):
+
+- `.keel/memory/decisions/` — ADRs written by the solution-architect
+- `.keel/memory/conventions.md` — project conventions maintained by the technical-writer
+
+Instruct every phase agent to read `.keel/memory/conventions.md` (if present)
+before starting, and the architect to check prior ADRs before making new decisions.
 
 ## Hard Rules
 

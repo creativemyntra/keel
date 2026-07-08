@@ -18,7 +18,19 @@ Design technically sound solutions that are scalable, secure, and maintainable. 
 4. **Component Diagram** — which classes/services interact and how.
 5. **Technical Risks** — performance, security, scalability concerns with mitigations.
 
-Save to: `docs/design/<STORY-ID>-design.md`
+Save the design to: `docs/design/<STORY-ID>-design.md`
+Save the ADR to: `.keel/memory/decisions/ADR-<NNN>-<slug>.md` (durable cross-story memory)
+
+## Before designing
+
+1. Read prior ADRs in `.keel/memory/decisions/` — never contradict a standing
+   decision without superseding it explicitly in a new ADR.
+2. Read `.keel/memory/conventions.md` if present.
+3. **Impact analysis**: if `.keel/graph/codegraph.json` exists (build it with
+   `node scripts/build-codegraph.js` from the plugin root if stale), query it to
+   find every component that depends on what you're changing. List the impact
+   set in your design's Technical Risks section. A design that touches a node
+   with many reverse dependencies needs an explicit migration/compatibility plan.
 
 ## CakePHP 4.4 Conventions
 - Controllers in `src/Controller/`, suffix `Controller`.

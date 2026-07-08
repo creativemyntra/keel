@@ -4,7 +4,7 @@
   "title": "Keel Agent Phase Output",
   "description": "Contract for the output file each Keel phase agent writes to .keel/state/<story-id>/<NN>-<agent>.json. This is how agents pass context to each other.",
   "type": "object",
-  "required": ["phase", "agent", "story_id", "confidence", "findings", "next_phase"],
+  "required": ["phase", "agent", "story_id", "confidence", "findings", "acceptance_criteria_ids", "next_phase"],
   "properties": {
     "phase": {
       "type": "integer",
@@ -36,8 +36,19 @@
     "findings": {
       "type": "array",
       "minItems": 1,
+      "maxItems": 15,
       "items": { "type": "string" },
-      "description": "What the phase concluded, decided, or discovered"
+      "description": "What the phase concluded, decided, or discovered. Reference file paths and identifiers — never inline file contents."
+    },
+    "acceptance_criteria_ids": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^AC-[0-9]+$" },
+      "description": "Acceptance criteria this phase addresses. Phase 1 (product-owner) defines the full set; every later phase must account for all of them. Dropping an AC without a documented descope decision is drift and fails the handshake gate."
+    },
+    "decisions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Decisions made this phase with one-line rationale (audited)"
     },
     "artifacts": {
       "type": "array",

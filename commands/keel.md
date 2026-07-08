@@ -18,6 +18,7 @@ Keel is an 8-phase AI-SDLC pipeline. Available commands:
 | `/keel:tdd-refactor` | Refactor with tests green |
 | `/keel:test` | Full test suite + coverage gate |
 | `/keel:sec` | OWASP Top 10 security scan |
+| `/keel:impact` | CodeGraph impact analysis for a class or file |
 | `/keel:deploy` | Staged rollout deployment |
 
 If the request is a multi-phase delivery task ("implement this feature", "take story X to production"),

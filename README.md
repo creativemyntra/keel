@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.1.0
+# Keel AI-SDLC Framework v3.2.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.1.0 ✅
+# → keel v3.2.0 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -81,7 +81,7 @@ It automates the entire software development process using **13 specialized auto
 
 ---
 
-## 🆕 What's New in v3.1.0 (Standards Release)
+## 🆕 What's New in v3.2.0 (Standards Release)
 
 Full restructure to the official Claude Code plugin layout:
 
@@ -114,7 +114,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.1.0 ✅
+# → keel v3.2.0 ✅
 ```
 
 ### Method 2: npm Global Package
@@ -153,27 +153,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.1.0
+        uses: creativemyntra/keel@v3.2.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.1.0
+        uses: creativemyntra/keel@v3.2.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.1.0
+        uses: creativemyntra/keel@v3.2.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.1.0
+        uses: creativemyntra/keel@v3.2.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -463,11 +463,11 @@ your-project/
 - **[END-TO-END-DEMO-WALKTHROUGH.md](.claude/END-TO-END-DEMO-WALKTHROUGH.md)** — Real-world example (45 min)
 - **[KEEL-AGENTS-MASTER-GUIDE.md](KEEL-AGENTS-MASTER-GUIDE.md)** — All 8 agents reference
 
-### v3.1.0 NEW: Enterprise Compliance (3 New Agents)
-- **[RELEASE-NOTES-v3.1.0.md](RELEASE-NOTES-v3.1.0.md)** — Complete release notes
+### v3.2.0 NEW: Enterprise Compliance (3 New Agents)
+- **[RELEASE-NOTES-v3.2.0.md](RELEASE-NOTES-v3.2.0.md)** — Complete release notes
 - **[COMPLIANCE-AGENTS-INTEGRATION.md](COMPLIANCE-AGENTS-INTEGRATION.md)** — How audit, state, handshake agents work together
 - **[PRODUCTION-READINESS-CHECKLIST.md](PRODUCTION-READINESS-CHECKLIST.md)** — Deployment validation
-- **[FINAL-AGENT-REVIEW-v3.1.0.md](FINAL-AGENT-REVIEW-v3.1.0.md)** — Complete agent architecture review
+- **[FINAL-AGENT-REVIEW-v3.2.0.md](FINAL-AGENT-REVIEW-v3.2.0.md)** — Complete agent architecture review
 - **[agents/audit-agent.md](agents/audit-agent.md)** — Audit Trail Agent (immutable logs, SonarQube)
 - **[agents/state-management-agent.md](agents/state-management-agent.md)** — State Management Agent (snapshots, recovery)
 - **[agents/handshake-agent.md](agents/handshake-agent.md)** — Handshake Agent (phase validation)
@@ -486,7 +486,7 @@ your-project/
 
 ---
 
-## 🔒 Security & Compliance (v3.1.0 NEW)
+## 🔒 Security & Compliance (v3.2.0 NEW)
 
 ### Enterprise Compliance Standards
 
@@ -543,7 +543,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.1.0
+- uses: creativemyntra/keel@v3.2.0
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -728,5 +728,5 @@ Then:
 **Vulnerabilities:** 0  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.1.0 (https://github.com/creativemyntra/keel/releases/tag/v3.1.0)
+**Tag:** v3.2.0 (https://github.com/creativemyntra/keel/releases/tag/v3.2.0)
 

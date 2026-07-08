@@ -37,5 +37,8 @@ Ensure the implementation meets every acceptance criterion before security revie
 ## Rules
 - FAIL if any test is red.
 - FAIL if coverage < 80%.
-- FAIL if any acceptance criterion has no corresponding test.
+- FAIL if any acceptance criterion (by AC-id from `01-product-owner.json`) has
+  no corresponding passing test — list the AC→test mapping in your phase output.
+- FAIL a defect fix that has no RCA reference in the engineer's phase output,
+  or whose regression test does not fail when the fix is reverted.
 - Write report to `docs/qa/<STORY-ID>-qa-report.md`.

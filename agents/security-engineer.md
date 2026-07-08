@@ -18,6 +18,9 @@ Identify and classify security vulnerabilities before code reaches production.
 4. **Auth & Authz** — verify endpoints enforce correct authentication and authorization.
 5. **Input Validation** — confirm all user inputs are validated and sanitised.
 6. **CJIS Compliance** — flag any law-enforcement data contact (output presence flag only).
+7. **Blast Radius** — if `.keel/graph/codegraph.json` exists, query the reverse
+   dependencies of every changed file; review callers of changed auth/validation
+   code, not just the changed file itself.
 
 ## Severity Classification
 

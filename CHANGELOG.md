@@ -2,6 +2,18 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.2.0] - 2026-07-08 - AGENTIC ENGINEERING CONCEPTS
+
+### Added
+- **CodeGraph v1** — `scripts/build-codegraph.cjs` builds a static PHP dependency graph (`.keel/graph/codegraph.json`: nodes = classes/interfaces/traits, edges = use/extends/implements/references) with a reverse-dependency query mode. New `/keel:impact <Class|file>` command reports the blast radius of a change and flags dependents without test coverage. Solution-architect and security-engineer consult the graph before approving designs and reviews.
+- **Acceptance-criteria threading (anti-drift)** — product-owner numbers every criterion (`AC-1`, `AC-2`, …); `acceptance_criteria_ids` is now a required schema field; the handshake gate fails any phase that silently drops an AC; release-manager requires every AC mapped to a passing test before GO.
+- **Bounded retry loops (loop engineering)** — `attempts` map in the story manifest; on gate failure the phase re-runs with the failure findings as additional input (never a blind retry); three failures on any phase halts the pipeline and escalates to a human.
+- **Grounding checks (anti-hallucination)** — handshake now verifies every claimed file path exists, every "tests pass" claim is backed by actual test-runner output in an artifact, and referenced classes/endpoints resolve in the codebase.
+- **RCA-gated defect fixes (no patch development)** — software-engineer must reference a root-cause analysis before fixing a bug and write a regression test that fails on the root cause; qa-engineer fails symptom-only patches.
+- **Cross-story memory** — `.keel/memory/decisions/` (ADRs, written by solution-architect) and `.keel/memory/conventions.md` (maintained by technical-writer); all agents read conventions before starting; `/keel:init` scaffolds the directories.
+- **Context economy rules (token discipline)** — orchestrator passes file paths, never contents; each phase reads only the previous phase's output plus the AC list; findings capped at 15 entries and must reference paths, not inline content.
+- `decisions` field in `agent-output-schema.json` — every decision with rationale, copied verbatim into the audit log; handshake gate events (pass/fail/halt with attempt number) are audited too.
+
 ## [3.1.0] - 2026-07-08 - CLAUDE CODE PLUGIN STANDARDS RESTRUCTURE
 
 ### Changed (BREAKING — reinstall required)
