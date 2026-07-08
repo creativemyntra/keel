@@ -29,7 +29,7 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
 |------|--------|-------|
 | QA | ✅ PASS | 47/47 green, 83% coverage |
 | Security | ✅ PASS | 0 HIGH |
-| CHANGELOG | ✅ PASS | [3.0.0] present |
+| CHANGELOG | ✅ PASS | [3.0.2] present |
 | Docs | ✅ PASS | |
 | Jira | ✅ PASS | No open P0/P1 |
 | PR Approval | ⏳ PENDING HUMAN | |

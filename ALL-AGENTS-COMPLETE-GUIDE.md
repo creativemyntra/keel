@@ -774,7 +774,7 @@ These agents ensure security, audit trail, and state management.
   
   "agent": {
     "name": "software-engineer",
-    "version": "3.0.0"
+    "version": "3.0.2"
   },
   
   "phase": {
