@@ -1,7 +1,7 @@
 {
   "name": "keel",
   "displayName": "Keel AI-SDLC Framework",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Complete AI-SDLC pipeline for Claude Code and Claude Desktop. 8 autonomous agents take you from idea to production in 2-4 hours: Brainstorm → Requirements → Design → TDD → QA → Security → Deploy.",
   "author": "Amar Singh",
   "email": "support@creativemyntra.com",
