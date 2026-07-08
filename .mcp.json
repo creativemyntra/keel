@@ -3,6 +3,11 @@
     "atlassian": {
       "type": "sse",
       "url": "https://mcp.atlassian.com/v1/sse"
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--headless"]
     }
   }
 }
