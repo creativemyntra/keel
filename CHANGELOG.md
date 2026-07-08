@@ -2,6 +2,15 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.3.1] - 2026-07-08 - WIZARD REFINEMENTS FROM LIVE TEST
+
+### Changed
+- `/keel:setup` wizard spec hardened from a live end-to-end test run (all four integrations exercised, Windows host):
+  - Audit log must be written UTF-8 **without BOM** — Windows PowerShell 5.1 `Out-File`/`Add-Content -Encoding utf8` emit a BOM that corrupts the first entry.
+  - Preflight results must shape the presented options (missing `gh` → default is plain git; Node < 18 → warn the bundled Playwright MCP server can't start; already-configured integrations are stated as such, not offered as new).
+  - Wizard steps are numbered in the question header (`1/4 Jira` … `4/4 Slack`).
+- Live-test evidence recorded in `docs/audit/2026-07-08-wizard-live-test.md`. The test found no functional defects.
+
 ## [3.3.0] - 2026-07-08 - INTERACTIVE MCP SETUP WIZARD
 
 ### Added
