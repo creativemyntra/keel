@@ -1,33 +1,86 @@
-{
-  "plugin": {
-    "name": "keel",
-    "version": "3.0.0"
+﻿{
+  "version": "1.0.0",
+  "name": "Keel AI-SDLC Framework v3.0.0",
+  "description": "Enterprise-grade AI-driven SDLC with 13 autonomous agents",
+  "author": "Amar Singh",
+  "license": "MIT",
+
+  "agents": {
+    "directory": ".claude/agents",
+    "auto_discovery": true
   },
-  "permissions": {
-    "allow": [
-      "Bash(git:*)",
-      "Bash(vendor/bin/phpunit:*)",
-      "Bash(vendor/bin/phpcs:*)",
-      "Bash(vendor/bin/phpstan:*)",
-      "Bash(composer:*)",
-      "Bash(npx playwright:*)",
-      "Read(**)",
-      "Write(src/**)",
-      "Write(tests/**)",
-      "Write(docs/**)",
-      "Write(config/routes.php)",
-      "Edit(**)"
-    ],
-    "deny": [
-      "Bash(git push --force:*)",
-      "Bash(git reset --hard:*)",
-      "Bash(git checkout -- .:*)",
-      "Bash(git branch -D:*)",
-      "Bash(rm -rf:*)"
+
+  "mcp_servers": {
+    "auto_start": true,
+    "servers": [
+      {
+        "name": "jira-mcp",
+        "type": "atlassian",
+        "enabled": false,
+        "config": {
+          "config_file": "~/.keel/config/jira.yml",
+          "token_file": "~/.keel/secrets/jira.token",
+          "auto_sync_issues": true
+        }
+      },
+      {
+        "name": "github-mcp",
+        "type": "github",
+        "enabled": false,
+        "config": {
+          "config_file": "~/.keel/config/github.yml",
+          "token_file": "~/.keel/secrets/github.token",
+          "auto_create_releases": true
+        }
+      },
+      {
+        "name": "slack-mcp",
+        "type": "slack",
+        "enabled": false,
+        "config": {
+          "config_file": "~/.keel/config/slack.yml",
+          "webhook_file": "~/.keel/secrets/slack.webhook"
+        }
+      },
+      {
+        "name": "playwright-mcp",
+        "type": "playwright",
+        "enabled": false,
+        "config": {
+          "config_file": "~/.keel/config/playwright.yml",
+          "headless": true,
+          "timeout": 30000
+        }
+      }
     ]
   },
-  "env": {
+
+  "environment": {
     "KEEL_VERSION": "3.0.0",
-    "KEEL_STACK": "cakephp"
+    "KEEL_HOME": "~/.keel",
+    "KEEL_CONFIG_DIR": "~/.keel/config",
+    "KEEL_SECRETS_DIR": "~/.keel/secrets",
+    "KEEL_ENV": "production"
+  },
+
+  "compliance": {
+    "standards": ["CJIS", "SOC2_TYPE_II", "HIPAA", "GDPR", "PCI_DSS", "SOX"],
+    "audit_enabled": true,
+    "encryption": {
+      "enabled": true,
+      "algorithm": "AES-256"
+    }
+  },
+
+  "security": {
+    "secrets_encryption": true,
+    "rbac_enabled": true,
+    "audit_all_actions": true
+  },
+
+  "telemetry": {
+    "enabled": false,
+    "track_errors": true,
+    "data_collection": "minimal"
   }
 }
