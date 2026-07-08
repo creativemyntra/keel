@@ -91,11 +91,19 @@ Then append one line per decision made this run to `~/.keel/config/setup-audit.l
 ```
 
 This log is the audit trail for integration changes — never delete or rewrite existing lines.
+Write it as UTF-8 **without BOM**: on Windows PowerShell 5.1, `Out-File`/`Add-Content
+-Encoding utf8` emit a BOM — use `[IO.File]::AppendAllText(path, text,
+(New-Object System.Text.UTF8Encoding($false)))` or equivalent instead.
 
 ## Rules
 
 - One AskUserQuestion call per integration (options: Configure now / Use default / Skip), then
-  follow-up questions only for the path chosen.
+  follow-up questions only for the path chosen. Number the steps in the question header
+  (`1/4 Jira` … `4/4 Slack`) so the user always knows how much wizard is left.
+- Preflight results must shape the options you present: if `gh` is missing, the GitHub
+  "Use default" description must say the fallback is plain git; if Node < 18, the Playwright
+  default must warn that the bundled MCP server cannot start; if an integration is already
+  configured, say so in the question instead of presenting it as new.
 - Never write secrets into any file under the project directory — secrets go to `~/.keel/secrets/` only.
 - Never overwrite an existing `~/.keel/config/<name>.yml` without telling the user what it currently says.
 - If the user aborts midway, still write the audit log lines for the steps completed.
