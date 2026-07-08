@@ -234,7 +234,7 @@
       "registry": "docker.io"
     },
     "githubAction": {
-      "uses": "creativemyntra/keel@v3.0.0"
+      "uses": "creativemyntra/keel@v3.0.2"
     },
     "githubPackages": {
       "image": "ghcr.io/creativemyntra/keel"

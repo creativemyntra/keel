@@ -1,4 +1,4 @@
-# Keel v3.0.0 — Claude Code Quick Start
+# Keel v3.0.2 — Claude Code Quick Start
 
 **Status:** ✅ Framework is ready to use NOW  
 **Date:** 2026-07-08  
@@ -153,7 +153,7 @@ This invokes ALL agents automatically:
 ## 📖 DOCUMENTATION
 
 - **README.md** — Overview, quickstart
-- **RELEASE-NOTES-v3.0.0.md** — What's new (3 compliance agents added)
+- **RELEASE-NOTES-v3.0.2.md** — What's new (3 compliance agents added)
 - **COMPLIANCE-AGENTS-INTEGRATION.md** — How agents work together
 - **PRODUCTION-READINESS-CHECKLIST.md** — Deployment validation
 - **KEEL-CLAUDE-CODE-INTEGRATION-DIAGNOSTIC.md** — Full technical details

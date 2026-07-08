@@ -14,7 +14,7 @@
 ### Production-Ready & Verified
 This is a **PATCH RELEASE** focusing on production cleanup, MCP configuration, and comprehensive end-to-end testing verification.
 
-v3.0.1 = v3.0.0 + Clean Repository + MCP Auto-Registration + E2E Testing ✅
+v3.0.1 = v3.0.2 + Clean Repository + MCP Auto-Registration + E2E Testing ✅
 
 ---
 
@@ -226,7 +226,7 @@ CHANGELOG.md       - Added 3.0.1 entry
 
 ---
 
-## 📌 Upgrade Path from v3.0.0
+## 📌 Upgrade Path from v3.0.2
 
 **Breaking Changes:** None  
 **Migration Required:** No
@@ -241,7 +241,7 @@ Or:
 /plugin add marketplace keel
 ```
 
-All v3.0.0 features remain; v3.0.1 adds:
+All v3.0.2 features remain; v3.0.1 adds:
 - ✅ Cleaner repository
 - ✅ Automatic MPC registration
 - ✅ Verified end-to-end workflow
@@ -261,9 +261,9 @@ All v3.0.0 features remain; v3.0.1 adds:
 
 ---
 
-## 📊 Comparison: v3.0.0 → v3.0.1
+## 📊 Comparison: v3.0.2 → v3.0.1
 
-| Aspect | v3.0.0 | v3.0.1 | Change |
+| Aspect | v3.0.2 | v3.0.1 | Change |
 |--------|--------|--------|--------|
 | Agents | 13 | 13 | ✅ Same |
 | Skills | 11 | 11 | ✅ Same |

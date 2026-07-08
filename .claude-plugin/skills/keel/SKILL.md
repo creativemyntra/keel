@@ -5,7 +5,7 @@ Invoke the complete Keel AI-SDLC Framework for developing features end-to-end. R
 ## Usage
 
 ```bash
-/keel --version              # Show version (3.0.0)
+/keel --version              # Show version (3.0.2)
 /keel --help                 # Show all commands
 /keel init --mode=new --stack=cakephp           # Initialize new project
 /keel brainstorm --goal="Your goal"             # Generate feature ideas
@@ -50,7 +50,7 @@ Keel is an **8-phase AI-driven development lifecycle** that takes you from idea 
 - **scrum-master** — Sprint health, ceremonies, velocity
 - **technical-writer** — Documentation, changelogs, runbooks
 
-**Compliance Agents (3 NEW in v3.0.0):**
+**Compliance Agents (3 NEW in v3.0.2):**
 - **audit-trail** — Immutable logs, SonarQube integration, compliance reporting
 - **state-management** — Global state, snapshots, recovery, time-travel debugging
 - **handshake** — Phase validation, context passing, memory continuity
@@ -118,7 +118,7 @@ Keel is an **8-phase AI-driven development lifecycle** that takes you from idea 
 - **README.md** — Overview and quickstart
 - **COMPLIANCE-AGENTS-INTEGRATION.md** — Integration guide
 - **PRODUCTION-READINESS-CHECKLIST.md** — Deployment validation
-- **RELEASE-NOTES-v3.0.0.md** — What's new in v3.0.0
+- **RELEASE-NOTES-v3.0.2.md** — What's new in v3.0.2
 
 ## Support
 
@@ -128,7 +128,7 @@ Keel is an **8-phase AI-driven development lifecycle** that takes you from idea 
 
 ---
 
-**Version:** 3.0.0  
+**Version:** 3.0.2  
 **Author:** Amar Singh  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  

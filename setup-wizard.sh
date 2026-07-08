@@ -334,7 +334,7 @@ case $INSTALL_TYPE in
 
   github-action)
     echo "GitHub Action ready to use"
-    success "Add to your workflow: uses: creativemyntra/keel@v3.0.0"
+    success "Add to your workflow: uses: creativemyntra/keel@v3.0.2"
     ;;
 esac
 

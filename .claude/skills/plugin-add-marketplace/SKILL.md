@@ -387,7 +387,7 @@ Try:
 ### Incompatible Version
 
 ```bash
-/plugin add marketplace future-plugin@v3.0.0
+/plugin add marketplace future-plugin@v3.0.2
 
 ⚠️ Compatibility check failed:
   Plugin requires: Keel ≥3.0.0
@@ -396,7 +396,7 @@ Try:
 Options:
   1. Upgrade Keel: /keel upgrade
   2. Install older version: /plugin add marketplace future-plugin@v2.1.0
-  3. Force install: /plugin add marketplace future-plugin@v3.0.0 --force
+  3. Force install: /plugin add marketplace future-plugin@v3.0.2 --force
 ```
 
 ### Installation Failed

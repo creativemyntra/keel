@@ -79,7 +79,7 @@ The Audit Agent is the **compliance spine** of Keel. It records EVERY action by 
   
   "agent": {
     "name": "software-engineer",
-    "version": "3.0.0",
+    "version": "3.0.2",
     "environment": "production"
   },
   
@@ -403,7 +403,7 @@ sonarqube:
 # ├─ Logic Error: Missing null check on $subscription->amount
 # └─ Performance: Query added 500ms latency
 # 
-# Agent Version: software-engineer v3.0.0
+# Agent Version: software-engineer v3.0.2
 # Model: gpt-4 (temp: 0.7)
 # 
 # Corrective Action: Queried CodeGraph, fixed references
@@ -692,7 +692,7 @@ ORDER BY error_rate DESC;
 
 ---
 
-**Skill Version:** 3.0.0  
+**Skill Version:** 3.0.2  
 **Status:** PRODUCTION READY  
 **Compliance Level:** Enterprise Grade  
 **Last Updated:** 2026-07-07

@@ -367,7 +367,7 @@ v2.1.0 (Current)
 
 Update Matrix:
 v2.0.0 → v2.1.0: ✅ Auto-install safe
-v2.1.0 → v3.0.0: ⚠️ Notify, require approval
+v2.1.0 → v3.0.2: ⚠️ Notify, require approval
 v2.1.0 → v2.1.1: ✅ Auto-install safe
 ```
 

@@ -2,7 +2,7 @@
 
 **Story:** HEALTH-1 — Health Check API Endpoint  
 **Stack:** CakePHP 4.4 / PHP 8.1  
-**Framework version:** Keel v3.0.0  
+**Framework version:** Keel v3.0.2  
 **Completed:** 2026-07-07  
 **Author:** Amar Singh (PM / Scrum Master)
 
@@ -58,7 +58,7 @@ keel/
 │   └── demo/
 ├── composer.json            ← CakePHP 4.4, PHPUnit, PHPStan, PHPCS
 ├── .env.example             ← Required vars, no real values
-├── plugin.json              ← Keel plugin manifest v3.0.0
+├── plugin.json              ← Keel plugin manifest v3.0.2
 └── .claude-plugin/
     └── marketplace.json     ← Validated marketplace source (claude plugin validate . ✅)
 ```
@@ -271,7 +271,7 @@ $routes->get('/health', ['controller' => 'Health', 'action' => 'index']);
 ```json
 {
   "status": "ok",
-  "version": "3.0.0",
+  "version": "3.0.2",
   "uptime": 3600,
   "timestamp": "2026-07-07T14:30:00Z",
   "db": {
@@ -285,7 +285,7 @@ $routes->get('/health', ['controller' => 'Health', 'action' => 'index']);
 ```json
 {
   "status": "degraded",
-  "version": "3.0.0",
+  "version": "3.0.2",
   "uptime": 3600,
   "timestamp": "2026-07-07T14:30:00Z",
   "db": {

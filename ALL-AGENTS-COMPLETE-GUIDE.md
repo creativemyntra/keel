@@ -1,6 +1,6 @@
-# Keel v3.0.0 — Complete Agent Guide
+# Keel v3.0.2 — Complete Agent Guide
 
-**Framework Version:** 3.0.0  
+**Framework Version:** 3.0.2  
 **Total Agents:** 13 (8 phase + 2 support + 3 compliance)  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
@@ -571,7 +571,7 @@ Cannot release with HIGH findings.
 
 ### Example Report
 ```markdown
-## Release Readiness: v3.0.0 — FEAT-123
+## Release Readiness: v3.0.2 — FEAT-123
 
 | Gate | Status | Notes |
 |------|--------|-------|
@@ -1152,7 +1152,7 @@ Day 6: Validate & release
 
 ---
 
-**Framework:** Keel AI-SDLC Framework v3.0.0  
+**Framework:** Keel AI-SDLC Framework v3.0.2  
 **License:** MIT  
 **Author:** Amar Singh  
 **Repository:** https://github.com/creativemyntra/keel  

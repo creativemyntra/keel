@@ -144,7 +144,7 @@ docker run -it amarsingh/keel:3.0.2 keel --version
 
 ---
 
-## 🔄 Upgrade from v3.0.0/v3.0.1
+## 🔄 Upgrade from v3.0.2/v3.0.1
 
 **Breaking Changes:** None  
 **Migration Required:** No
@@ -159,7 +159,7 @@ Or:
 /plugin add marketplace keel
 ```
 
-All v3.0.0/v3.0.1 features remain; v3.0.2 adds:
+All v3.0.2/v3.0.1 features remain; v3.0.2 adds:
 - ✅ Marketplace optimization
 - ✅ Workflow consolidation
 - ✅ Complete documentation

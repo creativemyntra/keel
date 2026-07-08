@@ -1,6 +1,6 @@
 ﻿{
   "version": "1.0.0",
-  "name": "Keel AI-SDLC Framework v3.0.0",
+  "name": "Keel AI-SDLC Framework v3.0.2",
   "description": "Enterprise-grade AI-driven SDLC with 13 autonomous agents",
   "author": "Amar Singh",
   "license": "MIT",
@@ -56,7 +56,7 @@
   },
 
   "environment": {
-    "KEEL_VERSION": "3.0.0",
+    "KEEL_VERSION": "3.0.2",
     "KEEL_HOME": "~/.keel",
     "KEEL_CONFIG_DIR": "~/.keel/config",
     "KEEL_SECRETS_DIR": "~/.keel/secrets",

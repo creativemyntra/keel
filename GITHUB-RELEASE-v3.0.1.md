@@ -237,7 +237,7 @@ Production Ready ✅
 
 ---
 
-## 🔄 Upgrade from v3.0.0
+## 🔄 Upgrade from v3.0.2
 
 **Breaking Changes:** None
 
@@ -248,7 +248,7 @@ Simply update to v3.0.1:
 npm install -g @amarsingh/keel@3.0.1
 ```
 
-All v3.0.0 features remain; v3.0.1 adds:
+All v3.0.2 features remain; v3.0.1 adds:
 - ✅ Cleaner repository (32 files removed)
 - ✅ Automatic MCP registration
 - ✅ Verified end-to-end workflow

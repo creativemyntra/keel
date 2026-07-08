@@ -4,7 +4,7 @@
 ---
 name: keel
 displayName: Keel AI-SDLC Framework
-version: 3.0.0
+version: 3.0.2
 author: Amar Singh
 license: MIT
 
@@ -105,7 +105,7 @@ installation:
     enabled: true
     action: amarsingh/keel
     repository: https://github.com/creativemyntra/keel
-    usage: "uses: amarsingh/keel@v3.0.0"
+    usage: "uses: amarsingh/keel@v3.0.2"
 
 # Plugin commands (what users can do)
 commands:

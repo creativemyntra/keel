@@ -62,7 +62,7 @@ All notable changes to Keel AI-SDLC Framework are documented here.
 
 ### Breaking Changes
 - Plugin manifest (`plugin.json`) fully restructured with marketplace metadata — update any tooling that reads the old flat `commands` object (now an array)
-- Distribution channels consolidated: npm package, Docker image, GHCR, and GitHub Action all versioned under `v3.0.0`
+- Distribution channels consolidated: npm package, Docker image, GHCR, and GitHub Action all versioned under `v3.0.2`
 
 ### Added
 - Full Claude Code Plugin Marketplace support (`/plugin add marketplace keel`)

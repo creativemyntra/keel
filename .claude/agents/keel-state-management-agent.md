@@ -796,7 +796,7 @@ retention:
 
 ---
 
-**Skill Version:** 3.0.0  
+**Skill Version:** 3.0.2  
 **Status:** PRODUCTION READY  
 **Compliance Level:** Enterprise Grade  
 **Last Updated:** 2026-07-07

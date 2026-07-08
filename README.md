@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.0.0
+# Keel AI-SDLC Framework v3.0.2
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -17,7 +17,7 @@ git clone https://github.com/creativemyntra/keel.git ~/.claude/skills/keel-frame
 
 # 3. Verify installation
 /keel --version
-# → Keel AI-SDLC Framework v3.0.0 ✅
+# → Keel AI-SDLC Framework v3.0.2 ✅
 
 # 3. Initialize your project
 /keel init --mode=new --stack=cakephp
@@ -60,7 +60,7 @@ It automates the entire software development process using **13 specialized auto
 | **scrum-master-agent** | Sprint ceremonies, velocity |
 | **technical-writer-agent** | API docs, changelogs |
 
-**Compliance Agents (3 NEW in v3.0.0):**
+**Compliance Agents (3 NEW in v3.0.2):**
 | Agent | Role |
 |-------|------|
 | **audit-trail-agent** | Immutable logs, SonarQube, compliance |
@@ -85,7 +85,7 @@ It automates the entire software development process using **13 specialized auto
 
 ---
 
-## 🆕 What's New in v3.0.0 (Enterprise Release)
+## 🆕 What's New in v3.0.2 (Enterprise Release)
 
 ### 3 Critical Compliance Agents Added
 
@@ -121,7 +121,7 @@ It automates the entire software development process using **13 specialized auto
 - ✅ PCI-DSS (Payment Card Industry Data Security)
 - ✅ SOX (Sarbanes-Oxley)
 
-**[View Complete Release Notes →](RELEASE-NOTES-v3.0.0.md)**
+**[View Complete Release Notes →](RELEASE-NOTES-v3.0.2.md)**
 
 ---
 
@@ -143,7 +143,7 @@ Restart Claude Code terminal. That's it! The plugin will:
 **Verify:**
 ```bash
 /keel --version
-# Output: Keel AI-SDLC Framework v3.0.0 ✅
+# Output: Keel AI-SDLC Framework v3.0.2 ✅
 ```
 
 ### Method 2: npm Global Package
@@ -492,11 +492,11 @@ your-project/
 - **[END-TO-END-DEMO-WALKTHROUGH.md](.claude/END-TO-END-DEMO-WALKTHROUGH.md)** — Real-world example (45 min)
 - **[KEEL-AGENTS-MASTER-GUIDE.md](KEEL-AGENTS-MASTER-GUIDE.md)** — All 8 agents reference
 
-### v3.0.0 NEW: Enterprise Compliance (3 New Agents)
-- **[RELEASE-NOTES-v3.0.0.md](RELEASE-NOTES-v3.0.0.md)** — Complete release notes
+### v3.0.2 NEW: Enterprise Compliance (3 New Agents)
+- **[RELEASE-NOTES-v3.0.2.md](RELEASE-NOTES-v3.0.2.md)** — Complete release notes
 - **[COMPLIANCE-AGENTS-INTEGRATION.md](COMPLIANCE-AGENTS-INTEGRATION.md)** — How audit, state, handshake agents work together
 - **[PRODUCTION-READINESS-CHECKLIST.md](PRODUCTION-READINESS-CHECKLIST.md)** — Deployment validation
-- **[FINAL-AGENT-REVIEW-v3.0.0.md](FINAL-AGENT-REVIEW-v3.0.0.md)** — Complete agent architecture review
+- **[FINAL-AGENT-REVIEW-v3.0.2.md](FINAL-AGENT-REVIEW-v3.0.2.md)** — Complete agent architecture review
 - **[.claude/agents/keel-audit-agent.md](.claude/agents/keel-audit-agent.md)** — Audit Trail Agent (immutable logs, SonarQube)
 - **[.claude/agents/keel-state-management-agent.md](.claude/agents/keel-state-management-agent.md)** — State Management Agent (snapshots, recovery)
 - **[.claude/agents/keel-handshake-agent.md](.claude/agents/keel-handshake-agent.md)** — Handshake Agent (phase validation)
@@ -515,7 +515,7 @@ your-project/
 
 ---
 
-## 🔒 Security & Compliance (v3.0.0 NEW)
+## 🔒 Security & Compliance (v3.0.2 NEW)
 
 ### Enterprise Compliance Standards
 
@@ -757,5 +757,5 @@ Then:
 **Vulnerabilities:** 0  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.0.0 (https://github.com/creativemyntra/keel/releases/tag/v3.0.0)
+**Tag:** v3.0.2 (https://github.com/creativemyntra/keel/releases/tag/v3.0.2)
 

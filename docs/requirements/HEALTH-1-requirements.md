@@ -73,7 +73,7 @@ GET /health
 ```json
 {
   "status": "ok",
-  "version": "3.0.0",
+  "version": "3.0.2",
   "uptime": 3600,
   "timestamp": "2026-07-07T13:00:00Z",
   "db": {
@@ -88,7 +88,7 @@ GET /health
 ```json
 {
   "status": "degraded",
-  "version": "3.0.0",
+  "version": "3.0.2",
   "uptime": 3600,
   "timestamp": "2026-07-07T13:00:00Z",
   "db": {
