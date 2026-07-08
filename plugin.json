@@ -3,16 +3,15 @@
   "displayName": "Keel AI-SDLC Framework",
   "version": "3.0.2",
   "description": "Complete AI-SDLC pipeline for Claude Code and Claude Desktop. 8 autonomous agents take you from idea to production in 2-4 hours: Brainstorm → Requirements → Design → TDD → QA → Security → Deploy.",
-  "author": "Amar Singh",
-  "email": "support@creativemyntra.com",
+  "author": {
+    "name": "Amar Singh",
+    "email": "support@creativemyntra.com"
+  },
   "license": "MIT",
   "type": "plugin",
   "main": "bin/keel.js",
   "homepage": "https://github.com/creativemyntra/keel",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/creativemyntra/keel.git"
-  },
+  "repository": "https://github.com/creativemyntra/keel",
   "bugs": {
     "url": "https://github.com/creativemyntra/keel/issues"
   },
@@ -36,126 +35,43 @@
   },
 
   "commands": [
-    {
-      "name": "keel",
-      "description": "Root Keel command — run /keel --help for all subcommands"
-    },
-    {
-      "name": "keel:init",
-      "description": "Scaffold a new project or add Keel to an existing one",
-      "usage": "/keel init --mode=new|existing --stack=cakephp"
-    },
-    {
-      "name": "keel:brainstorm",
-      "description": "Generate feature ideas from a business goal",
-      "usage": "/keel brainstorm --goal=\"Your goal\""
-    },
-    {
-      "name": "keel:req",
-      "description": "Create BDD requirements, acceptance criteria, and API spec",
-      "usage": "/keel req --story=FEAT-1 --feature=\"Description\""
-    },
-    {
-      "name": "keel:design",
-      "description": "Generate system architecture, DB schema, and API contracts",
-      "usage": "/keel design --story=FEAT-1"
-    },
-    {
-      "name": "keel:tdd-red",
-      "description": "Write failing tests (TDD Red phase)",
-      "usage": "/keel tdd-red --story=FEAT-1"
-    },
-    {
-      "name": "keel:tdd-green",
-      "description": "Write implementation to pass tests (TDD Green phase)",
-      "usage": "/keel tdd-green --story=FEAT-1"
-    },
-    {
-      "name": "keel:tdd-refactor",
-      "description": "Refactor code while keeping tests green",
-      "usage": "/keel tdd-refactor --story=FEAT-1"
-    },
-    {
-      "name": "keel:test",
-      "description": "Run comprehensive test suite with coverage reporting",
-      "usage": "/keel test --story=FEAT-1 --coverage-target=85"
-    },
-    {
-      "name": "keel:sec",
-      "description": "OWASP Top 10 + PCI-DSS security scan",
-      "usage": "/keel sec --story=FEAT-1"
-    },
-    {
-      "name": "keel:deploy",
-      "description": "Deploy with canary, blue-green, or instant rollout",
-      "usage": "/keel deploy --story=FEAT-1 --rollout=canary"
-    }
+    { "name": "keel",           "description": "Root Keel command — run /keel --help for all subcommands" },
+    { "name": "keel:init",      "description": "Scaffold a new project or add Keel to an existing one" },
+    { "name": "keel:brainstorm","description": "Generate feature ideas from a business goal" },
+    { "name": "keel:req",       "description": "Create BDD requirements, acceptance criteria, and API spec" },
+    { "name": "keel:design",    "description": "Generate system architecture, DB schema, and API contracts" },
+    { "name": "keel:tdd-red",   "description": "Write failing tests (TDD Red phase)" },
+    { "name": "keel:tdd-green", "description": "Write implementation to pass tests (TDD Green phase)" },
+    { "name": "keel:tdd-refactor","description": "Refactor code while keeping tests green" },
+    { "name": "keel:test",      "description": "Run comprehensive test suite with coverage reporting" },
+    { "name": "keel:sec",       "description": "OWASP Top 10 + PCI-DSS security scan" },
+    { "name": "keel:deploy",    "description": "Deploy with canary, blue-green, or instant rollout" }
   ],
 
   "skills": [
-    {
-      "name": "keel:sprint-planning",
-      "path": ".claude-plugin/skills/sprint-planning",
-      "description": "Generate sprint plans from backlog and team capacity"
-    },
-    {
-      "name": "keel:create-prd",
-      "path": ".claude-plugin/skills/create-prd",
-      "description": "Generate a PRD from a raw feature request"
-    },
-    {
-      "name": "keel:analyze-story",
-      "path": ".claude-plugin/skills/analyze-story",
-      "description": "Elaborate a backlog story through a Business Analyst lens"
-    },
-    {
-      "name": "keel:investigate-defect",
-      "path": ".claude-plugin/skills/investigate-defect",
-      "description": "Structured defect investigation with RCA output"
-    },
-    {
-      "name": "keel:create-mom",
-      "path": ".claude-plugin/skills/create-mom",
-      "description": "Generate Minutes of Meeting from notes or transcript"
-    },
-    {
-      "name": "keel:generate-tests",
-      "path": ".claude-plugin/skills/generate-tests",
-      "description": "Generate five required test categories for a feature"
-    },
-    {
-      "name": "keel:e2e-test",
-      "path": ".claude-plugin/skills/e2e-test",
-      "description": "Generate or run Playwright E2E tests for a user flow"
-    },
-    {
-      "name": "keel:review-code",
-      "path": ".claude-plugin/skills/review-code",
-      "description": "QA and Security review on staged changes"
-    },
-    {
-      "name": "keel:release-check",
-      "path": ".claude-plugin/skills/release-check",
-      "description": "Full release-readiness check before deployment"
-    },
-    {
-      "name": "keel:implement-feature",
-      "path": ".claude-plugin/skills/implement-feature",
-      "description": "Run the full pipeline from approved design to tested implementation"
-    }
+    { "name": "keel:sprint-planning",    "path": ".claude-plugin/skills/sprint-planning/SKILL.md",    "description": "Generate sprint plans from backlog and team capacity" },
+    { "name": "keel:create-prd",         "path": ".claude-plugin/skills/create-prd/SKILL.md",         "description": "Generate a PRD from a raw feature request" },
+    { "name": "keel:analyze-story",      "path": ".claude-plugin/skills/analyze-story/SKILL.md",      "description": "Elaborate a backlog story through a Business Analyst lens" },
+    { "name": "keel:investigate-defect", "path": ".claude-plugin/skills/investigate-defect/SKILL.md", "description": "Structured defect investigation with RCA output" },
+    { "name": "keel:create-mom",         "path": ".claude-plugin/skills/create-mom/SKILL.md",         "description": "Generate Minutes of Meeting from notes or transcript" },
+    { "name": "keel:generate-tests",     "path": ".claude-plugin/skills/generate-tests/SKILL.md",     "description": "Generate five required test categories for a feature" },
+    { "name": "keel:e2e-test",           "path": ".claude-plugin/skills/e2e-test/SKILL.md",           "description": "Generate or run Playwright E2E tests for a user flow" },
+    { "name": "keel:review-code",        "path": ".claude-plugin/skills/review-code/SKILL.md",        "description": "QA and Security review on staged changes" },
+    { "name": "keel:release-check",      "path": ".claude-plugin/skills/release-check/SKILL.md",      "description": "Full release-readiness check before deployment" },
+    { "name": "keel:implement-feature",  "path": ".claude-plugin/skills/implement-feature/SKILL.md",  "description": "Run the full pipeline from approved design to tested implementation" }
   ],
 
   "agents": [
-    { "name": "keel:orchestrator",       "role": "Routes all AI-SDLC work, enforces phase gates" },
-    { "name": "keel:product-owner",      "role": "Requirements, acceptance criteria, scope" },
-    { "name": "keel:business-analyst",   "role": "Functional specs, data flows, edge cases" },
-    { "name": "keel:solution-architect", "role": "Architecture, scalability, technical risk" },
-    { "name": "keel:software-engineer",  "role": "TDD implementation (Red → Green → Refactor)" },
-    { "name": "keel:qa-engineer",        "role": "Validation against acceptance criteria" },
-    { "name": "keel:security-engineer",  "role": "Threat modeling, OWASP, compliance" },
-    { "name": "keel:technical-writer",   "role": "Docs, changelogs, runbooks" },
-    { "name": "keel:release-manager",    "role": "Release readiness and go/no-go" },
-    { "name": "keel:scrum-master",       "role": "Sprint health, ceremonies, velocity" }
+    { "name": "keel:orchestrator",       "description": "Routes all AI-SDLC work, enforces phase gates" },
+    { "name": "keel:product-owner",      "description": "Requirements, acceptance criteria, scope" },
+    { "name": "keel:business-analyst",   "description": "Functional specs, data flows, edge cases" },
+    { "name": "keel:solution-architect", "description": "Architecture, scalability, technical risk" },
+    { "name": "keel:software-engineer",  "description": "TDD implementation (Red → Green → Refactor)" },
+    { "name": "keel:qa-engineer",        "description": "Validation against acceptance criteria" },
+    { "name": "keel:security-engineer",  "description": "Threat modeling, OWASP, compliance" },
+    { "name": "keel:technical-writer",   "description": "Docs, changelogs, runbooks" },
+    { "name": "keel:release-manager",    "description": "Release readiness and go/no-go" },
+    { "name": "keel:scrum-master",       "description": "Sprint health, ceremonies, velocity" }
   ],
 
   "mcpServers": {},
