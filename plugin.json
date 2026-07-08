@@ -49,16 +49,16 @@
   ],
 
   "skills": [
-    { "name": "keel:sprint-planning",    "path": ".claude-plugin/skills/sprint-planning/SKILL.md",    "description": "Generate sprint plans from backlog and team capacity" },
-    { "name": "keel:create-prd",         "path": ".claude-plugin/skills/create-prd/SKILL.md",         "description": "Generate a PRD from a raw feature request" },
-    { "name": "keel:analyze-story",      "path": ".claude-plugin/skills/analyze-story/SKILL.md",      "description": "Elaborate a backlog story through a Business Analyst lens" },
-    { "name": "keel:investigate-defect", "path": ".claude-plugin/skills/investigate-defect/SKILL.md", "description": "Structured defect investigation with RCA output" },
-    { "name": "keel:create-mom",         "path": ".claude-plugin/skills/create-mom/SKILL.md",         "description": "Generate Minutes of Meeting from notes or transcript" },
-    { "name": "keel:generate-tests",     "path": ".claude-plugin/skills/generate-tests/SKILL.md",     "description": "Generate five required test categories for a feature" },
-    { "name": "keel:e2e-test",           "path": ".claude-plugin/skills/e2e-test/SKILL.md",           "description": "Generate or run Playwright E2E tests for a user flow" },
-    { "name": "keel:review-code",        "path": ".claude-plugin/skills/review-code/SKILL.md",        "description": "QA and Security review on staged changes" },
-    { "name": "keel:release-check",      "path": ".claude-plugin/skills/release-check/SKILL.md",      "description": "Full release-readiness check before deployment" },
-    { "name": "keel:implement-feature",  "path": ".claude-plugin/skills/implement-feature/SKILL.md",  "description": "Run the full pipeline from approved design to tested implementation" }
+    { "name": "keel:sprint-planning",    "description": "Generate sprint plans from backlog and team capacity" },
+    { "name": "keel:create-prd",         "description": "Generate a PRD from a raw feature request" },
+    { "name": "keel:analyze-story",      "description": "Elaborate a backlog story through a Business Analyst lens" },
+    { "name": "keel:investigate-defect", "description": "Structured defect investigation with RCA output" },
+    { "name": "keel:create-mom",         "description": "Generate Minutes of Meeting from notes or transcript" },
+    { "name": "keel:generate-tests",     "description": "Generate five required test categories for a feature" },
+    { "name": "keel:e2e-test",           "description": "Generate or run Playwright E2E tests for a user flow" },
+    { "name": "keel:review-code",        "description": "QA and Security review on staged changes" },
+    { "name": "keel:release-check",      "description": "Full release-readiness check before deployment" },
+    { "name": "keel:implement-feature",  "description": "Run the full pipeline from approved design to tested implementation" }
   ],
 
   "agents": [
