@@ -60,6 +60,7 @@ All commands are namespaced under the plugin: `/keel:<command>`.
 | Command | Description |
 |---------|-------------|
 | `/keel:init` | Scaffold or adopt a project |
+| `/keel:setup` | Interactive integration wizard (Jira, GitHub, Playwright, Slack) |
 | `/keel:brainstorm --goal="..."` | Generate feature ideas |
 | `/keel:req --story=FEAT-1` | Write BDD requirements |
 | `/keel:design --story=FEAT-1` | Architecture, DB schema, API contracts |
@@ -99,14 +100,23 @@ orchestrator route): `keel:orchestrator`, `keel:product-owner`,
 
 ## Optional Integrations
 
-Jira works out of the box through the bundled Atlassian MCP server (`.mcp.json`) —
-you'll be prompted to authenticate on first use.
+After install, run the interactive setup wizard — every integration offers
+**Configure now / Use default / Skip (set up later)**:
 
-For GitHub/Slack shell integrations:
+```
+/keel:setup              # all integrations, step by step
+/keel:setup jira         # or one at a time, any time later
+/keel:setup status       # see current state
+```
+
+Defaults that work with zero config: Jira and Playwright ship as bundled MCP
+servers (`.mcp.json`) — Jira prompts OAuth on first use, Playwright runs headless
+Chromium via `npx`. GitHub uses the `gh` CLI if present. Slack is off until configured.
+
+Full guide: [docs/MCP-SETUP.md](docs/MCP-SETUP.md). For CI/Docker (non-interactive):
 
 ```bash
-bash setup-integrations.sh github
-bash setup-integrations.sh slack
+bash setup-integrations.sh jira|github|slack
 ```
 
 ---

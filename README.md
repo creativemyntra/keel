@@ -348,47 +348,31 @@ stack-profiles/
 
 ## 🔧 Optional: Configure Integrations
 
-Keel works perfectly without any integrations. Optionally configure:
+Keel works perfectly without any integrations. To configure them, run the
+**interactive setup wizard** inside Claude Code:
 
-### Jira Integration
-
-```bash
-bash ~/setup-integrations.sh jira
+```
+/keel:setup              # step-by-step wizard: Jira, GitHub, Playwright, Slack
+/keel:setup jira         # one integration at a time — set up later, any time
+/keel:setup status       # see what's configured
 ```
 
-**Enables:**
-- Sync story details from Jira
-- Update issue status automatically
-- Link PRs to Jira tickets
+Every step offers **Configure now / Use default / Skip (set up later)**, and each
+decision is recorded in `~/.keel/config/setup-audit.log`.
 
-### GitHub Integration
+| Integration | Default (zero config) | Configure for |
+|-------------|----------------------|---------------|
+| **Jira** | Bundled Atlassian MCP server — OAuth on first use | Instance URL, verified connectivity |
+| **GitHub** | `gh` CLI if installed | Default repo, or GitHub MCP server |
+| **Playwright** | Bundled Playwright MCP server — headless Chromium | Browsers, headed mode, E2E base URL |
+| **Slack** | Disabled | Webhook notifications on phase events |
 
-```bash
-bash ~/setup-integrations.sh github
-```
+Full step-by-step instructions: **[docs/MCP-SETUP.md](docs/MCP-SETUP.md)**.
 
-**Enables:**
-- Push code to repository
-- Create pull requests automatically
-- Link to GitHub issues
-
-### Slack Integration
+For CI/Docker (non-interactive), use the shell fallback:
 
 ```bash
-bash ~/setup-integrations.sh slack
-```
-
-**Enables:**
-- Notify team on phase completion
-- Post deployment status
-- Alert on security issues
-
-### Playwright (E2E Testing)
-
-Pre-configured out of the box. Customizable via:
-
-```bash
-nano ~/.keel/config/playwright.yml
+bash setup-integrations.sh jira|github|slack
 ```
 
 ---
@@ -453,36 +437,20 @@ your-project/
 ## 📖 Documentation
 
 ### Installation & Setup
-- **[PLUGIN-INTEGRATION-GUIDE.md](PLUGIN-INTEGRATION-GUIDE.md)** — How to use Keel with your projects
-- **[CLAUDE-CODE-INTEGRATION.md](.claude/CLAUDE-CODE-INTEGRATION.md)** — Claude Code plugin installation
-- **[CLAUDE-CODE-PLUGIN-MARKETPLACE.md](.claude/CLAUDE-CODE-PLUGIN-MARKETPLACE.md)** — Plugin discovery & updates
+- **[INSTALL.md](INSTALL.md)** — Plugin installation (Claude Code, Claude Desktop, local, GitHub Action)
+- **[QUICK-START-CLAUDE-CODE.md](QUICK-START-CLAUDE-CODE.md)** — Fastest path to a first feature
+- **[docs/MCP-SETUP.md](docs/MCP-SETUP.md)** — Integration & MCP setup wizard guide (Jira, GitHub, Playwright, Slack)
 
 ### Usage & Workflows
-- **[DEVELOPER-WORKFLOW.md](.claude/DEVELOPER-WORKFLOW.md)** — Daily development patterns
-- **[TDD-DEVELOPMENT-WORKFLOW.md](.claude/TDD-DEVELOPMENT-WORKFLOW.md)** — Complete TDD guide
-- **[END-TO-END-DEMO-WALKTHROUGH.md](.claude/END-TO-END-DEMO-WALKTHROUGH.md)** — Real-world example (45 min)
-- **[KEEL-AGENTS-MASTER-GUIDE.md](KEEL-AGENTS-MASTER-GUIDE.md)** — All 8 agents reference
+- **[ALL-AGENTS-COMPLETE-GUIDE.md](ALL-AGENTS-COMPLETE-GUIDE.md)** — All 13 agents reference
+- **[TECHNICAL-SPECIFICATIONS.md](TECHNICAL-SPECIFICATIONS.md)** — Architecture & state protocol
+- **[docs/demo/HEALTH-1-end-to-end-demo.md](docs/demo/HEALTH-1-end-to-end-demo.md)** — Real end-to-end pipeline walkthrough
+- **[CHANGELOG.md](CHANGELOG.md)** — Release history
 
-### v3.2.0 NEW: Enterprise Compliance (3 New Agents)
-- **[RELEASE-NOTES-v3.2.0.md](RELEASE-NOTES-v3.2.0.md)** — Complete release notes
-- **[COMPLIANCE-AGENTS-INTEGRATION.md](COMPLIANCE-AGENTS-INTEGRATION.md)** — How audit, state, handshake agents work together
-- **[PRODUCTION-READINESS-CHECKLIST.md](PRODUCTION-READINESS-CHECKLIST.md)** — Deployment validation
-- **[FINAL-AGENT-REVIEW-v3.2.0.md](FINAL-AGENT-REVIEW-v3.2.0.md)** — Complete agent architecture review
-- **[agents/audit-agent.md](agents/audit-agent.md)** — Audit Trail Agent (immutable logs, SonarQube)
+### Infrastructure Agents
+- **[agents/audit-agent.md](agents/audit-agent.md)** — Audit Trail Agent (per-story audit log)
 - **[agents/state-management-agent.md](agents/state-management-agent.md)** — State Management Agent (snapshots, recovery)
 - **[agents/handshake-agent.md](agents/handshake-agent.md)** — Handshake Agent (phase validation)
-
-### Advanced Topics
-- **[MCP-SETUP-WIZARD.md](.claude/MCP-SETUP-WIZARD.md)** — Detailed integration setup
-- **[SETUP-WIZARD-VALIDATION.md](.claude/SETUP-WIZARD-VALIDATION.md)** — MCP validation report
-- **[CODEGRAPH-GUIDE.md](.claude/CODEGRAPH-GUIDE.md)** — Knowledge graph system
-- **[DASHBOARD-SYSTEM.md](.claude/DASHBOARD-SYSTEM.md)** — Metrics & monitoring
-- **[MIT-LICENSE-GUIDE.md](.claude/MIT-LICENSE-GUIDE.md)** — License information
-
-### Distribution
-- **[AUTOMATED-PUBLISHING-GUIDE.md](.claude/AUTOMATED-PUBLISHING-GUIDE.md)** — Multi-marketplace publishing
-- **[GITHUB-MARKETPLACE-DISTRIBUTION.md](.claude/GITHUB-MARKETPLACE-DISTRIBUTION.md)** — GitHub Marketplace setup
-- **[MARKETPLACE-DISTRIBUTION-GUIDE.md](.claude/MARKETPLACE-DISTRIBUTION-GUIDE.md)** — All marketplace channels
 
 ---
 
