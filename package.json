@@ -1,6 +1,6 @@
 {
   "name": "@amarsingh/keel",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "description": "Keel AI-SDLC Framework - Complete AI-powered software development lifecycle automation",
   "type": "module",
   "main": "bin/keel.js",
@@ -13,8 +13,7 @@
     "test:unit": "jest tests/unit --coverage",
     "test:integration": "jest tests/integration",
     "lint": "eslint .",
-    "format": "prettier --write .",
-    "postinstall": "bash ./post-install.sh"
+    "format": "prettier --write ."
   },
   "keywords": [
     "ai-sdlc",
@@ -63,11 +62,15 @@
   },
   "files": [
     "bin/",
-    "lib/",
-    ".claude/",
-    "post-install.sh",
+    ".claude-plugin/",
+    "commands/",
+    "agents/",
+    "skills/",
+    "hooks/",
+    "scripts/",
+    ".mcp.json",
+    "agent-output-schema.json",
     "setup-integrations.sh",
-    "plugin.json",
     "action.yml",
     "LICENSE",
     "README.md"

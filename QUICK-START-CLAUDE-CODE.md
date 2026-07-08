@@ -1,4 +1,4 @@
-# Keel v3.0.2 — Claude Code Quick Start
+# Keel v3.1.0 — Claude Code Quick Start
 
 **Status:** ✅ Framework is ready to use NOW  
 **Date:** 2026-07-08  
@@ -122,7 +122,7 @@ This invokes ALL agents automatically:
 **A:** We just added it. Restart Claude Code terminal for command discovery. Then you can use:
 - `/keel --version`
 - `/keel --help`
-- `/keel init --mode=new`
+- `/keel:init --mode=new`
 
 ### Q: How do I use this in my project?
 
@@ -140,7 +140,7 @@ This invokes ALL agents automatically:
 → Close and reopen Claude Code completely
 
 ### "agent not found" error
-→ All agents are in `.claude/agents/` — check they're still there
+→ All agents are in `agents/` — check they're still there
 
 ### `/keel --version` not working
 → Restart Claude Code terminal (command discovery runs on startup)
@@ -153,7 +153,7 @@ This invokes ALL agents automatically:
 ## 📖 DOCUMENTATION
 
 - **README.md** — Overview, quickstart
-- **RELEASE-NOTES-v3.0.2.md** — What's new (3 compliance agents added)
+- **RELEASE-NOTES-v3.1.0.md** — What's new (3 compliance agents added)
 - **COMPLIANCE-AGENTS-INTEGRATION.md** — How agents work together
 - **PRODUCTION-READINESS-CHECKLIST.md** — Deployment validation
 - **KEEL-CLAUDE-CODE-INTEGRATION-DIAGNOSTIC.md** — Full technical details
@@ -207,7 +207,7 @@ Total time: **Hours instead of weeks!**
 
 ---
 
-**Version:** 3.0.2  
+**Version:** 3.1.0  
 **Author:** Amar Singh  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  

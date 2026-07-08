@@ -2,6 +2,27 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.1.0] - 2026-07-08 - CLAUDE CODE PLUGIN STANDARDS RESTRUCTURE
+
+### Changed (BREAKING — reinstall required)
+- Plugin manifest moved from repo root to `.claude-plugin/plugin.json` and reduced to spec-only fields (name, version, description, author, homepage, repository, license, keywords)
+- Agents moved from `.claude/agents/` to `agents/` — frontmatter names de-namespaced (plugin prefix is applied automatically by Claude Code)
+- Skills moved from `.claude-plugin/skills/` to `skills/` with required YAML frontmatter (name + description) added to every SKILL.md
+- Commands are now real slash commands in `commands/` — invoke as `/keel:init`, `/keel:req`, `/keel:design`, `/keel:tdd-red`, `/keel:tdd-green`, `/keel:tdd-refactor`, `/keel:test`, `/keel:sec`, `/keel:deploy`, `/keel:brainstorm`
+- Agent communication redefined as a file-based protocol: `.keel/state/<story-id>/<NN>-<agent>.json` conforming to `agent-output-schema.json` (added — it was previously referenced but missing)
+- handshake-agent, state-management-agent, and audit-agent rewritten to operate on real state files instead of describing non-existent PostgreSQL/Redis infrastructure
+- npm packaging metadata consolidated into `package.json`; `bin/package-plugin.sh`, `Dockerfile`, and release workflow updated for the new layout
+
+### Added
+- `hooks/hooks.json` with a SessionStart hook + `scripts/init-keel-home.sh` for idempotent `~/.keel` setup (replaces post-install.sh, which Claude Code never executed)
+- `.mcp.json` bundling the Atlassian remote MCP server used by Jira-aware agents
+
+### Removed
+- `post-install.sh` and the npm `postinstall` script
+- Shipped `.claude/` directory (project-level config and ~40 internal working documents do not belong in a distributed plugin); `.claude/settings.json` with its non-standard schema
+- Legacy duplicate skill tree under `.claude/skills/`
+- Unverifiable compliance claims (CJIS/SOC2/HIPAA certification checklists) — reworded as audit artifacts that support your compliance process
+
 ## [3.0.2] - 2026-07-08 - MARKETPLACE RELEASE FINALIZATION
 
 ### Added

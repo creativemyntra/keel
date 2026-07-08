@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.0.2 - Handoff Documentation
+# Keel AI-SDLC Framework v3.1.0 - Handoff Documentation
 
 **Document Version:** 1.0  
 **Last Updated:** 2026-07-08  
@@ -38,7 +38,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ### Key Facts
 
 - **Language:** JavaScript (Node.js)
-- **Current Version:** 3.0.2
+- **Current Version:** 3.1.0
 - **Status:** Production-ready
 - **Release Date:** 2026-07-08
 - **Platforms Supported:** CakePHP, Laravel, Django, Rails
@@ -105,7 +105,7 @@ keel/
 ├── plugin.json                   # Plugin manifest
 ├── action.yml                    # GitHub Action manifest
 ├── CHANGELOG.md                  # Version history
-├── RELEASE-NOTES-v3.0.2.md      # Current release
+├── RELEASE-NOTES-v3.1.0.md      # Current release
 ├── README.md                     # Main documentation
 ├── TECHNICAL-SPECIFICATIONS.md   # System specifications
 ├── HANDOFF-DOCUMENTATION.md      # This file
@@ -117,8 +117,8 @@ keel/
 
 | File | Purpose | Owner |
 |------|---------|-------|
-| `.claude/agents/*.md` | Autonomous agent definitions | Agent Logic |
-| `.claude-plugin/skills/*/SKILL.md` | Skill implementations | Skill System |
+| `agents/*.md` | Autonomous agent definitions | Agent Logic |
+| `skills/*/SKILL.md` | Skill implementations | Skill System |
 | `bin/keel.js` | CLI entry point | CLI Handler |
 | `plugin.json` | Plugin metadata & distribution config | Plugin System |
 | `action.yml` | GitHub Action specification | GitHub Integration |
@@ -186,7 +186,7 @@ npm run test -- --watch
 
 **Green Phase:** Write implementation
 ```bash
-# Implement in bin/keel.js or .claude/agents/*
+# Implement in bin/keel.js or agents/*
 # Tests should pass
 npm run test
 ```
@@ -202,14 +202,14 @@ npm run test  # Ensure still passing
 
 1. Create skill directory:
 ```bash
-mkdir -p .claude-plugin/skills/my-skill
+mkdir -p skills/my-skill
 ```
 
 2. Create SKILL.md:
 ```bash
 # Copy template from existing skill
-cp .claude-plugin/skills/sprint-planning/SKILL.md \
-   .claude-plugin/skills/my-skill/SKILL.md
+cp skills/sprint-planning/SKILL.md \
+   skills/my-skill/SKILL.md
 ```
 
 3. Update plugin.json:
@@ -217,7 +217,7 @@ cp .claude-plugin/skills/sprint-planning/SKILL.md \
 "skills": [
   {
     "name": "keel:my-skill",
-    "path": ".claude-plugin/skills/my-skill",
+    "path": "skills/my-skill",
     "description": "Description of what skill does"
   }
 ]
@@ -233,7 +233,7 @@ npm run lint
 
 1. Create agent file:
 ```bash
-touch .claude/agents/keel-my-agent.md
+touch agents/my-agent.md
 ```
 
 2. Define agent structure (copy from existing agent)
@@ -252,7 +252,7 @@ touch .claude/agents/keel-my-agent.md
 - **Purpose:** Production deployment
 - **Contains:** Only essential files (clean, no dev artifacts)
 - **Protection:** Requires PR review
-- **Tags:** Version tags (v3.0.2, etc.)
+- **Tags:** Version tags (v3.1.0, etc.)
 - **What to Merge:** Only tested, approved code
 
 #### Development Branch: `develop`
@@ -459,7 +459,7 @@ npm run test
 
 ```bash
 # 1. Create agent file
-touch .claude/agents/keel-my-phase-agent.md
+touch agents/my-phase-agent.md
 
 # 2. Define agent with:
 # - Role/responsibility
@@ -539,7 +539,7 @@ CI=true npm test
 **Solution:**
 ```bash
 # Validate agent file
-npm run lint .claude/agents/keel-agent-name.md
+npm run lint agents/agent-name.md
 
 # Check agent log
 DEBUG=keel:* npm start

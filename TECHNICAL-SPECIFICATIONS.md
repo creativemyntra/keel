@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.0.2 - Technical Specifications
+# Keel AI-SDLC Framework v3.1.0 - Technical Specifications
 
 **Document Version:** 1.0  
 **Last Updated:** 2026-07-08  
@@ -347,26 +347,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.0.2
+- Version: v3.1.0
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.0.2`
+- Installation: `npm install -g @amarsingh/keel@3.1.0`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.0.2`
+- Image: `amarsingh/keel:3.1.0`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.0.2`
+- Pull: `docker pull amarsingh/keel:3.1.0`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.0.2`
+- Version: `v3.1.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.0.2`
+- Usage: `uses: creativemyntra/keel@v3.1.0`
 
 ---
 
@@ -456,7 +456,7 @@ Record in Audit Trail
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
-| 3.0.2 | 2026-07-08 | PRODUCTION | Clean master branch, dev documentation segregated |
+| 3.1.0 | 2026-07-08 | PRODUCTION | Clean master branch, dev documentation segregated |
 | 3.0.1 | 2026-07-08 | PRODUCTION | Marketplace finalization |
 | 3.0.0 | 2026-07-07 | PRODUCTION | Initial major release |
 
@@ -484,7 +484,7 @@ Record in Audit Trail
 - **Repository:** https://github.com/creativemyntra/keel
 - **Documentation:** [QUICK-START-CLAUDE-CODE.md](QUICK-START-CLAUDE-CODE.md)
 - **Complete Agent Guide:** [ALL-AGENTS-COMPLETE-GUIDE.md](ALL-AGENTS-COMPLETE-GUIDE.md)
-- **Release Notes:** [RELEASE-NOTES-v3.0.2.md](RELEASE-NOTES-v3.0.2.md)
+- **Release Notes:** [RELEASE-NOTES-v3.1.0.md](RELEASE-NOTES-v3.1.0.md)
 
 ---
 

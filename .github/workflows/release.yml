@@ -50,7 +50,7 @@ jobs:
 
       - name: Validate plugin.json version matches tag
         run: |
-          PLUGIN_VERSION=$(node -p "require('./plugin.json').version")
+          PLUGIN_VERSION=$(node -p "require('./.claude-plugin/plugin.json').version")
           TAG_VERSION="${{ steps.version.outputs.version }}"
           if [ "$PLUGIN_VERSION" != "$TAG_VERSION" ]; then
             echo "❌ plugin.json version ($PLUGIN_VERSION) does not match tag ($TAG_VERSION)"

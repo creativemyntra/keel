@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/creativemyntra/keel/agent-output-schema.json",
+  "title": "Keel Agent Phase Output",
+  "description": "Contract for the output file each Keel phase agent writes to .keel/state/<story-id>/<NN>-<agent>.json. This is how agents pass context to each other.",
+  "type": "object",
+  "required": ["phase", "agent", "story_id", "confidence", "findings", "next_phase"],
+  "properties": {
+    "phase": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8,
+      "description": "Pipeline phase number (1=product-owner … 8=release-manager)"
+    },
+    "agent": {
+      "type": "string",
+      "enum": [
+        "product-owner",
+        "business-analyst",
+        "solution-architect",
+        "software-engineer",
+        "qa-engineer",
+        "security-engineer",
+        "technical-writer",
+        "release-manager"
+      ]
+    },
+    "story_id": {
+      "type": "string",
+      "description": "Story identifier, e.g. FEAT-1 or HART-287"
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low"]
+    },
+    "findings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" },
+      "description": "What the phase concluded, decided, or discovered"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Repo-relative paths to files this phase produced or changed"
+    },
+    "next_phase": {
+      "type": ["integer", "null"],
+      "description": "Phase that should run next; null when the pipeline is complete"
+    },
+    "blockers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Anything preventing the next phase from starting"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

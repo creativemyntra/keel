@@ -1,6 +1,6 @@
 # Keel — Installation Guide
 
-Install keel as a marketplace plugin in **Claude Code (terminal)** or **Claude Desktop (Cowork)**.
+Install Keel as a marketplace plugin in **Claude Code**.
 
 ---
 
@@ -17,18 +17,18 @@ claude plugin install keel
 claude plugin list
 ```
 
-First run drops into the setup wizard automatically.  
-Or trigger it manually: `/keel init`
+On the first session after install, Keel initializes `~/.keel` automatically
+(config + secrets directories). Then run `/keel:init` in your project.
 
 ---
 
-## Option B — Claude Desktop (Cowork)
+## Option B — Claude Desktop
 
 1. Open **Claude Desktop → Settings → Capabilities → Plugins**
 2. Click **Add Marketplace Source**
 3. Enter: `https://github.com/creativemyntra/keel`
 4. Find **Keel AI-SDLC** in the list → click **Install**
-5. Open any project folder → type `/keel init`
+5. Open any project folder → type `/keel:init`
 
 ---
 
@@ -45,7 +45,7 @@ claude plugin install .
 ## Option D — GitHub Action (CI/CD)
 
 ```yaml
-- uses: creativemyntra/keel@v3.0.2
+- uses: creativemyntra/keel@v3.1.0
   with:
     story: FEAT-1
     phase: full-pipeline
@@ -53,54 +53,65 @@ claude plugin install .
 
 ---
 
-## Optional Integrations
+## Commands
 
-After install, connect your tools:
-
-```bash
-# Jira
-bash setup-integrations.sh jira
-
-# GitHub  
-bash setup-integrations.sh github
-
-# Slack
-bash setup-integrations.sh slack
-```
-
----
-
-## Available Commands
+All commands are namespaced under the plugin: `/keel:<command>`.
 
 | Command | Description |
 |---------|-------------|
-| `/keel init` | Scaffold or adopt a project |
-| `/keel req --story=FEAT-1` | Write BDD requirements |
-| `/keel tdd-red --story=FEAT-1` | Write failing tests |
-| `/keel tdd-green --story=FEAT-1` | Implement to pass tests |
-| `/keel test --story=FEAT-1` | Run full test suite |
-| `/keel sec --story=FEAT-1` | OWASP security scan |
-| `/keel deploy --story=FEAT-1` | Deploy with canary rollout |
+| `/keel:init` | Scaffold or adopt a project |
+| `/keel:brainstorm --goal="..."` | Generate feature ideas |
+| `/keel:req --story=FEAT-1` | Write BDD requirements |
+| `/keel:design --story=FEAT-1` | Architecture, DB schema, API contracts |
+| `/keel:tdd-red --story=FEAT-1` | Write failing tests |
+| `/keel:tdd-green --story=FEAT-1` | Implement to pass tests |
+| `/keel:tdd-refactor --story=FEAT-1` | Refactor with tests green |
+| `/keel:test --story=FEAT-1` | Run full test suite + coverage gate |
+| `/keel:sec --story=FEAT-1` | OWASP security scan |
+| `/keel:deploy --story=FEAT-1` | Release gate + staged rollout |
 
-## Available Skills
+## Agents
+
+13 agents install with the plugin (invoke via the Task tool or let the
+orchestrator route): `keel:orchestrator`, `keel:product-owner`,
+`keel:business-analyst`, `keel:solution-architect`, `keel:software-engineer`,
+`keel:qa-engineer`, `keel:security-engineer`, `keel:technical-writer`,
+`keel:release-manager`, `keel:scrum-master`, plus infrastructure agents
+`keel:handshake-agent`, `keel:state-management-agent`, `keel:audit-agent`.
+
+## Skills
 
 | Skill | Trigger |
 |-------|---------|
-| `keel:sprint-planning` | "plan sprint", "/sprint" |
-| `keel:create-prd` | "create PRD", "/keel req" |
+| `keel:sprint-planning` | "plan sprint" |
+| `keel:create-prd` | "create PRD" |
 | `keel:analyze-story` | "analyze story" |
 | `keel:investigate-defect` | "RCA", "investigate bug" |
-| `keel:create-mom` | "minutes of meeting", "/mom" |
+| `keel:create-mom` | "minutes of meeting" |
 | `keel:generate-tests` | "generate tests" |
 | `keel:e2e-test` | "e2e test", "playwright" |
-| `keel:review-code` | "review code", "code review" |
+| `keel:review-code` | "review code" |
 | `keel:release-check` | "release check", "go/no-go" |
 | `keel:implement-feature` | "implement feature", "build this" |
 
 ---
 
+## Optional Integrations
+
+Jira works out of the box through the bundled Atlassian MCP server (`.mcp.json`) —
+you'll be prompted to authenticate on first use.
+
+For GitHub/Slack shell integrations:
+
+```bash
+bash setup-integrations.sh github
+bash setup-integrations.sh slack
+```
+
+---
+
 ## Requirements
 
-- Claude Code ≥ 1.0.0 **or** Claude Desktop (Cowork mode)
-- Node.js ≥ 18 (for packaging scripts)
+- Claude Code ≥ 1.0.0 **or** Claude Desktop
 - PHP 8.1 + Composer (for CakePHP projects)
+- Node.js ≥ 18 (only for the optional npm CLI)

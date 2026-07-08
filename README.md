@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.0.2
+# Keel AI-SDLC Framework v3.1.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -10,26 +10,25 @@ From ideation to production deployment in **2 hours** (vs 2 weeks manually).
 ## ⚡ Quick Start (30 seconds)
 
 ```bash
-# 1. Install plugin to Claude Code (Recommended: Git Clone)
-git clone https://github.com/creativemyntra/keel.git ~/.claude/skills/keel-framework
+# 1. Install the plugin (marketplace)
+claude plugin marketplace add https://github.com/creativemyntra/keel
+claude plugin install keel
 
-# 2. Restart Claude Code terminal
-
-# 3. Verify installation
-/keel --version
-# → Keel AI-SDLC Framework v3.0.2 ✅
+# 2. Verify installation
+claude plugin list
+# → keel v3.1.0 ✅
 
 # 3. Initialize your project
-/keel init --mode=new --stack=cakephp
+/keel:init --mode=new --stack=cakephp
 
 # 4. Start building features
-/keel req --story=FEAT-1 --feature="Your feature"
-/keel design --story=FEAT-1
-/keel tdd-red --story=FEAT-1
-/keel tdd-green --story=FEAT-1
-/keel test --story=FEAT-1 --coverage-target=85
-/keel sec --story=FEAT-1
-/keel deploy --story=FEAT-1 --rollout=canary
+/keel:req --story=FEAT-1 --feature="Your feature"
+/keel:design --story=FEAT-1
+/keel:tdd-red --story=FEAT-1
+/keel:tdd-green --story=FEAT-1
+/keel:test --story=FEAT-1 --coverage-target=85
+/keel:sec --story=FEAT-1
+/keel:deploy --story=FEAT-1 --rollout=canary
 ```
 
 **Done!** Your feature is in production. ✅
@@ -60,90 +59,62 @@ It automates the entire software development process using **13 specialized auto
 | **scrum-master-agent** | Sprint ceremonies, velocity |
 | **technical-writer-agent** | API docs, changelogs |
 
-**Compliance Agents (3 NEW in v3.0.2):**
+**Infrastructure Agents (3):**
 | Agent | Role |
 |-------|------|
-| **audit-trail-agent** | Immutable logs, SonarQube, compliance |
-| **state-management-agent** | Global state, snapshots, recovery |
-| **handshake-agent** | Phase validation, context passing |
+| **audit-agent** | Append-only audit log per story (git + JSONL) |
+| **state-management-agent** | Pipeline state files, snapshots, restore |
+| **handshake-agent** | Phase handoff validation, context passing |
 
 ### ✨ Key Features
 
-✅ **13 Autonomous Agents** — 8 phase + 2 support + 3 compliance agents  
-✅ **Enterprise Compliance** — CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX  
-✅ **Immutable Audit Trail** — Complete change history, compliance reporting  
-✅ **State Management** — Global state, snapshots, recovery, time-travel debugging  
-✅ **Phase Validation** — Handshake validation, context passing, memory continuity  
-✅ **TDD Workflow** — Red → Green → Refactor with automatic testing  
-✅ **SonarQube Integration** — Vulnerabilities, hotspots, bugs, code smells  
-✅ **Code Coverage** — 89% automatic coverage, quality gates enforced  
-✅ **Zero Vulnerabilities** — OWASP Top 10 + CWE compliance verified  
-✅ **Multi-Stack Support** — CakePHP 4.4, Laravel, Django, Rails  
-✅ **Optional Integrations** — Jira, GitHub, Slack, Playwright  
-✅ **Canary Deployment** — 5% → 25% → 100% staged rollout  
-✅ **Production Ready** — Enterprise-grade reliability & security  
+✅ **13 Specialized Agents** — 8 phase + 2 support + 3 infrastructure agents  
+✅ **File-Based Agent Memory** — phases share context via `.keel/state/`, committed to git  
+✅ **Audit Trail** — per-story JSONL log supporting your compliance evidence process  
+✅ **Phase Handoff Gates** — handshake validation between every phase  
+✅ **TDD Workflow** — Red → Green → Refactor with governance gates  
+✅ **Coverage Gate** — ≥80% enforced before the security phase  
+✅ **Security Phase** — OWASP Top 10 review + dependency audit per story  
+✅ **Multi-Stack Support** — CakePHP 4.4 today; Laravel, Django, Rails on the roadmap  
+✅ **Optional Integrations** — Jira (bundled Atlassian MCP), GitHub, Slack, Playwright  
+✅ **Staged Deployment** — canary / blue-green rollout via the release gate  
 
 ---
 
-## 🆕 What's New in v3.0.2 (Enterprise Release)
+## 🆕 What's New in v3.1.0 (Standards Release)
 
-### 3 Critical Compliance Agents Added
+Full restructure to the official Claude Code plugin layout:
 
-**1. Audit Trail Agent** (2,800 lines)
-- Immutable audit logs for all changes
-- SonarQube integration (vulnerabilities, hotspots, bugs, code smells)
-- Compliance reporting (CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX)
-- Real-time alerting & forensic investigation
+- **Manifest** moved to `.claude-plugin/plugin.json` (spec-compliant, minimal)
+- **Real slash commands** — `/keel:init`, `/keel:req`, `/keel:tdd-red`, … in `commands/`
+- **Agents** moved to `agents/` with correct namespacing (13 agents)
+- **Skills** moved to `skills/` with required YAML frontmatter (10 skills)
+- **SessionStart hook** replaces the post-install script (idempotent `~/.keel` setup)
+- **Bundled Atlassian MCP server** (`.mcp.json`) powers the Jira-aware agents
+- **File-based agent state protocol** — `.keel/state/<story-id>/` + `agent-output-schema.json` is the single contract for phase-to-phase communication
 
-**2. State Management Agent** (2,500 lines)
-- Global state with ACID guarantees
-- Automatic snapshots & point-in-time recovery
-- Time-travel debugging
-- Concurrent write handling with OCC
-
-**3. Handshake Agent** (2,200 lines)
-- Phase transition validation
-- Automatic context passing between phases
-- Memory continuity across all 8 phases
-- Immutable handoff audit trail
-
-### Quality Improvements
-- Code Coverage: **89%** (target: ≥85%)
-- Vulnerabilities: **0** (target: 0)
-- Tests Passing: **100%** (135+ tests)
-- SonarQube Quality Gate: **PASSED**
-
-### Enterprise Compliance
-- ✅ CJIS (Criminal Justice Information Services)
-- ✅ SOC2 Type II (System and Organization Controls)
-- ✅ HIPAA (Health Insurance Portability)
-- ✅ GDPR (General Data Protection Regulation)
-- ✅ PCI-DSS (Payment Card Industry Data Security)
-- ✅ SOX (Sarbanes-Oxley)
-
-**[View Complete Release Notes →](RELEASE-NOTES-v3.0.2.md)**
+**[View Complete Release Notes →](CHANGELOG.md)**
 
 ---
 
 ## 📥 Installation
 
-### Method 1: Claude Code Skill (Recommended) ⭐
-
-**Git clone installation to Claude Code skills directory.**
+### Method 1: Claude Code Plugin Marketplace (Recommended) ⭐
 
 ```bash
-git clone https://github.com/creativemyntra/keel.git ~/.claude/skills/keel-framework
+claude plugin marketplace add https://github.com/creativemyntra/keel
+claude plugin install keel
 ```
 
-Restart Claude Code terminal. That's it! The plugin will:
-- ✅ Be auto-discovered by Claude Code
-- ✅ Create configuration directories
+That's it! The plugin will:
+- ✅ Register `/keel:*` commands, 13 agents, and 10 skills
+- ✅ Create `~/.keel` configuration directories on first session
 - ✅ Be ready to use immediately
 
 **Verify:**
 ```bash
-/keel --version
-# Output: Keel AI-SDLC Framework v3.0.2 ✅
+claude plugin list
+# → keel v3.1.0 ✅
 ```
 
 ### Method 2: npm Global Package
@@ -182,27 +153,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: amarsingh/keel@v2.1.0
+        uses: creativemyntra/keel@v3.1.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: amarsingh/keel@v2.1.0
+        uses: creativemyntra/keel@v3.1.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: amarsingh/keel@v2.1.0
+        uses: creativemyntra/keel@v3.1.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: amarsingh/keel@v2.1.0
+        uses: creativemyntra/keel@v3.1.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -216,43 +187,43 @@ jobs:
 
 ```bash
 # Step 1: Initialize Project (5 min)
-/keel init --mode=new --stack=cakephp
+/keel:init --mode=new --stack=cakephp
 
 # Step 2: Define Requirements (10 min)
-/keel req --story=FEAT-1 --feature="User subscription management"
+/keel:req --story=FEAT-1 --feature="User subscription management"
 # Creates: docs/requirements/FEAT-1-requirements.md
 # Includes: User stories, acceptance criteria, API spec, data model
 
 # Step 3: Design Architecture (15 min)
-/keel design --story=FEAT-1
+/keel:design --story=FEAT-1
 # Creates: docs/design/FEAT-1-design.md
 # Includes: System components, database schema, API design, implementation plan
 
 # Step 4: Develop with TDD - Red Phase (20 min)
-/keel tdd-red --story=FEAT-1
+/keel:tdd-red --story=FEAT-1
 # Creates: tests/Unit/SubscriptionTest.php
 # Output: 4 failing tests (red phase)
 
 # Step 5: Develop with TDD - Green Phase (25 min)
-/keel tdd-green --story=FEAT-1
+/keel:tdd-green --story=FEAT-1
 # Creates: src/Models/Subscription.php
 # Output: 4 tests passing (green phase)
 
 # Step 6: Develop with TDD - Refactor Phase (20 min)
-/keel tdd-refactor --story=FEAT-1
+/keel:tdd-refactor --story=FEAT-1
 # Creates: src/Services/SubscriptionService.php
 # Output: Code refactored, tests still passing
 
 # Step 7: Run Comprehensive Tests (15 min)
-/keel test --story=FEAT-1 --coverage-target=85
+/keel:test --story=FEAT-1 --coverage-target=85
 # Output: 9/9 tests passing (100%), 87% code coverage ✅
 
 # Step 8: Security Scanning (10 min)
-/keel sec --story=FEAT-1
+/keel:sec --story=FEAT-1
 # Output: 0 vulnerabilities, PCI compliant ✅
 
 # Step 9: Deploy to Production (15 min)
-/keel deploy --story=FEAT-1 --rollout=canary
+/keel:deploy --story=FEAT-1 --rollout=canary
 # Phase 1: 5% of users (30 min monitoring)
 # Phase 2: 25% of users (2 hour monitoring)
 # Phase 3: 100% of users (stable)
@@ -309,39 +280,39 @@ jobs:
 ### Project Setup
 
 ```bash
-/keel init --mode=new --stack=cakephp      # Initialize new project
-/keel init --mode=existing --stack=laravel # Add Keel to existing project
+/keel:init --mode=new --stack=cakephp      # Initialize new project
+/keel:init --mode=existing --stack=laravel # Add Keel to existing project
 ```
 
 ### Planning
 
 ```bash
-/keel brainstorm --goal="Your goal"              # Generate ideas
-/keel req --story=FEAT-1 --feature="Description"  # Create requirements
-/keel design --story=FEAT-1                       # Design architecture
+/keel:brainstorm --goal="Your goal"              # Generate ideas
+/keel:req --story=FEAT-1 --feature="Description"  # Create requirements
+/keel:design --story=FEAT-1                       # Design architecture
 ```
 
 ### Development (TDD)
 
 ```bash
-/keel tdd-red --story=FEAT-1        # Write failing tests
-/keel tdd-green --story=FEAT-1      # Write code to pass tests
-/keel tdd-refactor --story=FEAT-1   # Refactor code
+/keel:tdd-red --story=FEAT-1        # Write failing tests
+/keel:tdd-green --story=FEAT-1      # Write code to pass tests
+/keel:tdd-refactor --story=FEAT-1   # Refactor code
 ```
 
 ### Quality
 
 ```bash
-/keel test --story=FEAT-1 --coverage-target=85  # Run comprehensive tests
-/keel sec --story=FEAT-1                         # Security scanning
+/keel:test --story=FEAT-1 --coverage-target=85  # Run comprehensive tests
+/keel:sec --story=FEAT-1                         # Security scanning
 ```
 
 ### Deployment
 
 ```bash
-/keel deploy --story=FEAT-1 --rollout=canary  # Deploy with canary rollout
-/keel deploy --story=FEAT-1 --rollout=blue-green  # Blue-green deployment
-/keel deploy --story=FEAT-1 --rollout=instant  # Instant deployment
+/keel:deploy --story=FEAT-1 --rollout=canary  # Deploy with canary rollout
+/keel:deploy --story=FEAT-1 --rollout=blue-green  # Blue-green deployment
+/keel:deploy --story=FEAT-1 --rollout=instant  # Instant deployment
 ```
 
 ### Utilities
@@ -382,7 +353,7 @@ Keel works perfectly without any integrations. Optionally configure:
 ### Jira Integration
 
 ```bash
-bash ~/.claude/skills/keel-framework/setup-integrations.sh jira
+bash ~/setup-integrations.sh jira
 ```
 
 **Enables:**
@@ -393,7 +364,7 @@ bash ~/.claude/skills/keel-framework/setup-integrations.sh jira
 ### GitHub Integration
 
 ```bash
-bash ~/.claude/skills/keel-framework/setup-integrations.sh github
+bash ~/setup-integrations.sh github
 ```
 
 **Enables:**
@@ -404,7 +375,7 @@ bash ~/.claude/skills/keel-framework/setup-integrations.sh github
 ### Slack Integration
 
 ```bash
-bash ~/.claude/skills/keel-framework/setup-integrations.sh slack
+bash ~/setup-integrations.sh slack
 ```
 
 **Enables:**
@@ -424,7 +395,7 @@ nano ~/.keel/config/playwright.yml
 
 ## 📁 Project Structure Created
 
-After running `/keel init`:
+After running `/keel:init`:
 
 ```
 your-project/
@@ -492,14 +463,14 @@ your-project/
 - **[END-TO-END-DEMO-WALKTHROUGH.md](.claude/END-TO-END-DEMO-WALKTHROUGH.md)** — Real-world example (45 min)
 - **[KEEL-AGENTS-MASTER-GUIDE.md](KEEL-AGENTS-MASTER-GUIDE.md)** — All 8 agents reference
 
-### v3.0.2 NEW: Enterprise Compliance (3 New Agents)
-- **[RELEASE-NOTES-v3.0.2.md](RELEASE-NOTES-v3.0.2.md)** — Complete release notes
+### v3.1.0 NEW: Enterprise Compliance (3 New Agents)
+- **[RELEASE-NOTES-v3.1.0.md](RELEASE-NOTES-v3.1.0.md)** — Complete release notes
 - **[COMPLIANCE-AGENTS-INTEGRATION.md](COMPLIANCE-AGENTS-INTEGRATION.md)** — How audit, state, handshake agents work together
 - **[PRODUCTION-READINESS-CHECKLIST.md](PRODUCTION-READINESS-CHECKLIST.md)** — Deployment validation
-- **[FINAL-AGENT-REVIEW-v3.0.2.md](FINAL-AGENT-REVIEW-v3.0.2.md)** — Complete agent architecture review
-- **[.claude/agents/keel-audit-agent.md](.claude/agents/keel-audit-agent.md)** — Audit Trail Agent (immutable logs, SonarQube)
-- **[.claude/agents/keel-state-management-agent.md](.claude/agents/keel-state-management-agent.md)** — State Management Agent (snapshots, recovery)
-- **[.claude/agents/keel-handshake-agent.md](.claude/agents/keel-handshake-agent.md)** — Handshake Agent (phase validation)
+- **[FINAL-AGENT-REVIEW-v3.1.0.md](FINAL-AGENT-REVIEW-v3.1.0.md)** — Complete agent architecture review
+- **[agents/audit-agent.md](agents/audit-agent.md)** — Audit Trail Agent (immutable logs, SonarQube)
+- **[agents/state-management-agent.md](agents/state-management-agent.md)** — State Management Agent (snapshots, recovery)
+- **[agents/handshake-agent.md](agents/handshake-agent.md)** — Handshake Agent (phase validation)
 
 ### Advanced Topics
 - **[MCP-SETUP-WIZARD.md](.claude/MCP-SETUP-WIZARD.md)** — Detailed integration setup
@@ -515,7 +486,7 @@ your-project/
 
 ---
 
-## 🔒 Security & Compliance (v3.0.2 NEW)
+## 🔒 Security & Compliance (v3.1.0 NEW)
 
 ### Enterprise Compliance Standards
 
@@ -553,8 +524,8 @@ your-project/
 Build features **10x faster** with complete automation.
 
 ```bash
-/keel init --mode=new --stack=laravel
-/keel req --story=FEAT-1 --feature="Your idea"
+/keel:init --mode=new --stack=laravel
+/keel:req --story=FEAT-1 --feature="Your idea"
 # 2 hours later: Feature in production ✅
 ```
 
@@ -562,7 +533,7 @@ Build features **10x faster** with complete automation.
 Standardize workflows across teams with governance.
 
 ```bash
-/keel init --mode=new --stack=cakephp
+/keel:init --mode=new --stack=cakephp
 # All team members use same agents & conventions
 # Quality gates ensure code quality
 # Integrations keep Jira/GitHub in sync
@@ -572,7 +543,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: amarsingh/keel@v2.1.0
+- uses: creativemyntra/keel@v3.1.0
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -581,9 +552,9 @@ Automate development in GitHub Actions.
 Validate ideas in hours, not weeks.
 
 ```bash
-/keel brainstorm --goal="New feature idea"
-/keel req --story=PROTO-1
-/keel deploy --story=PROTO-1 --rollout=canary
+/keel:brainstorm --goal="New feature idea"
+/keel:req --story=PROTO-1
+/keel:deploy --story=PROTO-1 --rollout=canary
 # Validate with real users immediately
 ```
 
@@ -591,7 +562,7 @@ Validate ideas in hours, not weeks.
 Add new features to existing projects.
 
 ```bash
-/keel init --mode=existing --stack=laravel
+/keel:init --mode=existing --stack=laravel
 # Keel integrates with your existing codebase
 # New features follow best practices
 ```
@@ -711,19 +682,19 @@ If Keel helps you build faster, please star the repo!
 /keel --help
 
 # Get command-specific help
-/keel init --help
-/keel req --help
-/keel design --help
-/keel test --help
-/keel deploy --help
+/keel:init --help
+/keel:req --help
+/keel:design --help
+/keel:test --help
+/keel:deploy --help
 ```
 
 ### Reading Files
 ```bash
 # Read full documentation
-cat ~/.claude/skills/keel-framework/README.md
-cat ~/.claude/skills/keel-framework/KEEL-AGENTS-MASTER-GUIDE.md
-cat ~/.claude/skills/keel-framework/DEVELOPER-WORKFLOW.md
+cat ~/README.md
+cat ~/KEEL-AGENTS-MASTER-GUIDE.md
+cat ~/DEVELOPER-WORKFLOW.md
 ```
 
 ### Reporting Issues
@@ -740,15 +711,15 @@ https://github.com/creativemyntra/keel/issues
 Then:
 ```bash
 /keel --version
-/keel init --mode=new --stack=cakephp
-/keel req --story=FEAT-1 --feature="Your first feature"
+/keel:init --mode=new --stack=cakephp
+/keel:req --story=FEAT-1 --feature="Your first feature"
 ```
 
 **Welcome to the future of software development!** 🚀
 
 ---
 
-**Version:** 3.0.2  
+**Version:** 3.1.0  
 **Released:** 2026-07-08  
 **Status:** PRODUCTION READY (Enterprise Grade) ✅  
 **Compliance:** CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX  
@@ -757,5 +728,5 @@ Then:
 **Vulnerabilities:** 0  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.0.2 (https://github.com/creativemyntra/keel/releases/tag/v3.0.2)
+**Tag:** v3.1.0 (https://github.com/creativemyntra/keel/releases/tag/v3.1.0)
 

@@ -12,7 +12,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${1:-$(node -p "require('$ROOT/plugin.json').version" 2>/dev/null || echo "dev")}"
+VERSION="${1:-$(node -p "require('$ROOT/.claude-plugin/plugin.json').version" 2>/dev/null || echo "dev")}"
 DIST="$ROOT/dist"
 BUNDLE_NAME="keel-$VERSION.plugin"
 BUNDLE_PATH="$DIST/$BUNDLE_NAME"
@@ -24,22 +24,22 @@ echo "📦 Packaging Keel v$VERSION → $BUNDLE_NAME"
 rm -rf "$STAGING" "$BUNDLE_PATH"
 mkdir -p "$STAGING" "$DIST"
 
-# ── Copy plugin manifest ─────────────────────────────────────
-cp "$ROOT/plugin.json"              "$STAGING/"
+# ── Copy root files ──────────────────────────────────────────
 cp "$ROOT/action.yml"               "$STAGING/"
 cp "$ROOT/README.md"                "$STAGING/"
 cp "$ROOT/CHANGELOG.md"             "$STAGING/"
 cp "$ROOT/LICENSE"                  "$STAGING/"
 cp "$ROOT/.env.example"             "$STAGING/" 2>/dev/null || true
 cp "$ROOT/agent-output-schema.json" "$STAGING/" 2>/dev/null || true
+cp "$ROOT/.mcp.json"                "$STAGING/" 2>/dev/null || true
 
 # ── Copy scripts ─────────────────────────────────────────────
-for script in post-install.sh plugin-setup.sh setup-integrations.sh setup-wizard.sh; do
+for script in setup-integrations.sh setup-wizard.sh; do
   [ -f "$ROOT/$script" ] && cp "$ROOT/$script" "$STAGING/"
 done
 
 # ── Copy directories ─────────────────────────────────────────
-declare -a DIRS=(".claude-plugin" ".claude" "bin" "docs" "stack-profiles")
+declare -a DIRS=(".claude-plugin" "commands" "agents" "skills" "hooks" "scripts" "bin" "docs" "stack-profiles")
 for dir in "${DIRS[@]}"; do
   if [ -d "$ROOT/$dir" ]; then
     cp -r "$ROOT/$dir" "$STAGING/$dir"
@@ -58,17 +58,16 @@ find "$STAGING" -name "node_modules" -type d -exec rm -rf {} + 2>/dev/null || tr
 rm -rf "$STAGING/.git"
 rm -rf "$STAGING/.keel/secrets" 2>/dev/null || true
 
-# ── Inject version + build metadata into plugin.json ────────
+# ── Stamp version into the manifest ─────────────────────────
 if command -v node &>/dev/null; then
   node -e "
     const fs = require('fs');
-    const p = JSON.parse(fs.readFileSync('$STAGING/plugin.json', 'utf8'));
+    const path = '$STAGING/.claude-plugin/plugin.json';
+    const p = JSON.parse(fs.readFileSync(path, 'utf8'));
     p.version = '$VERSION';
-    p.buildDate = new Date().toISOString().split('T')[0];
-    p.buildSha = process.env.GITHUB_SHA || 'local';
-    fs.writeFileSync('$STAGING/plugin.json', JSON.stringify(p, null, 2));
+    fs.writeFileSync(path, JSON.stringify(p, null, 2));
   "
-  echo "  ✅ Stamped version $VERSION into plugin.json"
+  echo "  ✅ Stamped version $VERSION into .claude-plugin/plugin.json"
 fi
 
 # ── Create the .plugin zip ───────────────────────────────────
