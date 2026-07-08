@@ -25,7 +25,7 @@ Keel AI-SDLC Framework is a production-ready autonomous software development sys
 ```bash
 # Clone into Claude Code skills directory
 cd ~/.claude/skills
-git clone https://github.com/amarsingh/keel.git
+git clone https://github.com/creativemyntra/keel.git
 
 # Verify installation
 /keel --version
@@ -500,7 +500,7 @@ ls -la ~/.claude/skills/keel-framework/
 
 # If not found, clone:
 cd ~/.claude/skills
-git clone https://github.com/amarsingh/keel.git keel-framework
+git clone https://github.com/creativemyntra/keel.git keel-framework
 
 # Restart Claude Code
 ```
@@ -584,7 +584,7 @@ git clone https://github.com/amarsingh/keel.git keel-framework
 1. **Install Skill:**
    ```bash
    cd ~/.claude/skills
-   git clone https://github.com/amarsingh/keel.git keel-framework
+   git clone https://github.com/creativemyntra/keel.git keel-framework
    ```
 
 2. **Verify Installation:**

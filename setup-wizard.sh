@@ -209,6 +209,10 @@ if [ "$SETUP_JIRA" = "y" ] || [ "$SETUP_JIRA" = "Y" ]; then
   read -sp "  Jira API token (hidden): " JIRA_TOKEN
   echo ""
 
+  mkdir -p ~/.keel/secrets
+  echo "$JIRA_TOKEN" > ~/.keel/secrets/jira.token
+  chmod 600 ~/.keel/secrets/jira.token
+
   JIRA_CONFIG="true"
   success "Jira configured"
 else
@@ -257,8 +261,15 @@ GITHUB_CONFIG=""
 if [ "$SETUP_GITHUB" = "y" ] || [ "$SETUP_GITHUB" = "Y" ]; then
   echo ""
   echo -e "${BLUE}→ GitHub Configuration${NC}"
-  read -p "  GitHub Personal Access Token (leave empty to skip): " GITHUB_TOKEN
+  read -sp "  GitHub Personal Access Token (leave empty to skip): " GITHUB_TOKEN
+  echo ""
   read -p "  Repository (owner/repo): " GITHUB_REPO
+
+  if [ -n "$GITHUB_TOKEN" ]; then
+    mkdir -p ~/.keel/secrets
+    echo "$GITHUB_TOKEN" > ~/.keel/secrets/github.token
+    chmod 600 ~/.keel/secrets/github.token
+  fi
 
   GITHUB_CONFIG="true"
   success "GitHub configured"
@@ -300,7 +311,12 @@ case $INSTALL_TYPE in
     echo "Installing as Claude Code Skill..."
     KEEL_DIR="${HOME}/.claude/skills/keel-framework"
     mkdir -p "$(dirname "$KEEL_DIR")"
-    git clone https://github.com/amarsingh/keel.git "$KEEL_DIR" 2>/dev/null || (cd "$KEEL_DIR" && git pull)
+    if [ -d "$KEEL_DIR/.git" ]; then
+      echo "Updating existing installation..."
+      git -C "$KEEL_DIR" pull
+    else
+      git clone https://github.com/creativemyntra/keel.git "$KEEL_DIR"
+    fi
     success "Installed at $KEEL_DIR"
     ;;
 
@@ -318,7 +334,7 @@ case $INSTALL_TYPE in
 
   github-action)
     echo "GitHub Action ready to use"
-    success "Add to your workflow: uses: amarsingh/keel@v2.1.0"
+    success "Add to your workflow: uses: creativemyntra/keel@v3.0.0"
     ;;
 esac
 
@@ -532,8 +548,8 @@ case $INSTALL_TYPE in
 esac
 
 echo ""
-echo "  📖 Documentation: https://github.com/amarsingh/keel#readme"
-echo "  💬 Support: https://github.com/amarsingh/keel/issues"
+echo "  📖 Documentation: https://github.com/creativemyntra/keel#readme"
+echo "  💬 Support: https://github.com/creativemyntra/keel/issues"
 echo ""
 
 if [ "$INSTALL_TYPE" = "claude-code-skill" ] || [ "$INSTALL_TYPE" = "npm-global" ]; then

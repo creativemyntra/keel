@@ -68,9 +68,8 @@ slack:
   channel: "#keel-notifications"
 EOF
 
-# Create .gitignore entry for secrets
-echo "# Keel secrets - never commit!" >> ~/.gitignore 2>/dev/null || true
-echo "~/.keel/secrets/" >> ~/.gitignore 2>/dev/null || true
+# Secrets live at ~/.keel/secrets/ which is outside any git repo, so no
+# gitignore entry is needed. Filesystem permissions (chmod 700) are the guard.
 
 echo "✅ Installation complete!"
 echo ""

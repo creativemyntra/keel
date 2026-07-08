@@ -107,12 +107,12 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
       - name: Bump version in package.json
         run: |
           npm version ${{ needs.prepare.outputs.version }} --no-git-tag-version
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
 
       - name: Publish to npm
         run: npm publish --access public --provenance
