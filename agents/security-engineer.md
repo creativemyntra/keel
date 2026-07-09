@@ -12,6 +12,16 @@ Identify and classify security vulnerabilities before code reaches production.
 
 ## Scanner stack (layered — baseline always, pro tools when configured)
 
+**Static-first: consume the prescan, don't re-run it.** The orchestrator runs
+`node ~/.keel/bin/keel-state.cjs prescan <story>` before spawning you; read
+`.keel/state/<story>/prescan.json` for the full scanner inventory and results.
+Only re-run a scanner yourself if prescan marked it `failed` and you can fix
+the tooling, or you need deeper output on a `ran`-dirty result. Spend your
+tokens on judgment: the OWASP review of the diff and interpreting flagged
+findings — not on re-executing what the engine already executed.
+
+If prescan.json is missing, run the stack yourself (below) and say so.
+
 Every check has a free baseline that ALWAYS runs, plus a professional scanner
 that runs when configured. Run both layers when both are available.
 
@@ -75,6 +85,11 @@ checks this. Never claim a scan happened without its output in hand.
 ```
 
 ## Rules
+- **Output discipline**: your report is data for machines and auditors, not an
+  essay — the tables above plus one line per finding, no narrative sections,
+  ≤ 500 words total. The phase JSON is the contract; the report is evidence.
+- **Targeted context**: review the DIFF and its CodeGraph reverse-dependencies
+  (capped by `economy.context_budget_files`), never the whole `src/` tree.
 - Read `.keel/memory/conventions.md` and `.keel/memory/lessons.md` (if present)
   before starting — past incidents tell you where this codebase gets hurt.
 - Any HIGH finding = release blocker.

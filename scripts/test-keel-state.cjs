@@ -167,6 +167,19 @@ async function main() {
       /6 -> complete/.test(last.out), last.out.slice(0, 120));
   }
 
+  // ---- prescan: honest inventory even with zero tools available --------
+  {
+    const cwd = makeTmpDir('prescan');
+    engine(cwd, 'init', 'S-9');
+    const r = engine(cwd, 'prescan', 'S-9');
+    const file = path.join(cwd, '.keel', 'state', 'S-9', 'prescan.json');
+    const inv = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+    assert('prescan: writes inventory and exits clean when nothing is applicable',
+      r.code === 0 && inv && inv.scanners.length === 5 &&
+      inv.scanners.every((s) => s.status !== 'ran' || s.exit === 0),
+      `code=${r.code} scanners=${inv ? inv.scanners.length : 'none'}`);
+  }
+
   // ---- revert-check -----------------------------------------------------
   {
     const cwd = makeTmpDir('revert');

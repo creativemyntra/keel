@@ -118,11 +118,40 @@ The engine owns the attempt counter — read the handshake agent's report:
   in the JSON.
 - Deterministic work (schema checks, counters, log appends, snapshots) is
   engine work — spending an agent invocation on it is a protocol violation.
-- **Model tiering**: if your Task tool supports a per-invocation model
-  parameter, use the fast model (haiku) for transcription-grade work — the
-  jira-entry intake and TRIVIAL-tier gates. Transcription needs fidelity,
-  not depth. Architect, engineer, QA, security, and NORMAL/FULL gates stay
-  on the strong model — judgment is what you're paying them for.
+
+## Economy decisions (smart, recorded, owner-configurable)
+
+Before EVERY agent spawn, make an explicit economy decision and record it in
+your ledger line (`[economy: <model>/<context>/<tier>]`). Decisions are driven
+by deterministic signals, and the aggressive options are owner choices in the
+committed project file `.keel/economy.yml` (defaults shown — missing file =
+these defaults):
+
+```yaml
+economy:
+  model_tiering: true            # haiku for transcription-grade spawns
+  static_first_security: true    # engine prescan runs before the security agent
+  security_skip_on_clean: false  # OWNER OPT-IN: clean prescan + TRIVIAL diff
+                                 # replaces the security spawn entirely
+  context_budget_files: 6        # max source files any agent loads
+  output_caps: true              # report length caps enforced
+```
+
+**Decision table (signal → decision):**
+
+| Deterministic signal | Decision |
+|---|---|
+| Story has a Jira key + type Bug | defect lane (`init --scope defect`) |
+| Spawn is transcription-grade (jira intake, TRIVIAL gate) + `model_tiering` | fast model (haiku) if your Task tool supports per-invocation model |
+| `static_first_security` | run `node ~/.keel/bin/keel-state.cjs prescan <story>` via Bash BEFORE phase 6; pass `prescan.json` path to the security agent — it must NOT re-run scanners |
+| Prescan CLEAN + diff tier TRIVIAL + `security_skip_on_clean: true` | no security spawn: record the decision + prescan inventory in the gate notes yourself (`gate --phase 6 --verdict PASS --notes "security satisfied by clean prescan (owner opt-in economy.security_skip_on_clean); diff TRIVIAL"`). Prescan DIRTY or any code-behavior diff → always spawn the agent |
+| CodeGraph exists (`.keel/graph/codegraph.json`) | context slice: instruct architect/engineer to load ONLY the impact set (`build-codegraph.cjs --impact`), capped at `context_budget_files`; grep pre-pass fallback when the graph is missing (non-PHP stacks) |
+| Phases of one story | run back-to-back in one sitting — the prompt cache (~5 min TTL) makes consecutive spawns dramatically cheaper than resumed ones; an idle story re-reads everything cold |
+
+Hard boundaries the table never overrides: gates ≥ phase 2 always spawn the
+handshake (only its TIER varies); `security_skip_on_clean` never applies to
+diffs touching auth/payments/data/validation or with prescan findings; budget
+and attempt caps are engine-enforced regardless.
 
 ## Context compaction (your own context, mandatory)
 

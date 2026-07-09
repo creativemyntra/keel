@@ -35,6 +35,9 @@ Ensure the implementation meets every acceptance criterion before security revie
 ```
 
 ## Rules
+- **Targeted context**: read only the files this story changed (`git diff
+  --name-only`) plus their tests and CodeGraph dependents — never the whole
+  existing test suite's source. You RUN the full suite; you don't READ it.
 - Read `.keel/memory/conventions.md` (if present) before starting — test
   structure and naming follow project conventions.
 - FAIL if any test is red.

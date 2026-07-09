@@ -11,6 +11,11 @@ Initialize Keel in this repository. Arguments: $ARGUMENTS
    - `.keel/state/` — per-story pipeline state
    - `.keel/memory/decisions/` — ADRs (cross-story memory)
    - `.keel/memory/conventions.md` — project conventions (seed with an empty dated header)
+   - `.keel/economy.yml` — token-economy choices (committed, team-shared); seed
+     with the conservative defaults from the orchestrator's Economy decisions
+     section (`model_tiering: true`, `static_first_security: true`,
+     `security_skip_on_clean: false`, `context_budget_files: 6`,
+     `output_caps: true`) and tell the user which knobs are opt-in
 4. Build the initial CodeGraph: `node ~/.keel/bin/build-codegraph.cjs .`
    (skip gracefully if the project has no src/ yet).
 5. Verify `agent-output-schema.json` is reachable in the plugin root.

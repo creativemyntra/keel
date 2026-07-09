@@ -2,6 +2,15 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.11.0] - 2026-07-09 - SMART ECONOMY: OWNER CHOICES, STATIC-FIRST SECURITY, CODEGRAPH CONTEXT
+
+### Added
+- **`.keel/economy.yml`** — every aggressive token lever is a recorded, committed owner choice, not a silent default: `model_tiering`, `static_first_security`, `security_skip_on_clean` (**opt-in, default false**; never applies to auth/payments/data/validation diffs or dirty prescans), `context_budget_files` (default 6), `output_caps`. The orchestrator's new Economy decision table maps deterministic signals → decisions and logs each one in the pipeline ledger (`[economy: model/context/tier]`). Scaffolded by `/keel:init`.
+- **`keel-state.cjs prescan`** — static-first security: all applicable scanners (composer/npm audit, PHPStan, Snyk, SonarQube) run deterministically before any security agent spawns, honest inventory written to `prescan.json` + audit log, exit 1 on findings. The security agent consumes prescan results instead of re-running tools; with the opt-in, a clean prescan on a trivial diff replaces the spawn entirely. Suite: 14/14.
+- **CodeGraph-targeted context** — the impact set is now also the context budget: architect and engineer load ONLY impact-set files (capped by `context_budget_files`), QA reads only changed files + their tests + dependents (it runs the suite, it doesn't read it), the writer processes one file at a time and writes directly. Grep pre-pass fallback for stacks the graph doesn't cover.
+- **Output discipline caps** — BA analysis ≤ 800 words, security report ≤ 500 words of tables (data, not essays); phase JSON remains the machine contract.
+- WORKFLOW.md: cache-friendly-structure guidance (caching is harness-automatic in Claude Code; the plugin's job is byte-stable specs + back-to-back phase batching inside the ~5-min TTL) and the owner-choices table.
+
 ## [3.10.0] - 2026-07-09 - TOKEN ECONOMY: TIERED VERIFICATION + MODEL TIERING
 
 Cost levers from the measured KEEL-101 run (~330k tokens for a 2-line defect,

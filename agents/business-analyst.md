@@ -36,6 +36,9 @@ requirements:
 Save to: `docs/analysis/<STORY-ID>-analysis.md`
 
 ## Rules
+- **Output cap**: your analysis document is ≤ 800 words — data flows as tables,
+  edge cases as one-liners. Text validation and elaboration is straightforward
+  work; do not over-generate on it.
 - Read `.keel/memory/conventions.md` (if present) before starting — specs must
   follow established project conventions, not reinvent them.
 - Never invent business rules — surface ambiguity as open questions.

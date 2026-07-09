@@ -23,6 +23,7 @@
  *   node keel-state.cjs verify   <story-id>
  *   node keel-state.cjs resume   <story-id> --phase N --notes "human rationale"
  *   node keel-state.cjs revert-check <story-id> --test <filter-or-path> [--runner "vendor/bin/phpunit"]
+ *   node keel-state.cjs prescan  <story-id>
  *   node keel-state.cjs memory-check
  */
 'use strict';
@@ -563,6 +564,62 @@ function cmdRevertCheck(storyId, args) {
   console.log('PASS: regression test fails without the fix and passes with it — the test proves the fix.');
 }
 
+// Static-first security prescan: run every applicable deterministic scanner
+// BEFORE any security agent is spawned; record an honest inventory
+// (ran / skipped+reason / failed+reason) to prescan.json. Zero LLM tokens.
+// The security agent consumes prescan.json instead of re-running scanners;
+// whether a CLEAN prescan may replace the agent spawn entirely is an owner
+// choice in .keel/economy.yml (security_skip_on_clean, default false).
+// Exit 1 if any scanner that RAN reported findings.
+function cmdPrescan(storyId) {
+  readManifest(storyId);
+  const { execSync } = require('child_process');
+  const os = require('os');
+  const keelHome = process.env.KEEL_HOME || path.join(os.homedir(), '.keel');
+  const scanners = [];
+  const run = (name, cmd, applicable, skipReason) => {
+    if (!applicable) { scanners.push({ name, status: 'skipped', reason: skipReason }); return; }
+    try {
+      const out = execSync(cmd, { stdio: 'pipe', timeout: 300000 }).toString();
+      scanners.push({ name, status: 'ran', exit: 0, tail: out.trim().split('\n').slice(-3).join(' | ').slice(0, 400) });
+    } catch (e) {
+      if (e.status == null) {
+        scanners.push({ name, status: 'failed', reason: e.message.split('\n')[0].slice(0, 200) });
+      } else {
+        const out = ((e.stdout || '') + (e.stderr || '')).toString();
+        scanners.push({ name, status: 'ran', exit: e.status, tail: out.trim().split('\n').slice(-5).join(' | ').slice(0, 600) });
+      }
+    }
+  };
+  const exists = (p) => fs.existsSync(p);
+  const onPath = (bin) => {
+    try { execSync(`${process.platform === 'win32' ? 'where' : 'which'} ${bin}`, { stdio: 'pipe' }); return true; }
+    catch { return false; }
+  };
+
+  run('composer-audit', 'composer audit --no-interaction', exists('composer.json'), 'not applicable — no composer.json');
+  run('phpstan', 'vendor/bin/phpstan analyse --no-progress --error-format=raw',
+    exists(path.join('vendor', 'bin', 'phpstan')) || exists(path.join('vendor', 'bin', 'phpstan.bat')),
+    'not applicable — phpstan not installed');
+  run('npm-audit', 'npm audit --package-lock-only',
+    exists('package.json') && (exists('package-lock.json') || exists('npm-shrinkwrap.json')),
+    exists('package.json') ? 'no lockfile — generate one or audit manually' : 'not applicable — no package.json');
+  const snykReady = onPath('snyk') && (process.env.SNYK_TOKEN || exists(path.join(keelHome, 'secrets', 'snyk.token')));
+  run('snyk', 'snyk test --severity-threshold=high', snykReady, 'not configured — snyk CLI or token missing');
+  const sonarReady = onPath('sonar-scanner') && (exists('sonar-project.properties') || exists(path.join(keelHome, 'config', 'sonarqube.yml')));
+  run('sonar-scanner', 'sonar-scanner', sonarReady, 'not configured — scanner or project config missing');
+
+  fs.writeFileSync(path.join(stateDir(storyId), 'prescan.json'),
+    JSON.stringify({ ts: nowIso(), scanners }, null, 2) + '\n');
+  scanners.forEach((s) => console.log(`${s.name}: ${s.status}${s.exit != null ? ` (exit ${s.exit})` : ''}${s.reason ? ` — ${s.reason}` : ''}`));
+  appendAudit(storyId, { agent: 'engine', action: 'prescan', notes: scanners.map((s) => `${s.name}=${s.status}${s.exit != null ? ':' + s.exit : ''}`).join(' ') });
+  const dirty = scanners.filter((s) => s.status === 'ran' && s.exit !== 0);
+  if (dirty.length) {
+    die(1, `PRESCAN DIRTY: ${dirty.map((d) => d.name).join(', ')} reported findings — review .keel/state/${storyId}/prescan.json`);
+  }
+  console.log(`PRESCAN CLEAN: all runnable scanners passed — inventory in .keel/state/${storyId}/prescan.json`);
+}
+
 function cmdMemoryCheck() {
   const conv = path.join('.keel', 'memory', 'conventions.md');
   const les = path.join('.keel', 'memory', 'lessons.md');
@@ -604,5 +661,6 @@ switch (cmd) {
   case 'verify': cmdVerify(storyId); break;
   case 'resume': cmdResume(storyId, rest); break;
   case 'revert-check': cmdRevertCheck(storyId, rest); break;
+  case 'prescan': cmdPrescan(storyId); break;
   default: die(64, `unknown command: ${cmd}`);
 }

@@ -1,0 +1,9 @@
+# Keel token-economy choices — committed, team-shared.
+# Every aggressive lever is a recorded owner decision, not a silent default.
+# See docs/WORKFLOW.md §5b and the orchestrator's Economy decisions section.
+economy:
+  model_tiering: true            # haiku for transcription-grade spawns
+  static_first_security: true    # engine prescan runs before the security agent
+  security_skip_on_clean: false  # OWNER OPT-IN: clean prescan + TRIVIAL diff replaces the security spawn
+  context_budget_files: 6        # max source files any agent loads (CodeGraph-selected)
+  output_caps: true              # report length caps enforced

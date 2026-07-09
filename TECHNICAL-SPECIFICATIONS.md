@@ -1,6 +1,6 @@
-# Keel AI-SDLC Framework v3.10.0 - Technical Specifications
+# Keel AI-SDLC Framework v3.11.0 - Technical Specifications
 
-**Document Version:** 1.7  
+**Document Version:** 1.8  
 **Last Updated:** 2026-07-09  
 **Status:** PRODUCTION  
 **Author:** Amar Singh  
@@ -347,26 +347,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.10.0
+- Version: v3.11.0
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.10.0`
+- Installation: `npm install -g @amarsingh/keel@3.11.0`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.10.0`
+- Image: `amarsingh/keel:3.11.0`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.10.0`
+- Pull: `docker pull amarsingh/keel:3.11.0`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.10.0`
+- Version: `v3.11.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.10.0`
+- Usage: `uses: creativemyntra/keel@v3.11.0`
 
 ---
 
@@ -456,6 +456,7 @@ Record in Audit Trail
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
+| 3.11.0 | 2026-07-09 | PRODUCTION | Smart economy: .keel/economy.yml owner choices, prescan static-first security, CodeGraph context budget, output caps |
 | 3.10.0 | 2026-07-09 | PRODUCTION | Token economy: tiered gate verification, gate-1-lite, haiku model-tiering, docs/WORKFLOW.md cost model |
 | 3.9.1 | 2026-07-09 | PRODUCTION | First full pipeline live test (KEEL-101): scope-aware gate advance, coverage-metric applicability, halt-message path fix |
 | 3.9.0 | 2026-07-09 | PRODUCTION | Write-tool + engine-path blockers fixed (pipeline runnable end-to-end), defect express lane, Node-only init, coverage waiver |

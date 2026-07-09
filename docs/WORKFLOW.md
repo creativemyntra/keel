@@ -1,6 +1,6 @@
 # Keel — Complete Workflow, Cost Model, and Token Economy
 
-**As of v3.10.0.** Numbers marked *measured* come from the first full pipeline
+**As of v3.11.0.** Numbers marked *measured* come from the first full pipeline
 live test (KEEL-101, 2026-07-09 — see
 [docs/audit/2026-07-09-e2e-pipeline-live-test.md](audit/2026-07-09-e2e-pipeline-live-test.md)).
 Nothing here is estimated where a measurement exists.
@@ -115,9 +115,39 @@ to two days of *team* time.
 6. **Right model for the job.** Mechanical agents (state, audit) pin
    `model: haiku`; the orchestrator requests the fast model for
    transcription-grade spawns. Judgment agents stay on the strong model.
-7. **Cache-window batching (operator tip).** Prompt cache lives ~5 minutes;
-   running a story's phases back-to-back reuses cached context, pausing
-   mid-story re-reads everything cold.
+7. **Cache-friendly structure.** In Claude Code, prompt caching is
+   harness-automatic (cached input is ~90% cheaper) — the plugin's job is to
+   be cacheable: agent specs and stack profiles stay byte-stable between
+   releases, and a story's phases run back-to-back inside the ~5-minute cache
+   TTL. An idle story re-reads everything cold; a batched one doesn't.
+8. **Static-first security.** The engine's `prescan` runs every applicable
+   scanner (composer/npm audit, PHPStan, Snyk, SonarQube) deterministically
+   BEFORE the security agent is spawned and records an honest inventory to
+   `prescan.json`. The agent consumes results instead of re-running tools —
+   and with the owner opt-in below, a clean prescan on a trivial diff replaces
+   the spawn entirely.
+9. **CodeGraph-targeted context.** No agent loads the whole `src/` tree. The
+   dependency graph's impact set (capped at `context_budget_files`, default 6)
+   defines what the architect/engineer read; QA reads only changed files +
+   their tests; the writer processes one file at a time. Grep pre-pass is the
+   fallback on stacks the graph doesn't cover yet.
+10. **Output discipline.** Reports are data, not essays: BA analysis ≤ 800
+    words, security report ≤ 500 words of tables, phase JSON is the
+    machine-readable contract everywhere. Writers edit files directly instead
+    of narrating intentions.
+
+## 5b. Owner choices — `.keel/economy.yml` (committed, team-shared)
+
+Every aggressive lever is a recorded choice, not a silent default. The
+orchestrator logs each economy decision in its ledger.
+
+| Knob | Default | What it does |
+|---|---|---|
+| `model_tiering` | `true` | haiku for transcription-grade spawns (intake, TRIVIAL gates) |
+| `static_first_security` | `true` | engine `prescan` before the security phase; agent consumes results |
+| `security_skip_on_clean` | **`false` (opt-in)** | clean prescan + TRIVIAL diff replaces the security spawn; never applies to auth/payments/data/validation diffs or prescan findings |
+| `context_budget_files` | `6` | max source files any agent loads (CodeGraph-selected) |
+| `output_caps` | `true` | report length caps enforced |
 
 ## 6. What the pipeline guarantees (and what it doesn't)
 

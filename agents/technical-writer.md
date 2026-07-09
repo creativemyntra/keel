@@ -59,6 +59,9 @@ lessons.md (30-entry cap) — move oldest entries to
 Unbounded memory is a token leak charged to every future story.
 
 ## Rules
+- **Write directly, one file at a time**: edit the target doc/PHPDoc in place —
+  never describe what you would write and wait for confirmation, and never hold
+  multiple files' content in context simultaneously (process one, move on).
 - Never document implementation details that expose security internals.
 - All code examples must be tested and working.
 - Write docs to `docs/<type>/<STORY-ID>-<name>.md`.

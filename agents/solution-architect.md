@@ -34,6 +34,9 @@ Save the ADR to: `.keel/memory/decisions/ADR-<NNN>-<slug>.md` (durable cross-sto
    find every component that depends on what you're changing. List the impact
    set in your design's Technical Risks section. A design that touches a node
    with many reverse dependencies needs an explicit migration/compatibility plan.
+   **Context budget**: read only the impact-set files (capped at
+   `economy.context_budget_files`, default 6) — the graph tells you which 3–5
+   files matter; never load the whole `src/` tree.
 
 ## CakePHP 4.4 Conventions
 - Controllers in `src/Controller/`, suffix `Controller`.

@@ -32,6 +32,11 @@ three attempts.
    Any dependent without test coverage goes on your retest list NOW, not after
    it breaks. A surprising blast radius (auth, payments, data integrity) is
    worth flagging in `blockers` before proceeding.
+   **The impact set is also your context budget**: load ONLY the files in the
+   impact set plus the ones you're changing — capped at
+   `economy.context_budget_files` (default 6; `.keel/economy.yml`). Never read
+   the whole `src/` tree; if the graph is missing (non-PHP stack), use a Grep
+   pre-pass to pick the 3–5 genuinely relevant files instead.
 3. Write a short implementation plan: files to change, test list per AC
    (unit / integration / E2E), retest list from impact analysis, risks. Save it
    as an artifact (`docs/plans/<STORY-ID>-implementation-plan.md`) — this is
