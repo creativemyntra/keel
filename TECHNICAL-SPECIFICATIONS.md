@@ -1,6 +1,6 @@
-# Keel AI-SDLC Framework v3.9.0 - Technical Specifications
+# Keel AI-SDLC Framework v3.9.1 - Technical Specifications
 
-**Document Version:** 1.5  
+**Document Version:** 1.6  
 **Last Updated:** 2026-07-09  
 **Status:** PRODUCTION  
 **Author:** Amar Singh  
@@ -347,26 +347,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.9.0
+- Version: v3.9.1
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.9.0`
+- Installation: `npm install -g @amarsingh/keel@3.9.1`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.9.0`
+- Image: `amarsingh/keel:3.9.1`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.9.0`
+- Pull: `docker pull amarsingh/keel:3.9.1`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.9.0`
+- Version: `v3.9.1`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.9.0`
+- Usage: `uses: creativemyntra/keel@v3.9.1`
 
 ---
 
@@ -456,6 +456,7 @@ Record in Audit Trail
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
+| 3.9.1 | 2026-07-09 | PRODUCTION | First full pipeline live test (KEEL-101): scope-aware gate advance, coverage-metric applicability, halt-message path fix |
 | 3.9.0 | 2026-07-09 | PRODUCTION | Write-tool + engine-path blockers fixed (pipeline runnable end-to-end), defect express lane, Node-only init, coverage waiver |
 | 3.8.0 | 2026-07-09 | PRODUCTION | Jira-entry pipeline (/keel:from-jira), PO/scrum-master removed from automated pipeline (human roles) |
 | 3.7.0 | 2026-07-09 | PRODUCTION | OS-enforced state locking + atomic writes, pipeline budgets, automated revert-check, identical-retry detection, engine test suite |

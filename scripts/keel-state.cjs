@@ -153,7 +153,7 @@ function notifyHalt(storyId, phase, attempt, reasons) {
       }
       const url = new URL(fs.readFileSync(hookFile, 'utf8').trim());
       const body = JSON.stringify({
-        text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): node keel-state.cjs resume ${storyId} --phase ${phase} --notes "..."`,
+        text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): node ~/.keel/bin/keel-state.cjs resume ${storyId} --phase ${phase} --notes "..."`,
       });
       const req = require('https').request(url, {
         method: 'POST',
@@ -335,12 +335,17 @@ function cmdGate(storyId, args) {
     if (verdict === 'PASS') {
       delete manifest.attempts[key];
       if (manifest.attempt_hashes) delete manifest.attempt_hashes[key];
-      manifest.current_phase = phase + 1;
+      // advance to the next phase IN SCOPE (defect scope skips 2-3 and 7-8),
+      // not blindly +1 — e2e run KEEL-101 caught the old behavior
+      const expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
+      const next = expected.find((p) => p > phase);
+      manifest.current_phase = next || phase + 1;
+      const label = next ? String(next) : 'complete';
       writeManifest(storyId, manifest);
       fs.appendFileSync(handoffPath(storyId),
-        `- ${nowIso()} | phase ${phase} -> ${phase + 1} | PASS | ${notes}\n`);
+        `- ${nowIso()} | phase ${phase} -> ${label} | PASS | ${notes}\n`);
       appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_passed', notes });
-      console.log(`PASS recorded: phase ${phase} -> ${phase + 1}`);
+      console.log(`PASS recorded: phase ${phase} -> ${label}`);
       return;
     }
 

@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.9.0
+# Keel AI-SDLC Framework v3.9.1
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.9.0 ✅
+# → keel v3.9.1 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -90,9 +90,9 @@ snapshots) is done by a zero-dependency **state engine**
 
 ---
 
-## 🆕 What's New in v3.9.0 (Governance With Teeth)
+## 🆕 What's New in v3.9.1 (Governance With Teeth)
 
-v3.4.0 → v3.9.0 turn the pipeline's promises into enforcement:
+v3.4.0 → v3.9.1 turn the pipeline's promises into enforcement:
 
 - **Human roles stay human (v3.8.0)** — product-owner and scrum-master agents are out of the automated pipeline; `/keel:from-jira <KEY>` starts development straight from a Jira ticket (transcribed as the AC contract, never rewritten); AI-drafted requirements are proposals the human PO confirms.
 
@@ -127,7 +127,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.9.0 ✅
+# → keel v3.9.1 ✅
 ```
 
 ### Method 2: npm Global Package (⏳ not yet published — coming soon)
@@ -166,27 +166,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.9.0
+        uses: creativemyntra/keel@v3.9.1
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.9.0
+        uses: creativemyntra/keel@v3.9.1
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.9.0
+        uses: creativemyntra/keel@v3.9.1
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.9.0
+        uses: creativemyntra/keel@v3.9.1
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -518,7 +518,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.9.0
+- uses: creativemyntra/keel@v3.9.1
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -694,11 +694,11 @@ Then:
 
 ---
 
-**Version:** 3.9.0  
+**Version:** 3.9.1  
 **Released:** 2026-07-09  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.9.0 (https://github.com/creativemyntra/keel/releases/tag/v3.9.0)
+**Tag:** v3.9.1 (https://github.com/creativemyntra/keel/releases/tag/v3.9.1)
 

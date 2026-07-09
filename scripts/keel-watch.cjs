@@ -93,7 +93,7 @@ function staleCheck() {
       let m;
       try { m = JSON.parse(fs.readFileSync(mPath, 'utf8')); } catch { continue; }
       if (m.halted === true) {
-        lines.push(`KEEL: story ${story} is HALTED at phase ${m.current_phase} — a human must decide: resume (keel-state.cjs resume ${story} --phase ${m.current_phase} --notes "...") or abandon.`);
+        lines.push(`KEEL: story ${story} is HALTED at phase ${m.current_phase} — a human must decide: resume (node ~/.keel/bin/keel-state.cjs resume ${story} --phase ${m.current_phase} --notes "...") or abandon.`);
         continue;
       }
       const idleH = (now - Date.parse(m.updated_at || 0)) / 3600000;

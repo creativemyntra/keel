@@ -1,6 +1,6 @@
-# Keel v3.9.0 — Complete Agent Guide
+# Keel v3.9.1 — Complete Agent Guide
 
-**Framework Version:** 3.9.0  
+**Framework Version:** 3.9.1  
 **Total Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
@@ -1152,7 +1152,7 @@ Day 6: Validate & release
 
 ---
 
-**Framework:** Keel AI-SDLC Framework v3.9.0  
+**Framework:** Keel AI-SDLC Framework v3.9.1  
 **License:** MIT  
 **Author:** Amar Singh  
 **Repository:** https://github.com/creativemyntra/keel  

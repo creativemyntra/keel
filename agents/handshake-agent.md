@@ -50,6 +50,11 @@ below with the script's error list as your findings.
      an explicit instruction; record it verbatim in the gate `--notes`
      (`"coverage waived by human: <their words>"`). Never waive on your own
      initiative, and never PASS silently without the number.
+     **Metric applicability**: line coverage is meaningless for diffs that
+     change only strings/config/docs (a text-assertion test reads sources as
+     data — honest measurement would report ~0%). For such diffs, state that
+     the metric does not apply, verify every changed line is directly asserted
+     by a test instead, and still route the formal waiver to the human.
    - "endpoint returns 200" → hit it if a local server is available; otherwise
      mark the claim unverified in your notes (do not silently accept it).
 2. **Referenced code resolves.** Classes/endpoints named in a design exist in

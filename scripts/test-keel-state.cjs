@@ -152,6 +152,21 @@ async function main() {
       after > before && m.current_phase === 2, `audit ${before}->${after}, phase=${m.current_phase}`);
   }
 
+  // ---- scope-aware phase advance (found by e2e run KEEL-101) ----------
+  {
+    const cwd = makeTmpDir('scope');
+    engine(cwd, 'init', 'S-8', '--scope', 'defect');
+    const r = engine(cwd, 'gate', 'S-8', '--phase', '1', '--verdict', 'PASS');
+    const m = readManifest(cwd, 'S-8');
+    assert('defect scope: gate PASS on phase 1 advances to 4, not 2',
+      m.current_phase === 4 && /1 -> 4/.test(r.out), `current_phase=${m.current_phase}`);
+    engine(cwd, 'gate', 'S-8', '--phase', '4', '--verdict', 'PASS');
+    engine(cwd, 'gate', 'S-8', '--phase', '5', '--verdict', 'PASS');
+    const last = engine(cwd, 'gate', 'S-8', '--phase', '6', '--verdict', 'PASS');
+    assert('defect scope: final gate reports complete',
+      /6 -> complete/.test(last.out), last.out.slice(0, 120));
+  }
+
   // ---- revert-check -----------------------------------------------------
   {
     const cwd = makeTmpDir('revert');
