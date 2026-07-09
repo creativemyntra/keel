@@ -56,7 +56,11 @@ below with the script's error list as your findings.
      `git stash pop` (must PASS).
    - After qa-engineer: coverage ≥ 80% **as observed by you**, and every AC
      mapped to a passing test.
-   - After security-engineer: zero HIGH findings recorded.
+   - After security-engineer: zero HIGH findings recorded, AND the report's
+     scanner inventory is complete — every configured scanner (Snyk when the
+     CLI + token exist, SonarQube when `sonar-project.properties` or
+     `~/.keel/config/sonarqube.yml` enables it) shows `ran` with output to
+     prove it. Configured-but-skipped or FAILED scanner = gate FAIL.
    - After technical-writer: if the story fixed a defect (the engineer's phase
      output references an RCA), `.keel/memory/lessons.md` must contain a new
      entry for this story — a defect whose lesson isn't recorded will recur.

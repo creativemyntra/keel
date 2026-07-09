@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.5.0
+# Keel AI-SDLC Framework v3.6.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.5.0 ✅
+# → keel v3.6.0 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -83,16 +83,18 @@ snapshots) is done by a zero-dependency **state engine**
 ✅ **TDD Workflow** — Red → Green → Refactor with governance gates  
 ✅ **Coverage Gate** — ≥80% enforced before the security phase  
 ✅ **No Patch Development** — defect fixes require an RCA + revert-checked regression test; symptom patches fail the gate  
-✅ **Security Phase** — OWASP Top 10 review + dependency audit per story  
+✅ **Security Phase** — OWASP Top 10 review + layered SAST/SCA: PHPStan & composer audit always, SonarQube & Snyk when configured  
 ✅ **Multi-Stack Support** — CakePHP 4.4 today; Laravel, Django, Rails on the roadmap  
 ✅ **Optional Integrations** — Jira (bundled Atlassian MCP), GitHub, Slack, Playwright  
 ✅ **Staged Deployment** — canary / blue-green rollout via the release gate  
 
 ---
 
-## 🆕 What's New in v3.5.0 (Governance With Teeth)
+## 🆕 What's New in v3.6.0 (Governance With Teeth)
 
-v3.4.0 + v3.5.0 turn the pipeline's promises into enforcement:
+v3.4.0 → v3.6.0 turn the pipeline's promises into enforcement:
+
+- **Layered SAST/SCA scanner stack (v3.6.0)** — the security phase runs PHPStan + composer/npm audit always, and SonarQube (quality gate) + Snyk (vuln DB) when configured; the engineer runs the same stack during development (shift-left). Every security report carries a scanner inventory — a configured scanner that silently didn't run fails the gate.
 
 - **Deterministic state engine** (`scripts/keel-state.cjs`) — schema validation, grounding checks (artifact paths must exist), AC-drift detection, gate/attempt/halt logic, audit appends, snapshots & restore. Cross-platform, zero dependencies.
 - **Handshake gate executes claims** — "tests pass" is verified by running the suite, not by reading the artifact the audited agent wrote. Adversarial by design.
@@ -122,7 +124,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.5.0 ✅
+# → keel v3.6.0 ✅
 ```
 
 ### Method 2: npm Global Package
@@ -161,27 +163,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.5.0
+        uses: creativemyntra/keel@v3.6.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.5.0
+        uses: creativemyntra/keel@v3.6.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.5.0
+        uses: creativemyntra/keel@v3.6.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.5.0
+        uses: creativemyntra/keel@v3.6.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -362,7 +364,7 @@ Keel works perfectly without any integrations. To configure them, run the
 **interactive setup wizard** inside Claude Code:
 
 ```
-/keel:setup              # step-by-step wizard: Jira, GitHub, Playwright, Slack
+/keel:setup              # step-by-step wizard: Jira, GitHub, Playwright, Slack, SonarQube, Snyk
 /keel:setup jira         # one integration at a time — set up later, any time
 /keel:setup status       # see what's configured
 ```
@@ -375,7 +377,9 @@ decision is recorded in `~/.keel/config/setup-audit.log`.
 | **Jira** | Bundled Atlassian MCP server — OAuth on first use | Instance URL, verified connectivity |
 | **GitHub** | `gh` CLI if installed | Default repo, or GitHub MCP server |
 | **Playwright** | Bundled Playwright MCP server — headless Chromium | Browsers, headed mode, E2E base URL |
-| **Slack** | Disabled | Webhook notifications on phase events |
+| **Slack** | Disabled | Webhook notifications on phase events + pipeline halts |
+| **SonarQube** | Disabled (PHPStan SAST baseline always runs) | Quality-gate enforcement in the security phase |
+| **Snyk** | Disabled (composer/npm audit SCA baseline always runs) | Vulnerability DB + license checks in the security phase |
 
 Full step-by-step instructions: **[docs/MCP-SETUP.md](docs/MCP-SETUP.md)**.
 
@@ -473,7 +477,9 @@ can. What it gives your auditors:
 ### Built-In Security Features
 
 ✅ **OWASP Top 10 review** — dedicated security phase per story, HIGH findings block release  
-✅ **Dependency audit** — automated vulnerability scan in the security phase  
+✅ **Layered SAST** — PHPStan baseline always; SonarQube quality gate when configured (gate ERROR = release blocker)  
+✅ **Layered SCA** — composer/npm audit baseline always; Snyk when configured (high/critical = release blocker)  
+✅ **Scanner inventory honesty** — every security report declares which scanners ran vs were skipped; a configured scanner that silently didn't run fails the gate  
 ✅ **Secrets hygiene** — no API keys in git (`~/.keel/secrets/`, gitignored); agents are forbidden from outputting credentials, tokens, or PII
 
 ---
@@ -503,7 +509,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.5.0
+- uses: creativemyntra/keel@v3.6.0
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -679,11 +685,11 @@ Then:
 
 ---
 
-**Version:** 3.5.0  
+**Version:** 3.6.0  
 **Released:** 2026-07-09  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.5.0 (https://github.com/creativemyntra/keel/releases/tag/v3.5.0)
+**Tag:** v3.6.0 (https://github.com/creativemyntra/keel/releases/tag/v3.6.0)
 

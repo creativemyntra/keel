@@ -12,7 +12,7 @@
       "displayName": "Keel AI-SDLC",
       "source": ".",
       "description": "Complete AI-SDLC pipeline for Claude Code and Claude Desktop. 13 specialized agents with a deterministic state engine, execution-verified gates, bounded retries with human resume, cross-story memory, and proactive watchers. Stack: CakePHP 4.4 / PHP 8.1 (production-proven). Laravel/Django/Rails on the roadmap.",
-      "version": "3.5.0",
+      "version": "3.6.0",
       "tags": [
         "sdlc",
         "agile",

@@ -65,6 +65,12 @@ tests after each step — must stay green.
 Review your own diff (`git diff`) as a hostile reviewer:
 
 - PSR-12, `declare(strict_types=1)` in every file, PHPStan level 5+ clean.
+- **Run the security gate's scanners now, not at phase 6** (shift-left —
+  finding it yourself costs minutes, the security gate finding it costs an
+  attempt): `composer audit` always; `snyk test --severity-threshold=high` if
+  the `snyk` CLI + token are available; `sonar-scanner` if SonarQube is
+  configured (`sonar-project.properties` or `~/.keel/config/sonarqube.yml`).
+  Fix HIGHs before handoff; note in findings which scanners you ran.
 - No functions > 30 lines; no hardcoded strings (constants or config).
 - Comments explain WHY, not WHAT.
 - Error paths handled — no bare catch, no ignored return values.

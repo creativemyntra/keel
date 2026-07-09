@@ -57,6 +57,25 @@ slack:
   channel: "#keel-notifications"
 EOF
 
+write_default "$KEEL_HOME/config/sonarqube-default.yml" << 'EOF'
+# SonarQube SAST (Optional) — the PHPStan baseline always runs regardless
+# To enable: set url/project_key, put your token in ~/.keel/secrets/sonarqube.token,
+# then rename this file to sonarqube.yml (or run /keel:setup sonarqube)
+sonarqube:
+  enabled: false
+  url: ""
+  project_key: ""
+EOF
+
+write_default "$KEEL_HOME/config/snyk-default.yml" << 'EOF'
+# Snyk SCA (Optional) — the composer/npm audit baseline always runs regardless
+# To enable: install the snyk CLI, put your token in ~/.keel/secrets/snyk.token,
+# then rename this file to snyk.yml (or run /keel:setup snyk)
+snyk:
+  enabled: false
+  severity_threshold: high
+EOF
+
 touch "$KEEL_HOME/.initialized"
 echo "Keel: initialized $KEEL_HOME (config + secrets directories created)"
-echo "Keel: run /keel:setup to configure integrations (Jira, GitHub, Playwright, Slack) — or skip it, defaults work out of the box"
+echo "Keel: run /keel:setup to configure integrations (Jira, GitHub, Playwright, Slack, SonarQube, Snyk) — or skip it, defaults work out of the box"

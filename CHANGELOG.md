@@ -2,6 +2,14 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.6.0] - 2026-07-09 - LAYERED SAST/SCA SCANNER STACK (SONARQUBE + SNYK)
+
+### Added
+- **Layered scanner stack in the security phase** — every check has a free baseline that ALWAYS runs plus a professional scanner when configured: SCA = `composer audit`/`npm audit` baseline + **Snyk** (`snyk test --severity-threshold=high`; token from `SNYK_TOKEN` or `~/.keel/secrets/snyk.token`); SAST = PHPStan L5+ baseline + **SonarQube** (`sonar-scanner` via `sonar-project.properties` or `~/.keel/config/sonarqube.yml`; quality-gate ERROR = HIGH). Snyk high/critical and SonarQube gate failures are release blockers.
+- **Scanner inventory (honesty gate)** — the security report must list every scanner as ran / skipped (not configured) / FAILED; the handshake gate FAILs the phase if a configured scanner was silently skipped, and a FAILED scanner is itself a blocker (a gate that couldn't run is not a passed gate).
+- **Shift-left in development** — the software-engineer runs the same scanner stack during self code review, before handoff: finding it yourself costs minutes, the security gate finding it costs an attempt.
+- **Setup wizard steps 5–6** — `/keel:setup sonarqube` and `/keel:setup snyk` (server URL/project key/token; CLI check + token storage in `~/.keel/secrets/`); wizard is now 6 steps; `~/.keel` init scaffolds `sonarqube-default.yml` and `snyk-default.yml`; `SNYK_TOKEN` added to `.env.example`.
+
 ## [3.5.0] - 2026-07-09 - HALT ESCALATION, MEMORY WRITEBACK, PROACTIVE WATCHERS
 
 ### Added

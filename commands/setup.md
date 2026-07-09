@@ -1,6 +1,6 @@
 ---
-description: Interactive integration setup wizard — Jira, GitHub, Playwright, Slack. Configure now, accept the default, or skip and set up later.
-argument-hint: [jira|github|playwright|slack|status]
+description: Interactive integration setup wizard — Jira, GitHub, Playwright, Slack, SonarQube, Snyk. Configure now, accept the default, or skip and set up later.
+argument-hint: [jira|github|playwright|slack|sonarqube|snyk|status]
 ---
 
 The user invoked the Keel setup wizard with: $ARGUMENTS
@@ -15,9 +15,9 @@ Every integration offers exactly three paths:
 
 ## Routing
 
-- No argument → full wizard: run steps 1–4 in order, then print the status table.
-- `jira` | `github` | `playwright` | `slack` → run only that integration's step.
-- `status` → print the status table (step 5) and stop. No questions.
+- No argument → full wizard: run steps 1–6 in order, then print the status table.
+- `jira` | `github` | `playwright` | `slack` | `sonarqube` | `snyk` → run only that integration's step.
+- `status` → print the status table (step 7) and stop. No questions.
 
 ## Preflight (always, before any question)
 
@@ -78,7 +78,39 @@ tools exposed as `mcp__plugin_keel_playwright__*`). Requires Node.js ≥ 18.
 - **Use default** → disabled; nothing to do.
 - **Skip** → same as default.
 
-## 5. Status table + audit trail (always finish with this)
+## 5. SonarQube SAST (default: disabled — PHPStan baseline covers SAST)
+
+The security phase always runs PHPStan as its SAST baseline; SonarQube adds
+quality-gate enforcement on top when configured.
+
+- **Configure now** → ask for the server URL (SonarQube self-hosted or
+  https://sonarcloud.io) and project key. Check `sonar-scanner` is installed
+  (`sonar-scanner --version`); if missing, point at
+  https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/scanners/sonarscanner/
+  and continue (config is still saved). Store the token in
+  `~/.keel/secrets/sonarqube.token` (never echo, never commit) and write
+  `~/.keel/config/sonarqube.yml` with `enabled: true`, `url`, `project_key`.
+  Offer to generate a `sonar-project.properties` in the repo.
+- **Use default** → disabled; the security phase reports SonarQube as
+  "skipped (not configured)" and relies on the PHPStan baseline.
+- **Skip** → write `~/.keel/config/sonarqube.yml` with `enabled: false`.
+
+## 6. Snyk SCA (default: disabled — composer/npm audit baseline covers SCA)
+
+The security phase always runs `composer audit` (and `npm audit`) as its SCA
+baseline; Snyk adds its vulnerability database and license checks on top.
+
+- **Configure now** → check the `snyk` CLI (`snyk --version`); if missing, point at
+  https://docs.snyk.io/snyk-cli/install-or-update-the-snyk-cli and continue.
+  Ask for the API token (from https://app.snyk.io/account) and store it in
+  `~/.keel/secrets/snyk.token` (never echo, never commit). Write
+  `~/.keel/config/snyk.yml` with `enabled: true`, `severity_threshold: high`.
+  Verify with `snyk auth <token>` or an env-var test run if the CLI is present.
+- **Use default** → disabled; the security phase reports Snyk as
+  "skipped (not configured)" and relies on the composer/npm audit baseline.
+- **Skip** → write `~/.keel/config/snyk.yml` with `enabled: false`.
+
+## 7. Status table + audit trail (always finish with this)
 
 Print a table: integration | state (configured / default / skipped / not set up) | how to change it
 (`/keel:setup <name>`).
@@ -99,7 +131,7 @@ Write it as UTF-8 **without BOM**: on Windows PowerShell 5.1, `Out-File`/`Add-Co
 
 - One AskUserQuestion call per integration (options: Configure now / Use default / Skip), then
   follow-up questions only for the path chosen. Number the steps in the question header
-  (`1/4 Jira` … `4/4 Slack`) so the user always knows how much wizard is left.
+  (`1/6 Jira` … `6/6 Snyk`) so the user always knows how much wizard is left.
 - Preflight results must shape the options you present: if `gh` is missing, the GitHub
   "Use default" description must say the fallback is plain git; if Node < 18, the Playwright
   default must warn that the bundled MCP server cannot start; if an integration is already

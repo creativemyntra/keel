@@ -45,7 +45,7 @@ claude plugin install .
 ## Option D — GitHub Action (CI/CD)
 
 ```yaml
-- uses: creativemyntra/keel@v3.5.0
+- uses: creativemyntra/keel@v3.6.0
   with:
     story: FEAT-1
     phase: full-pipeline
@@ -60,7 +60,7 @@ All commands are namespaced under the plugin: `/keel:<command>`.
 | Command | Description |
 |---------|-------------|
 | `/keel:init` | Scaffold or adopt a project |
-| `/keel:setup` | Interactive integration wizard (Jira, GitHub, Playwright, Slack) |
+| `/keel:setup` | Interactive integration wizard (Jira, GitHub, Playwright, Slack, SonarQube, Snyk) |
 | `/keel:brainstorm --goal="..."` | Generate feature ideas |
 | `/keel:req --story=FEAT-1` | Write BDD requirements |
 | `/keel:design --story=FEAT-1` | Architecture, DB schema, API contracts |
