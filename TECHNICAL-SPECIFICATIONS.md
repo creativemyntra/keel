@@ -1,7 +1,7 @@
-# Keel AI-SDLC Framework v3.1.0 - Technical Specifications
+# Keel AI-SDLC Framework v3.5.0 - Technical Specifications
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-07-08  
+**Document Version:** 1.1  
+**Last Updated:** 2026-07-09  
 **Status:** PRODUCTION  
 **Author:** Amar Singh  
 **Audience:** Development Team, Future Maintainers, Contributors  
@@ -347,26 +347,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.1.0
+- Version: v3.5.0
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.1.0`
+- Installation: `npm install -g @amarsingh/keel@3.5.0`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.1.0`
+- Image: `amarsingh/keel:3.5.0`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.1.0`
+- Pull: `docker pull amarsingh/keel:3.5.0`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.1.0`
+- Version: `v3.5.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.1.0`
+- Usage: `uses: creativemyntra/keel@v3.5.0`
 
 ---
 
@@ -456,6 +456,11 @@ Record in Audit Trail
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
+| 3.5.0 | 2026-07-09 | PRODUCTION | Halt escalation + resume, memory writeback (lessons.md), proactive watchers, /keel:health |
+| 3.4.0 | 2026-07-09 | PRODUCTION | Deterministic state engine (keel-state.cjs), execution-verified handshake gates, single pipeline entry point |
+| 3.3.1 | 2026-07-08 | PRODUCTION | Setup wizard hardened from live end-to-end test |
+| 3.3.0 | 2026-07-08 | PRODUCTION | /keel:setup wizard, bundled Playwright MCP server |
+| 3.2.0 | 2026-07-08 | PRODUCTION | CodeGraph, AC threading, bounded retries, grounding checks, cross-story memory |
 | 3.1.0 | 2026-07-08 | PRODUCTION | Clean master branch, dev documentation segregated |
 | 3.0.1 | 2026-07-08 | PRODUCTION | Marketplace finalization |
 | 3.0.0 | 2026-07-07 | PRODUCTION | Initial major release |

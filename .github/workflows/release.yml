@@ -189,7 +189,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ env.DOCKER_IMAGE }}
-          short-description: 'Keel AI-SDLC Framework — 8 agents, idea to production in 2 hours'
+          short-description: 'Keel AI-SDLC Framework — 13 agents, deterministic gates, idea to production'
           readme-filepath: ./README.md
 
   # ─────────────────────────────────────────────

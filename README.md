@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.2.0
+# Keel AI-SDLC Framework v3.5.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.2.0 ✅
+# → keel v3.5.0 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -62,18 +62,27 @@ It automates the entire software development process using **13 specialized auto
 **Infrastructure Agents (3):**
 | Agent | Role |
 |-------|------|
-| **audit-agent** | Append-only audit log per story (git + JSONL) |
-| **state-management-agent** | Pipeline state files, snapshots, restore |
-| **handshake-agent** | Phase handoff validation, context passing |
+| **handshake-agent** | Adversarial phase gate — verifies claims by *executing* them (runs the tests, checks coverage first-hand) |
+| **state-management-agent** | Operates the deterministic state engine (init, status, snapshots, restore) |
+| **audit-agent** | Forensics & audit queries over the per-story append-only JSONL log |
+
+Mechanical work (schema validation, gating, attempt counting, audit appends,
+snapshots) is done by a zero-dependency **state engine**
+(`scripts/keel-state.cjs`) — agents spend tokens on judgment only.
 
 ### ✨ Key Features
 
 ✅ **13 Specialized Agents** — 8 phase + 2 support + 3 infrastructure agents  
+✅ **Deterministic State Engine** — `keel-state.cjs` owns state, gates, retries, audit; zero tokens on clerk work  
 ✅ **File-Based Agent Memory** — phases share context via `.keel/state/`, committed to git  
+✅ **Execution-Verified Gates** — the handshake gate re-runs tests instead of trusting claims (anti-hallucination)  
+✅ **Bounded Retry Loops** — 3 attempts per phase, then HALT + Slack escalation; resume requires a recorded human decision  
+✅ **Cross-Story Memory with Writeback** — every defect RCA becomes a lesson in `.keel/memory/lessons.md` (gated, bounded)  
+✅ **Proactive Watchers** — hooks warn on coverage drops and shrinking test counts; halted/stale stories surface at session start  
 ✅ **Audit Trail** — per-story JSONL log supporting your compliance evidence process  
-✅ **Phase Handoff Gates** — handshake validation between every phase  
 ✅ **TDD Workflow** — Red → Green → Refactor with governance gates  
 ✅ **Coverage Gate** — ≥80% enforced before the security phase  
+✅ **No Patch Development** — defect fixes require an RCA + revert-checked regression test; symptom patches fail the gate  
 ✅ **Security Phase** — OWASP Top 10 review + dependency audit per story  
 ✅ **Multi-Stack Support** — CakePHP 4.4 today; Laravel, Django, Rails on the roadmap  
 ✅ **Optional Integrations** — Jira (bundled Atlassian MCP), GitHub, Slack, Playwright  
@@ -81,17 +90,16 @@ It automates the entire software development process using **13 specialized auto
 
 ---
 
-## 🆕 What's New in v3.2.0 (Standards Release)
+## 🆕 What's New in v3.5.0 (Governance With Teeth)
 
-Full restructure to the official Claude Code plugin layout:
+v3.4.0 + v3.5.0 turn the pipeline's promises into enforcement:
 
-- **Manifest** moved to `.claude-plugin/plugin.json` (spec-compliant, minimal)
-- **Real slash commands** — `/keel:init`, `/keel:req`, `/keel:tdd-red`, … in `commands/`
-- **Agents** moved to `agents/` with correct namespacing (13 agents)
-- **Skills** moved to `skills/` with required YAML frontmatter (10 skills)
-- **SessionStart hook** replaces the post-install script (idempotent `~/.keel` setup)
-- **Bundled Atlassian MCP server** (`.mcp.json`) powers the Jira-aware agents
-- **File-based agent state protocol** — `.keel/state/<story-id>/` + `agent-output-schema.json` is the single contract for phase-to-phase communication
+- **Deterministic state engine** (`scripts/keel-state.cjs`) — schema validation, grounding checks (artifact paths must exist), AC-drift detection, gate/attempt/halt logic, audit appends, snapshots & restore. Cross-platform, zero dependencies.
+- **Handshake gate executes claims** — "tests pass" is verified by running the suite, not by reading the artifact the audited agent wrote. Adversarial by design.
+- **Halt escalation + human resume** — 3 failed attempts halt the pipeline, notify Slack (if configured), and surface at every session start until a human resumes with a recorded rationale.
+- **Memory writeback loop** — defect RCAs must produce a lesson in `.keel/memory/lessons.md` (gated); architect & engineer read lessons before designing/coding; memory is capped so it never becomes a token leak.
+- **Proactive watchers** — PostToolUse hook warns on coverage drops / shrinking test counts; `/keel:health` sweeps for halted/stale stories, attempt heat-maps, and stale impact graphs.
+- **Plan-first, self-auditing software engineer** — impact analysis before coding, full test pyramid (unit / integration / Playwright E2E), patch-pattern self-review, revert-checked defect fixes.
 
 **[View Complete Release Notes →](CHANGELOG.md)**
 
@@ -114,7 +122,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.2.0 ✅
+# → keel v3.5.0 ✅
 ```
 
 ### Method 2: npm Global Package
@@ -153,27 +161,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.2.0
+        uses: creativemyntra/keel@v3.5.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.2.0
+        uses: creativemyntra/keel@v3.5.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.2.0
+        uses: creativemyntra/keel@v3.5.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.2.0
+        uses: creativemyntra/keel@v3.5.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -318,9 +326,11 @@ jobs:
 ### Utilities
 
 ```bash
-/keel --version              # Show version
-/keel --help                 # Show all commands
-/keel [command] --help       # Show command-specific help
+/keel:setup                        # Interactive integration wizard (Jira, GitHub, Playwright, Slack)
+/keel:impact <Class or file>       # CodeGraph impact analysis — blast radius of a change
+/keel:health                       # Pipeline health sweep — halted/stale stories, memory bounds, coverage trend
+/keel --version                    # Show version
+/keel --help                       # Show all commands
 ```
 
 ---
@@ -383,28 +393,19 @@ After running `/keel:init`:
 
 ```
 your-project/
-├── .claude/
-│   ├── CLAUDE.md                    ← Project governance
-│   ├── CODEGRAPH.json               ← Knowledge graph
-│   └── skills/                      ← 8 agent definitions
-│       ├── init-agent/
-│       ├── brainstorm-agent/
-│       ├── req-agent/
-│       ├── design-agent/
-│       ├── dev-agent/
-│       ├── test-agent/
-│       ├── sec-agent/
-│       └── deploy-agent/
 ├── .keel/
-│   ├── config/                      ← Integration configs (optional)
-│   │   ├── jira.yml
-│   │   ├── github.yml
-│   │   ├── slack.yml
-│   │   └── playwright.yml
-│   └── secrets/                     ← API tokens (in .gitignore)
-│       ├── jira.token
-│       ├── github.token
-│       └── slack.webhook
+│   ├── state/<story-id>/            ← Pipeline state (committed to git)
+│   │   ├── manifest.json            ← Position, attempts, halted flag
+│   │   ├── NN-<agent>.json          ← One output per phase (agent-output-schema.json)
+│   │   ├── handoff-log.md           ← Gate decisions (append-only)
+│   │   ├── audit-log.jsonl          ← Audit trail (append-only)
+│   │   └── snapshots/               ← Full state copies before risky ops
+│   ├── memory/                      ← Cross-story memory (committed, bounded)
+│   │   ├── conventions.md           ← Project conventions (≤150 lines)
+│   │   ├── lessons.md               ← Incident-derived lessons from RCAs (≤30)
+│   │   └── decisions/               ← ADRs
+│   ├── graph/codegraph.json         ← Dependency graph for impact analysis
+│   └── watch/baseline.json          ← Coverage/test-count baseline (watchers)
 ├── docs/
 │   ├── requirements/                ← Auto-generated requirements
 │   │   ├── FEAT-1-requirements.md
@@ -454,35 +455,26 @@ your-project/
 
 ---
 
-## 🔒 Security & Compliance (v3.2.0 NEW)
+## 🔒 Security & Compliance
 
-### Enterprise Compliance Standards
+### Compliance Evidence, Honestly Scoped
 
-✅ **CJIS (Criminal Justice Information Services)** — Audit trail, access control, encryption  
-✅ **SOC2 Type II (System Controls)** — Change management, monitoring, incident response  
-✅ **HIPAA (Health Insurance Portability)** — PHI protection, access audit, encryption  
-✅ **GDPR (Data Protection Regulation)** — Data subject rights, retention policies  
-✅ **PCI-DSS (Payment Card Industry)** — Payment security, access logging  
-✅ **SOX (Sarbanes-Oxley)** — Financial system controls, change tracking  
+Keel's audit trail (git history + per-story append-only JSONL logs, with every
+decision and gate event recorded) is **evidence that supports** your
+organization's compliance process — CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX or
+otherwise. Keel does not claim certified compliance on your behalf; no tool
+can. What it gives your auditors:
+
+✅ **Append-only audit log per story** — who/what/when/why for every phase, gate, retry, halt, and human resume  
+✅ **Decision traceability** — every agent decision recorded verbatim with its rationale  
+✅ **Reconstructable retry loops** — gate failures logged with attempt numbers; restores never rewind history  
+✅ **Human accountability points** — halts require a recorded human rationale to resume; releases require explicit approval  
 
 ### Built-In Security Features
 
-✅ **OWASP Top 10** — All checks implemented  
-✅ **CWE Rankings** — Zero critical issues found  
-✅ **SonarQube Integration** — Real-time code quality analysis  
-✅ **Vulnerability Scanning** — Automated dependency audit  
-✅ **Code Analysis** — Injection prevention & logic validation  
-✅ **Immutable Audit Logs** — Complete change history (7-year retention)  
-✅ **Encryption** — AES-256 at rest, TLS 1.3+ in transit  
-✅ **MFA Support** — Multi-factor authentication enforced  
-✅ **RBAC** — Role-based access control with audit trail  
-
-### Zero Trust
-
-- **No API keys in git** — Stored in `~/.keel/secrets/` (in .gitignore)
-- **No credentials logged** — Hidden input for all secrets
-- **Audit trail** — All actions logged
-- **Encryption** — Tokens encrypted at rest
+✅ **OWASP Top 10 review** — dedicated security phase per story, HIGH findings block release  
+✅ **Dependency audit** — automated vulnerability scan in the security phase  
+✅ **Secrets hygiene** — no API keys in git (`~/.keel/secrets/`, gitignored); agents are forbidden from outputting credentials, tokens, or PII
 
 ---
 
@@ -511,7 +503,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.2.0
+- uses: creativemyntra/keel@v3.5.0
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -539,11 +531,11 @@ Add new features to existing projects.
 
 ## ✨ What's Included
 
-### Framework (2,906 lines of code)
-- ✅ 8 agent skill definitions
-- ✅ 11 governance rules
-- ✅ 8 quality gates
-- ✅ 4 tech stack profiles
+### Framework
+- ✅ 13 agent definitions + 10 skills + 14 slash commands
+- ✅ Deterministic state engine + proactive watchers (zero-dependency Node)
+- ✅ Governance gates enforced between every phase
+- ✅ Tech stack profiles (CakePHP today; more on the roadmap)
 
 ### Documentation
 - ✅ 12+ comprehensive guides
@@ -687,14 +679,11 @@ Then:
 
 ---
 
-**Version:** 3.1.0  
-**Released:** 2026-07-08  
-**Status:** PRODUCTION READY (Enterprise Grade) ✅  
-**Compliance:** CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX  
-**Agents:** 13 (8 phase + 2 support + 3 compliance)  
-**Code Coverage:** 89%  
-**Vulnerabilities:** 0  
+**Version:** 3.5.0  
+**Released:** 2026-07-09  
+**Status:** PRODUCTION READY ✅  
+**Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.2.0 (https://github.com/creativemyntra/keel/releases/tag/v3.2.0)
+**Tag:** v3.5.0 (https://github.com/creativemyntra/keel/releases/tag/v3.5.0)
 

@@ -45,7 +45,7 @@ claude plugin install .
 ## Option D — GitHub Action (CI/CD)
 
 ```yaml
-- uses: creativemyntra/keel@v3.2.0
+- uses: creativemyntra/keel@v3.5.0
   with:
     story: FEAT-1
     phase: full-pipeline
@@ -70,6 +70,7 @@ All commands are namespaced under the plugin: `/keel:<command>`.
 | `/keel:test --story=FEAT-1` | Run full test suite + coverage gate |
 | `/keel:sec --story=FEAT-1` | OWASP security scan |
 | `/keel:impact <Class or file>` | CodeGraph impact analysis (blast radius of a change) |
+| `/keel:health` | Pipeline health sweep (halted/stale stories, memory bounds, coverage trend) |
 | `/keel:deploy --story=FEAT-1` | Release gate + staged rollout |
 
 ## Agents
