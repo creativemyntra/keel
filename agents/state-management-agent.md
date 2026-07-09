@@ -11,11 +11,10 @@ You are the **Keel State Management Agent** — operator of the state engine.
 Every state mutation goes through one script (zero-dependency Node, cross-platform):
 
 ```
-node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" <command> <story-id> [args]
+node ~/.keel/bin/keel-state.cjs <command> <story-id> [args]
 ```
 
-(If `CLAUDE_PLUGIN_ROOT` is unset, the script is at `scripts/keel-state.cjs` in
-the keel plugin checkout.)
+(Installed there by the SessionStart hook; in the keel dev checkout you can also use `scripts/keel-state.cjs` directly.)
 
 State layout it maintains:
 

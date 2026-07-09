@@ -16,7 +16,7 @@ FROM node:20-alpine
 
 LABEL maintainer="Amar Singh <support@creativemyntra.com>"
 LABEL description="Keel AI-SDLC Framework - Complete AI-powered software development lifecycle automation"
-LABEL version="3.8.0"
+LABEL version="3.9.0"
 
 WORKDIR /app
 
@@ -31,8 +31,8 @@ COPY --from=builder /build .
 RUN mkdir -p ~/.keel/config ~/.keel/secrets && \
     chmod 700 ~/.keel/secrets
 
-# Make setup scripts executable
-RUN chmod +x scripts/init-keel-home.sh setup-integrations.sh
+# Initialize keel home (engine install + default configs) and make the CI setup script executable
+RUN node scripts/keel-init.cjs && chmod +x setup-integrations.sh
 
 # Expose port for future API features
 EXPOSE 3000

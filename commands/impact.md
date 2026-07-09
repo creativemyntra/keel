@@ -7,7 +7,7 @@ Run impact analysis for: $ARGUMENTS
 
 1. Build (or rebuild) the dependency graph, then query reverse dependencies:
    ```bash
-   node "${CLAUDE_PLUGIN_ROOT}/scripts/build-codegraph.cjs" . --impact "$ARGUMENTS"
+   node ~/.keel/bin/build-codegraph.cjs . --impact "$ARGUMENTS"
    ```
    Rebuild first without `--impact` if the graph in `.keel/graph/codegraph.json`
    is older than the latest commit touching `src/`.

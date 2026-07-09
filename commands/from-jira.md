@@ -1,6 +1,6 @@
 ---
 description: Start development directly from a Jira ticket. The human-authored ticket IS the requirements — no AI product-owner or scrum-master involved.
-argument-hint: <TICKET-KEY> (e.g. HART-287)
+argument-hint: <TICKET-KEY> [--scope=feature|defect] (e.g. HART-287 --scope=defect)
 ---
 
 Start development from Jira ticket: $ARGUMENTS
@@ -10,6 +10,9 @@ The orchestrator will:
 
 1. Use the ticket key as the story id and initialize `.keel/state/<key>/` via the
    state engine (or resume from `current_phase` if already initialized).
+   **Scope:** if `--scope` is given, use it; otherwise infer from the ticket
+   type — Bug/Defect → `--scope defect` (express lane: intake → engineer →
+   QA → security, ~6 spawns), anything else → `feature` (all 8 phases).
 2. Run phase 1 as a **Jira import** by `keel:business-analyst` (it has the Jira
    MCP read tools): fetch the ticket, transcribe its summary, description, and
    acceptance criteria into `01-business-analyst.json` — numbering the ACs

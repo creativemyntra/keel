@@ -45,7 +45,7 @@ claude plugin install .
 ## Option D — GitHub Action (CI/CD)
 
 ```yaml
-- uses: creativemyntra/keel@v3.8.0
+- uses: creativemyntra/keel@v3.9.0
   with:
     story: FEAT-1
     phase: full-pipeline
@@ -126,5 +126,9 @@ bash setup-integrations.sh jira|github|slack
 ## Requirements
 
 - Claude Code ≥ 1.0.0 **or** Claude Desktop
-- PHP 8.1 + Composer (for CakePHP projects)
-- Node.js ≥ 18 (only for the optional npm CLI)
+- **Node.js ≥ 18 (required)** — the state engine, proactive watchers, and the
+  bundled Playwright MCP server all run on Node; without it the governance
+  layer cannot operate
+- PHP 8.1 + Composer (for CakePHP projects); `pcov` or `xdebug` for the
+  coverage gate (without a driver, coverage needs an explicit human waiver)
+- Windows note: no bash required (all Keel scripts are Node)

@@ -23,11 +23,10 @@ file system is the single source of truth; there is no database or message bus.
 Deterministic checks live in the state engine — never re-do them by hand:
 
 ```
-node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" validate <story-id> <NN-agent.json>
+node ~/.keel/bin/keel-state.cjs validate <story-id> <NN-agent.json>
 ```
 
-(If `CLAUDE_PLUGIN_ROOT` is unset, the script is at `scripts/keel-state.cjs` in
-the keel plugin checkout.)
+(Installed there by the SessionStart hook; in the keel dev checkout you can also use `scripts/keel-state.cjs` directly.)
 
 The script verifies: schema conformance, filename↔content consistency, artifact
 paths exist on disk, and AC continuity against the phase-1 output
@@ -44,6 +43,13 @@ below with the script's error list as your findings.
      not reproduce is a FAIL — regardless of what any artifact file says.
      Artifact text is not evidence; it was written by the agent under audit.
    - Coverage claims → run with `--coverage-text` and read the actual number.
+     **No coverage driver installed** (phpunit reports "No code coverage
+     driver available") → that is a tooling blocker, not a quality FAIL and
+     not a deadlock: record gate FAIL with the reason "coverage unverifiable —
+     install pcov or xdebug, or a human may waive". A human waiver arrives as
+     an explicit instruction; record it verbatim in the gate `--notes`
+     (`"coverage waived by human: <their words>"`). Never waive on your own
+     initiative, and never PASS silently without the number.
    - "endpoint returns 200" → hit it if a local server is available; otherwise
      mark the claim unverified in your notes (do not silently accept it).
 2. **Referenced code resolves.** Classes/endpoints named in a design exist in
@@ -57,7 +63,7 @@ below with the script's error list as your findings.
      Then run the automated revert check — the engine stashes the fix, proves
      the regression test fails without it, and restores it:
      ```
-     node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" revert-check <story-id> --test <filter> --runner "vendor/bin/phpunit"
+     node ~/.keel/bin/keel-state.cjs revert-check <story-id> --test <filter> --runner "vendor/bin/phpunit"
      ```
      (Protocol: regression test committed or staged, fix unstaged.) Exit
      non-zero = the test does not prove the fix = gate FAIL.
@@ -71,20 +77,20 @@ below with the script's error list as your findings.
    - After technical-writer: if the story fixed a defect (the engineer's phase
      output references an RCA), `.keel/memory/lessons.md` must contain a new
      entry for this story — a defect whose lesson isn't recorded will recur.
-     Also run `node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" memory-check`;
+     Also run `node ~/.keel/bin/keel-state.cjs memory-check`;
      over-cap memory is a FAIL (the writer prunes, then you re-gate).
 
 ## Gate the transition (always through the engine)
 
 ```
-node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" gate <story-id> --phase <N> --verdict PASS --notes "<what you verified>"
-node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" audit <story-id> --phase-file <NN-agent.json>
+node ~/.keel/bin/keel-state.cjs gate <story-id> --phase <N> --verdict PASS --notes "<what you verified>"
+node ~/.keel/bin/keel-state.cjs audit <story-id> --phase-file <NN-agent.json>
 ```
 
 or on failure:
 
 ```
-node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" gate <story-id> --phase <N> --verdict FAIL --notes "<every reason, specific>"
+node ~/.keel/bin/keel-state.cjs gate <story-id> --phase <N> --verdict FAIL --notes "<every reason, specific>"
 ```
 
 The engine owns the handoff log, the audit log, the attempt counter, and the

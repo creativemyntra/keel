@@ -36,11 +36,10 @@ When asked "what happened to story X" or "who changed file Y":
 Run the deterministic check first, then investigate anything it flags:
 
 ```
-node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" verify <story-id>
+node ~/.keel/bin/keel-state.cjs verify <story-id>
 ```
 
-(If `CLAUDE_PLUGIN_ROOT` is unset, the script is at `scripts/keel-state.cjs` in
-the keel plugin checkout.)
+(Installed there by the SessionStart hook; in the keel dev checkout you can also use `scripts/keel-state.cjs` directly.)
 
 It checks timestamps are strictly increasing and phase completions are
 consistent with the manifest. Report anomalies; never fix them silently.
@@ -52,7 +51,7 @@ intervention, emergency rollback), record it through the engine — never append
 to the log by hand:
 
 ```
-node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" audit <story-id> --json '{"agent":"human","action":"manual_intervention","notes":"..."}'
+node ~/.keel/bin/keel-state.cjs audit <story-id> --json '{"agent":"human","action":"manual_intervention","notes":"..."}'
 ```
 
 ## Scope and honesty

@@ -5,7 +5,7 @@ argument-hint: [story-id]
 
 Run a Keel health sweep$ARGUMENTS. Report findings — never fix anything during a sweep; surfacing is the job, the human decides.
 
-Use the engine at `${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs` (fallback: `scripts/keel-state.cjs` in the keel checkout).
+Use the engine at `~/.keel/bin/keel-state.cjs` (fallback: `scripts/keel-state.cjs` in the keel checkout).
 
 1. **Stories** — for every directory in `.keel/state/` (or just the story given as argument):
    - `node keel-state.cjs status <story>` — flag `halted: true`, sequencing gaps, and stories idle > 48h (`updated_at`).

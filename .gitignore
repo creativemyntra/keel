@@ -48,8 +48,9 @@ Thumbs.db
 .temp/
 
 # Project-specific
-/state/ (reserved for audit-agent only)
-.ai-sdlc/ (reserved for framework)
+# NOTE: .keel/state/ and .keel/memory/ are deliberately COMMITTED — git history
+# is the pipeline's audit trail. Never add them here.
+.keel/watch/
 
 # Generated files (should be committed for framework, but not for user projects)
 # Keep these in keel:

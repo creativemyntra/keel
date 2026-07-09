@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/init-keel-home.sh\""
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-init.cjs\""
           },
           {
             "type": "command",

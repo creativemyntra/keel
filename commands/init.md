@@ -11,7 +11,7 @@ Initialize Keel in this repository. Arguments: $ARGUMENTS
    - `.keel/state/` — per-story pipeline state
    - `.keel/memory/decisions/` — ADRs (cross-story memory)
    - `.keel/memory/conventions.md` — project conventions (seed with an empty dated header)
-4. Build the initial CodeGraph: `node "${CLAUDE_PLUGIN_ROOT}/scripts/build-codegraph.cjs" .`
+4. Build the initial CodeGraph: `node ~/.keel/bin/build-codegraph.cjs .`
    (skip gracefully if the project has no src/ yet).
 5. Verify `agent-output-schema.json` is reachable in the plugin root.
 6. Summarize what was created and suggest `/keel:brainstorm` or `/keel:req` as the next step.

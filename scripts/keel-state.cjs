@@ -181,12 +181,24 @@ function copyDir(src, dest, skip) {
 
 // ---------------------------------------------------------------- commands
 
+// Pipeline scopes: which phases a story is expected to run.
+// feature = full 8-phase pipeline; defect = intake -> engineer -> QA -> security
+// (express lane for bug fixes — no BA elaboration/architecture/docs ceremony).
+const SCOPES = {
+  feature: [1, 2, 3, 4, 5, 6, 7, 8],
+  defect: [1, 4, 5, 6],
+};
+
 function cmdInit(storyId, args) {
   const dir = stateDir(storyId);
+  const scope = flag(args, '--scope') || 'feature';
+  if (!SCOPES[scope]) die(64, `unknown --scope "${scope}" (feature|defect)`);
   fs.mkdirSync(path.join(dir, 'snapshots'), { recursive: true });
   const manifest = {
     story_id: storyId,
     title: flag(args, '--title') || '',
+    scope,
+    expected_phases: SCOPES[scope],
     current_phase: 1,
     attempts: {},
     gate_events: 0,
@@ -389,13 +401,15 @@ function cmdStatus(storyId) {
   const manifest = readManifest(storyId);
   const files = fs.readdirSync(stateDir(storyId)).filter((f) => /^\d{2}-.+\.json$/.test(f)).sort();
   const phases = files.map((f) => parseInt(f.slice(0, 2), 10));
-  const gaps = [];
-  for (let p = 1; p < Math.max(0, ...phases); p++) {
-    if (!phases.includes(p)) gaps.push(p);
-  }
+  // sequencing gaps are judged against the story's scope — a defect-scope
+  // story legitimately skips BA/architect/writer phases
+  const expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
+  const maxDone = Math.max(0, ...phases);
+  const gaps = expected.filter((p) => p < maxDone && !phases.includes(p));
   console.log(JSON.stringify({
     story_id: manifest.story_id,
     title: manifest.title,
+    scope: manifest.scope || 'feature',
     current_phase: manifest.current_phase,
     halted: manifest.halted === true,
     attempts: manifest.attempts,

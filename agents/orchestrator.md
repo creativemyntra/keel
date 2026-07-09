@@ -28,6 +28,17 @@ acceptance criteria must be confirmed by the human before phase 2 starts.
 `keel:scrum-master` is never part of the delivery pipeline in either mode —
 it exists for ceremonies (standup, retro, velocity) when the human asks.
 
+**Scope (orthogonal to entry mode):**
+- `feature` (default) — all 8 phases.
+- `defect` — express lane for bug fixes: phases 1 (intake), 4 (engineer:
+  RCA + revert-checked fix), 5 (QA), 6 (security scan of the diff). No BA
+  elaboration, no architecture phase, no technical-writer phase — EXCEPT the
+  lessons.md writeback still happens: have the engineer append the lesson from
+  the RCA (checked at the phase-6 gate instead of phase 7).
+  Choose defect scope when the Jira ticket type is Bug/Defect, or the human
+  says "fix". Pass it at init: `init <story> --scope defect`. Roughly 6 agent
+  spawns instead of ~17 — don't run feature ceremony on a bug fix.
+
 ## Pipeline Phases
 
 1. **Requirements intake** — jira-entry: `keel:business-analyst` (import); full: `keel:product-owner` (draft + human confirmation)
@@ -52,11 +63,10 @@ Agents share context through files — the repository is the only shared memory.
 Mechanical state work is done by the state engine, not by agents:
 
 ```
-node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" <command> <story-id> [args]
+node ~/.keel/bin/keel-state.cjs <command> <story-id> [args]
 ```
 
-(If `CLAUDE_PLUGIN_ROOT` is unset, the script is at `scripts/keel-state.cjs` in
-the keel plugin checkout.)
+(Installed there by the SessionStart hook; in the keel dev checkout you can also use `scripts/keel-state.cjs` directly.)
 
 1. At story start, run `init <story-id> --title "..."` yourself via Bash. If it
    reports the story already exists, run `status <story-id>` and resume from

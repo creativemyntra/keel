@@ -26,8 +26,8 @@ three attempts.
    finding), and prior ADRs in `.keel/memory/decisions/`.
 2. **Impact analysis (proactive)** — know the blast radius before touching code:
    ```
-   node "${CLAUDE_PLUGIN_ROOT}/scripts/build-codegraph.cjs"
-   node "${CLAUDE_PLUGIN_ROOT}/scripts/build-codegraph.cjs" --impact <ClassOrFile>
+   node ~/.keel/bin/build-codegraph.cjs
+   node ~/.keel/bin/build-codegraph.cjs --impact <ClassOrFile>
    ```
    Any dependent without test coverage goes on your retest list NOW, not after
    it breaks. A surprising blast radius (auth, payments, data integrity) is
@@ -93,7 +93,7 @@ A bug fix is only acceptable when it targets the root cause:
 3. **Revert-check** — prove the test actually guards the cause. Stage the
    regression test (`git add tests/...`), leave the fix unstaged, then:
    ```
-   node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" revert-check <story-id> --test <filter> --runner "vendor/bin/phpunit"
+   node ~/.keel/bin/keel-state.cjs revert-check <story-id> --test <filter> --runner "vendor/bin/phpunit"
    ```
    The engine reverts the fix, asserts the test FAILS, restores the fix,
    asserts it PASSES, and records the result in the audit log. Include the
@@ -120,7 +120,7 @@ Before writing your phase output:
    deviations in `decisions`.
 4. **Validate your own output before handoff**:
    ```
-   node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" validate <story-id> 04-software-engineer.json
+   node ~/.keel/bin/keel-state.cjs validate <story-id> 04-software-engineer.json
    ```
    Fix what it reports — catching your own drift is free; the handshake
    catching it costs an attempt.

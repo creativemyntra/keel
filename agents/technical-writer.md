@@ -51,7 +51,7 @@ Two files, two jobs — don't mix them:
   conventions.md and mark the lesson `(promoted)`.
 
 **Bounds (you enforce them):** run
-`node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" memory-check` before
+`node ~/.keel/bin/keel-state.cjs memory-check` before
 finishing your phase. Over cap → prune NOW: conventions.md (150-line cap) —
 consolidate duplicates, delete stale rules, move long rationale to an ADR;
 lessons.md (30-entry cap) — move oldest entries to

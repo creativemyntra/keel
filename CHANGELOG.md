@@ -2,6 +2,25 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.9.0] - 2026-07-09 - END-DEVELOPER FLOW FIXES (PIPELINE CAN NOW ACTUALLY RUN)
+
+Deep end-to-end flow review from a fresh developer's perspective found two release
+blockers and three major frictions — all fixed:
+
+### Fixed
+- **BLOCKER: five pipeline agents had no Write tool** — product-owner, business-analyst, solution-architect, release-manager, and scrum-master could not write their own phase outputs (`NN-<agent>.json`), design docs, ADRs, or release reports. Phases 1–3 and 8 could never complete; the jira-entry import (v3.8.0) was dead on arrival. Write granted (architect also gained Bash for the codegraph). The pipeline had never been runnable end-to-end until this fix.
+- **BLOCKER: engine path unresolvable for installed-plugin users** — agents invoked the engine via `${CLAUDE_PLUGIN_ROOT}/scripts/…`, which is only reliable in hooks, and the documented fallback only worked inside the keel dev checkout. Now the SessionStart hook installs the engine scripts to `~/.keel/bin/` every session (refreshed on plugin upgrade) and all agents use that stable path — no substitution, works in any shell on any install.
+- Stale `node scripts/build-codegraph.js` reference in solution-architect (wrong extension, wrong cwd assumption).
+- `.gitignore` junk patterns (`/state/ (reserved for audit-agent only)`) replaced with an explicit "state/memory are deliberately committed" note; `.keel/watch/` (machine-local baselines) now properly ignored.
+
+### Added
+- **Defect express lane** — `init --scope defect` runs phases 1 (intake) → 4 (engineer: RCA + revert-checked fix) → 5 (QA) → 6 (security), ~6 agent spawns instead of ~17; `/keel:from-jira` infers scope from the ticket type (Bug → defect). `status` judges sequencing gaps against the story's scope. The lessons.md writeback moves to the phase-6 gate in defect scope.
+- **Coverage waiver path** — a missing coverage driver (no pcov/xdebug) is a tooling blocker, not a deadlock: the gate FAILs with an actionable reason and a human may waive explicitly (recorded verbatim in the gate notes). The handshake never waives on its own.
+
+### Changed
+- **`scripts/keel-init.cjs` replaces `init-keel-home.sh`** — session initialization is pure Node (bash no longer required on Windows); it installs the engine to `~/.keel/bin/`, records the plugin root, and scaffolds `~/.keel` on first run. Verified by execution.
+- Docs tell the truth about requirements and channels: Node ≥ 18 is **required** (engine, watchers, Playwright MCP — README previously claimed Node was only for the optional CLI); npm/Docker install methods are marked "not yet published — coming soon" instead of presenting 404s as working.
+
 ## [3.8.0] - 2026-07-09 - HUMAN ROLES STAY HUMAN + JIRA-ENTRY PIPELINE
 
 ### Added
