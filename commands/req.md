@@ -1,13 +1,23 @@
 ---
-description: Write BDD requirements, acceptance criteria, and API spec for a story.
-argument-hint: --story=FEAT-1 --feature="description"
+description: BDD requirements, acceptance criteria, and API spec for a story. Human owns the requirements — from a Jira ticket, or confirmed interactively.
+argument-hint: --story=FEAT-1 [--jira=TICKET-KEY] [--feature="description"]
 ---
 
 Create requirements for: $ARGUMENTS
 
-Invoke the `keel:product-owner` agent to define business value, scope, and Gherkin
-acceptance criteria, then the `keel:business-analyst` agent to elaborate the functional
-spec, data flows, and edge cases.
+**The product owner is a human, not an agent.** Requirements come from them:
 
-Each agent writes its output to `.keel/state/<story-id>/` per `agent-output-schema.json`.
-Run the `keel:handshake-agent` between the two phases.
+- `--jira=<KEY>` given (or the story id is a Jira key) → invoke
+  `keel:business-analyst` in **import mode**: fetch the ticket, transcribe its
+  ACs into the phase-1 output (`01-business-analyst.json`). No testable ACs in
+  the ticket → stop and tell the human what to add. Never invent requirements.
+- No ticket → elaborate from the human's `--feature` description: invoke
+  `keel:business-analyst` to draft Gherkin acceptance criteria as a PROPOSAL,
+  then **present them to the human for confirmation before writing the phase-1
+  output**. The human's confirmed set is the contract.
+- Only when the human explicitly asks for story drafting help (backlog shaping,
+  prioritisation) invoke `keel:product-owner` — never as an automatic step.
+
+Then invoke `keel:business-analyst` for phase 2 elaboration (functional spec,
+data flows, edge cases) and run `keel:handshake-agent` on each phase output.
+Outputs go to `.keel/state/<story-id>/` per `agent-output-schema.json`.

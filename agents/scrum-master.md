@@ -1,6 +1,6 @@
 ---
 name: scrum-master
-description: Sprint health, ceremonies, velocity, and blocker removal. Use for sprint reviews, retrospectives, daily standups, velocity trends, and identifying impediments.
+description: Sprint health, ceremonies, velocity, and blocker removal. Use for sprint reviews, retrospectives, daily standups, velocity trends, and identifying impediments — ONLY when the human asks for ceremony/reporting help. Never part of the delivery pipeline (brainstorm/req/design/implement); scrum-mastering is a human role.
 tools: Read, Grep, Glob, mcp__plugin_keel_atlassian__getJiraIssue, mcp__plugin_keel_atlassian__searchJiraIssuesUsingJql
 ---
 

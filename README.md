@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.7.0
+# Keel AI-SDLC Framework v3.8.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.7.0 ✅
+# → keel v3.8.0 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -90,9 +90,11 @@ snapshots) is done by a zero-dependency **state engine**
 
 ---
 
-## 🆕 What's New in v3.7.0 (Governance With Teeth)
+## 🆕 What's New in v3.8.0 (Governance With Teeth)
 
-v3.4.0 → v3.7.0 turn the pipeline's promises into enforcement:
+v3.4.0 → v3.8.0 turn the pipeline's promises into enforcement:
+
+- **Human roles stay human (v3.8.0)** — product-owner and scrum-master agents are out of the automated pipeline; `/keel:from-jira <KEY>` starts development straight from a Jira ticket (transcribed as the AC contract, never rewritten); AI-drafted requirements are proposals the human PO confirms.
 
 - **OS-enforced state integrity (v3.7.0)** — atomic manifest writes + OS-level locking (concurrent writes physically can't lose updates), pipeline budgets (gate-event + wall-clock caps with human-resume extension), automated revert-check proving regression tests guard their fixes, byte-identical-retry detection, and an 11-test engine suite (`npm run test:engine`).
 - **Layered SAST/SCA scanner stack (v3.6.0)** — the security phase runs PHPStan + composer/npm audit always, and SonarQube (quality gate) + Snyk (vuln DB) when configured; the engineer runs the same stack during development (shift-left). Every security report carries a scanner inventory — a configured scanner that silently didn't run fails the gate.
@@ -125,7 +127,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.7.0 ✅
+# → keel v3.8.0 ✅
 ```
 
 ### Method 2: npm Global Package
@@ -298,10 +300,16 @@ jobs:
 ### Planning
 
 ```bash
+/keel:from-jira HART-287                          # Start development straight from a Jira ticket
 /keel:brainstorm --goal="Your goal"              # Generate ideas
-/keel:req --story=FEAT-1 --feature="Description"  # Create requirements
+/keel:req --story=FEAT-1 --jira=TICKET-KEY        # Requirements from a Jira ticket (or --feature="...")
 /keel:design --story=FEAT-1                       # Design architecture
 ```
+
+> **Human roles stay human:** the product-owner and scrum-master agents are
+> never auto-invoked in the delivery pipeline. When a Jira ticket exists, the
+> ticket is the requirements (transcribed, never rewritten); without one, AI
+> drafts are proposals the human PO confirms.
 
 ### Development (TDD)
 
@@ -686,11 +694,11 @@ Then:
 
 ---
 
-**Version:** 3.7.0  
+**Version:** 3.8.0  
 **Released:** 2026-07-09  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.7.0 (https://github.com/creativemyntra/keel/releases/tag/v3.7.0)
+**Tag:** v3.8.0 (https://github.com/creativemyntra/keel/releases/tag/v3.8.0)
 

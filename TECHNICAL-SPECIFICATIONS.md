@@ -1,6 +1,6 @@
-# Keel AI-SDLC Framework v3.7.0 - Technical Specifications
+# Keel AI-SDLC Framework v3.8.0 - Technical Specifications
 
-**Document Version:** 1.3  
+**Document Version:** 1.4  
 **Last Updated:** 2026-07-09  
 **Status:** PRODUCTION  
 **Author:** Amar Singh  
@@ -347,26 +347,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.7.0
+- Version: v3.8.0
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.7.0`
+- Installation: `npm install -g @amarsingh/keel@3.8.0`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.7.0`
+- Image: `amarsingh/keel:3.8.0`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.7.0`
+- Pull: `docker pull amarsingh/keel:3.8.0`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.7.0`
+- Version: `v3.8.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.7.0`
+- Usage: `uses: creativemyntra/keel@v3.8.0`
 
 ---
 
@@ -456,6 +456,7 @@ Record in Audit Trail
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
+| 3.8.0 | 2026-07-09 | PRODUCTION | Jira-entry pipeline (/keel:from-jira), PO/scrum-master removed from automated pipeline (human roles) |
 | 3.7.0 | 2026-07-09 | PRODUCTION | OS-enforced state locking + atomic writes, pipeline budgets, automated revert-check, identical-retry detection, engine test suite |
 | 3.6.0 | 2026-07-09 | PRODUCTION | Layered SAST/SCA scanner stack (PHPStan/SonarQube + composer audit/Snyk), scanner-inventory gate, setup wizard steps |
 | 3.5.0 | 2026-07-09 | PRODUCTION | Halt escalation + resume, memory writeback (lessons.md), proactive watchers, /keel:health |

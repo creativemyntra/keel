@@ -245,15 +245,19 @@ function validatePhaseFile(storyId, fileName) {
     if (typeof a !== 'string' || !fs.existsSync(a)) errors.push(`artifact does not exist on disk: ${a}`);
   });
 
-  // AC continuity vs phase 1 (anti-drift)
-  const poFile = path.join(stateDir(storyId), '01-product-owner.json');
-  if (out.phase > 1 && fs.existsSync(poFile)) {
+  // AC continuity vs phase 1 (anti-drift). Phase 1 may be written by the
+  // product-owner (full pipeline) or the business-analyst (jira-entry mode,
+  // where the human-authored Jira ticket is the requirements source).
+  const phase1Name = out.phase > 1
+    ? fs.readdirSync(stateDir(storyId)).find((f) => /^01-.+\.json$/.test(f))
+    : null;
+  if (phase1Name) {
     try {
-      const po = JSON.parse(fs.readFileSync(poFile, 'utf8'));
+      const p1 = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phase1Name), 'utf8'));
       const decisionsText = (out.decisions || []).join(' ');
-      (po.acceptance_criteria_ids || []).forEach((ac) => {
+      (p1.acceptance_criteria_ids || []).forEach((ac) => {
         if (!out.acceptance_criteria_ids.includes(ac) && !decisionsText.includes(ac)) {
-          errors.push(`AC drift: ${ac} defined by product-owner but silently dropped (no descope decision mentions it)`);
+          errors.push(`AC drift: ${ac} defined in ${phase1Name} but silently dropped (no descope decision mentions it)`);
         }
       });
     } catch (e) { errors.push(`cannot check AC continuity: ${e.message}`); }

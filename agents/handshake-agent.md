@@ -30,7 +30,8 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" validate <story-id> <NN-agen
 the keel plugin checkout.)
 
 The script verifies: schema conformance, filename↔content consistency, artifact
-paths exist on disk, and AC continuity against `01-product-owner.json`
+paths exist on disk, and AC continuity against the phase-1 output
+(`01-product-owner.json`, or `01-business-analyst.json` in jira-entry mode)
 (anti-drift). If it exits non-zero, the phase FAILs — go straight to gating
 below with the script's error list as your findings.
 

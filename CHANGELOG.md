@@ -2,6 +2,15 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.8.0] - 2026-07-09 - HUMAN ROLES STAY HUMAN + JIRA-ENTRY PIPELINE
+
+### Added
+- **`/keel:from-jira <TICKET-KEY>`** — start development directly from a Jira ticket. The orchestrator's new **jira-entry mode** (default whenever a ticket key is given): phase 1 is a business-analyst **import** — the ticket's summary/description/ACs are transcribed into `01-business-analyst.json` with ACs numbered exactly as the ticket states them; a ticket without testable ACs stops with a blocker telling the human PO what to add. Transcription, never authorship.
+- Engine AC-continuity check accepts any `01-*.json` phase-1 file (product-owner-authored or jira-imported); downstream agents (QA, engineer, release-manager, handshake) reference "the phase-1 output" instead of hard-coding the PO file.
+
+### Changed
+- **Product-owner and scrum-master agents are no longer part of the automated delivery pipeline.** They are human roles: the PO agent is invoked only when the human explicitly asks for story-drafting help, and its output is a PROPOSAL requiring human confirmation of the ACs before phase 2; the scrum-master exists solely for ceremony/reporting requests. `/keel:req` no longer auto-invokes the PO agent — with `--jira` it imports the ticket; without, the BA drafts ACs and the human confirms them.
+
 ## [3.7.0] - 2026-07-09 - OS-ENFORCED STATE INTEGRITY, PIPELINE BUDGETS, AUTOMATED REVERT CHECK
 
 Remediation pass driven by an external review; every claim was verified against the current

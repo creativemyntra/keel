@@ -13,7 +13,8 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
 ## Release Gate Checklist
 
 - [ ] QA report: all tests green, coverage ≥ 80%
-- [ ] AC traceability: every AC-id from `01-product-owner.json` maps to a passing
+- [ ] AC traceability: every AC-id from the phase-1 output (`01-product-owner.json`
+      or `01-business-analyst.json` in jira-entry mode) maps to a passing
       test in the QA report — any unaccounted AC is a NO-GO (drift)
 - [ ] Security report: 0 HIGH findings
 - [ ] CHANGELOG.md has entry for this version

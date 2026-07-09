@@ -19,7 +19,8 @@ three attempts.
 ## Phase 0 — Plan before code (mandatory, before any edit)
 
 1. Read your inputs: the design (`03-solution-architect.json` + its design doc
-   artifact), the AC list in `01-product-owner.json`, and — if present —
+   artifact), the AC list in the phase-1 output (`01-product-owner.json` or
+   `01-business-analyst.json`), and — if present —
    `.keel/memory/conventions.md`, `.keel/memory/lessons.md` (incident-derived
    rules; repeating a recorded root-cause pattern is an automatic review
    finding), and prior ADRs in `.keel/memory/decisions/`.
