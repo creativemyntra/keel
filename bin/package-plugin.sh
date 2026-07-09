@@ -61,20 +61,33 @@ rm -rf "$STAGING/.git"
 rm -rf "$STAGING/.keel/secrets" 2>/dev/null || true
 
 # ── Stamp version into the manifest ─────────────────────────
+# Run node from INSIDE the staging dir with a relative path — interpolating
+# an MSYS path (/c/Users/...) into node code breaks on Windows (git-bash
+# translates it to C:\c\Users\...).
 if command -v node &>/dev/null; then
-  node -e "
+  (cd "$STAGING" && node -e "
     const fs = require('fs');
-    const path = '$STAGING/.claude-plugin/plugin.json';
-    const p = JSON.parse(fs.readFileSync(path, 'utf8'));
+    const p = JSON.parse(fs.readFileSync('.claude-plugin/plugin.json', 'utf8'));
     p.version = '$VERSION';
-    fs.writeFileSync(path, JSON.stringify(p, null, 2));
-  "
+    fs.writeFileSync('.claude-plugin/plugin.json', JSON.stringify(p, null, 2));
+  ")
   echo "  ✅ Stamped version $VERSION into .claude-plugin/plugin.json"
 fi
 
 # ── Create the .plugin zip ───────────────────────────────────
+# git-bash on Windows ships no `zip` — fall back to PowerShell Compress-Archive.
 cd "$STAGING"
-zip -r "$BUNDLE_PATH" . -x "*.DS_Store" > /dev/null
+if command -v zip &>/dev/null; then
+  zip -r "$BUNDLE_PATH" . -x "*.DS_Store" > /dev/null
+elif command -v powershell.exe &>/dev/null; then
+  # Compress-Archive only writes .zip — create as .zip, then rename
+  TMP_ZIP="$BUNDLE_PATH.zip"
+  powershell.exe -NoProfile -Command "Compress-Archive -Path '.\*' -DestinationPath '$(cygpath -w "$TMP_ZIP" 2>/dev/null || echo "$TMP_ZIP")' -Force" > /dev/null
+  mv "$TMP_ZIP" "$BUNDLE_PATH"
+else
+  echo "❌ Neither zip nor powershell.exe available — cannot create bundle" >&2
+  exit 1
+fi
 cd "$ROOT"
 
 # ── Generate checksum ────────────────────────────────────────

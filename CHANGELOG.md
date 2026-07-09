@@ -2,6 +2,21 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.12.0] - 2026-07-09 - INSTALL-TO-PIPELINE E2E + status --all (KEEL-102)
+
+Full pre-release verification: install layer (package → hooks → init → 38-component
+validation) plus the first complete FEATURE-lane pipeline run (phases 1–8, story
+KEEL-102) with the v3.11 economy active. Measured: 15 spawns, ~776k subagent tokens
+(haiku gates ~39k vs ~55k strong-model). Evidence:
+`docs/audit/2026-07-09-e2e-install-to-pipeline.md` + committed `.keel/state/KEEL-102/`.
+
+### Added
+- **`keel-state.cjs status --all` (KEEL-102)** — one-call fleet listing: JSON array of `{story_id, scope, current_phase, halted}` per story, `[]` on empty state, corrupt manifests skip-and-marked as `{story_id, error}` (never aborts a sweep for one bad story — ADR-001, lock-free read-only per the atomic-write guarantee). `/keel:health` step 1 now uses it instead of iterating directories. Built through the pipeline itself: BA behavior table → architect design + first ADR → TDD (6 red → 21/21 green) → QA with **measured** c8 coverage (changed code 100%; 72.03% file-level flagged as pre-existing debt) → security 0 HIGH → release readiness PENDING-HUMAN.
+
+### Fixed
+- **Gate PASS now auto-audits the phase completion** — the separate `audit --phase-file` step proved fragile in the live run (a fast-model gate skipped it and euphemized the failure; caught by orchestrator verification of the audit log). One command, engine-owned; docs updated; suite 22/22.
+- **`bin/package-plugin.sh` on Windows** — MSYS path interpolated into inline Node broke the version stamp (`C:\c\Users\...`), and git-bash has no `zip` (PowerShell Compress-Archive fallback added, create-as-.zip-then-rename). Windows maintainers can now build the bundle the CI builds.
+
 ## [3.11.0] - 2026-07-09 - SMART ECONOMY: OWNER CHOICES, STATIC-FIRST SECURITY, CODEGRAPH CONTEXT
 
 ### Added

@@ -16,7 +16,7 @@ FROM node:20-alpine
 
 LABEL maintainer="Amar Singh <support@creativemyntra.com>"
 LABEL description="Keel AI-SDLC Framework - Complete AI-powered software development lifecycle automation"
-LABEL version="3.11.0"
+LABEL version="3.12.0"
 
 WORKDIR /app
 

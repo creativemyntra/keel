@@ -17,7 +17,7 @@
  *   node keel-state.cjs gate     <story-id> --phase N --verdict PASS|FAIL [--notes "..."]
  *   node keel-state.cjs audit    <story-id> --phase-file <NN-agent.json> [--commit <sha>] [--notes "..."]
  *   node keel-state.cjs audit    <story-id> --json '<object>'
- *   node keel-state.cjs status   <story-id>
+ *   node keel-state.cjs status   <story-id> | --all
  *   node keel-state.cjs snapshot <story-id>
  *   node keel-state.cjs restore  <story-id> <snapshot-timestamp>
  *   node keel-state.cjs verify   <story-id>
@@ -346,6 +346,22 @@ function cmdGate(storyId, args) {
       fs.appendFileSync(handoffPath(storyId),
         `- ${nowIso()} | phase ${phase} -> ${label} | PASS | ${notes}\n`);
       appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_passed', notes });
+      // auto-audit the phase completion — the separate `audit --phase-file`
+      // step proved fragile in practice (a fast-model gate skipped it in the
+      // KEEL-102 e2e), so the engine owns it on PASS
+      const prefix2 = String(phase).padStart(2, '0') + '-';
+      const phaseFile = fs.readdirSync(stateDir(storyId))
+        .find((f) => f.startsWith(prefix2) && f.endsWith('.json'));
+      if (phaseFile) {
+        try {
+          const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+          appendAudit(storyId, {
+            phase: out.phase, agent: out.agent, action: 'phase_completed',
+            outputs: [phaseFile], artifacts: out.artifacts || [], decisions: out.decisions || [],
+            git_commit: null, notes: 'auto-audited on gate PASS',
+          });
+        } catch { /* unparseable phase file would have failed validate; skip */ }
+      }
       console.log(`PASS recorded: phase ${phase} -> ${label}`);
       return;
     }
@@ -425,6 +441,40 @@ function cmdStatus(storyId) {
     updated_at: manifest.updated_at,
   }, null, 2));
   if (gaps.length) die(1, `FAIL: sequencing violation — missing phase output(s): ${gaps.join(', ')}`);
+}
+
+// Fleet listing (B-1..B-9): read-only sweep of every story under .keel/state/.
+// Deliberately lock-free — writeManifest() is atomic (tmp + rename), so a
+// reader never sees a torn manifest. Per-story problems are DATA, not failures:
+// a local try/catch (NOT readJson/readManifest, which die(1) and would abort
+// the sweep) marks corrupt manifests as {story_id, error} and continues.
+function cmdStatusAll() {
+  const root = path.join('.keel', 'state');
+  if (!fs.existsSync(root)) { console.log('[]'); return; }          // B-2
+  let entries;
+  try { entries = fs.readdirSync(root, { withFileTypes: true }); }
+  catch (e) { die(1, `FAIL: cannot read ${root}: ${e.message}`); }  // B-9
+  const stories = [];
+  for (const ent of entries) {
+    if (!ent.isDirectory()) continue;                               // B-6 files
+    if (ent.name === '.lock' || ent.name.endsWith('.tmp')) continue;// B-6 artifacts
+    if (ent.name === '--all') continue;                             // BR-6 reserved
+    const mf = path.join(root, ent.name, 'manifest.json');
+    if (!fs.existsSync(mf)) continue;                               // B-4 not a story
+    try {
+      const m = JSON.parse(fs.readFileSync(mf, 'utf8'));
+      stories.push({
+        story_id: m.story_id || ent.name,
+        scope: m.scope || 'feature',                                // BR-2 default
+        current_phase: m.current_phase ?? null,
+        halted: m.halted === true,                                  // strict, matches cmdStatus
+      });
+    } catch (e) {
+      stories.push({ story_id: ent.name, error: e.message });       // B-5 skip-and-mark
+    }
+  }
+  stories.sort((a, b) => a.story_id.localeCompare(b.story_id));     // BR-5 determinism
+  console.log(JSON.stringify(stories, null, 2));                    // exit 0 (BR-1)
 }
 
 function cmdSnapshot(storyId) {
@@ -645,11 +695,12 @@ function cmdMemoryCheck() {
 
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|snapshot|restore|verify|resume|revert-check> <story-id> [args] | keel-state.cjs memory-check';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|snapshot|restore|verify|resume|revert-check> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
 if (!storyId) die(64, USAGE);
+if (cmd === 'status' && storyId === '--all') { cmdStatusAll(); process.exit(0); }
 switch (cmd) {
   case 'init': cmdInit(storyId, rest); break;
   case 'validate': cmdValidate(storyId, rest[0] || die(64, 'validate needs <NN-agent.json>')); break;

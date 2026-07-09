@@ -113,8 +113,10 @@ rules are hard boundaries, not suggestions:
 
 ```
 node ~/.keel/bin/keel-state.cjs gate <story-id> --phase <N> --verdict PASS --notes "<what you verified>"
-node ~/.keel/bin/keel-state.cjs audit <story-id> --phase-file <NN-agent.json>
 ```
+
+(A PASS auto-audits the phase completion — do NOT also run `audit
+--phase-file`, that would double-log.)
 
 or on failure:
 

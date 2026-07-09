@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.11.0
+# Keel AI-SDLC Framework v3.12.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.11.0 ✅
+# → keel v3.12.0 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -90,9 +90,9 @@ snapshots) is done by a zero-dependency **state engine**
 
 ---
 
-## 🆕 What's New in v3.11.0 (Governance With Teeth)
+## 🆕 What's New in v3.12.0 (Governance With Teeth)
 
-v3.4.0 → v3.11.0 turn the pipeline's promises into enforcement:
+v3.4.0 → v3.12.0 turn the pipeline's promises into enforcement:
 
 - **Smart economy (v3.11.0)** — owner-choice file `.keel/economy.yml`, static-first security prescan (clean prescan can replace the security spawn, opt-in), CodeGraph-capped context loading, output caps. See [docs/WORKFLOW.md](docs/WORKFLOW.md).
 - **Token economy (v3.10.0)** — measured cost model ([docs/WORKFLOW.md](docs/WORKFLOW.md)): tiered gate verification (TRIVIAL/NORMAL/FULL — security-sensitive diffs always pay full price), gate-1-lite, and haiku model-tiering for mechanical spawns; trivial defects projected −50–60% tokens.
@@ -129,7 +129,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.11.0 ✅
+# → keel v3.12.0 ✅
 ```
 
 ### Method 2: npm Global Package (⏳ not yet published — coming soon)
@@ -168,27 +168,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.11.0
+        uses: creativemyntra/keel@v3.12.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.11.0
+        uses: creativemyntra/keel@v3.12.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.11.0
+        uses: creativemyntra/keel@v3.12.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.11.0
+        uses: creativemyntra/keel@v3.12.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -521,7 +521,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.11.0
+- uses: creativemyntra/keel@v3.12.0
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -697,11 +697,11 @@ Then:
 
 ---
 
-**Version:** 3.11.0  
+**Version:** 3.12.0  
 **Released:** 2026-07-09  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.11.0 (https://github.com/creativemyntra/keel/releases/tag/v3.11.0)
+**Tag:** v3.12.0 (https://github.com/creativemyntra/keel/releases/tag/v3.12.0)
 

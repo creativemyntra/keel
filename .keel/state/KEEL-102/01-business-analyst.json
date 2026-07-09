@@ -1,0 +1,27 @@
+{
+  "phase": 1,
+  "agent": "business-analyst",
+  "story_id": "KEEL-102",
+  "confidence": "high",
+  "findings": [
+    "Consumer confirmed: commands/health.md step 1 currently instructs the caller to iterate 'every directory in .keel/state/' and run status per story — a single --all listing removes that iteration.",
+    "Dispatcher constraint (scripts/keel-state.cjs:649-652): argv is destructured as [cmd, storyId, ...rest] and dies with exit 64 if storyId is falsy, so '--all' will arrive AS the storyId parameter to cmdStatus; the design must branch on storyId === '--all' before readManifest runs.",
+    "cmdStatus (scripts/keel-state.cjs:406-428) is strictly single-story: readManifest(storyId) dies (exit 1) when no manifest exists, so --all must not delegate naively per-directory or one uninitialized/corrupt directory would abort the whole listing.",
+    "All four AC-1 fields exist in the single-story status JSON today: story_id, scope (defaults to 'feature'), current_phase, halted (manifest.halted === true coercion) — --all entries can be derived from each story's manifest.json without new state.",
+    "AC-2 empty-state semantics differ from single-story behavior: cmdStatus exits nonzero on problems, but --all with no .keel/state/ or zero story dirs must print [] and exit 0 (health sweep on a fresh repo is healthy, not an error).",
+    "Directory enumeration must filter to real story directories (contain manifest.json); .keel/state/ may contain non-story entries and story dirs contain snapshots/ and .lock subdirs that must not leak into results.",
+    "AC-3 regression surface: single-story status also emits attempts, completed_phase_files, sequencing_gaps, timestamps, and dies on sequencing gaps — none of that behavior may change; engine test suite must stay green.",
+    "Current live fixture: .keel/state/ holds KEEL-101 and KEEL-102, giving a ready two-entry test case for the array output."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3"],
+  "decisions": [
+    "ACs drafted from direct owner requirement; owner e2e authorization recorded as confirmation",
+    "AC-1: status --all prints a JSON array with one entry per story directory under .keel/state/, each entry containing story_id, scope, current_phase, halted",
+    "AC-2: with no .keel/state/ directory or no stories, prints [] and exits 0",
+    "AC-3: existing single-story status <id> behavior unchanged; full engine suite stays green",
+    "Design note for phase 2/3: intercept storyId === '--all' in the dispatcher or at top of cmdStatus, before readManifest can die on a literal '--all' story lookup"
+  ],
+  "artifacts": [],
+  "next_phase": 2,
+  "timestamp": "2026-07-09T15:52:00.000Z"
+}

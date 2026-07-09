@@ -82,7 +82,7 @@ node ~/.keel/bin/keel-state.cjs <command> <story-id> [args]
    phase makes no executable claims, so spawning a full gate agent to verify
    grep-able facts wastes ~50k tokens. Instead: run the engine validate via
    Bash, spot-check the intake's citations with Read/Grep yourself, then run
-   the engine `gate` + `audit` commands directly. From phase 2 onward, always
+   the engine `gate` command directly (PASS auto-audits). From phase 2 onward, always
    spawn the handshake agent — it chooses a verification depth tier
    (TRIVIAL/NORMAL/FULL) per its spec; never instruct it to tier down.
    Do NOT spawn separate state or audit agents in the phase loop — the engine

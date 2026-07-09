@@ -167,6 +167,18 @@ async function main() {
       /6 -> complete/.test(last.out), last.out.slice(0, 120));
   }
 
+  // ---- gate PASS auto-audits the phase (KEEL-102 e2e finding) ----------
+  {
+    const cwd = makeTmpDir('autoaudit');
+    engine(cwd, 'init', 'S-10');
+    writePhaseFile(cwd, 'S-10', 1, 'business-analyst', ['intake done']);
+    engine(cwd, 'gate', 'S-10', '--phase', '1', '--verdict', 'PASS', '--notes', 'ok');
+    const log = fs.readFileSync(path.join(cwd, '.keel', 'state', 'S-10', 'audit-log.jsonl'), 'utf8');
+    assert('gate PASS auto-appends phase_completed (no separate audit call)',
+      /"action":"phase_completed"/.test(log) && /"agent":"business-analyst"/.test(log),
+      log.slice(-200));
+  }
+
   // ---- prescan: honest inventory even with zero tools available --------
   {
     const cwd = makeTmpDir('prescan');
@@ -178,6 +190,68 @@ async function main() {
       r.code === 0 && inv && inv.scanners.length === 5 &&
       inv.scanners.every((s) => s.status !== 'ran' || s.exit === 0),
       `code=${r.code} scanners=${inv ? inv.scanners.length : 'none'}`);
+  }
+
+  // ---- status --all: fleet listing (KEEL-102) --------------------------
+  {
+    // (a) two-story fixture: FLEET-A feature (advanced past phase 1),
+    //     FLEET-B defect halted via 3 gate FAILs on the same phase.
+    const cwd = makeTmpDir('fleet');
+    engine(cwd, 'init', 'FLEET-A', '--title', 'feature story');
+    engine(cwd, 'gate', 'FLEET-A', '--phase', '1', '--verdict', 'PASS');
+    engine(cwd, 'init', 'FLEET-B', '--scope', 'defect');
+    engine(cwd, 'gate', 'FLEET-B', '--phase', '1', '--verdict', 'FAIL', '--notes', 'f1');
+    engine(cwd, 'gate', 'FLEET-B', '--phase', '1', '--verdict', 'FAIL', '--notes', 'f2');
+    engine(cwd, 'gate', 'FLEET-B', '--phase', '1', '--verdict', 'FAIL', '--notes', 'f3'); // 3rd FAIL halts
+    const r = engine(cwd, 'status', '--all');
+    let fleet = null;
+    try { fleet = JSON.parse(r.out); } catch { /* asserted below */ }
+    assert('status --all: exit 0 with a JSON array of 2 stories',
+      r.code === 0 && Array.isArray(fleet) && fleet.length === 2,
+      `code=${r.code} out=${r.out.slice(0, 160)}`);
+    const [fa, fb] = Array.isArray(fleet) && fleet.length === 2 ? fleet : [{}, {}];
+    assert('status --all: sorted first entry is the feature story with correct fields',
+      fa.story_id === 'FLEET-A' && fa.scope === 'feature' && fa.current_phase === 2 && fa.halted === false,
+      JSON.stringify(fa));
+    assert('status --all: defect + halted story reported verbatim',
+      fb.story_id === 'FLEET-B' && fb.scope === 'defect' && fb.halted === true,
+      JSON.stringify(fb));
+    assert('status --all: entries project exactly {story_id, scope, current_phase, halted}',
+      Object.keys(fa).sort().join(',') === 'current_phase,halted,scope,story_id',
+      `keys=${Object.keys(fa).join(',')}`);
+
+    // (b) no .keel/state directory at all -> empty fleet, exit 0
+    const empty = makeTmpDir('fleet-empty');
+    const re = engine(empty, 'status', '--all');
+    assert('status --all: no .keel/state prints [] with exit 0',
+      re.code === 0 && re.out.trim() === '[]', `code=${re.code} out=${re.out.slice(0, 120)}`);
+
+    // (c) corrupt manifest sibling -> skip-and-mark {story_id, error};
+    //     the healthy sibling must still be listed and the sweep exits 0.
+    const mixed = makeTmpDir('fleet-corrupt');
+    engine(mixed, 'init', 'GOOD-1');
+    const badDir = path.join(mixed, '.keel', 'state', 'BAD-1');
+    fs.mkdirSync(badDir, { recursive: true });
+    fs.writeFileSync(path.join(badDir, 'manifest.json'), '{invalid');
+    const rc = engine(mixed, 'status', '--all');
+    let mixedFleet = null;
+    try { mixedFleet = JSON.parse(rc.out); } catch { /* asserted below */ }
+    const badEntry = Array.isArray(mixedFleet) ? mixedFleet.find((s) => s.story_id === 'BAD-1') : null;
+    const goodEntry = Array.isArray(mixedFleet) ? mixedFleet.find((s) => s.story_id === 'GOOD-1') : null;
+    assert('status --all: corrupt manifest is skip-and-marked, healthy sibling still listed, exit 0',
+      rc.code === 0 && !!badEntry && typeof badEntry.error === 'string' &&
+      !!goodEntry && goodEntry.scope === 'feature',
+      `code=${rc.code} out=${rc.out.slice(0, 200)}`);
+
+    // (d) B-10 / AC-3: single-story `status <id>` deep view unchanged.
+    // The deep single-story contract itself predates --all; this pins it.
+    const single = engine(cwd, 'status', 'FLEET-A');
+    let deep = null;
+    try { deep = JSON.parse(single.out); } catch { /* asserted below */ }
+    assert('status <id>: single-story deep view unchanged by --all',
+      single.code === 0 && !!deep && deep.story_id === 'FLEET-A' &&
+      'attempts' in deep && 'completed_phase_files' in deep,
+      `code=${single.code} out=${single.out.slice(0, 160)}`);
   }
 
   // ---- revert-check -----------------------------------------------------
