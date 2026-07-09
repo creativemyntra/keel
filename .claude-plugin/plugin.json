@@ -1,6 +1,6 @@
 {
   "name": "keel",
-  "version": "3.9.1",
+  "version": "3.10.0",
   "description": "Complete AI-SDLC pipeline for Claude Code. 13 specialized agents take a feature from idea to production: Brainstorm → Requirements → Design → TDD → QA → Security → Deploy.",
   "author": {
     "name": "Amar Singh",

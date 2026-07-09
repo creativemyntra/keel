@@ -34,6 +34,30 @@ paths exist on disk, and AC continuity against the phase-1 output
 (anti-drift). If it exits non-zero, the phase FAILs — go straight to gating
 below with the script's error list as your findings.
 
+## Verification depth (decide BEFORE running anything — cost control)
+
+Full re-execution of everything at every gate measured ~50% of a story's
+entire token cost (KEEL-101 e2e). Scale depth to the diff — but the tier
+rules are hard boundaries, not suggestions:
+
+- **Tier FULL (mandatory, never tier down):** the diff touches auth,
+  payments, data integrity, input validation, or anything security-adjacent;
+  OR > 100 changed lines; OR adds/updates a dependency; OR this is the
+  security-engineer or release-manager gate. → Re-execute every executable
+  claim (current default behavior).
+- **Tier NORMAL:** everything else with code changes. → Re-execute the tests
+  for the changed area + the story's regression test; the FULL suite runs
+  once per story, at the qa-engineer gate (phase 5), not at every gate.
+- **Tier TRIVIAL:** diff touches only docs/comments/message-strings/config,
+  ≤ 10 changed lines, no security-sensitive paths. → Engine validate + run
+  the story's regression test. You may accept an engine-recorded
+  `revert_check` PASS from the audit log instead of re-running it (the
+  engine only writes that entry when it actually executed the check).
+- State your chosen tier and why in the gate `--notes`. If in doubt between
+  two tiers, take the higher one. Residual risk of TRIVIAL is accepted by
+  design and documented — an agent abusing `audit --json` to fake a
+  revert_check entry would still be caught at the phase-5 full-suite gate.
+
 ## Your judgment checks (only after the script passes)
 
 1. **Execute, don't trust (anti-hallucination).** Any claim that something

@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.9.1
+# Keel AI-SDLC Framework v3.10.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.9.1 ✅
+# → keel v3.10.0 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -90,10 +90,11 @@ snapshots) is done by a zero-dependency **state engine**
 
 ---
 
-## 🆕 What's New in v3.9.1 (Governance With Teeth)
+## 🆕 What's New in v3.10.0 (Governance With Teeth)
 
-v3.4.0 → v3.9.1 turn the pipeline's promises into enforcement:
+v3.4.0 → v3.10.0 turn the pipeline's promises into enforcement:
 
+- **Token economy (v3.10.0)** — measured cost model ([docs/WORKFLOW.md](docs/WORKFLOW.md)): tiered gate verification (TRIVIAL/NORMAL/FULL — security-sensitive diffs always pay full price), gate-1-lite, and haiku model-tiering for mechanical spawns; trivial defects projected −50–60% tokens.
 - **Human roles stay human (v3.8.0)** — product-owner and scrum-master agents are out of the automated pipeline; `/keel:from-jira <KEY>` starts development straight from a Jira ticket (transcribed as the AC contract, never rewritten); AI-drafted requirements are proposals the human PO confirms.
 
 - **OS-enforced state integrity (v3.7.0)** — atomic manifest writes + OS-level locking (concurrent writes physically can't lose updates), pipeline budgets (gate-event + wall-clock caps with human-resume extension), automated revert-check proving regression tests guard their fixes, byte-identical-retry detection, and an 11-test engine suite (`npm run test:engine`).
@@ -127,7 +128,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.9.1 ✅
+# → keel v3.10.0 ✅
 ```
 
 ### Method 2: npm Global Package (⏳ not yet published — coming soon)
@@ -166,27 +167,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.9.1
+        uses: creativemyntra/keel@v3.10.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.9.1
+        uses: creativemyntra/keel@v3.10.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.9.1
+        uses: creativemyntra/keel@v3.10.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.9.1
+        uses: creativemyntra/keel@v3.10.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -456,6 +457,7 @@ your-project/
 - **[docs/MCP-SETUP.md](docs/MCP-SETUP.md)** — Integration & MCP setup wizard guide (Jira, GitHub, Playwright, Slack)
 
 ### Usage & Workflows
+- **[docs/WORKFLOW.md](docs/WORKFLOW.md)** — Complete workflow, measured cost model (time & tokens), token-economy design
 - **[ALL-AGENTS-COMPLETE-GUIDE.md](ALL-AGENTS-COMPLETE-GUIDE.md)** — All 13 agents reference
 - **[TECHNICAL-SPECIFICATIONS.md](TECHNICAL-SPECIFICATIONS.md)** — Architecture & state protocol
 - **[docs/demo/HEALTH-1-end-to-end-demo.md](docs/demo/HEALTH-1-end-to-end-demo.md)** — Real end-to-end pipeline walkthrough
@@ -518,7 +520,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.9.1
+- uses: creativemyntra/keel@v3.10.0
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -694,11 +696,11 @@ Then:
 
 ---
 
-**Version:** 3.9.1  
+**Version:** 3.10.0  
 **Released:** 2026-07-09  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.9.1 (https://github.com/creativemyntra/keel/releases/tag/v3.9.1)
+**Tag:** v3.10.0 (https://github.com/creativemyntra/keel/releases/tag/v3.10.0)
 

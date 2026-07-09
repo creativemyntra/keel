@@ -77,9 +77,14 @@ node ~/.keel/bin/keel-state.cjs <command> <story-id> [args]
    `next_phase`).
 3. When invoking the next phase agent, pass it the exact path of the previous
    phase's output file as its input.
-4. After each phase, run `keel:handshake-agent` (one agent, once per phase).
-   It validates mechanically via the engine, verifies executable claims by
-   running them, and records the gate + audit entries through the engine.
+4. After each phase, run `keel:handshake-agent` (one agent, once per phase) —
+   EXCEPT the phase-1 gate, which you do yourself (gate-1-lite): the intake
+   phase makes no executable claims, so spawning a full gate agent to verify
+   grep-able facts wastes ~50k tokens. Instead: run the engine validate via
+   Bash, spot-check the intake's citations with Read/Grep yourself, then run
+   the engine `gate` + `audit` commands directly. From phase 2 onward, always
+   spawn the handshake agent — it chooses a verification depth tier
+   (TRIVIAL/NORMAL/FULL) per its spec; never instruct it to tier down.
    Do NOT spawn separate state or audit agents in the phase loop — the engine
    covers that clerk work for free.
 5. Before risky operations (large refactor, deploy), run `snapshot <story-id>`.
@@ -113,6 +118,11 @@ The engine owns the attempt counter — read the handshake agent's report:
   in the JSON.
 - Deterministic work (schema checks, counters, log appends, snapshots) is
   engine work — spending an agent invocation on it is a protocol violation.
+- **Model tiering**: if your Task tool supports a per-invocation model
+  parameter, use the fast model (haiku) for transcription-grade work — the
+  jira-entry intake and TRIVIAL-tier gates. Transcription needs fidelity,
+  not depth. Architect, engineer, QA, security, and NORMAL/FULL gates stay
+  on the strong model — judgment is what you're paying them for.
 
 ## Context compaction (your own context, mandatory)
 

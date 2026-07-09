@@ -2,6 +2,18 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.10.0] - 2026-07-09 - TOKEN ECONOMY: TIERED VERIFICATION + MODEL TIERING
+
+Cost levers from the measured KEEL-101 run (~330k tokens for a 2-line defect,
+~50% spent on gates re-executing everything). Projected: trivial defects drop to
+~130–160k (−50–60%); security-sensitive stories intentionally pay full price.
+
+### Added
+- **Verification depth tiers in the handshake gate** — TRIVIAL (docs/strings/config, ≤10 lines, nothing sensitive → engine validate + regression test; may accept the engine-recorded revert_check audit entry), NORMAL (changed-area tests + regression; full suite once per story at the phase-5 gate), FULL (auth/payments/data/security paths, >100 lines, new dependencies, and always the security & release gates → re-execute everything). Tier + rationale recorded in gate notes; doubt = higher tier; orchestrator forbidden from instructing a tier-down. Residual TRIVIAL risk documented and bounded by the once-per-story full-suite gate.
+- **Gate-1-lite** — the intake phase makes no executable claims, so the orchestrator gates phase 1 itself (engine validate + citation spot-check + engine gate/audit) instead of spawning a ~50k-token handshake agent.
+- **Model tiering** — `state-management-agent` and `audit-agent` pin `model: haiku` (mechanical work); the orchestrator requests the fast model for transcription-grade spawns (jira-entry intake, TRIVIAL gates) when the harness supports per-invocation model; judgment agents stay on the strong model.
+- **`docs/WORKFLOW.md`** — the complete workflow, measured cost model (KEEL-101 numbers), token-economy design rationale, and an honest guarantees/non-guarantees section.
+
 ## [3.9.1] - 2026-07-09 - FIRST FULL PIPELINE LIVE TEST (KEEL-101)
 
 The pipeline's first end-to-end execution in project history — a real defect (KEEL-101,
