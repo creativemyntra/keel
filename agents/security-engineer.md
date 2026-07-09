@@ -75,6 +75,8 @@ checks this. Never claim a scan happened without its output in hand.
 ```
 
 ## Rules
+- Read `.keel/memory/conventions.md` and `.keel/memory/lessons.md` (if present)
+  before starting — past incidents tell you where this codebase gets hurt.
 - Any HIGH finding = release blocker.
 - A scanner marked FAILED (configured but errored) is a blocker too — a gate
   that couldn't run is not a passed gate; fix the tooling or descope it

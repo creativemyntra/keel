@@ -89,9 +89,14 @@ A bug fix is only acceptable when it targets the root cause:
    phase output `findings`.
 2. Write a regression test that fails on the root cause BEFORE the fix
    (TDD Red applies to bugs too).
-3. **Revert-check** — prove the test actually guards the cause:
-   `git stash` the fix → regression test must FAIL → `git stash pop` →
-   must PASS. Include both observed results in your findings.
+3. **Revert-check** — prove the test actually guards the cause. Stage the
+   regression test (`git add tests/...`), leave the fix unstaged, then:
+   ```
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" revert-check <story-id> --test <filter> --runner "vendor/bin/phpunit"
+   ```
+   The engine reverts the fix, asserts the test FAILS, restores the fix,
+   asserts it PASSES, and records the result in the audit log. Include the
+   engine's verdict in your findings — the handshake re-runs this check.
 4. A change that silences the symptom while leaving the cause is a patch —
    do not ship it. The handshake and QA gates will fail it and cost an attempt.
 

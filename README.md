@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.6.0
+# Keel AI-SDLC Framework v3.7.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.6.0 ✅
+# → keel v3.7.0 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -90,10 +90,11 @@ snapshots) is done by a zero-dependency **state engine**
 
 ---
 
-## 🆕 What's New in v3.6.0 (Governance With Teeth)
+## 🆕 What's New in v3.7.0 (Governance With Teeth)
 
-v3.4.0 → v3.6.0 turn the pipeline's promises into enforcement:
+v3.4.0 → v3.7.0 turn the pipeline's promises into enforcement:
 
+- **OS-enforced state integrity (v3.7.0)** — atomic manifest writes + OS-level locking (concurrent writes physically can't lose updates), pipeline budgets (gate-event + wall-clock caps with human-resume extension), automated revert-check proving regression tests guard their fixes, byte-identical-retry detection, and an 11-test engine suite (`npm run test:engine`).
 - **Layered SAST/SCA scanner stack (v3.6.0)** — the security phase runs PHPStan + composer/npm audit always, and SonarQube (quality gate) + Snyk (vuln DB) when configured; the engineer runs the same stack during development (shift-left). Every security report carries a scanner inventory — a configured scanner that silently didn't run fails the gate.
 
 - **Deterministic state engine** (`scripts/keel-state.cjs`) — schema validation, grounding checks (artifact paths must exist), AC-drift detection, gate/attempt/halt logic, audit appends, snapshots & restore. Cross-platform, zero dependencies.
@@ -124,7 +125,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.6.0 ✅
+# → keel v3.7.0 ✅
 ```
 
 ### Method 2: npm Global Package
@@ -163,27 +164,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.6.0
+        uses: creativemyntra/keel@v3.7.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.6.0
+        uses: creativemyntra/keel@v3.7.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.6.0
+        uses: creativemyntra/keel@v3.7.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.6.0
+        uses: creativemyntra/keel@v3.7.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -509,7 +510,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.6.0
+- uses: creativemyntra/keel@v3.7.0
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -685,11 +686,11 @@ Then:
 
 ---
 
-**Version:** 3.6.0  
+**Version:** 3.7.0  
 **Released:** 2026-07-09  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.6.0 (https://github.com/creativemyntra/keel/releases/tag/v3.6.0)
+**Tag:** v3.7.0 (https://github.com/creativemyntra/keel/releases/tag/v3.7.0)
 

@@ -1,6 +1,6 @@
-# Keel AI-SDLC Framework v3.6.0 - Handoff Documentation
+# Keel AI-SDLC Framework v3.7.0 - Maintainer Handoff
 
-**Document Version:** 1.2  
+**Document Version:** 1.3  
 **Last Updated:** 2026-07-09  
 **Prepared By:** Amar Singh  
 **For:** Future Development Team & Maintainers  
@@ -38,7 +38,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ### Key Facts
 
 - **Language:** JavaScript (Node.js)
-- **Current Version:** 3.6.0
+- **Current Version:** 3.7.0
 - **Status:** Production-ready
 - **Release Date:** 2026-07-09
 - **Platforms Supported:** CakePHP, Laravel, Django, Rails
@@ -108,7 +108,7 @@ keel/
 ├── RELEASE-NOTES-v3.0.2.md      # Release notes
 ├── README.md                     # Main documentation
 ├── TECHNICAL-SPECIFICATIONS.md   # System specifications
-├── HANDOFF-DOCUMENTATION.md      # This file
+├── docs/MAINTAINER-HANDOFF.md    # This file (was HANDOFF-DOCUMENTATION.md — old name collided with per-story handoff-log.md)
 └── .gitignore                    # Excluded files
 
 ```

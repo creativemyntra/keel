@@ -51,9 +51,15 @@ below with the script's error list as your findings.
    - After software-engineer: tests referenced in artifacts exist as files. If
      the phase fixed a defect, `findings` must reference an RCA document — open
      it and check the root cause it names is what the diff actually changes
-     (an RCA that describes the symptom is not an RCA). Revert-check when
-     feasible: `git stash` the fix, run the regression test (must FAIL),
-     `git stash pop` (must PASS).
+     (an RCA that describes the symptom is not an RCA; this is a best-effort
+     judgment call, not a guarantee — say so in your notes when uncertain).
+     Then run the automated revert check — the engine stashes the fix, proves
+     the regression test fails without it, and restores it:
+     ```
+     node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" revert-check <story-id> --test <filter> --runner "vendor/bin/phpunit"
+     ```
+     (Protocol: regression test committed or staged, fix unstaged.) Exit
+     non-zero = the test does not prove the fix = gate FAIL.
    - After qa-engineer: coverage ≥ 80% **as observed by you**, and every AC
      mapped to a passing test.
    - After security-engineer: zero HIGH findings recorded, AND the report's

@@ -21,6 +21,8 @@ Bridge business requirements and technical implementation. Produce unambiguous f
 Save to: `docs/analysis/<STORY-ID>-analysis.md`
 
 ## Rules
+- Read `.keel/memory/conventions.md` (if present) before starting — specs must
+  follow established project conventions, not reinvent them.
 - Never invent business rules — surface ambiguity as open questions.
 - Flag any requirement that touches payment, authentication, or PII data.
 - Coordinate with Solution Architect before proposing data model changes.

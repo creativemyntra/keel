@@ -40,6 +40,7 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
 ```
 
 ## Rules
+- Read `.keel/memory/conventions.md` (if present) before starting.
 - Never merge the PR (human only).
 - Never issue a GO verdict with any HIGH security finding.
 - Write report to `docs/releases/release-readiness-v<VERSION>.md`.

@@ -1,6 +1,6 @@
 {
   "name": "@amarsingh/keel",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "description": "Keel AI-SDLC Framework - Complete AI-powered software development lifecycle automation",
   "type": "module",
   "main": "bin/keel.js",
@@ -9,7 +9,9 @@
   },
   "scripts": {
     "start": "node ./bin/keel.js",
-    "test": "npm run test:unit && npm run test:integration",
+    "test": "npm run test:engine",
+    "test:engine": "node scripts/test-keel-state.cjs",
+    "test:legacy": "npm run test:unit && npm run test:integration",
     "test:unit": "jest tests/unit --coverage",
     "test:integration": "jest tests/integration",
     "lint": "eslint .",

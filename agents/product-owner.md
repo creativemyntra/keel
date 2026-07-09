@@ -45,6 +45,8 @@ Scenario: <name>
 ```
 
 ## Rules
+- Read `.keel/memory/conventions.md` (if present) before starting — established
+  project conventions constrain what you scope and how stories are framed.
 - Number every acceptance criterion `AC-1`, `AC-2`, … and list the full set in
   `acceptance_criteria_ids` of your phase output. This set is the anti-drift
   contract: every downstream phase must account for every AC you define here.

@@ -35,6 +35,8 @@ Ensure the implementation meets every acceptance criterion before security revie
 ```
 
 ## Rules
+- Read `.keel/memory/conventions.md` (if present) before starting — test
+  structure and naming follow project conventions.
 - FAIL if any test is red.
 - FAIL if coverage < 80%.
 - **Watch the trend, not just the threshold**: compare coverage and test count

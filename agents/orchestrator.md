@@ -85,6 +85,32 @@ The engine owns the attempt counter — read the handshake agent's report:
 - Deterministic work (schema checks, counters, log appends, snapshots) is
   engine work — spending an agent invocation on it is a protocol violation.
 
+## Context compaction (your own context, mandatory)
+
+Phase agents stay lean by design; YOU are the one at risk of linear context
+growth across 16+ agent invocations. Discipline:
+
+- Maintain a **pipeline ledger** — one line per completed phase, nothing more:
+  `phase N <agent>: <PASS|FAIL@attempt> -> <output-file-path> — <≤15-word summary>`
+  Hard cap: 8 ledger lines, ≤25 words each.
+- The ledger is your ONLY memory of completed phases. Never quote phase
+  outputs, agent transcripts, or artifact contents into your own reasoning —
+  if a later decision needs detail, the ledger's file path is the pointer;
+  pass the path to whoever needs it.
+- When invoking a phase agent or handshake, your instruction is paths +
+  one-line goal, ≤100 words. The agent reads the files; you don't read them
+  for it.
+- Your final delivery summary is built from the ledger + `status <story-id>`
+  output, not from re-reading phase files.
+
+## Pipeline budget (engine-enforced, not yours to manage)
+
+The engine caps total gate events (default 30) and wall-clock (default 72h)
+per story — set at `init` via `--max-gates` / `--max-hours`. When exceeded, the
+gate HALTs (exit 2) exactly like a 3-attempt halt, and only a human `resume`
+(which extends the budget with headroom) continues. Never work around a budget
+halt by re-initializing state.
+
 ## Cross-story memory
 
 Durable knowledge lives in `.keel/memory/` (committed to git):

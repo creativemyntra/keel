@@ -2,6 +2,24 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.7.0] - 2026-07-09 - OS-ENFORCED STATE INTEGRITY, PIPELINE BUDGETS, AUTOMATED REVERT CHECK
+
+Remediation pass driven by an external review; every claim was verified against the current
+code first (most were already fixed in 3.4–3.6 — see the Phase-0 cross-check in the PR).
+
+### Added
+- **OS-enforced state integrity (Fix A2)** — manifest writes are now atomic (temp file + `rename`) and serialized by an OS-level lock (`mkdir` on `.keel/state/<story>/.lock`, stale-broken after 30s); `init` uses exclusive create (`wx`) so concurrent double-init cannot both win. Test-caught bug fixed along the way: `process.exit` skips `finally`, so failing gates leaked the lock — released via an exit handler now.
+- **Automated revert check (Fix C)** — `keel-state.cjs revert-check <story> --test <filter>`: stashes the fix (`--keep-index` so the staged/committed regression test survives), asserts the test FAILS without the fix, restores, asserts it PASSES, writes the verdict to the audit log. Handshake and software-engineer now call this command instead of narrating a manual stash dance. Documented limit: committed fixes can't be stash-reverted (refuses, manual verification); RCA quality review remains best-effort LLM judgment and says so.
+- **Pipeline-level budget (Fix E1)** — beyond the per-phase 3-attempt cap: total gate events (default 30) and wall-clock (default 72h) per story, set at `init --max-gates/--max-hours`; breach HALTs like an attempt halt; human `resume` extends the exhausted budget with headroom.
+- **Identical-retry detection in code (Fix E3)** — the engine hashes the phase output at each gate FAIL; a retry with a byte-identical output is flagged as a `protocol_violation` in the audit log and loudly on stderr (prose rule → code check).
+- **Engine test suite** — `scripts/test-keel-state.cjs` (zero-dep, cross-platform, `npm run test:engine`): 11 tests covering exclusive init, lock contention, lost-update prevention, identical-retry, budget halt/resume, restore log-preservation, and revert-check both ways. 11/11 green on Windows.
+
+### Changed
+- **Memory-read instruction in every phase agent (Fix D2)** — PO, BA, QA, security, release-manager, scrum-master now carry the `.keel/memory/conventions.md` read rule inline (previously only orchestrator/engineer/architect), so it survives direct skill invocation.
+- **Orchestrator context compaction (Fix F)** — mandatory pipeline ledger (≤8 lines, ≤25 words each) as the orchestrator's only memory of completed phases; never quotes phase outputs into its own context; invocation instructions capped at ~100 words. Prompt-level discipline — hard enforcement is a harness capability, stated as such.
+- **Naming collision resolved (Fix E5)** — root `HANDOFF-DOCUMENTATION.md` renamed to `docs/MAINTAINER-HANDOFF.md`; "handoff" now unambiguously means the per-story `handoff-log.md`.
+- `npm test` now runs the engine suite (`test:engine`); the aspirational jest scripts moved to `test:legacy`.
+
 ## [3.6.0] - 2026-07-09 - LAYERED SAST/SCA SCANNER STACK (SONARQUBE + SNYK)
 
 ### Added

@@ -27,6 +27,7 @@ Track and report:
 - Sprint burndown status
 
 ## Rules
+- Read `.keel/memory/conventions.md` (if present) before starting.
 - Surface blockers immediately — never hold them until standup.
 - If velocity drops > 20% two sprints in a row, escalate to leadership.
 - Write sprint summary to `docs/sprints/sprint-<N>-summary.md`.

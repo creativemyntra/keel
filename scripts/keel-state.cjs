@@ -22,12 +22,14 @@
  *   node keel-state.cjs restore  <story-id> <snapshot-timestamp>
  *   node keel-state.cjs verify   <story-id>
  *   node keel-state.cjs resume   <story-id> --phase N --notes "human rationale"
+ *   node keel-state.cjs revert-check <story-id> --test <filter-or-path> [--runner "vendor/bin/phpunit"]
  *   node keel-state.cjs memory-check
  */
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const AGENTS = [
   'product-owner', 'business-analyst', 'solution-architect', 'software-engineer',
@@ -39,6 +41,10 @@ const KNOWN_FIELDS = [
   'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp',
 ];
 const MAX_ATTEMPTS = 3;
+const DEFAULT_MAX_GATES = 30;   // pipeline budget: total gate events per story
+const DEFAULT_MAX_HOURS = 72;   // pipeline budget: wall-clock per story
+const LOCK_STALE_MS = 30000;
+const LOCK_WAIT_MS = 2000;
 
 const stateDir = (storyId) => path.join('.keel', 'state', storyId);
 const manifestPath = (storyId) => path.join(stateDir(storyId), 'manifest.json');
@@ -60,9 +66,62 @@ function readManifest(storyId) {
   return readJson(manifestPath(storyId));
 }
 
+// Atomic replace: write to a temp file, then rename. rename() is atomic on the
+// same volume on both Windows (NTFS) and POSIX, so readers never see a torn file.
 function writeManifest(storyId, manifest) {
   manifest.updated_at = nowIso();
-  fs.writeFileSync(manifestPath(storyId), JSON.stringify(manifest, null, 2) + '\n');
+  const file = manifestPath(storyId);
+  const tmp = file + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(manifest, null, 2) + '\n');
+  fs.renameSync(tmp, file);
+}
+
+// Mutual exclusion for read-modify-write on manifest.json. mkdir is atomic on
+// every platform, so the lock is enforced by the OS, not by convention. A lock
+// older than LOCK_STALE_MS is broken (crashed invocation) with a warning.
+// die()/process.exit() skips finally-blocks, so the exit handler below is the
+// release path for commands that exit non-zero while holding the lock.
+let heldLockDir = null;
+process.on('exit', () => {
+  if (heldLockDir) { try { fs.rmdirSync(heldLockDir); } catch { /* already gone */ } }
+});
+
+function withLock(storyId, fn) {
+  const lockDir = path.join(stateDir(storyId), '.lock');
+  const t0 = Date.now();
+  for (;;) {
+    try { fs.mkdirSync(lockDir); break; }
+    catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      let age = Infinity;
+      try { age = Date.now() - fs.statSync(lockDir).mtimeMs; } catch { continue; }
+      if (age > LOCK_STALE_MS) {
+        console.error('warn: breaking stale lock (held > 30s — a previous engine invocation likely crashed)');
+        try { fs.rmdirSync(lockDir); } catch { /* lost the race to another breaker */ }
+        continue;
+      }
+      if (Date.now() - t0 > LOCK_WAIT_MS) {
+        die(1, `FAIL: concurrent engine invocation detected on ${storyId} (lock held: ${lockDir}). State writes are serialized — retry after the other operation finishes.`);
+      }
+      const spinUntil = Date.now() + 50;
+      while (Date.now() < spinUntil) { /* brief wait, then re-attempt */ }
+    }
+  }
+  heldLockDir = lockDir;
+  try { return fn(); }
+  finally {
+    heldLockDir = null;
+    try { fs.rmdirSync(lockDir); } catch { /* already released */ }
+  }
+}
+
+function phaseFileHash(storyId, phase) {
+  const prefix = String(phase).padStart(2, '0') + '-';
+  const file = fs.readdirSync(stateDir(storyId))
+    .find((f) => f.startsWith(prefix) && f.endsWith('.json'));
+  if (!file) return null;
+  return crypto.createHash('sha256')
+    .update(fs.readFileSync(path.join(stateDir(storyId), file))).digest('hex');
 }
 
 function appendAudit(storyId, entry) {
@@ -111,7 +170,8 @@ function notifyHalt(storyId, phase, attempt, reasons) {
 function copyDir(src, dest, skip) {
   fs.mkdirSync(dest, { recursive: true });
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    if (skip && entry.name === skip) continue;
+    if (skip && skip.includes(entry.name)) continue;
+    if (entry.name === '.lock' || entry.name.endsWith('.tmp')) continue; // transient
     const s = path.join(src, entry.name);
     const d = path.join(dest, entry.name);
     if (entry.isDirectory()) copyDir(s, d, null);
@@ -123,21 +183,27 @@ function copyDir(src, dest, skip) {
 
 function cmdInit(storyId, args) {
   const dir = stateDir(storyId);
-  if (fs.existsSync(manifestPath(storyId))) {
-    die(1, `FAIL: story ${storyId} already initialized at ${dir}`);
-  }
   fs.mkdirSync(path.join(dir, 'snapshots'), { recursive: true });
   const manifest = {
     story_id: storyId,
     title: flag(args, '--title') || '',
     current_phase: 1,
     attempts: {},
+    gate_events: 0,
+    max_gates: parseInt(flag(args, '--max-gates') || '', 10) || DEFAULT_MAX_GATES,
+    max_hours: parseFloat(flag(args, '--max-hours') || '') || DEFAULT_MAX_HOURS,
     started_at: nowIso(),
     updated_at: nowIso(),
   };
-  writeManifest(storyId, manifest);
+  // exclusive create — two concurrent inits cannot both win (OS-enforced)
+  try {
+    fs.writeFileSync(manifestPath(storyId), JSON.stringify(manifest, null, 2) + '\n', { flag: 'wx' });
+  } catch (e) {
+    if (e.code === 'EEXIST') die(1, `FAIL: story ${storyId} already initialized at ${dir}`);
+    throw e;
+  }
   appendAudit(storyId, { phase: 0, agent: 'orchestrator', action: 'pipeline_initialized', notes: manifest.title });
-  console.log(`OK: initialized ${dir}`);
+  console.log(`OK: initialized ${dir} (budget: ${manifest.max_gates} gate events / ${manifest.max_hours}h)`);
 }
 
 function validatePhaseFile(storyId, fileName) {
@@ -207,8 +273,21 @@ function cmdValidate(storyId, fileName) {
   console.log(`PASS: ${fileName} — schema valid, artifacts exist, no AC drift`);
 }
 
+function haltPipeline(storyId, manifest, phase, attempt, reason, extraAudit) {
+  manifest.halted = true;
+  writeManifest(storyId, manifest);
+  fs.appendFileSync(handoffPath(storyId), `- ${nowIso()} | phase ${phase} | HALT | ${reason}\n`);
+  const reasons = fs.readFileSync(handoffPath(storyId), 'utf8').split('\n')
+    .filter((l) => l.includes(`phase ${phase} | FAIL`)).slice(-MAX_ATTEMPTS).join('\n') || reason;
+  notifyHalt(storyId, phase, attempt, reasons).then((sent) => {
+    appendAudit(storyId, Object.assign(
+      { phase, agent: 'handshake', action: 'pipeline_halted', attempt, notes: reason, notified: sent }, extraAudit));
+    console.error(`HALT: ${reason} — pipeline halted, escalate to a human. History in ${handoffPath(storyId)}`);
+    process.exit(2);
+  });
+}
+
 function cmdGate(storyId, args) {
-  const manifest = readManifest(storyId);
   const phase = parseInt(flag(args, '--phase') || '', 10);
   const verdict = (flag(args, '--verdict') || '').toUpperCase();
   const notes = flag(args, '--notes') || '';
@@ -217,36 +296,63 @@ function cmdGate(storyId, args) {
   }
   const key = String(phase);
 
-  if (verdict === 'PASS') {
-    delete manifest.attempts[key];
-    manifest.current_phase = phase + 1;
+  withLock(storyId, () => {
+    const manifest = readManifest(storyId);
+    if (manifest.halted === true) {
+      die(1, `FAIL: story ${storyId} is HALTED — a human must run resume before any further gate`);
+    }
+
+    // pipeline-level budget (independent of the per-phase attempt cap)
+    manifest.gate_events = (manifest.gate_events || 0) + 1;
+    const maxGates = manifest.max_gates || DEFAULT_MAX_GATES;
+    const maxHours = manifest.max_hours || DEFAULT_MAX_HOURS;
+    const hoursElapsed = (Date.now() - Date.parse(manifest.started_at)) / 3600000;
+    if (manifest.gate_events > maxGates) {
+      return haltPipeline(storyId, manifest, phase, manifest.attempts[key] || 0,
+        `pipeline budget exceeded: ${manifest.gate_events} gate events > max ${maxGates}`, { budget: 'gates' });
+    }
+    if (hoursElapsed > maxHours) {
+      return haltPipeline(storyId, manifest, phase, manifest.attempts[key] || 0,
+        `pipeline budget exceeded: ${hoursElapsed.toFixed(1)}h wall-clock > max ${maxHours}h`, { budget: 'hours' });
+    }
+
+    if (verdict === 'PASS') {
+      delete manifest.attempts[key];
+      if (manifest.attempt_hashes) delete manifest.attempt_hashes[key];
+      manifest.current_phase = phase + 1;
+      writeManifest(storyId, manifest);
+      fs.appendFileSync(handoffPath(storyId),
+        `- ${nowIso()} | phase ${phase} -> ${phase + 1} | PASS | ${notes}\n`);
+      appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_passed', notes });
+      console.log(`PASS recorded: phase ${phase} -> ${phase + 1}`);
+      return;
+    }
+
+    // identical-retry detection: hash the phase output at each FAIL; a retry
+    // whose output hashes identically did not incorporate the failure findings.
+    const hash = phaseFileHash(storyId, phase);
+    manifest.attempt_hashes = manifest.attempt_hashes || {};
+    const identicalRetry = hash !== null && manifest.attempt_hashes[key] === hash;
+    if (hash !== null) manifest.attempt_hashes[key] = hash;
+
+    const attempt = (manifest.attempts[key] || 0) + 1;
+    manifest.attempts[key] = attempt;
     writeManifest(storyId, manifest);
     fs.appendFileSync(handoffPath(storyId),
-      `- ${nowIso()} | phase ${phase} -> ${phase + 1} | PASS | ${notes}\n`);
-    appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_passed', notes });
-    console.log(`PASS recorded: phase ${phase} -> ${phase + 1}`);
-    return;
-  }
+      `- ${nowIso()} | phase ${phase} | FAIL (attempt ${attempt}/${MAX_ATTEMPTS})${identicalRetry ? ' | IDENTICAL RETRY' : ''} | ${notes}\n`);
 
-  const attempt = (manifest.attempts[key] || 0) + 1;
-  manifest.attempts[key] = attempt;
-  if (attempt >= MAX_ATTEMPTS) manifest.halted = true;
-  writeManifest(storyId, manifest);
-  fs.appendFileSync(handoffPath(storyId),
-    `- ${nowIso()} | phase ${phase} | FAIL (attempt ${attempt}/${MAX_ATTEMPTS}) | ${notes}\n`);
+    if (identicalRetry) {
+      appendAudit(storyId, { phase, agent: 'engine', action: 'protocol_violation', attempt, notes: 'retry output is byte-identical to the previous failed attempt — failure findings were not incorporated' });
+      console.error('VIOLATION: this retry produced byte-identical output to the previous failed attempt — the failure findings were not incorporated. The next attempt MUST differ.');
+    }
 
-  if (attempt >= MAX_ATTEMPTS) {
-    const reasons = fs.readFileSync(handoffPath(storyId), 'utf8').split('\n')
-      .filter((l) => l.includes(`phase ${phase} | FAIL`)).slice(-MAX_ATTEMPTS).join('\n');
-    notifyHalt(storyId, phase, attempt, reasons).then((sent) => {
-      appendAudit(storyId, { phase, agent: 'handshake', action: 'pipeline_halted', attempt, notes, notified: sent });
-      console.error(`HALT: phase ${phase} failed ${attempt} times — pipeline halted, escalate to a human. Reasons in ${handoffPath(storyId)}`);
-      process.exit(2);
-    });
-    return;
-  }
-  appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_failed', attempt, notes });
-  die(1, `FAIL recorded: phase ${phase} attempt ${attempt}/${MAX_ATTEMPTS} — re-run the phase agent with the failure findings as additional input`);
+    if (attempt >= MAX_ATTEMPTS) {
+      return haltPipeline(storyId, manifest, phase, attempt,
+        `phase ${phase} failed ${attempt} times`, {});
+    }
+    appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_failed', attempt, notes });
+    die(1, `FAIL recorded: phase ${phase} attempt ${attempt}/${MAX_ATTEMPTS} — re-run the phase agent with the failure findings as additional input`);
+  });
 }
 
 function cmdAudit(storyId, args) {
@@ -301,7 +407,7 @@ function cmdSnapshot(storyId) {
   readManifest(storyId);
   const ts = nowIso().replace(/[:.]/g, '-');
   const dest = path.join(stateDir(storyId), 'snapshots', ts);
-  copyDir(stateDir(storyId), dest, 'snapshots');
+  copyDir(stateDir(storyId), dest, ['snapshots']);
   appendAudit(storyId, { agent: 'state-management', action: 'snapshot_created', notes: ts });
   console.log(`OK: snapshot ${ts}`);
 }
@@ -351,19 +457,87 @@ function cmdVerify(storyId) {
 }
 
 function cmdResume(storyId, args) {
-  const manifest = readManifest(storyId);
   const phase = parseInt(flag(args, '--phase') || '', 10);
   const notes = (flag(args, '--notes') || '').trim();
   if (!Number.isInteger(phase) || !notes) {
     die(64, 'usage: resume <story-id> --phase N --notes "human rationale" — notes are REQUIRED; resume records a human decision, agents must never resume on their own initiative');
   }
-  delete manifest.attempts[String(phase)];
-  delete manifest.halted;
-  manifest.current_phase = phase;
-  writeManifest(storyId, manifest);
-  fs.appendFileSync(handoffPath(storyId), `- ${nowIso()} | phase ${phase} | RESUMED by human | ${notes}\n`);
-  appendAudit(storyId, { phase, agent: 'human', action: 'pipeline_resumed', notes });
-  console.log(`OK: story ${storyId} resumed at phase ${phase} — attempts reset, halt cleared`);
+  withLock(storyId, () => {
+    const manifest = readManifest(storyId);
+    delete manifest.attempts[String(phase)];
+    if (manifest.attempt_hashes) delete manifest.attempt_hashes[String(phase)];
+    delete manifest.halted;
+    manifest.current_phase = phase;
+    // a budget-halted story would re-halt on the next gate — extend with headroom
+    let budgetNote = '';
+    const maxGates = manifest.max_gates || DEFAULT_MAX_GATES;
+    if ((manifest.gate_events || 0) >= maxGates) {
+      manifest.max_gates = manifest.gate_events + 6;
+      budgetNote = ` (gate budget extended to ${manifest.max_gates})`;
+    }
+    const maxHours = manifest.max_hours || DEFAULT_MAX_HOURS;
+    const hoursElapsed = (Date.now() - Date.parse(manifest.started_at)) / 3600000;
+    if (hoursElapsed >= maxHours) {
+      manifest.max_hours = Math.ceil(hoursElapsed) + 24;
+      budgetNote += ` (hour budget extended to ${manifest.max_hours}h)`;
+    }
+    writeManifest(storyId, manifest);
+    fs.appendFileSync(handoffPath(storyId), `- ${nowIso()} | phase ${phase} | RESUMED by human | ${notes}\n`);
+    appendAudit(storyId, { phase, agent: 'human', action: 'pipeline_resumed', notes });
+    console.log(`OK: story ${storyId} resumed at phase ${phase} — attempts reset, halt cleared${budgetNote}`);
+  });
+}
+
+// Revert check: proves the regression test actually guards the fix.
+// Protocol: the regression TEST must survive the revert (committed, or staged
+// via `git add`), while the FIX is unstaged working-tree changes — the stash
+// uses --keep-index so staged content stays put and only the fix is reverted.
+// If the test were stashed along with the fix, "test file missing" would
+// masquerade as "test fails without fix" and pass the check for the wrong reason.
+// LIMIT: a fix that is already committed cannot be stash-reverted — this
+// command refuses rather than guess; verify manually against the parent commit.
+function cmdRevertCheck(storyId, args) {
+  readManifest(storyId);
+  const testArg = flag(args, '--test');
+  const runner = flag(args, '--runner') || 'vendor/bin/phpunit';
+  if (!testArg) die(64, 'usage: revert-check <story-id> --test <filter-or-path> [--runner "vendor/bin/phpunit"]');
+  const { execSync } = require('child_process');
+  const sh = (cmd) => execSync(cmd, { stdio: 'pipe' }).toString();
+  const runTest = () => {
+    try { execSync(`${runner} ${testArg}`, { stdio: 'pipe' }); return true; }
+    catch { return false; }
+  };
+
+  const unstaged = sh('git diff --name-only').trim();
+  const untracked = sh('git ls-files --others --exclude-standard').trim();
+  if (!unstaged && !untracked) {
+    die(1, 'FAIL: revert-check needs the fix as UNSTAGED working-tree changes (and the regression test committed or staged via `git add`). A committed fix cannot be stash-reverted — verify manually (checkout the parent commit, run the test, confirm it fails).');
+  }
+
+  sh('git stash push --include-untracked --keep-index -m keel-revert-check');
+  let failsWithoutFix;
+  try {
+    failsWithoutFix = !runTest();
+  } finally {
+    try { sh('git stash pop'); }
+    catch (e) {
+      die(1, `FAIL: git stash pop failed (${e.message.split('\n')[0]}) — the fix is in the stash named "keel-revert-check". Recover it manually with: git stash pop`);
+    }
+  }
+  const passesWithFix = runTest();
+
+  appendAudit(storyId, {
+    agent: 'engine', action: 'revert_check',
+    notes: `test="${testArg}" fails_without_fix=${failsWithoutFix} passes_with_fix=${passesWithFix}`,
+  });
+
+  if (!failsWithoutFix) {
+    die(1, `FAIL: the regression test PASSES without the fix — it does not prove the fix targets the cause. Rewrite the test so it fails on the unfixed code.`);
+  }
+  if (!passesWithFix) {
+    die(1, `FAIL: the regression test fails even WITH the fix applied — the fix is incomplete or the test is broken.`);
+  }
+  console.log('PASS: regression test fails without the fix and passes with it — the test proves the fix.');
 }
 
 function cmdMemoryCheck() {
@@ -391,7 +565,7 @@ function cmdMemoryCheck() {
 
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|snapshot|restore|verify|resume> <story-id> [args] | keel-state.cjs memory-check';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|snapshot|restore|verify|resume|revert-check> <story-id> [args] | keel-state.cjs memory-check';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
@@ -406,5 +580,6 @@ switch (cmd) {
   case 'restore': cmdRestore(storyId, rest[0] || die(64, 'restore needs <snapshot-timestamp>')); break;
   case 'verify': cmdVerify(storyId); break;
   case 'resume': cmdResume(storyId, rest); break;
+  case 'revert-check': cmdRevertCheck(storyId, rest); break;
   default: die(64, `unknown command: ${cmd}`);
 }
