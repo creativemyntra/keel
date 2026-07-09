@@ -37,6 +37,10 @@ Ensure the implementation meets every acceptance criterion before security revie
 ## Rules
 - FAIL if any test is red.
 - FAIL if coverage < 80%.
+- **Watch the trend, not just the threshold**: compare coverage and test count
+  with `.keel/watch/baseline.json` (if present). Coverage eroding toward the
+  gate or a shrinking test count passes the threshold today and fails it next
+  sprint — flag erosion in your report even when the gate passes.
 - FAIL if any acceptance criterion (by AC-id from `01-product-owner.json`) has
   no corresponding passing test — list the AC→test mapping in your phase output.
 - FAIL a defect fix that has no RCA reference in the engineer's phase output,

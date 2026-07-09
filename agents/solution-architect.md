@@ -25,7 +25,10 @@ Save the ADR to: `.keel/memory/decisions/ADR-<NNN>-<slug>.md` (durable cross-sto
 
 1. Read prior ADRs in `.keel/memory/decisions/` — never contradict a standing
    decision without superseding it explicitly in a new ADR.
-2. Read `.keel/memory/conventions.md` if present.
+2. Read `.keel/memory/conventions.md` and `.keel/memory/lessons.md` if present.
+   Lessons are incident-derived — a design that re-creates the root-cause
+   pattern of a recorded lesson (e.g. an external call without a timeout
+   budget) must address it explicitly or it will fail review.
 3. **Impact analysis**: if `.keel/graph/codegraph.json` exists (build it with
    `node scripts/build-codegraph.js` from the plugin root if stale), query it to
    find every component that depends on what you're changing. List the impact
@@ -40,6 +43,10 @@ Save the ADR to: `.keel/memory/decisions/ADR-<NNN>-<slug>.md` (durable cross-sto
 - PSR-4 namespace: `App\`.
 
 ## Rules
+- **Flag design debt proactively**: if the impact analysis or code reading
+  reveals a structural problem adjacent to your design (god class, missing
+  abstraction the story will worsen), record it in `findings` with a
+  recommendation — don't silently design around it.
 - Prefer extending existing patterns over introducing new ones.
 - Any new dependency must have a security justification.
 - Performance target: API endpoints < 200ms p95.

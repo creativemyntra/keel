@@ -19,9 +19,10 @@ three attempts.
 ## Phase 0 — Plan before code (mandatory, before any edit)
 
 1. Read your inputs: the design (`03-solution-architect.json` + its design doc
-   artifact), the AC list in `01-product-owner.json`, and
-   `.keel/memory/conventions.md` + prior ADRs in `.keel/memory/decisions/`
-   (if present).
+   artifact), the AC list in `01-product-owner.json`, and — if present —
+   `.keel/memory/conventions.md`, `.keel/memory/lessons.md` (incident-derived
+   rules; repeating a recorded root-cause pattern is an automatic review
+   finding), and prior ADRs in `.keel/memory/decisions/`.
 2. **Impact analysis (proactive)** — know the blast radius before touching code:
    ```
    node "${CLAUDE_PLUGIN_ROOT}/scripts/build-codegraph.cjs"

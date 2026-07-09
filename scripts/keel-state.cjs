@@ -21,6 +21,8 @@
  *   node keel-state.cjs snapshot <story-id>
  *   node keel-state.cjs restore  <story-id> <snapshot-timestamp>
  *   node keel-state.cjs verify   <story-id>
+ *   node keel-state.cjs resume   <story-id> --phase N --notes "human rationale"
+ *   node keel-state.cjs memory-check
  */
 'use strict';
 
@@ -71,6 +73,39 @@ function appendAudit(storyId, entry) {
 function flag(args, name) {
   const i = args.indexOf(name);
   return i >= 0 && i + 1 < args.length ? args[i + 1] : null;
+}
+
+// POST the halt to Slack if configured (~/.keel/config/slack.yml enabled +
+// ~/.keel/secrets/slack.webhook). Never throws, never blocks the halt.
+function notifyHalt(storyId, phase, attempt, reasons) {
+  return new Promise((resolve) => {
+    try {
+      const os = require('os');
+      const keelHome = process.env.KEEL_HOME || path.join(os.homedir(), '.keel');
+      const cfgFile = path.join(keelHome, 'config', 'slack.yml');
+      const hookFile = path.join(keelHome, 'secrets', 'slack.webhook');
+      if (!fs.existsSync(cfgFile) || !fs.existsSync(hookFile)) {
+        console.error('note: no notification channel configured (need ~/.keel/config/slack.yml + ~/.keel/secrets/slack.webhook) — halt is console-only');
+        return resolve(false);
+      }
+      if (!/enabled:\s*true/.test(fs.readFileSync(cfgFile, 'utf8'))) {
+        console.error('note: slack notifications disabled in slack.yml — halt is console-only');
+        return resolve(false);
+      }
+      const url = new URL(fs.readFileSync(hookFile, 'utf8').trim());
+      const body = JSON.stringify({
+        text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): node keel-state.cjs resume ${storyId} --phase ${phase} --notes "..."`,
+      });
+      const req = require('https').request(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+        timeout: 5000,
+      }, (res) => { res.resume(); res.on('end', () => resolve(res.statusCode < 300)); });
+      req.on('error', (e) => { console.error(`warn: halt notification failed: ${e.message}`); resolve(false); });
+      req.on('timeout', () => { req.destroy(); console.error('warn: halt notification timed out'); resolve(false); });
+      req.end(body);
+    } catch (e) { console.error(`warn: halt notification failed: ${e.message}`); resolve(false); }
+  });
 }
 
 function copyDir(src, dest, skip) {
@@ -195,13 +230,20 @@ function cmdGate(storyId, args) {
 
   const attempt = (manifest.attempts[key] || 0) + 1;
   manifest.attempts[key] = attempt;
+  if (attempt >= MAX_ATTEMPTS) manifest.halted = true;
   writeManifest(storyId, manifest);
   fs.appendFileSync(handoffPath(storyId),
     `- ${nowIso()} | phase ${phase} | FAIL (attempt ${attempt}/${MAX_ATTEMPTS}) | ${notes}\n`);
 
   if (attempt >= MAX_ATTEMPTS) {
-    appendAudit(storyId, { phase, agent: 'handshake', action: 'pipeline_halted', attempt, notes });
-    die(2, `HALT: phase ${phase} failed ${attempt} times — pipeline halted, escalate to a human. Reasons in ${handoffPath(storyId)}`);
+    const reasons = fs.readFileSync(handoffPath(storyId), 'utf8').split('\n')
+      .filter((l) => l.includes(`phase ${phase} | FAIL`)).slice(-MAX_ATTEMPTS).join('\n');
+    notifyHalt(storyId, phase, attempt, reasons).then((sent) => {
+      appendAudit(storyId, { phase, agent: 'handshake', action: 'pipeline_halted', attempt, notes, notified: sent });
+      console.error(`HALT: phase ${phase} failed ${attempt} times — pipeline halted, escalate to a human. Reasons in ${handoffPath(storyId)}`);
+      process.exit(2);
+    });
+    return;
   }
   appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_failed', attempt, notes });
   die(1, `FAIL recorded: phase ${phase} attempt ${attempt}/${MAX_ATTEMPTS} — re-run the phase agent with the failure findings as additional input`);
@@ -245,6 +287,7 @@ function cmdStatus(storyId) {
     story_id: manifest.story_id,
     title: manifest.title,
     current_phase: manifest.current_phase,
+    halted: manifest.halted === true,
     attempts: manifest.attempts,
     completed_phase_files: files,
     sequencing_gaps: gaps,
@@ -307,12 +350,52 @@ function cmdVerify(storyId) {
   console.log('PASS: audit log chronologically consistent with manifest');
 }
 
+function cmdResume(storyId, args) {
+  const manifest = readManifest(storyId);
+  const phase = parseInt(flag(args, '--phase') || '', 10);
+  const notes = (flag(args, '--notes') || '').trim();
+  if (!Number.isInteger(phase) || !notes) {
+    die(64, 'usage: resume <story-id> --phase N --notes "human rationale" — notes are REQUIRED; resume records a human decision, agents must never resume on their own initiative');
+  }
+  delete manifest.attempts[String(phase)];
+  delete manifest.halted;
+  manifest.current_phase = phase;
+  writeManifest(storyId, manifest);
+  fs.appendFileSync(handoffPath(storyId), `- ${nowIso()} | phase ${phase} | RESUMED by human | ${notes}\n`);
+  appendAudit(storyId, { phase, agent: 'human', action: 'pipeline_resumed', notes });
+  console.log(`OK: story ${storyId} resumed at phase ${phase} — attempts reset, halt cleared`);
+}
+
+function cmdMemoryCheck() {
+  const conv = path.join('.keel', 'memory', 'conventions.md');
+  const les = path.join('.keel', 'memory', 'lessons.md');
+  const problems = [];
+  let convLines = 0;
+  let lessonCount = 0;
+  if (fs.existsSync(conv)) {
+    convLines = fs.readFileSync(conv, 'utf8').split('\n').length;
+    if (convLines > 150) problems.push(`conventions.md is ${convLines} lines (cap 150) — consolidate duplicates, delete stale rules, promote long rationale to ADRs`);
+  }
+  if (fs.existsSync(les)) {
+    lessonCount = (fs.readFileSync(les, 'utf8').match(/^## L-/gm) || []).length;
+    if (lessonCount > 30) problems.push(`lessons.md has ${lessonCount} entries (cap 30) — move oldest to .keel/memory/archive/lessons-<year>.md`);
+  }
+  console.log(`conventions.md: ${convLines} lines (cap 150) | lessons.md: ${lessonCount} entries (cap 30)`);
+  if (problems.length) {
+    console.error('FAIL: memory over bounds — the technical-writer must prune:');
+    problems.forEach((p) => console.error(`  - ${p}`));
+    process.exit(1);
+  }
+  console.log('PASS: memory within bounds');
+}
+
 // ------------------------------------------------------------------- main
 
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|snapshot|restore|verify|resume> <story-id> [args] | keel-state.cjs memory-check';
 const [, , cmd, storyId, ...rest] = process.argv;
-if (!cmd || !storyId) {
-  die(64, 'usage: keel-state.cjs <init|validate|gate|audit|status|snapshot|restore|verify> <story-id> [args]');
-}
+if (!cmd) die(64, USAGE);
+if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
+if (!storyId) die(64, USAGE);
 switch (cmd) {
   case 'init': cmdInit(storyId, rest); break;
   case 'validate': cmdValidate(storyId, rest[0] || die(64, 'validate needs <NN-agent.json>')); break;
@@ -322,5 +405,6 @@ switch (cmd) {
   case 'snapshot': cmdSnapshot(storyId); break;
   case 'restore': cmdRestore(storyId, rest[0] || die(64, 'restore needs <snapshot-timestamp>')); break;
   case 'verify': cmdVerify(storyId); break;
+  case 'resume': cmdResume(storyId, rest); break;
   default: die(64, `unknown command: ${cmd}`);
 }

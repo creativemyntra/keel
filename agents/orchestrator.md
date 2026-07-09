@@ -63,10 +63,15 @@ The engine owns the attempt counter — read the handshake agent's report:
 - Gate FAIL with attempts < 3: re-invoke the SAME phase agent with two inputs —
   the original input file AND the handshake failure findings. Never retry with
   identical input; each attempt must incorporate what failed.
-- Gate HALT (attempts ≥ 3): stop the pipeline. Summarize all failure reasons
-  for the human in your final message and stop. Never skip or weaken a gate to
-  make progress.
+- Gate HALT (attempts ≥ 3): stop the pipeline. The engine marks the story
+  `halted`, notifies Slack if configured, and the SessionStart watcher will
+  keep surfacing it. Summarize all failure reasons for the human in your final
+  message and stop. Never skip or weaken a gate to make progress.
 - Attempts reset automatically when a phase finally passes.
+- **Resume is a human decision.** `keel-state.cjs resume <story> --phase N
+  --notes "..."` exists for exactly one caller: a human who has decided what
+  to do about the halt. Never run it on your own initiative; only relay an
+  explicit human instruction, quoting it in `--notes`.
 
 ## Context economy rules (token discipline)
 
@@ -86,9 +91,13 @@ Durable knowledge lives in `.keel/memory/` (committed to git):
 
 - `.keel/memory/decisions/` — ADRs written by the solution-architect
 - `.keel/memory/conventions.md` — project conventions maintained by the technical-writer
+- `.keel/memory/lessons.md` — incident-derived lessons, written by the
+  technical-writer from RCAs (gated: a defect story must add its lesson)
 
 Instruct every phase agent to read `.keel/memory/conventions.md` (if present)
-before starting, and the architect to check prior ADRs before making new decisions.
+before starting; the architect and engineer additionally read `lessons.md`;
+the architect checks prior ADRs before making new decisions. Memory is
+bounded (`keel-state.cjs memory-check`) so this read stays cheap.
 
 ## Hard Rules
 

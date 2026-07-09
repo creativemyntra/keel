@@ -2,6 +2,20 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.5.0] - 2026-07-09 - HALT ESCALATION, MEMORY WRITEBACK, PROACTIVE WATCHERS
+
+### Added
+- **Halt notification + resume path** — on pipeline HALT the engine marks the story `halted` in the manifest, posts story/phase/failure-reasons to Slack when configured (`~/.keel/config/slack.yml` enabled + `~/.keel/secrets/slack.webhook`; notification failure never blocks the halt), and `status` surfaces the halted flag. New `keel-state.cjs resume <story> --phase N --notes "..."` clears the halt and resets attempts — `--notes` is mandatory because resume records a **human** decision; the orchestrator is instructed to never run it on its own initiative. Previously a HALT left `attempts` at 3 forever with no documented way back.
+- **Memory writeback loop** — new `.keel/memory/lessons.md` (incident-derived, distinct from conventions): when a story fixed a defect, the technical-writer must distill the RCA's Prevention section into a lesson entry, and the handshake gate FAILs phase 7 if the lesson is missing. Solution-architect and software-engineer read lessons before designing/coding; repeating a recorded root-cause pattern is an automatic finding. Memory is bounded — `keel-state.cjs memory-check` (conventions.md ≤ 150 lines, lessons.md ≤ 30 entries, oldest lessons archived to `.keel/memory/archive/`) runs in the phase-7 gate so cross-story memory can't become a compounding token leak.
+- **Proactive watchers** (`scripts/keel-watch.cjs`, zero-dependency, crash-proof — every path exits 0 fast):
+  - `--post-bash` (PostToolUse hook on Bash): recognizes PHPUnit output, compares against `.keel/watch/baseline.json`, and injects a warning into the conversation on coverage drops > 2 points or a shrinking test count (deleted/skipped tests are a patch pattern). Green runs update the baseline. Strips the UTF-8 BOM Windows PowerShell 5.1 prepends to piped JSON.
+  - `--stale-check` (SessionStart hook): surfaces halted pipelines (with the exact resume command) and in-flight stories idle > 48h at session open — the escalation backstop when Slack isn't configured.
+- **`/keel:health` command** — on-demand sweep: halted/stale stories, audit-log integrity, attempt heat-map (a phase repeatedly needing 2+ attempts is a recurring upstream quality problem), memory bounds, coverage-baseline trend, and CodeGraph staleness vs last commit. Report-only by design: surfacing is the job, the human decides.
+
+### Changed
+- qa-engineer watches the coverage/test-count **trend** against the watch baseline, not just the 80% threshold — erosion that still passes today's gate is flagged before it fails next sprint's.
+- solution-architect flags adjacent design debt proactively instead of silently designing around it.
+
 ## [3.4.0] - 2026-07-09 - DETERMINISTIC STATE ENGINE + GATES WITH TEETH
 
 ### Added

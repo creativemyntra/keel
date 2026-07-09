@@ -57,6 +57,11 @@ below with the script's error list as your findings.
    - After qa-engineer: coverage ≥ 80% **as observed by you**, and every AC
      mapped to a passing test.
    - After security-engineer: zero HIGH findings recorded.
+   - After technical-writer: if the story fixed a defect (the engineer's phase
+     output references an RCA), `.keel/memory/lessons.md` must contain a new
+     entry for this story — a defect whose lesson isn't recorded will recur.
+     Also run `node "${CLAUDE_PLUGIN_ROOT}/scripts/keel-state.cjs" memory-check`;
+     over-cap memory is a FAIL (the writer prunes, then you re-gate).
 
 ## Gate the transition (always through the engine)
 
