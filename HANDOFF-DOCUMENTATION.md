@@ -105,7 +105,7 @@ keel/
 ├── plugin.json                   # Plugin manifest
 ├── action.yml                    # GitHub Action manifest
 ├── CHANGELOG.md                  # Version history
-├── RELEASE-NOTES-v3.1.0.md      # Current release
+├── RELEASE-NOTES-v3.0.2.md      # Release notes
 ├── README.md                     # Main documentation
 ├── TECHNICAL-SPECIFICATIONS.md   # System specifications
 ├── HANDOFF-DOCUMENTATION.md      # This file
@@ -321,7 +321,7 @@ git checkout -b release/v3.1.0 origin/develop
 #### 2. Update Version Files
 ```bash
 # Update in: package.json, plugin.json, action.yml
-# Edit: CHANGELOG.md, RELEASE-NOTES-v3.1.0.md
+# Edit: CHANGELOG.md, RELEASE-NOTES-vX.Y.Z.md
 ```
 
 #### 3. Commit Release Bump
@@ -356,7 +356,7 @@ git push origin v3.1.0
 # Go to: https://github.com/creativemyntra/keel/releases/new
 # Tag: v3.1.0
 # Title: "Keel v3.1.0 - [Description]"
-# Description: [Copy from RELEASE-NOTES-v3.1.0.md]
+# Description: [Copy from RELEASE-NOTES-vX.Y.Z.md]
 # Publish
 ```
 

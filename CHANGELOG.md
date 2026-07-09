@@ -284,9 +284,9 @@ uses: amarsingh/keel@v2.1.0
 ## Documentation
 
 - **[README.md](README.md)** - Complete user guide
-- **[PLUGIN-INTEGRATION-GUIDE.md](PLUGIN-INTEGRATION-GUIDE.md)** - How to use in projects
-- **[.claude/DEVELOPER-WORKFLOW.md](.claude/DEVELOPER-WORKFLOW.md)** - Daily patterns
-- **[.claude/TDD-DEVELOPMENT-WORKFLOW.md](.claude/TDD-DEVELOPMENT-WORKFLOW.md)** - TDD guide
+- **[INSTALL.md](INSTALL.md)** - Installation guide
+- **[QUICK-START-CLAUDE-CODE.md](QUICK-START-CLAUDE-CODE.md)** - Quick start for Claude Code
+- **[ALL-AGENTS-COMPLETE-GUIDE.md](ALL-AGENTS-COMPLETE-GUIDE.md)** - Complete agent guide
 - **[GitHub Issues](https://github.com/creativemyntra/keel/issues)** - Report bugs
 
 ---

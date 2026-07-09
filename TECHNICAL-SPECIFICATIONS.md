@@ -484,7 +484,7 @@ Record in Audit Trail
 - **Repository:** https://github.com/creativemyntra/keel
 - **Documentation:** [QUICK-START-CLAUDE-CODE.md](QUICK-START-CLAUDE-CODE.md)
 - **Complete Agent Guide:** [ALL-AGENTS-COMPLETE-GUIDE.md](ALL-AGENTS-COMPLETE-GUIDE.md)
-- **Release Notes:** [RELEASE-NOTES-v3.1.0.md](RELEASE-NOTES-v3.1.0.md)
+- **Release Notes:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 

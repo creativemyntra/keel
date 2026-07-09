@@ -661,8 +661,8 @@ If Keel helps you build faster, please star the repo!
 ```bash
 # Read full documentation
 cat ~/README.md
-cat ~/KEEL-AGENTS-MASTER-GUIDE.md
-cat ~/DEVELOPER-WORKFLOW.md
+cat ~/ALL-AGENTS-COMPLETE-GUIDE.md
+cat ~/TECHNICAL-SPECIFICATIONS.md
 ```
 
 ### Reporting Issues

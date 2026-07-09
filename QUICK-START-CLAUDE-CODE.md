@@ -146,17 +146,17 @@ This invokes ALL agents automatically:
 → Restart Claude Code terminal (command discovery runs on startup)
 
 ### Everything else
-→ Check **KEEL-CLAUDE-CODE-INTEGRATION-DIAGNOSTIC.md** for full troubleshooting
+→ Check **TECHNICAL-SPECIFICATIONS.md** for full troubleshooting
 
 ---
 
 ## 📖 DOCUMENTATION
 
 - **README.md** — Overview, quickstart
-- **RELEASE-NOTES-v3.1.0.md** — What's new (3 compliance agents added)
-- **COMPLIANCE-AGENTS-INTEGRATION.md** — How agents work together
-- **PRODUCTION-READINESS-CHECKLIST.md** — Deployment validation
-- **KEEL-CLAUDE-CODE-INTEGRATION-DIAGNOSTIC.md** — Full technical details
+- **INSTALL.md** — Installation guide
+- **CHANGELOG.md** — What's new in each release
+- **ALL-AGENTS-COMPLETE-GUIDE.md** — How agents work together
+- **TECHNICAL-SPECIFICATIONS.md** — Full technical details
 
 ---
 
