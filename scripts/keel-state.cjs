@@ -34,7 +34,8 @@ const crypto = require('crypto');
 
 const AGENTS = [
   'product-owner', 'business-analyst', 'solution-architect', 'software-engineer',
-  'qa-engineer', 'security-engineer', 'technical-writer', 'release-manager',
+  'tdd-red', 'tdd-green', 'qa-engineer', 'e2e-engineer',
+  'security-engineer', 'technical-writer', 'release-manager',
 ];
 const CONFIDENCE = ['high', 'medium', 'low'];
 const KNOWN_FIELDS = [
@@ -42,7 +43,7 @@ const KNOWN_FIELDS = [
   'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp',
 ];
 const MAX_ATTEMPTS = 3;
-const DEFAULT_MAX_GATES = 30;   // pipeline budget: total gate events per story
+const DEFAULT_MAX_GATES = 44;   // pipeline budget: total gate events per story (11 phases × 3 attempts + overhead)
 const DEFAULT_MAX_HOURS = 72;   // pipeline budget: wall-clock per story
 const LOCK_STALE_MS = 30000;
 const LOCK_WAIT_MS = 2000;
@@ -183,11 +184,34 @@ function copyDir(src, dest, skip) {
 // ---------------------------------------------------------------- commands
 
 // Pipeline scopes: which phases a story is expected to run.
-// feature = full 8-phase pipeline; defect = intake -> engineer -> QA -> security
-// (express lane for bug fixes — no BA elaboration/architecture/docs ceremony).
+//
+// feature (11 phases):
+//   1  product-owner      — intake / requirements
+//   2  business-analyst   — functional spec
+//   3  solution-architect — architecture + design
+//   4  software-engineer  — implementation (production code ONLY, no tests)
+//   5  tdd-red            — test case creation (write + verify meaningful failing tests)
+//   6  tdd-green          — full suite execution + coverage gate (≥80% changed lines)
+//   7  qa-engineer        — AC mapping, regression, integration validation
+//   8  e2e-engineer       — Playwright E2E browser tests
+//   9  security-engineer  — OWASP, threat model, dependency audit
+//  10  technical-writer   — docs, changelog, runbook
+//  11  release-manager    — go/no-go, deployment plan
+//
+// defect (express lane — phases 1, 4-7, 9):
+//   1  business-analyst   — triage + RCA import
+//   4  software-engineer  — root-cause fix
+//   5  tdd-red            — regression test (proves fix guards root cause)
+//   6  tdd-green          — revert-check + full suite green
+//   7  qa-engineer        — validation
+//   9  security-engineer  — diff-scoped security scan
+//
+// Existing stories initialized under the old 8-phase scheme store their own
+// expected_phases in their manifest.json — the engine always reads from the
+// manifest, so old stories are unaffected by this constant changing.
 const SCOPES = {
-  feature: [1, 2, 3, 4, 5, 6, 7, 8],
-  defect: [1, 4, 5, 6],
+  feature: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  defect: [1, 4, 5, 6, 7, 9],
 };
 
 function cmdInit(storyId, args) {
@@ -229,7 +253,7 @@ function validatePhaseFile(storyId, fileName) {
   catch (e) { return [`invalid JSON in ${file}: ${e.message}`]; }
 
   // schema checks (mirrors agent-output-schema.json)
-  if (!Number.isInteger(out.phase) || out.phase < 1 || out.phase > 8) errors.push('phase must be integer 1..8');
+  if (!Number.isInteger(out.phase) || out.phase < 1 || out.phase > 11) errors.push('phase must be integer 1..11');
   if (!AGENTS.includes(out.agent)) errors.push(`agent must be one of: ${AGENTS.join(', ')}`);
   if (typeof out.story_id !== 'string' || !out.story_id) errors.push('story_id missing');
   else if (out.story_id !== storyId) errors.push(`story_id "${out.story_id}" does not match directory "${storyId}"`);

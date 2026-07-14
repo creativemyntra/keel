@@ -29,32 +29,54 @@ acceptance criteria must be confirmed by the human before phase 2 starts.
 it exists for ceremonies (standup, retro, velocity) when the human asks.
 
 **Scope (orthogonal to entry mode):**
-- `feature` (default) — all 8 phases.
-- `defect` — express lane for bug fixes: phases 1 (intake), 4 (engineer:
-  RCA + revert-checked fix), 5 (QA), 6 (security scan of the diff). No BA
-  elaboration, no architecture phase, no technical-writer phase — EXCEPT the
-  lessons.md writeback still happens: have the engineer append the lesson from
-  the RCA (checked at the phase-6 gate instead of phase 7).
-  Choose defect scope when the Jira ticket type is Bug/Defect, or the human
-  says "fix". Pass it at init: `init <story> --scope defect`. Roughly 6 agent
-  spawns instead of ~17 — don't run feature ceremony on a bug fix.
+- `feature` (default) — all 11 phases (see table below).
+- `defect` — express lane for bug fixes: phases 1, 4, 5, 6, 7, 9.
+  No BA elaboration, no architecture, no technical-writer, no E2E phase — the
+  defect is a targeted fix with a regression test, not a feature. EXCEPT:
+  the lessons.md writeback still happens (phase-6 gate checks it). Choose
+  defect scope when the Jira ticket type is Bug/Defect, or the human says
+  "fix". Pass it at init: `init <story> --scope defect`. ~8 agent spawns
+  instead of ~22 — don't run feature ceremony on a bug fix.
 
 ## Pipeline Phases
 
-1. **Requirements intake** — jira-entry: `keel:business-analyst` (import); full: `keel:product-owner` (draft + human confirmation)
-2. **Business Analyst** (`keel:business-analyst`) — functional spec, data flows, edge cases
-3. **Solution Architect** (`keel:solution-architect`) — architecture, design, technical risk
-4. **Software Engineer** (`keel:software-engineer`) — TDD Red → Green → Refactor
-5. **QA Engineer** (`keel:qa-engineer`) — test validation, coverage gate
-6. **Security Engineer** (`keel:security-engineer`) — OWASP, threat model, compliance
-7. **Technical Writer** (`keel:technical-writer`) — docs, changelogs, runbooks
-8. **Release Manager** (`keel:release-manager`) — go/no-go, deployment
+| Phase | Agent | Job | Gate requirement |
+|-------|-------|-----|-----------------|
+| 1 | `keel:product-owner` or `keel:business-analyst` | Requirements intake | ACs confirmed by human |
+| 2 | `keel:business-analyst` | Functional spec, data flows, edge cases | Spec complete |
+| 3 | `keel:solution-architect` | Architecture, design, technical risk | Design approved |
+| 4 | `keel:software-engineer` | **Production code only** — no tests | Lint + static analysis clean |
+| 5 | `keel:tdd-red` | **Test case creation** — write failing tests for every AC | Every AC has ≥1 test; each test verified meaningful |
+| 6 | `keel:tdd-green` | **Full suite execution** — all tests pass, coverage ≥ 80% | 0 failures, ≥80% changed-line coverage |
+| 7 | `keel:qa-engineer` | AC mapping, integration tests, error paths | All ACs mapped to passing tests |
+| 8 | `keel:e2e-engineer` | **Playwright E2E** browser tests for all user-facing flows | All E2E tests pass, screenshots captured |
+| 9 | `keel:security-engineer` | OWASP, threat model, dependency audit | 0 HIGH findings |
+| 10 | `keel:technical-writer` | Docs, changelog, runbook | Docs complete |
+| 11 | `keel:release-manager` | Go/no-go, deployment plan | Human approval |
+
+**Defect scope phases:** 1 → 4 → 5 → 6 → 7 → 9 (skips BA elaboration,
+architecture, E2E, docs, release ceremony).
+
+## Phase sequencing rules
+
+- **Phase 4 before phase 5**: software-engineer writes code FIRST; tdd-red
+  writes tests AGAINST that code. Never swap the order.
+- **Phase 5 before phase 6**: tdd-red must produce test files before tdd-green
+  can execute them. Never collapse these into one agent call.
+- **Phase 6 before phase 7**: QA validates a green suite, not a red one.
+- **Phase 7 before phase 8**: E2E is browser-level; it runs after unit/
+  integration QA is clean to avoid debugging the wrong layer.
+- **Phase 8 before phase 9**: security reviews committed, tested code.
+- All three test phases (5, 6, 7) must complete before E2E (8). Never skip.
 
 ## Governance Gates (cannot be skipped)
 
-- Tests must FAIL before implementation (TDD Red gate)
-- Coverage ≥ 80% before security phase
-- Zero HIGH security findings before release
+- Phase 4 output must contain NO test files (code only)
+- Phase 5 gate: every AC has ≥1 test, every test verified meaningful
+- Phase 6 gate: 0 test failures, coverage ≥ 80% on changed files
+- Phase 7 gate: all ACs mapped to passing tests, integration endpoints validated
+- Phase 8 gate: all Playwright E2E tests pass, screenshots in artifacts
+- Phase 9 gate: 0 HIGH security findings
 - Release Manager must approve before deploy
 
 ## State protocol (how phases communicate)
@@ -173,7 +195,7 @@ growth across 16+ agent invocations. Discipline:
 
 ## Pipeline budget (engine-enforced, not yours to manage)
 
-The engine caps total gate events (default 30) and wall-clock (default 72h)
+The engine caps total gate events (default 44) and wall-clock (default 72h)
 per story — set at `init` via `--max-gates` / `--max-hours`. When exceeded, the
 gate HALTs (exit 2) exactly like a 3-attempt halt, and only a human `resume`
 (which extends the budget with headroom) continues. Never work around a budget
