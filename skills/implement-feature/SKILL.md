@@ -31,15 +31,16 @@ drift from the governed one.
    ```
    1  Product Owner / Business Analyst  — requirements intake
    2  Business Analyst                  — functional spec
-   3  Solution Architect                — architecture + design
-   4  Software Engineer                 — production code (no tests)
-   5  TDD Red                           — test case creation
-   6  TDD Green                         — full suite execution + coverage gate
-   7  QA Engineer                       — AC mapping + integration tests
-   8  E2E Engineer                      — Playwright browser tests
-   9  Security Engineer                 — OWASP + dependency audit
-   10 Technical Writer                  — docs + changelog
-   11 Release Manager                   — go/no-go
+   3  UI Designer                       — screen flows, mockups, component states
+   4  Solution Architect                — architecture + design (reads UI design)
+   5  Software Engineer                 — production code (no tests)
+   6  TDD Red                           — test case creation
+   7  TDD Green                         — full suite execution + coverage gate
+   8  QA Engineer                       — AC mapping + integration tests
+   9  E2E Engineer                      — Playwright browser tests
+   10 Security Engineer                 — OWASP + dependency audit
+   11 Technical Writer                  — docs + changelog
+   12 Release Manager                   — go/no-go
    ```
 
 4. Relay the orchestrator's delivery summary to the user:

@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-07-14T05:20:21.690Z",
+  "nodes": {
+    "App\\Controller\\HealthController": {
+      "file": "src/Controller/HealthController.php",
+      "kind": "class"
+    },
+    "App\\Test\\TestCase\\Controller\\HealthControllerTest": {
+      "file": "tests/TestCase/Controller/HealthControllerTest.php",
+      "kind": "class"
+    }
+  },
+  "edges": [
+    {
+      "from": "App\\Controller\\HealthController",
+      "to": "Cake\\Controller\\Controller",
+      "type": "extends"
+    },
+    {
+      "from": "App\\Controller\\HealthController",
+      "to": "Cake\\Datasource\\ConnectionManager",
+      "type": "references"
+    },
+    {
+      "from": "App\\Test\\TestCase\\Controller\\HealthControllerTest",
+      "to": "App\\Controller\\HealthController",
+      "type": "use"
+    },
+    {
+      "from": "App\\Test\\TestCase\\Controller\\HealthControllerTest",
+      "to": "Cake\\TestSuite\\TestCase",
+      "type": "extends"
+    }
+  ]
+}

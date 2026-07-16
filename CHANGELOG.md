@@ -2,6 +2,16 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.14.0] - 2026-07-15 - PIPELINE STATUS WEB DASHBOARD (KEEL-104)
+
+### Added
+- **`keel dashboard [--port=<N>]` (KEEL-104)** — new CLI sub-command (`bin/keel.js` route → `scripts/keel-dashboard.cjs`) that serves a strictly read-only pipeline status web dashboard on `http://localhost:7772` (default; `--port=<N>` via the CLI, `--port <N>` when running the script directly — invalid or out-of-range values fall back to 7772). Lists every story under `.keel/state/` with story ID, title, scope, current phase by agent name (e.g. `Phase 11 — Technical Writer`), status badge (COMPLETE / IN PROGRESS / HALTED, derived from the manifest halted flag and completed-phase count), and idle time since last manifest write (`Xh Ym` / `Xm Ys` per the KEEL-103 convention; `unknown` when the timestamp is absent). Rows sort by `updated_at` descending; corrupt manifests render as skip-and-marked error rows (never abort the sweep — ADR-001 pattern); empty state prompts `Run keel init <story-id> to start.` while the server keeps serving. Page auto-refreshes every 30 seconds via meta refresh. Prints `Dashboard: http://localhost:<port>` on start; on `EADDRINUSE` exits 1 with `Error: port <N> is already in use. Use --port to specify a different port.` on stderr. Security posture (ADR-003): binds to `127.0.0.1` only (unreachable from the LAN), zero filesystem writes (read-only `fs` APIs exclusively), all state-derived output HTML-escaped, only `GET /` served (everything else 404, request URL never echoed or mapped to the filesystem), `X-Content-Type-Options: nosniff` + `Cache-Control: no-store` headers. Zero new npm dependencies (Node built-ins: `http`, `fs`, `path`). `keel-state.cjs` untouched — `status --all` output byte-for-byte unchanged (AC-7 regression contract).
+
+## [3.13.0] - 2026-07-14 - DESCRIBE COMMAND: HUMAN-READABLE STORY INSPECTION (KEEL-103)
+
+### Added
+- **`keel-state.cjs describe <story-id>` (KEEL-103)** — new read-only, lock-free inspection command that prints a human-readable one-page summary of any story's pipeline state to stdout. Output includes: story title and scope, current phase by agent name (not number), halted status, idle time since last manifest write, start timestamp, completed phases with agent names and timestamps, in-progress phase, remaining phases, attempt failure counts, and gate-event budget (used / max). Idle time format: `Xh Ym` for durations >= 60 minutes, `Xm Ys` for shorter durations (both `Math.floor`-rounded). Exits 0 on success; exits 1 with `FAIL: no manifest for story <id>` to stderr on missing story. Prepends `WARNING: pipeline is HALTED — human resume required` when halted. Zero new npm dependencies. `cmdStatus` and `cmdStatusAll` are byte-for-byte unchanged — AC-5 regression contract preserved. Lock-free per ADR-002 (same reasoning as ADR-001: atomic manifest writes make a pure reader safe without the write lock). Phase names resolved via the existing `AGENTS` array — no new data structures.
+
 ## [3.12.0] - 2026-07-09 - INSTALL-TO-PIPELINE E2E + status --all (KEEL-102)
 
 Full pre-release verification: install layer (package → hooks → init → 38-component

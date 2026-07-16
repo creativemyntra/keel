@@ -44,39 +44,40 @@ it exists for ceremonies (standup, retro, velocity) when the human asks.
 |-------|-------|-----|-----------------|
 | 1 | `keel:product-owner` or `keel:business-analyst` | Requirements intake | ACs confirmed by human |
 | 2 | `keel:business-analyst` | Functional spec, data flows, edge cases | Spec complete |
-| 3 | `keel:solution-architect` | Architecture, design, technical risk | Design approved |
-| 4 | `keel:software-engineer` | **Production code only** — no tests | Lint + static analysis clean |
-| 5 | `keel:tdd-red` | **Test case creation** — write failing tests for every AC | Every AC has ≥1 test; each test verified meaningful |
-| 6 | `keel:tdd-green` | **Full suite execution** — all tests pass, coverage ≥ 80% | 0 failures, ≥80% changed-line coverage |
-| 7 | `keel:qa-engineer` | AC mapping, integration tests, error paths | All ACs mapped to passing tests |
-| 8 | `keel:e2e-engineer` | **Playwright E2E** browser tests for all user-facing flows | All E2E tests pass, screenshots captured |
-| 9 | `keel:security-engineer` | OWASP, threat model, dependency audit | 0 HIGH findings |
-| 10 | `keel:technical-writer` | Docs, changelog, runbook | Docs complete |
-| 11 | `keel:release-manager` | Go/no-go, deployment plan | Human approval |
+| 3 | `keel:ui-designer` | **UI/UX design** — screen flows, mockups, component states for every user-facing AC | Every user-facing AC has design spec + HTML mockup; no-UI ACs documented |
+| 4 | `keel:solution-architect` | Architecture, design, technical risk | Design approved (reads phase-3 UI design) |
+| 5 | `keel:software-engineer` | **Production code only** — no tests | Lint + static analysis clean |
+| 6 | `keel:tdd-red` | **Test case creation** — write failing tests for every AC | Every AC has ≥1 test; each test verified meaningful |
+| 7 | `keel:tdd-green` | **Full suite execution** — all tests pass, coverage ≥ 80% | 0 failures, ≥80% changed-line coverage |
+| 8 | `keel:qa-engineer` | AC mapping, integration tests, error paths | All ACs mapped to passing tests |
+| 9 | `keel:e2e-engineer` | **Playwright E2E** browser tests for all user-facing flows | All E2E tests pass, screenshots captured |
+| 10 | `keel:security-engineer` | OWASP, threat model, dependency audit | 0 HIGH findings |
+| 11 | `keel:technical-writer` | Docs, changelog, runbook | Docs complete |
+| 12 | `keel:release-manager` | Go/no-go, deployment plan | Human approval |
 
-**Defect scope phases:** 1 → 4 → 5 → 6 → 7 → 9 (skips BA elaboration,
+**Defect scope phases:** 1 → 5 → 6 → 7 → 8 → 10 (skips UI design, BA elaboration,
 architecture, E2E, docs, release ceremony).
 
 ## Phase sequencing rules
 
-- **Phase 4 before phase 5**: software-engineer writes code FIRST; tdd-red
-  writes tests AGAINST that code. Never swap the order.
-- **Phase 5 before phase 6**: tdd-red must produce test files before tdd-green
-  can execute them. Never collapse these into one agent call.
-- **Phase 6 before phase 7**: QA validates a green suite, not a red one.
-- **Phase 7 before phase 8**: E2E is browser-level; it runs after unit/
-  integration QA is clean to avoid debugging the wrong layer.
-- **Phase 8 before phase 9**: security reviews committed, tested code.
-- All three test phases (5, 6, 7) must complete before E2E (8). Never skip.
+- **Phase 3 before phase 4**: UI designer produces screen specs FIRST; architect designs the API/DB to support them.
+- **Phase 4 before phase 5**: architect produces technical design FIRST; software-engineer implements against it.
+- **Phase 5 before phase 6**: software-engineer writes code FIRST; tdd-red writes tests AGAINST that code. Never swap the order.
+- **Phase 6 before phase 7**: tdd-red must produce test files before tdd-green can execute them. Never collapse these into one agent call.
+- **Phase 7 before phase 8**: QA validates a green suite, not a red one.
+- **Phase 8 before phase 9**: E2E is browser-level; it runs after unit/integration QA is clean to avoid debugging the wrong layer.
+- **Phase 9 before phase 10**: security reviews committed, tested code.
+- All three test phases (6, 7, 8) must complete before E2E (9). Never skip.
 
 ## Governance Gates (cannot be skipped)
 
-- Phase 4 output must contain NO test files (code only)
-- Phase 5 gate: every AC has ≥1 test, every test verified meaningful
-- Phase 6 gate: 0 test failures, coverage ≥ 80% on changed files
-- Phase 7 gate: all ACs mapped to passing tests, integration endpoints validated
-- Phase 8 gate: all Playwright E2E tests pass, screenshots in artifacts
-- Phase 9 gate: 0 HIGH security findings
+- Phase 3 gate: every user-facing AC has design spec + HTML mockup (or "no UI surface" rationale)
+- Phase 5 output must contain NO test files (code only)
+- Phase 6 gate: every AC has ≥1 test, every test verified meaningful
+- Phase 7 gate: 0 test failures, coverage ≥ 80% on changed files
+- Phase 8 gate: all ACs mapped to passing tests, integration endpoints validated
+- Phase 9 gate: all Playwright E2E tests pass, screenshots in artifacts
+- Phase 10 gate: 0 HIGH security findings
 - Release Manager must approve before deploy
 
 ## State protocol (how phases communicate)

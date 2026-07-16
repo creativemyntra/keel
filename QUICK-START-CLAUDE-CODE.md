@@ -1,4 +1,4 @@
-# Keel v3.12.0 — Claude Code Quick Start
+# Keel v3.14.0 — Claude Code Quick Start
 
 **Status:** ✅ Framework is ready to use NOW  
 **Date:** 2026-07-08  
@@ -207,7 +207,7 @@ Total time: **Hours instead of weeks!**
 
 ---
 
-**Version:** 3.12.0  
+**Version:** 3.14.0  
 **Author:** Amar Singh  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  

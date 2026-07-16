@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.12.0 - Technical Specifications
+# Keel AI-SDLC Framework v3.14.0 - Technical Specifications
 
 **Document Version:** 1.9  
 **Last Updated:** 2026-07-09  
@@ -347,26 +347,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.12.0
+- Version: v3.14.0
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.12.0`
+- Installation: `npm install -g @amarsingh/keel@3.14.0`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.12.0`
+- Image: `amarsingh/keel:3.14.0`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.12.0`
+- Pull: `docker pull amarsingh/keel:3.14.0`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.12.0`
+- Version: `v3.14.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.12.0`
+- Usage: `uses: creativemyntra/keel@v3.14.0`
 
 ---
 
@@ -456,6 +456,8 @@ Record in Audit Trail
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
+| 3.14.0 | 2026-07-15 | PENDING RELEASE | Pipeline status web dashboard (KEEL-104): `keel dashboard --port=<N>`, read-only, loopback-only |
+| 3.13.0 | 2026-07-14 | PRODUCTION | Describe command: human-readable story inspection (KEEL-103) |
 | 3.12.0 | 2026-07-09 | PRODUCTION | Install-to-pipeline e2e (KEEL-102), status --all, gate auto-audit, Windows packaging fixes |
 | 3.11.0 | 2026-07-09 | PRODUCTION | Smart economy: .keel/economy.yml owner choices, prescan static-first security, CodeGraph context budget, output caps |
 | 3.10.0 | 2026-07-09 | PRODUCTION | Token economy: tiered gate verification, gate-1-lite, haiku model-tiering, docs/WORKFLOW.md cost model |

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Keel AI-SDLC Framework v3.0.0 -- CLI Dispatcher (ESM)
+ * Keel AI-SDLC Framework v3.14.0 -- CLI Dispatcher (ESM)
  * Author : Amar Singh <support@creativemyntra.com>
  * License: MIT
  */
@@ -9,7 +9,7 @@ import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const VERSION   = '3.0.0';
+const VERSION   = '3.14.0';
 const KEEL_DIR  = resolve(__dirname, '..');
 
 function parseArgs(argv) {
@@ -189,6 +189,10 @@ const ROUTES = {
     ]);
   },
 
+  dashboard(c) {
+    run('node', [resolve(__dirname, '../scripts/keel-dashboard.cjs'), '--port', c.port]);
+  },
+
   deploy(c) {
     emit(8, ['keel:technical-writer', 'keel:release-manager'], c.story, [
       'Rollout: ' + c.rollout + ' | Version: v' + VERSION,
@@ -232,6 +236,7 @@ function showHelp() {
     '  6     test             keel:qa-engineer  [+ phpunit phpcs phpstan]',
     '  7     sec              keel:security-engineer  [+ composer audit]',
     '  8     deploy           keel:technical-writer -> keel:release-manager',
+    '  --    dashboard        [standalone — starts local HTTP server]',
     '',
     'OPTIONS',
     '  --story=<ID>             Story ID (e.g. FEAT-1, HEALTH-1)',
@@ -240,6 +245,7 @@ function showHelp() {
     '  --stack=cakephp          Supported stack for v3.0 (Laravel/Django/Rails in v3.1)',
     '  --coverage-target=<N>    Min coverage % (default: 80)',
     '  --rollout=<type>         canary | blue-green | instant (default: canary)',
+    '  --port=<N>               Dashboard port (default: 7772)',
     '  --help, -h               Show this help',
     '  --version, -v            Show version',
     '',
@@ -279,6 +285,7 @@ function showHelp() {
     mode:           String(flags.mode     || 'new'),
     rollout:        String(flags.rollout  || 'canary'),
     coverageTarget: String(flags['coverage-target'] || '80'),
+    port:           String(flags.port || '7772'),
   };
 
   ROUTES[sub](ctx);

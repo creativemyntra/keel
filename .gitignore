@@ -10,6 +10,9 @@ yarn.lock
 .env.local
 .env.*.local
 
+# Security scan artifacts (never commit — may contain finding context)
+gitleaks-report.json
+
 # IDE & Editor
 .vscode/
 .idea/
@@ -59,3 +62,7 @@ Thumbs.db
 # - /docs/deployment/
 # - /docs/security/
 # - /docs/brainstorms/
+
+# Test/browser scratch output
+.playwright-mcp/
+test-results/

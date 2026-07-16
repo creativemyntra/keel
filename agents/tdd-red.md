@@ -1,6 +1,6 @@
 ---
 name: tdd-red
-description: Phase 5 — Test case creation. Reads the phase-4 implementation and writes a thorough test suite (unit + integration) for every AC. Verifies each test is meaningful by confirming it would fail without the implementation. Use after Software Engineer (phase 4), before TDD Green (phase 6).
+description: Phase 6 — Test case creation. Reads the phase-5 implementation and writes a thorough test suite (unit + integration) for every AC. Verifies each test is meaningful by confirming it would fail without the implementation. Use after Software Engineer (phase 5), before TDD Green (phase 7).
 tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -9,9 +9,9 @@ acceptance criterion is covered by a test that actually guards behavior.
 
 ## Role (one job only)
 
-Write a complete test suite for the implementation delivered in phase 4.
+Write a complete test suite for the implementation delivered in phase 5.
 You do NOT modify production code. You do NOT run the full suite to judgment
-(that is phase 6). Your job is: tests written, tests meaningful, tests cover
+(that is phase 7). Your job is: tests written, tests meaningful, tests cover
 every AC.
 
 ## Operating principle
@@ -22,13 +22,14 @@ must be verifiable as meaningful before this phase exits.
 
 ## Step 0 — Read your inputs (before writing a single line)
 
-1. Phase-4 output: `.keel/state/<story-id>/04-software-engineer.json` — know
+1. Phase-5 output: `.keel/state/<story-id>/05-software-engineer.json` — know
    what files were changed, what ACs were addressed.
 2. Phase-1 ACs: `01-product-owner.json` or `01-business-analyst.json` — the
    canonical AC list. Every AC-id in that file must map to ≥1 test here.
-3. Design doc (from phase-3 artifact) — understand expected inputs/outputs,
+3. Design doc (from phase-4 architect artifact) — understand expected inputs/outputs,
    error codes, edge cases.
-4. `.keel/memory/conventions.md` and `.keel/memory/lessons.md` if present —
+4. UI design (from phase-3 artifact) — understand user-facing flows and error states.
+5. `.keel/memory/conventions.md` and `.keel/memory/lessons.md` if present —
    prior test patterns to follow, anti-patterns to avoid.
 
 ## Step 1 — Write test cases
@@ -112,16 +113,16 @@ goes into `blockers`.
 ## Step 4 — Validate and write phase output
 
 ```bash
-node ~/.keel/bin/keel-state.cjs validate <story-id> 05-tdd-red.json
+node ~/.keel/bin/keel-state.cjs validate <story-id> 06-tdd-red.json
 ```
 
 Fix everything it reports before calling this phase done.
 
-## Output file: `05-tdd-red.json`
+## Output file: `06-tdd-red.json`
 
 ```json
 {
-  "phase": 5,
+  "phase": 6,
   "agent": "tdd-red",
   "story_id": "<STORY-ID>",
   "confidence": "high|medium|low",
@@ -138,7 +139,7 @@ Fix everything it reports before calling this phase done.
     "tests/TestCase/...",
     "docs/test-plans/<story-id>-test-map.md"
   ],
-  "next_phase": 6,
+  "next_phase": 7,
   "blockers": []
 }
 ```
@@ -154,7 +155,7 @@ Fix everything it reports before calling this phase done.
 ## Rules
 
 - Never modify production code — any needed production change is a `blocker`
-  to return to phase 4.
+  to return to phase 5.
 - Never write tests that test implementation details (method names, private
   state) — test observable behavior through the public interface.
 - If you discover a bug while writing tests (the implementation doesn't match

@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.12.0
+# Keel AI-SDLC Framework v3.14.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.12.0 ✅
+# → keel v3.14.0 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -79,6 +79,7 @@ snapshots) is done by a zero-dependency **state engine**
 ✅ **Bounded Retry Loops** — 3 attempts per phase, then HALT + Slack escalation; resume requires a recorded human decision  
 ✅ **Cross-Story Memory with Writeback** — every defect RCA becomes a lesson in `.keel/memory/lessons.md` (gated, bounded)  
 ✅ **Proactive Watchers** — hooks warn on coverage drops and shrinking test counts; halted/stale stories surface at session start  
+✅ **Pipeline Dashboard** — `keel dashboard` serves a read-only local web view of all stories (loopback-only, auto-refreshing)  
 ✅ **Audit Trail** — per-story JSONL log supporting your compliance evidence process  
 ✅ **TDD Workflow** — Red → Green → Refactor with governance gates  
 ✅ **Coverage Gate** — ≥80% enforced before the security phase  
@@ -90,7 +91,10 @@ snapshots) is done by a zero-dependency **state engine**
 
 ---
 
-## 🆕 What's New in v3.12.0 (Governance With Teeth)
+## 🆕 What's New in v3.14.0
+
+- **`keel dashboard` — pipeline status web dashboard (KEEL-104)** — `node bin/keel.js dashboard [--port=<N>]` serves a local, read-only web view of every story in `.keel/state/` at `http://localhost:7772` (default): story ID, title, scope, current phase by agent name, status badge (COMPLETE / IN PROGRESS / HALTED), and idle time. Auto-refreshes every 30 seconds. Binds to `127.0.0.1` only, performs zero filesystem writes, zero new dependencies. See [Pipeline Dashboard](#pipeline-dashboard) below.
+- **`describe` command (v3.13.0)** — `node ~/.keel/bin/keel-state.cjs describe <story-id>` prints a human-readable one-page summary of any story: phase names (not numbers), idle time as `Xh Ym` / `Xm Ys`, halted warning, gate-event budget. Exits 0 on success, exits 1 with stderr on missing story. Zero new dependencies. See [State Engine CLI](#state-engine-cli) below.
 
 v3.4.0 → v3.12.0 turn the pipeline's promises into enforcement:
 
@@ -129,7 +133,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.12.0 ✅
+# → keel v3.14.0 ✅
 ```
 
 ### Method 2: npm Global Package (⏳ not yet published — coming soon)
@@ -342,9 +346,32 @@ jobs:
 /keel:setup                        # Interactive integration wizard (Jira, GitHub, Playwright, Slack)
 /keel:impact <Class or file>       # CodeGraph impact analysis — blast radius of a change
 /keel:health                       # Pipeline health sweep — halted/stale stories, memory bounds, coverage trend
+/keel dashboard --port=7772        # Read-only pipeline status web dashboard (binds to 127.0.0.1 only)
 /keel --version                    # Show version
 /keel --help                       # Show all commands
 ```
+
+---
+
+### Pipeline Dashboard
+
+A read-only local web view of every story in `.keel/state/` — it never writes to disk.
+
+```bash
+node bin/keel.js dashboard               # serves http://localhost:7772
+node bin/keel.js dashboard --port=8080   # custom port (equals form via the CLI)
+
+# or run the server script directly (space-separated flag form):
+node scripts/keel-dashboard.cjs --port 8080
+```
+
+On start it prints `Dashboard: http://localhost:<port>`; stop it with Ctrl-C.
+
+- **Columns:** story ID, title, scope, current phase by agent name (e.g. `Phase 11 — Technical Writer`), status badge (COMPLETE / IN PROGRESS / HALTED), idle time — sorted most-recently-active first.
+- **Auto-refresh:** the page reloads every 30 seconds; a corrupt manifest renders as an error row instead of breaking the sweep.
+- **Empty state:** with no stories, the page prompts `Run keel init <story-id> to start.` — the server still runs.
+- **Local-only by design:** binds to `127.0.0.1` (unreachable from the network); all state-derived output is HTML-escaped; strictly read-only (no write endpoints, zero filesystem writes); zero new npm dependencies.
+- **Port in use:** exits with `Error: port <N> is already in use. Use --port to specify a different port.`
 
 ---
 
@@ -697,11 +724,10 @@ Then:
 
 ---
 
-**Version:** 3.12.0  
-**Released:** 2026-07-09  
+**Version:** 3.14.0  
+**Released:** 2026-07-15  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.12.0 (https://github.com/creativemyntra/keel/releases/tag/v3.12.0)
-
+**Tag:** v3.14.0 (https://github.com/creativemyntra/keel/releases/tag/v3.14.0)

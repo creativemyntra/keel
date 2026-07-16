@@ -1,0 +1,42 @@
+{
+  "phase": 1,
+  "agent": "business-analyst",
+  "story_id": "KEEL-104",
+  "confidence": "high",
+  "findings": [
+    "Feature: new `keel dashboard` CLI sub-command in bin/keel.js — serves a local HTTP server (default port 7772).",
+    "The dashboard is strictly read-only; no write actions are exposed.",
+    "Data source: .keel/state/ directory — each story sub-directory contains a manifest.json with story ID, title, scope, phase, status, and updated_at.",
+    "Phase display must use phase name (not phase number) — names must map from the numeric phase stored in manifest.",
+    "Status values to display: COMPLETE, IN PROGRESS, HALTED — these must derive from manifest status fields.",
+    "Idle time calculation follows the established convention (ADR/conventions.md 2026-07-14): Xh Ym when >= 60 min; Xm Ys when < 60 min; absent timestamp shows 'unknown'.",
+    "Sort order: stories sorted by updated_at descending (most recently active first).",
+    "Auto-refresh: page must refresh every 30 seconds via meta refresh or JS — no server-side push required.",
+    "Port override: --port flag on CLI overrides default 7772; only AC-5 requires this flag to be supported.",
+    "Empty state: if .keel/state/ directory is absent, the page must show 'No stories found. Run keel init <story-id> to start.' — server still starts and serves this message.",
+    "Zero new npm dependencies — implementation restricted to Node.js built-ins: http, fs, path, child_process.",
+    "HTML is generated inline within the JS source — no external template files, no bundler.",
+    "AC-7 is a regression guard: existing `status --all` output from keel-state.cjs must remain byte-for-byte unchanged.",
+    "Server startup confirmation: stdout must print exactly 'Dashboard: http://localhost:<port>' on start.",
+    "Imported from KEEL-104 story brief provided by human PO — not authored by BA agent."
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5",
+    "AC-6",
+    "AC-7"
+  ],
+  "decisions": [
+    "Imported from KEEL-104 story brief provided by human PO, not authored by BA agent.",
+    "Idle time display follows project convention established 2026-07-14 (KEEL-103) in conventions.md.",
+    "No open questions raised — brief is complete and testable as written; all 7 ACs are unambiguous."
+  ],
+  "artifacts": [
+    ".keel/state/KEEL-104/01-business-analyst.json"
+  ],
+  "next_phase": 2,
+  "timestamp": "2026-07-14T00:00:00Z"
+}

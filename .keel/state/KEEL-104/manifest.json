@@ -1,0 +1,27 @@
+{
+  "story_id": "KEEL-104",
+  "title": "Add pipeline status web dashboard",
+  "scope": "feature",
+  "expected_phases": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "current_phase": 13,
+  "attempts": {},
+  "gate_events": 14,
+  "max_gates": 48,
+  "max_hours": 72,
+  "started_at": "2026-07-14T14:28:14.903Z",
+  "updated_at": "2026-07-16T05:09:38.471Z",
+  "attempt_hashes": {}
+}

@@ -1,6 +1,6 @@
 ---
 name: solution-architect
-description: Owns architecture, scalability, design patterns, and technical risk. Use after Business Analyst, before Software Engineer. Produces design docs, API contracts, DB schema, and tech decision records.
+description: Phase 4 — Owns architecture, scalability, design patterns, and technical risk. Use after UI Designer (phase 3), before Software Engineer (phase 5). Produces design docs, API contracts, DB schema, and tech decision records.
 tools: Read, Write, Grep, Glob, Bash, WebSearch
 ---
 
@@ -23,6 +23,10 @@ Save the ADR to: `.keel/memory/decisions/ADR-<NNN>-<slug>.md` (durable cross-sto
 
 ## Before designing
 
+0. **Read the UI design**: `03-ui-designer.json` and its `docs/design/<STORY-ID>-ui-design.md`
+   artifact. Your API contracts, component structure, and data schema must support
+   every screen, state, and flow the UI designer specified. If the UI design says
+   "no UI surface" for all ACs, skip this step and note it.
 1. Read prior ADRs in `.keel/memory/decisions/` — never contradict a standing
    decision without superseding it explicitly in a new ADR.
 2. Read `.keel/memory/conventions.md` and `.keel/memory/lessons.md` if present.

@@ -1,0 +1,42 @@
+{
+  "phase": 9,
+  "agent": "e2e-engineer",
+  "story_id": "KEEL-104",
+  "confidence": "high",
+  "findings": [
+    "Flow mapping: AC-1..AC-6 are browser/CLI-testable; AC-7 is backend-only (status --all JSON regression guard, no UI surface) — no E2E test applicable, covered by phase-8 integration tests",
+    "Wrote 10 Playwright tests in tests/e2e/KEEL-104-dashboard.spec.ts — real Chromium against real spawned servers: `node bin/keel.js dashboard --port=7891` (repo state) plus scripts/keel-dashboard.cjs on ports 7892 (empty fixture), 7893 (XSS fixture), 7772 (default)",
+    "Runner: `npx playwright test tests/e2e/KEEL-104-dashboard.spec.ts --reporter=list` — verbatim result '10 passed (21.8s)', 0 failed, 0 skipped",
+    "AC-1: startup stdout contained 'Dashboard: http://localhost:7891' via keel CLI, and 'Dashboard: http://localhost:7772' with no --port flag; default-port server served the dashboard with footer 'Port 7772'",
+    "AC-2: table renders all 4 stories with 6 columns (Story ID/Title/Scope/Current Phase/Status/Idle Time); KEEL-104 row shows title, scope 'feature', 'Phase 9 — E2E Engineer', IN PROGRESS badge rgb(217,119,6); KEEL-101/102/103 show COMPLETE badges rgb(22,163,74); all idle cells match /^(\\d+h \\d+m|\\d+m \\d+s|unknown)$/",
+    "AC-3: row order asserted as KEEL-104, KEEL-103, KEEL-102, KEEL-101 — matches manifest updated_at descending",
+    "AC-4: live DOM contains meta[http-equiv=refresh] with content='30'",
+    "AC-5: --port=7891 override honored end-to-end (stdout, HTTP bind, footer 'Port 7891')",
+    "AC-6: server started from a cwd with no .keel/state shows 'No stories found.' + 'keel init <story-id>' hint, header '0 stories', zero table elements",
+    "XSS safety: manifest title '<script>alert('xss')</script><img src=x onerror=alert(2)>' rendered as literal text in the title cell; 0 script elements, 0 img elements, 0 dialogs fired",
+    "404 handling: GET /nonexistent returned status 404 with body 'Not found' via both APIRequestContext and browser navigation",
+    "No JS console errors or pageerrors captured in any tested flow (listeners attached before navigation in each flow)",
+    "Evidence on disk: 4 screenshots + 2 startup-stdout captures under docs/e2e-evidence/KEEL-104/; screenshots visually verified (table, empty state, escaped XSS payload)",
+    "Environment fix during session: chromium_headless_shell-1228 binary was missing (first run failed 9/10 on browserType.launch); ran `npx playwright install chromium`, re-run passed 10/10 — no test or app code relaxed",
+    "Cleanup verified: netstat shows no listeners left on ports 7772/7891/7892/7893 after the run (process trees killed in afterAll)"
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6", "AC-7"],
+  "decisions": [
+    "AC-7 (keel-state.cjs status --all byte-compatibility) has no browser surface — no E2E test fabricated; it was regression-verified in phase 8 via direct CLI integration test and keel-dashboard.cjs never touches keel-state.cjs (ADR-003)",
+    "Used semantic selectors (thead th, tbody tr, td:nth-child) instead of adding data-testid attributes — the server-rendered page is a single stable table and adding testids would modify generateHTML after phase-8 QA sign-off for zero functional benefit",
+    "Empty-state and XSS scenarios run real spawned servers with process.cwd() pointed at temp-dir fixtures (dashboard resolves .keel/state from cwd) — real repo state is never touched; fixtures removed in afterAll",
+    "Servers spawned/killed inside the spec (beforeAll/afterAll with Windows taskkill /T for the keel.js->dashboard process tree) rather than a playwright.config webServer, because four distinct server contexts (CLI wrapper, empty, XSS, default-port) are needed in one suite"
+  ],
+  "artifacts": [
+    "tests/e2e/KEEL-104-dashboard.spec.ts",
+    "docs/e2e-evidence/KEEL-104/ac2-ac3-dashboard-table.png",
+    "docs/e2e-evidence/KEEL-104/ac6-empty-state.png",
+    "docs/e2e-evidence/KEEL-104/xss-escaped.png",
+    "docs/e2e-evidence/KEEL-104/404-not-found.png",
+    "docs/e2e-evidence/KEEL-104/ac1-ac5-startup-stdout.txt",
+    "docs/e2e-evidence/KEEL-104/ac1-default-port-stdout.txt"
+  ],
+  "next_phase": 10,
+  "blockers": [],
+  "timestamp": "2026-07-15T13:20:00.000Z"
+}
