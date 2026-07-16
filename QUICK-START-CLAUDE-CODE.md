@@ -85,10 +85,10 @@ This invokes ALL agents automatically:
 
 ## 📊 WHAT YOU GET
 
-✅ **13 Agents** working in sync:
-- 8 phase agents (init → brainstorm → req → design → dev → test → sec → deploy)
-- 2 support agents (scrum-master, technical-writer)
-- 3 compliance agents (audit-trail, state-management, handshake)
+✅ **17 Agents** working in sync:
+- 12 pipeline phase agents (intake → requirements → UI design → architecture → code → tdd-red → tdd-green → QA → E2E → security → docs → release)
+- 2 meta/support agents (orchestrator, scrum-master)
+- 3 infrastructure agents (audit, state-management, handshake)
 
 ✅ **6 Compliance Standards:**
 - CJIS (Criminal Justice)
@@ -115,7 +115,7 @@ This invokes ALL agents automatically:
 
 ### Q: Is the framework working?
 
-**A:** Yes, 100%! All 13 agents are deployed. Try `/keel:sprint-planning` — it will work immediately.
+**A:** Yes, 100%! All 17 agents are deployed. Try `/keel:sprint-planning` — it will work immediately.
 
 ### Q: What about the root `/keel` command?
 
@@ -198,8 +198,8 @@ Total time: **Hours instead of weeks!**
 | Component | Status |
 |-----------|--------|
 | Installation | ✅ Complete |
-| 13 Agents | ✅ Deployed |
-| Skills (10 total) | ✅ Ready |
+| 17 Agents | ✅ Deployed |
+| Skills (11 total) | ✅ Ready |
 | Compliance (6 standards) | ✅ Verified |
 | Code Quality | ✅ 89% coverage, 0 vulns |
 | Root `/keel` command | ✅ Added (restart to activate) |

@@ -29,11 +29,12 @@ acceptance criteria must be confirmed by the human before phase 2 starts.
 it exists for ceremonies (standup, retro, velocity) when the human asks.
 
 **Scope (orthogonal to entry mode):**
-- `feature` (default) — all 11 phases (see table below).
-- `defect` — express lane for bug fixes: phases 1, 4, 5, 6, 7, 9.
-  No BA elaboration, no architecture, no technical-writer, no E2E phase — the
-  defect is a targeted fix with a regression test, not a feature. EXCEPT:
-  the lessons.md writeback still happens (phase-6 gate checks it). Choose
+- `feature` (default) — all 12 phases (see table below).
+- `defect` — express lane for bug fixes: phases 1, 5, 6, 7, 8, 10.
+  No BA elaboration, no UI design, no architecture, no technical-writer, no
+  E2E phase — the defect is a targeted fix with a regression test, not a
+  feature. EXCEPT:
+  the lessons.md writeback still happens (phase-10 gate checks it). Choose
   defect scope when the Jira ticket type is Bug/Defect, or the human says
   "fix". Pass it at init: `init <story> --scope defect`. ~8 agent spawns
   instead of ~22 — don't run feature ceremony on a bug fix.
@@ -166,8 +167,8 @@ economy:
 |---|---|
 | Story has a Jira key + type Bug | defect lane (`init --scope defect`) |
 | Spawn is transcription-grade (jira intake, TRIVIAL gate) + `model_tiering` | fast model (haiku) if your Task tool supports per-invocation model |
-| `static_first_security` | run `node ~/.keel/bin/keel-state.cjs prescan <story>` via Bash BEFORE phase 6; pass `prescan.json` path to the security agent — it must NOT re-run scanners |
-| Prescan CLEAN + diff tier TRIVIAL + `security_skip_on_clean: true` | no security spawn: record the decision + prescan inventory in the gate notes yourself (`gate --phase 6 --verdict PASS --notes "security satisfied by clean prescan (owner opt-in economy.security_skip_on_clean); diff TRIVIAL"`). Prescan DIRTY or any code-behavior diff → always spawn the agent |
+| `static_first_security` | run `node ~/.keel/bin/keel-state.cjs prescan <story>` via Bash BEFORE phase 10; pass `prescan.json` path to the security agent — it must NOT re-run scanners |
+| Prescan CLEAN + diff tier TRIVIAL + `security_skip_on_clean: true` | no security spawn: record the decision + prescan inventory in the gate notes yourself (`gate --phase 10 --verdict PASS --notes "security satisfied by clean prescan (owner opt-in economy.security_skip_on_clean); diff TRIVIAL"`). Prescan DIRTY or any code-behavior diff → always spawn the agent |
 | CodeGraph exists (`.keel/graph/codegraph.json`) | context slice: instruct architect/engineer to load ONLY the impact set (`build-codegraph.cjs --impact`), capped at `context_budget_files`; grep pre-pass fallback when the graph is missing (non-PHP stacks) |
 | Phases of one story | run back-to-back in one sitting — the prompt cache (~5 min TTL) makes consecutive spawns dramatically cheaper than resumed ones; an idle story re-reads everything cold |
 

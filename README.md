@@ -2,7 +2,7 @@
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
-Automate your entire development lifecycle with 8 autonomous AI agents.  
+Automate your entire development lifecycle with 17 specialized AI agents across a 12-phase pipeline.  
 From ideation to production deployment in **2 hours** (vs 2 weeks manually).
 
 ---
@@ -39,25 +39,29 @@ claude plugin list
 
 **Keel** is a complete AI-SDLC (Artificial Intelligence Software Development Lifecycle) framework integrated with Claude Code as a plugin.
 
-It automates the entire software development process using **13 specialized autonomous agents**:
+It automates the entire software development process using **17 specialized autonomous agents**:
 
-**Phase Agents (8):**
-| Agent | Role | Phase |
-|-------|------|-------|
-| **orchestrator-agent** | Route work, enforce gates | Meta |
-| **product-owner-agent** | Business value, scope | 1. Init |
-| **business-analyst-agent** | Requirements, specs | 2-3. Planning |
-| **solution-architect-agent** | Architecture, design | 4. Design |
-| **software-engineer-agent** | TDD implementation | 5. Development |
-| **qa-engineer-agent** | Test validation | 6. Testing |
-| **security-engineer-agent** | OWASP, compliance | 7. Security |
-| **release-manager-agent** | Go/no-go decision | 8. Deployment |
+**Pipeline Phase Agents (12):**
+| Phase | Agent | Role |
+|-------|-------|------|
+| 1 | **product-owner** | Requirements intake — proposals only; the human confirms ACs (or `/keel:from-jira` transcribes the ticket) |
+| 2 | **business-analyst** | Functional spec, data flows, edge cases |
+| 3 | **ui-designer** | UI/UX design — screen flows, design spec + HTML mockup for every user-facing AC |
+| 4 | **solution-architect** | Architecture, design, technical risk |
+| 5 | **software-engineer** | Production code only — no tests |
+| 6 | **tdd-red** | Test case creation — every AC gets tests, each verified meaningful |
+| 7 | **tdd-green** | Full suite execution — 0 failures, coverage ≥80% |
+| 8 | **qa-engineer** | AC-to-test mapping, integration tests, error paths |
+| 9 | **e2e-engineer** | Playwright browser E2E tests with screenshot evidence |
+| 10 | **security-engineer** | OWASP, threat model, dependency audit |
+| 11 | **technical-writer** | Docs, changelog, runbook |
+| 12 | **release-manager** | Go/no-go decision, deployment plan |
 
-**Support Agents (2):**
+**Meta & Support Agents (2):**
 | Agent | Role |
 |-------|------|
-| **scrum-master-agent** | Sprint ceremonies, velocity |
-| **technical-writer-agent** | API docs, changelogs |
+| **orchestrator-agent** | Routes work, sequences phases, enforces gates |
+| **scrum-master-agent** | Sprint ceremonies, velocity (human-invoked only, never in the pipeline) |
 
 **Infrastructure Agents (3):**
 | Agent | Role |
@@ -72,7 +76,8 @@ snapshots) is done by a zero-dependency **state engine**
 
 ### ✨ Key Features
 
-✅ **13 Specialized Agents** — 8 phase + 2 support + 3 infrastructure agents  
+✅ **17 Specialized Agents** — 12 pipeline phase + 2 meta/support + 3 infrastructure agents  
+✅ **12-Phase Pipeline** — dedicated UI design (3), code-only implementation (5), TDD red/green split (6-7), and Playwright E2E (9) phases; defect express lane runs 1→5→6→7→8→10  
 ✅ **Deterministic State Engine** — `keel-state.cjs` owns state, gates, retries, audit; zero tokens on clerk work  
 ✅ **File-Based Agent Memory** — phases share context via `.keel/state/`, committed to git  
 ✅ **Execution-Verified Gates** — the handshake gate re-runs tests instead of trusting claims (anti-hallucination)  
@@ -95,6 +100,8 @@ snapshots) is done by a zero-dependency **state engine**
 
 - **`keel dashboard` — pipeline status web dashboard (KEEL-104)** — `node bin/keel.js dashboard [--port=<N>]` serves a local, read-only web view of every story in `.keel/state/` at `http://localhost:7772` (default): story ID, title, scope, current phase by agent name, status badge (COMPLETE / IN PROGRESS / HALTED), and idle time. Auto-refreshes every 30 seconds. Binds to `127.0.0.1` only, performs zero filesystem writes, zero new dependencies. See [Pipeline Dashboard](#pipeline-dashboard) below.
 - **`describe` command (v3.13.0)** — `node ~/.keel/bin/keel-state.cjs describe <story-id>` prints a human-readable one-page summary of any story: phase names (not numbers), idle time as `Xh Ym` / `Xm Ys`, halted warning, gate-event budget. Exits 0 on success, exits 1 with stderr on missing story. Zero new dependencies. See [State Engine CLI](#state-engine-cli) below.
+- **Dedicated UI design phase — new `ui-designer` agent (phase 3)** — scans existing UI patterns, then produces a Markdown design spec + self-contained HTML mockup for every user-facing AC before architecture begins (no Figma required). The pipeline is now **12 phases**; builds on the v3.13.0 restructure that split development into dedicated code (`software-engineer`), test-authoring (`tdd-red`), test-execution (`tdd-green`), and browser E2E (`e2e-engineer`) phases.
+- **Binding pipeline guardrails (`.keel/GUARDRAILS.md`)** — governance rules the orchestrator, handshake gate, engineer, ui-designer, and release-manager must obey on every run.
 
 v3.4.0 → v3.12.0 turn the pipeline's promises into enforcement:
 
@@ -126,7 +133,7 @@ claude plugin install keel
 ```
 
 That's it! The plugin will:
-- ✅ Register `/keel:*` commands, 13 agents, and 10 skills
+- ✅ Register `/keel:*` commands, 17 agents, and 11 skills
 - ✅ Create `~/.keel` configuration directories on first session
 - ✅ Be ready to use immediately
 
@@ -486,7 +493,7 @@ your-project/
 
 ### Usage & Workflows
 - **[docs/WORKFLOW.md](docs/WORKFLOW.md)** — Complete workflow, measured cost model (time & tokens), token-economy design
-- **[ALL-AGENTS-COMPLETE-GUIDE.md](ALL-AGENTS-COMPLETE-GUIDE.md)** — All 13 agents reference
+- **[ALL-AGENTS-COMPLETE-GUIDE.md](ALL-AGENTS-COMPLETE-GUIDE.md)** — All 17 agents reference
 - **[TECHNICAL-SPECIFICATIONS.md](TECHNICAL-SPECIFICATIONS.md)** — Architecture & state protocol
 - **[docs/demo/HEALTH-1-end-to-end-demo.md](docs/demo/HEALTH-1-end-to-end-demo.md)** — Real end-to-end pipeline walkthrough
 - **[CHANGELOG.md](CHANGELOG.md)** — Release history
@@ -577,7 +584,7 @@ Add new features to existing projects.
 ## ✨ What's Included
 
 ### Framework
-- ✅ 13 agent definitions + 10 skills + 14 slash commands
+- ✅ 17 agent definitions + 11 skills + 15 slash commands
 - ✅ Deterministic state engine + proactive watchers (zero-dependency Node)
 - ✅ Governance gates enforced between every phase
 - ✅ Tech stack profiles (CakePHP today; more on the roadmap)
@@ -727,7 +734,7 @@ Then:
 **Version:** 3.14.0  
 **Released:** 2026-07-15  
 **Status:** PRODUCTION READY ✅  
-**Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
+**Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
 **Tag:** v3.14.0 (https://github.com/creativemyntra/keel/releases/tag/v3.14.0)

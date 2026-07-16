@@ -1,7 +1,7 @@
 {
   "name": "keel",
   "version": "3.14.0",
-  "description": "Complete AI-SDLC pipeline for Claude Code. 13 specialized agents take a feature from idea to production: Brainstorm → Requirements → Design → TDD → QA → Security → Deploy.",
+  "description": "Complete AI-SDLC pipeline for Claude Code. 17 specialized agents take a feature from idea to production through a 12-phase pipeline: Requirements → UI Design → Architecture → Code → TDD Red/Green → QA → Playwright E2E → Security → Docs → Release.",
   "author": {
     "name": "Amar Singh",
     "email": "support@creativemyntra.com",

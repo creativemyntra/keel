@@ -76,12 +76,14 @@ All commands are namespaced under the plugin: `/keel:<command>`.
 
 ## Agents
 
-13 agents install with the plugin (invoke via the Task tool or let the
+17 agents install with the plugin (invoke via the Task tool or let the
 orchestrator route): `keel:orchestrator`, `keel:product-owner`,
-`keel:business-analyst`, `keel:solution-architect`, `keel:software-engineer`,
-`keel:qa-engineer`, `keel:security-engineer`, `keel:technical-writer`,
-`keel:release-manager`, `keel:scrum-master`, plus infrastructure agents
-`keel:handshake-agent`, `keel:state-management-agent`, `keel:audit-agent`.
+`keel:business-analyst`, `keel:ui-designer`, `keel:solution-architect`,
+`keel:software-engineer`, `keel:tdd-red`, `keel:tdd-green`,
+`keel:qa-engineer`, `keel:e2e-engineer`, `keel:security-engineer`,
+`keel:technical-writer`, `keel:release-manager`, `keel:scrum-master`,
+plus infrastructure agents `keel:handshake-agent`,
+`keel:state-management-agent`, `keel:audit-agent`.
 
 ## Skills
 

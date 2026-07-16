@@ -1,7 +1,7 @@
-# Keel v3.12.0 — Complete Agent Guide
+# Keel v3.14.0 — Complete Agent Guide
 
-**Framework Version:** 3.12.0  
-**Total Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
+**Framework Version:** 3.14.0  
+**Total Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
 
@@ -15,19 +15,40 @@
 /keel:implement-feature story="FEAT-123" feature="User payment export"
 ```
 
-This single command invokes the orchestrator, which routes through all 8 phase agents automatically.
+This single command invokes the orchestrator, which routes through all 12 pipeline phases automatically.
 
 ---
 
 ## 📊 AGENT TYPES
 
-### **PHASE AGENTS (8)** — Deliver the feature through 8 sequential phases
-### **SUPPORT AGENTS (2)** — Help organize team and document
-### **COMPLIANCE AGENTS (3)** — Ensure security, audit, state management
+### **PIPELINE PHASE AGENTS (12)** — Deliver the feature through 12 sequential phases
+### **META/SUPPORT AGENTS (2)** — Orchestrator (routing) + Scrum Master (ceremonies)
+### **INFRASTRUCTURE AGENTS (3)** — Handshake gate, state management, audit
 
 ---
 
-# PART 1: PHASE AGENTS (8)
+## 🆕 NEW AGENTS (v3.13.0–v3.14.0)
+
+Four agents were added when the pipeline was restructured from 8 to 12 phases
+(the sections below this table predate the restructure — the phase numbering in
+[`agents/orchestrator.md`](agents/orchestrator.md) is authoritative):
+
+| Phase | Agent | Role |
+|-------|-------|------|
+| 3 | **ui-designer** (v3.14.0) | UI/UX design before implementation — scans existing UI patterns, produces a Markdown design spec + self-contained HTML mockup for every user-facing AC. No Figma required. |
+| 6 | **tdd-red** (v3.13.0) | Test case creation — writes the unit/integration suite against the phase-5 implementation; verifies every test is meaningful (would fail without the implementation). |
+| 7 | **tdd-green** (v3.13.0) | Full suite execution — every test passes, coverage ≥80% on changed lines, no regressions. |
+| 9 | **e2e-engineer** (v3.13.0) | Playwright browser E2E tests for every user-facing flow, with screenshot evidence; blocks release on any failure. |
+
+Full 12-phase order: product-owner (1) → business-analyst (2) → ui-designer (3)
+→ solution-architect (4) → software-engineer (5, production code only) →
+tdd-red (6) → tdd-green (7) → qa-engineer (8) → e2e-engineer (9) →
+security-engineer (10) → technical-writer (11) → release-manager (12).
+Defect express lane: 1 → 5 → 6 → 7 → 8 → 10.
+
+---
+
+# PART 1: PHASE AGENTS
 
 These agents work sequentially to take a feature from idea to production.
 
@@ -1077,7 +1098,7 @@ Response: {
 
 ## Simplest Usage
 ```bash
-# One command invokes all 13 agents
+# One command invokes all 17 agents
 /keel:implement-feature story="FEAT-123" feature="User payment export"
 
 # This automatically:
@@ -1157,5 +1178,5 @@ Day 6: Validate & release
 **Author:** Amar Singh  
 **Repository:** https://github.com/creativemyntra/keel  
 
-✅ **All 13 agents ready to deliver enterprise-grade features in hours, not weeks!**
+✅ **All 17 agents ready to deliver enterprise-grade features in hours, not weeks!**
 

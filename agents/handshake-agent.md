@@ -47,7 +47,7 @@ rules are hard boundaries, not suggestions:
   claim (current default behavior).
 - **Tier NORMAL:** everything else with code changes. → Re-execute the tests
   for the changed area + the story's regression test; the FULL suite runs
-  once per story, at the qa-engineer gate (phase 5), not at every gate.
+  once per story, at the qa-engineer gate (phase 8), not at every gate.
 - **Tier TRIVIAL:** diff touches only docs/comments/message-strings/config,
   ≤ 10 changed lines, no security-sensitive paths. → Engine validate + run
   the story's regression test. You may accept an engine-recorded
@@ -56,7 +56,7 @@ rules are hard boundaries, not suggestions:
 - State your chosen tier and why in the gate `--notes`. If in doubt between
   two tiers, take the higher one. Residual risk of TRIVIAL is accepted by
   design and documented — an agent abusing `audit --json` to fake a
-  revert_check entry would still be caught at the phase-5 full-suite gate.
+  revert_check entry would still be caught at the phase-8 full-suite gate.
 
 ## Your judgment checks (only after the script passes)
 

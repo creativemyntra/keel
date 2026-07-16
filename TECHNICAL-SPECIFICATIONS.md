@@ -36,7 +36,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - **Enterprise Compliance:** 6 standards (CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX)
 
 ### Core Capabilities
-1. Autonomous agent orchestration across 8 phases
+1. Autonomous agent orchestration across 12 phases
 2. Test-driven development (TDD) automation
 3. Security scanning and compliance checking
 4. Multi-stack support (CakePHP, Laravel, Django, Rails)
@@ -100,9 +100,9 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - State Management Agent (maintains global state)
 
 **Layer 3: Execution Layer**
-- 8 Phase Agents (INIT → DEPLOY)
-- 2 Support Agents (Scrum Master, Technical Writer)
-- 3 Compliance Agents (Audit, State, Handshake)
+- 12 Phase Agents (Intake → Requirements → UI Design → Architecture → Code → TDD Red → TDD Green → QA → E2E → Security → Docs → Release)
+- 1 Support Agent (Scrum Master — human-invoked only)
+- 3 Infrastructure Agents (Audit, State Management, Handshake)
 
 **Layer 4: Integration Layer**
 - 4 MCP Servers (Jira, GitHub, Slack, Playwright)
