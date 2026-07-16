@@ -1,0 +1,1 @@
+- 2026-07-16T07:49:06.863Z | phase 1 -> 2 | PASS | gate-1-lite by orchestrator: engine validate PASS; transcription spot-checked against requirement-brief.md — 8 ACs match brief 1:1, no invention. Story title: Dashboard Host-header allowlist (DNS-rebinding hardening). No open items.
