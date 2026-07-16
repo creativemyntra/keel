@@ -1,0 +1,38 @@
+{
+  "phase": 8,
+  "agent": "e2e-engineer",
+  "story_id": "KEEL-103",
+  "confidence": "high",
+  "findings": [
+    "All 5 ACs have a CLI-surface user flow: the `describe` command is the UI. No browser involved; E2E means subprocess spawn + stdout/stderr/exit-code validation.",
+    "AC-1 (existing story → summary, exit 0): 11 assertions against live KEEL-103. Verified exit 0, story ID present, separator line, all 5 required labels (Scope:, Current phase:, Halted:, Idle:, Started:), 'Completed phases:' section, 'Gate events used:' line, and empty stderr. All PASS.",
+    "AC-2 (missing story → stderr error, exit 1): 5 assertions. Verified exit 1, 'FAIL: no manifest for story' message, story ID echoed in stderr, clean die() message (no stack trace), stdout empty. All PASS.",
+    "AC-3 (idle time format): 5 assertions across 3 scenarios. Live KEEL-103 (>2h old) correctly shows 'Xh Ym'. Fixture story patched to 3m30s ago correctly shows 'Xm Ys'. Fixture story patched to 62 min ago shows exactly '1h 2m' (floor rounding). All PASS.",
+    "AC-4 (phase names from AGENTS array): 11 assertions against live KEEL-103. Verified all 7 completed agent names (product-owner through qa-engineer), in-progress name 'e2e-engineer' (AGENTS[7]), and all 3 remaining names (security-engineer, technical-writer, release-manager). All PASS.",
+    "AC-5 (status --all regression guard): 11 assertions against live 3-story fleet (KEEL-101, KEEL-102, KEEL-103). Verified exit 0, valid JSON array, >= 3 entries, each entry has exactly {story_id, scope, current_phase, halted}, KEEL-103 fields correct (scope=feature, current_phase=8, halted=false), alphabetical sort, empty stderr. All PASS.",
+    "No unexpected stderr output in any flow — zero console errors across all 44 tests.",
+    "Runner output: '44 / 44 passed'  exit 0. Timestamp: 2026-07-14T09:50:08.165Z. Node: v26.1.0."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5"],
+  "decisions": [
+    "No browser UI exists — this is a pure CLI tool. E2E coverage uses spawnSync subprocess tests that exercise the full stack (CLI arg dispatch → manifest read → AGENTS lookup → formatting → exit code) without mocking.",
+    "AC-1 through AC-5 are all CLI-surface flows. None are browser-only or backend-only with no observable output. All required E2E coverage.",
+    "Tests spawn scripts/keel-state.cjs directly against the real project repo (REPO_ROOT) for live-data assertions (AC-1, AC-4, AC-5) and against tmp fixtures for time-controlled idle-format assertions (AC-3). Both modes run in the same test file.",
+    "Evidence files (stdout/stderr captures) saved as .txt to docs/e2e-evidence/KEEL-103/ — equivalent role to browser screenshots: they record the final state of each test scenario.",
+    "No data-testid equivalents needed — CLI selector is the command name and argument, which is stable."
+  ],
+  "artifacts": [
+    "tests/keel-state-describe-e2e.test.cjs",
+    "docs/e2e-evidence/KEEL-103/ac1-happy-path-stdout.txt",
+    "docs/e2e-evidence/KEEL-103/ac2-missing-story-output.txt",
+    "docs/e2e-evidence/KEEL-103/ac3-idle-live-stdout.txt",
+    "docs/e2e-evidence/KEEL-103/ac3-idle-subhour-stdout.txt",
+    "docs/e2e-evidence/KEEL-103/ac3-idle-hour-boundary-stdout.txt",
+    "docs/e2e-evidence/KEEL-103/ac4-phase-names-stdout.txt",
+    "docs/e2e-evidence/KEEL-103/ac5-status-all-stdout.txt",
+    "docs/e2e-evidence/KEEL-103/e2e-summary.txt"
+  ],
+  "next_phase": 9,
+  "blockers": [],
+  "timestamp": "2026-07-14T09:50:08.000Z"
+}

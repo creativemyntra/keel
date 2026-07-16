@@ -1,0 +1,38 @@
+{
+  "phase": 4,
+  "agent": "software-engineer",
+  "story_id": "KEEL-103",
+  "confidence": "high",
+  "findings": [
+    "AC-1: cmdDescribe prints a fixed-width labeled text block to stdout via sequential console.log calls; falls through to natural exit 0. Verified: `node scripts/keel-state.cjs describe KEEL-103` exits 0 and prints the full summary block.",
+    "AC-2: first statement is readManifest(storyId) which calls die(1, 'FAIL: no manifest for story ...') to stderr and exits 1. Verified: `describe KEEL-MISSING` exits 1 with correct stderr message.",
+    "AC-3: local formatIdle(ms) helper — ms>=3_600_000 returns Xh Ym; else Xm Ys; both use Math.floor. Defensive guard: manifest.updated_at absent => 'unknown'. Verified: idle showed '2m 49s' then '1h 2m' across smoke-test runs, both branches exercised.",
+    "AC-4: completed phases from fs.readdirSync regex scan mapped via AGENTS[n-1]; remaining via expected_phases fallback chain; halted warning when manifest.halted===true; gate events from manifest.gate_events||0 / manifest.max_gates||DEFAULT_MAX_GATES. All fields visible in smoke-test output.",
+    "AC-5: cmdStatus (lines 446-468) and cmdStatusAll (lines 475-502) are byte-for-byte unchanged — confirmed by git diff. `status KEEL-103` and `status --all` outputs verified unchanged post-change.",
+    "Insertion point: cmdDescribe inserted immediately after cmdStatusAll closing brace (line 502), before cmdSnapshot — matches architecture decision.",
+    "Switch case added: `case 'describe': cmdDescribe(storyId); break;` placed after `case 'status'`.",
+    "USAGE string updated: 'describe' added to command list — verified in no-arg output.",
+    "Zero new npm dependencies: cmdDescribe uses only fs, path, AGENTS, SCOPES, DEFAULT_MAX_GATES — all pre-existing.",
+    "Node.js syntax check: `node --check scripts/keel-state.cjs` exits 0.",
+    "Unused variable removed: completedNames was declared but never referenced; removed before final smoke test.",
+    "conventions.md read: ADR-001 lock-free rule applied — cmdDescribe is lock-free per ADR-002.",
+    "lessons.md read: L-1 (hard-coded paths in user-facing strings) does not apply — no path literals in new strings, only the command name 'describe'.",
+    "Impact set: scripts/keel-state.cjs only (codegraph covers PHP classes; Node.js file is sole change). No dependents with untested coverage identified.",
+    "Test intelligence for phase 5: (1) happy path exits 0 + stdout structure; (2) missing story exits 1 + stderr text; (3) sub-hour idle format 'Xm Ys'; (4) multi-hour idle format 'Xh Ym'; (5) absent updated_at shows 'unknown'; (6) completed phases list accuracy; (7) remaining phases list; (8) halted=true shows WARNING; (9) gate events N/M display; (10) status and status --all JSON unchanged after describe added."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5"],
+  "decisions": [
+    "cmdDescribe is a standalone function (not an extension of cmdStatus) — AC-5 compliance is trivially verifiable because lines 446-502 are untouched.",
+    "formatIdle is a named function local to cmdDescribe scope, not promoted to module level — no other command needs idle-time formatting.",
+    "Lock-free per ADR-001/ADR-002: writeManifest is atomic (tmp+rename); a pure reader gains nothing from withLock and must not acquire it.",
+    "catch in completedLines mapping silently omits timestamp for unparseable phase files — correct behavior; a bad phase file would already have failed validate.",
+    "attemptsDisplay: empty attempts object shown as '0 failures' rather than '{}' for human readability."
+  ],
+  "artifacts": [
+    "scripts/keel-state.cjs",
+    "docs/plans/KEEL-103-implementation-plan.md"
+  ],
+  "next_phase": 5,
+  "blockers": [],
+  "timestamp": "2026-07-14T06:21:00.000Z"
+}

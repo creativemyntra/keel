@@ -1,0 +1,40 @@
+{
+  "phase": 3,
+  "agent": "solution-architect",
+  "story_id": "KEEL-103",
+  "confidence": "high",
+  "findings": [
+    "ADR-001 read: lock-free read-only commands are the standing pattern. cmdDescribe is consistent — it makes no writes and requires no withLock wrapper. ADR-002 authored (see .keel/memory/decisions/ADR-002-describe-command-read-only-display.md).",
+    "Lesson L-1 reviewed: user-facing message strings that hard-code paths cause migration failures. cmdDescribe introduces no new path literals in instructional strings — the only new string is the command name 'describe' added to USAGE, which is not a filesystem path. L-1 does not trigger here.",
+    "Insertion point: cmdDescribe is placed immediately after cmdStatusAll (line 502) and before cmdSnapshot (line 504). This groups all three read-only inspection commands (cmdStatus, cmdStatusAll, cmdDescribe) adjacently.",
+    "Function signature: cmdDescribe(storyId). No args array parameter — the MVP command takes no flags. This matches the narrowest sufficient interface.",
+    "Missing-story path: cmdDescribe's first statement is readManifest(storyId), which already calls die(1, 'FAIL: no manifest for story <id>...') to stderr+exit(1). No duplicate error string is needed — AC-2 is satisfied by delegation.",
+    "Idle-time helper: formatIdle(ms) is a named function defined at the top of cmdDescribe scope (not module-level). Formula: ms>=3600000 => Xh Ym using Math.floor; ms<3600000 => Xm Ys using Math.floor. Defensive guard required: manifest.updated_at may be absent on old stories — use 'manifest.updated_at ? formatIdle(...) : \"unknown\"' to avoid NaNh NaNm output.",
+    "Phase enumeration pattern: fs.readdirSync(stateDir(storyId)).filter(f => /^\\d{2}-.+\\.json$/.test(f)).sort() — same regex as cmdStatus line 448. Pattern is reused, not the function, so AC-5 is unaffected.",
+    "In-progress phase: AGENTS[manifest.current_phase - 1] with fallback to 'complete' when current_phase > 11. No new data structure needed — AGENTS array (line 35) covers all 11 phases.",
+    "Remaining phases: expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature — same precedence chain as cmdStatus line 452. Filtered to phases > current_phase not already in completedPhaseNums.",
+    "Gate events line: manifest.gate_events (default 0) and manifest.max_gates || DEFAULT_MAX_GATES (44) — same fallback used by cmdGate line 349. No new logic.",
+    "Attempts line: JSON.stringify(manifest.attempts) inline — shows only active (in-progress) failures; deleted entries on PASS are gone. Per phase-1/phase-2 decisions, full audit-log history is deferred for MVP.",
+    "Output format: sequential console.log calls to stdout. Separator is 40 dashes (fixed). Labels padded to column 14. Halted warning prepended before first separator when manifest.halted === true (strict equality). Trailing blank line closes block.",
+    "AC-5 regression guard: cmdStatus (lines 446-468) and cmdStatusAll (lines 475-502) are byte-for-byte unchanged. The only structural changes to the file are: one new function (cmdDescribe), one new switch case ('describe'), and an addition to the USAGE string.",
+    "Zero new npm dependencies confirmed: cmdDescribe uses only fs (already required at line 31) and the existing constants AGENTS, SCOPES, DEFAULT_MAX_GATES. No require() additions needed.",
+    "Technical risk — NaN idle time: if manifest.updated_at is absent (pre-field stories), formatIdle(NaN) produces NaNh NaNm. Mitigation: guard with ternary before calling formatIdle. Risk is low (all current stories have the field per writeManifest line 74 writing it on every call)."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5"],
+  "decisions": [
+    "cmdDescribe is a standalone function (not an extension of cmdStatus) — AC-5 compliance is trivially verifiable because lines 446-502 are untouched.",
+    "Insertion point is after cmdStatusAll (line 502), before cmdSnapshot. All read-only inspection commands are grouped adjacently.",
+    "Lock-free per ADR-001 reasoning: writeManifest is atomic (tmp+rename); a pure reader gains nothing from withLock and must not acquire it.",
+    "formatIdle is a named function local to cmdDescribe scope, not promoted to module level. No other command needs idle-time formatting.",
+    "Halted warning uses strict equality (manifest.halted === true) consistent with cmdStatus line 460 and cmdStatusAll line 494.",
+    "expected_phases fallback chain: manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature — consistent with cmdStatus line 452.",
+    "Separator width: 40 dashes (fixed, not content-derived). Sufficient for readability without dynamic computation.",
+    "Defensive guard on manifest.updated_at absence produces 'unknown' rather than crashing or displaying NaN.",
+    "No design doc written to docs/design/ for this story: the feature is a single-function addition with no schema changes, no new dependencies, and no cross-component impact. The ADR is the sufficient durable record."
+  ],
+  "artifacts": [
+    ".keel/memory/decisions/ADR-002-describe-command-read-only-display.md",
+    ".keel/state/KEEL-103/03-solution-architect.json"
+  ],
+  "next_phase": 4
+}

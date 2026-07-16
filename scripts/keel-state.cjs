@@ -33,7 +33,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const AGENTS = [
-  'product-owner', 'business-analyst', 'solution-architect', 'software-engineer',
+  'product-owner', 'business-analyst', 'ui-designer', 'solution-architect', 'software-engineer',
   'tdd-red', 'tdd-green', 'qa-engineer', 'e2e-engineer',
   'security-engineer', 'technical-writer', 'release-manager',
 ];
@@ -43,7 +43,7 @@ const KNOWN_FIELDS = [
   'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp',
 ];
 const MAX_ATTEMPTS = 3;
-const DEFAULT_MAX_GATES = 44;   // pipeline budget: total gate events per story (11 phases × 3 attempts + overhead)
+const DEFAULT_MAX_GATES = 48;   // pipeline budget: total gate events per story (12 phases × 3 attempts + overhead)
 const DEFAULT_MAX_HOURS = 72;   // pipeline budget: wall-clock per story
 const LOCK_STALE_MS = 30000;
 const LOCK_WAIT_MS = 2000;
@@ -210,8 +210,8 @@ function copyDir(src, dest, skip) {
 // expected_phases in their manifest.json — the engine always reads from the
 // manifest, so old stories are unaffected by this constant changing.
 const SCOPES = {
-  feature: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-  defect: [1, 4, 5, 6, 7, 9],
+  feature: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  defect: [1, 5, 6, 7, 8, 10],
 };
 
 function cmdInit(storyId, args) {
@@ -253,7 +253,7 @@ function validatePhaseFile(storyId, fileName) {
   catch (e) { return [`invalid JSON in ${file}: ${e.message}`]; }
 
   // schema checks (mirrors agent-output-schema.json)
-  if (!Number.isInteger(out.phase) || out.phase < 1 || out.phase > 11) errors.push('phase must be integer 1..11');
+  if (!Number.isInteger(out.phase) || out.phase < 1 || out.phase > 12) errors.push('phase must be integer 1..12');
   if (!AGENTS.includes(out.agent)) errors.push(`agent must be one of: ${AGENTS.join(', ')}`);
   if (typeof out.story_id !== 'string' || !out.story_id) errors.push('story_id missing');
   else if (out.story_id !== storyId) errors.push(`story_id "${out.story_id}" does not match directory "${storyId}"`);
@@ -501,6 +501,113 @@ function cmdStatusAll() {
   console.log(JSON.stringify(stories, null, 2));                    // exit 0 (BR-1)
 }
 
+// Human-readable per-story summary. Lock-free (read-only) per ADR-002 — same
+// reasoning as ADR-001: writeManifest is atomic (tmp+rename), a pure reader
+// never sees a torn file and gains nothing from withLock.
+function cmdDescribe(storyId) {
+  const manifest = readManifest(storyId); // AC-2: exits 1 to stderr if story missing
+
+  // Local helper — no other command needs idle-time formatting, so keep it here
+  // rather than polluting module scope.
+  function formatIdle(ms) {
+    if (ms >= 3_600_000) {
+      return `${Math.floor(ms / 3600000)}h ${Math.floor((ms % 3600000) / 60000)}m`;
+    }
+    return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
+  }
+
+  // Defensive guard: manifest.updated_at may be absent on stories initialized
+  // before the field existed; formatIdle(NaN) would produce "NaNh NaNm".
+  const idle = manifest.updated_at
+    ? formatIdle(Date.now() - new Date(manifest.updated_at).getTime())
+    : 'unknown';
+
+  // Enumerate completed phase files — same regex pattern as cmdStatus line 448.
+  // Reusing the pattern (not the function) keeps cmdStatus byte-for-byte intact.
+  const files = fs.readdirSync(stateDir(storyId))
+    .filter((f) => /^\d{2}-.+\.json$/.test(f))
+    .sort();
+  const completedPhaseNums = files.map((f) => parseInt(f.slice(0, 2), 10));
+
+  // Current in-progress phase name; "complete" when beyond the last defined phase.
+  const inProgress = manifest.current_phase > 12
+    ? 'complete'
+    : (AGENTS[manifest.current_phase - 1] || 'complete');
+
+  // Remaining phases: same expected_phases fallback chain as cmdStatus line 452.
+  const expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
+  const remaining = expected
+    .filter((p) => p > manifest.current_phase && !completedPhaseNums.includes(p))
+    .map((p) => AGENTS[p - 1])
+    .filter(Boolean);
+
+  // Read timestamps from each completed phase file for display.
+  const completedLines = files.map((f) => {
+    const phaseNum = parseInt(f.slice(0, 2), 10);
+    const agentName = AGENTS[phaseNum - 1] || f.slice(3, -5);
+    let ts = '';
+    try {
+      const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), f), 'utf8'));
+      // Slice ISO string to "YYYY-MM-DD HH:MM" for human display.
+      if (out.timestamp) ts = ` (${out.timestamp.slice(0, 16).replace('T', ' ')})`;
+    } catch { /* unparseable phase file — timestamp omitted */ }
+    return `  ✓  ${String(phaseNum).padEnd(3)} ${agentName}${ts}`;
+  });
+
+  // In-progress started time: use manifest.updated_at or last completed phase ts.
+  let inProgressTs = '';
+  if (manifest.updated_at) {
+    inProgressTs = ` (started ${manifest.updated_at.slice(0, 16).replace('T', ' ')})`;
+  }
+
+  const SEP = '----------------------------------------';
+  const attemptsDisplay = manifest.attempts && Object.keys(manifest.attempts).length
+    ? JSON.stringify(manifest.attempts)
+    : '0 failures';
+  const gateEvents = manifest.gate_events || 0;
+  const maxGates = manifest.max_gates || DEFAULT_MAX_GATES;
+
+  if (manifest.halted === true) {
+    console.log('WARNING: pipeline is HALTED — human resume required');
+  }
+  console.log(SEP);
+  console.log(`${manifest.story_id} · ${manifest.title || '(no title)'}`);
+  console.log(SEP);
+  console.log(`Scope:          ${manifest.scope || 'feature'}`);
+  console.log(`Current phase:  ${manifest.current_phase} / 11 (${inProgress})`);
+  console.log(`Halted:         ${manifest.halted === true ? 'yes' : 'no'}`);
+  console.log(`Idle:           ${idle}`);
+  console.log(`Started:        ${manifest.started_at || 'unknown'}`);
+  console.log('');
+  console.log('Completed phases:');
+  if (completedLines.length) {
+    completedLines.forEach((l) => console.log(l));
+  } else {
+    console.log('  (none)');
+  }
+  console.log('');
+  console.log('In progress:');
+  if (inProgress !== 'complete') {
+    console.log(`  ➤  ${String(manifest.current_phase).padEnd(3)} ${inProgress}${inProgressTs}`);
+  } else {
+    console.log('  (complete)');
+  }
+  console.log('');
+  console.log('Remaining:');
+  if (remaining.length) {
+    remaining.forEach((name) => {
+      const phaseNum = expected.find((p) => AGENTS[p - 1] === name);
+      console.log(`     ${String(phaseNum || '').padEnd(3)} ${name}`);
+    });
+  } else {
+    console.log('  (none)');
+  }
+  console.log('');
+  console.log(`Attempts (this story):  ${attemptsDisplay}`);
+  console.log(`Gate events used:       ${gateEvents} / ${maxGates}`);
+  console.log('');
+}
+
 function cmdSnapshot(storyId) {
   readManifest(storyId);
   const ts = nowIso().replace(/[:.]/g, '-');
@@ -717,9 +824,307 @@ function cmdMemoryCheck() {
   console.log('PASS: memory within bounds');
 }
 
+function cmdReport(storyId) {
+  const manifest = readManifest(storyId);
+
+  // ---- collect phase files ------------------------------------------------
+  const phaseFiles = fs.readdirSync(stateDir(storyId))
+    .filter((f) => /^\d{2}-.+\.json$/.test(f))
+    .sort();
+
+  const phases = phaseFiles.map((f) => {
+    const num = parseInt(f.slice(0, 2), 10);
+    let data = {};
+    try { data = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), f), 'utf8')); } catch {}
+    return { num, file: f, agent: AGENTS[num - 1] || f.slice(3, -5), data };
+  });
+
+  // ---- helper: escape HTML ------------------------------------------------
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ---- overall status badge -----------------------------------------------
+  const expectedLen = (manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature).length;
+  const completed   = phases.length;
+  let statusLabel, statusColor;
+  if (manifest.halted) {
+    statusLabel = 'HALTED'; statusColor = '#dc2626';
+  } else if (completed >= expectedLen) {
+    statusLabel = 'COMPLETE'; statusColor = '#16a34a';
+  } else {
+    statusLabel = `IN PROGRESS (${completed}/${expectedLen})`; statusColor = '#d97706';
+  }
+
+  // ---- phase table rows ---------------------------------------------------
+  const PHASE_NAMES = {
+    'product-owner': 'Product Owner', 'business-analyst': 'Business Analyst',
+    'ui-designer': 'UI Designer', 'solution-architect': 'Solution Architect',
+    'software-engineer': 'Software Engineer', 'tdd-red': 'TDD Red',
+    'tdd-green': 'TDD Green', 'qa-engineer': 'QA Engineer',
+    'e2e-engineer': 'E2E Engineer', 'security-engineer': 'Security Engineer',
+    'technical-writer': 'Technical Writer', 'release-manager': 'Release Manager',
+  };
+  const expectedPhases = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
+  const completedNums  = new Set(phases.map((p) => p.num));
+
+  const phaseRows = expectedPhases.map((n) => {
+    const p = phases.find((x) => x.num === n);
+    const name = PHASE_NAMES[AGENTS[n - 1]] || AGENTS[n - 1] || `Phase ${n}`;
+    if (!p) {
+      return `<tr><td class="ph-num">${n}</td><td>${esc(name)}</td>
+        <td><span class="badge pending">PENDING</span></td>
+        <td>—</td><td>—</td><td>—</td></tr>`;
+    }
+    const conf   = p.data.confidence || '—';
+    const ts     = (p.data.timestamp || '').slice(0, 16).replace('T', ' ') || '—';
+    const blk    = (p.data.blockers || []).length;
+    const confCls = conf === 'high' ? 'high' : conf === 'medium' ? 'med' : 'low';
+    return `<tr>
+      <td class="ph-num">${n}</td>
+      <td><strong>${esc(name)}</strong></td>
+      <td><span class="badge pass">PASS</span></td>
+      <td><span class="conf ${confCls}">${esc(conf)}</span></td>
+      <td class="ts">${esc(ts)}</td>
+      <td>${blk ? `<span class="badge fail">${blk} blocker${blk > 1 ? 's' : ''}</span>` : '—'}</td>
+    </tr>`;
+  }).join('\n');
+
+  // ---- key metrics extraction ---------------------------------------------
+  // TDD Green (phase 7)
+  const tddGreen = phases.find((p) => p.agent === 'tdd-green');
+  let testSummary = '—';
+  if (tddGreen) {
+    const hit = (tddGreen.data.findings || []).find((f) => /passing|passed|pass/i.test(f));
+    testSummary = hit ? esc(hit) : 'See phase 7 findings';
+  }
+
+  // Coverage lines from QA (phase 8) or TDD Green (phase 7)
+  const qaPhase = phases.find((p) => p.agent === 'qa-engineer');
+  const covLines = [];
+  [tddGreen, qaPhase].forEach((ph) => {
+    if (!ph) return;
+    (ph.data.findings || []).forEach((f) => {
+      if (/coverage|%/i.test(f)) covLines.push(esc(f));
+    });
+  });
+  const coverageHtml = covLines.length
+    ? covLines.map((l) => `<li>${l}</li>`).join('')
+    : '<li>—</li>';
+
+  // E2E (phase 9)
+  const e2ePhase = phases.find((p) => p.agent === 'e2e-engineer');
+  let e2eSummary = '—';
+  if (e2ePhase) {
+    const hit = (e2ePhase.data.findings || []).find((f) => /passed|pass|PASS/i.test(f));
+    e2eSummary = hit ? esc(hit) : 'See phase 9 findings';
+  }
+
+  // Security (phase 10)
+  const secPhase = phases.find((p) => p.agent === 'security-engineer');
+  const secFindings = secPhase ? (secPhase.data.findings || []).map((f) => `<li>${esc(f)}</li>`).join('') : '<li>—</li>';
+  const highCount   = secPhase
+    ? (secPhase.data.findings || []).filter((f) => /\bHIGH\b/.test(f)).length
+    : 0;
+
+  // AC list (from phase 1)
+  const phase1 = phases.find((p) => p.num === 1);
+  const allACs  = (phase1 && phase1.data.acceptance_criteria_ids) || [];
+
+  // All decisions across phases
+  const allDecisions = phases.flatMap((p) =>
+    (p.data.decisions || []).map((d) => ({ agent: PHASE_NAMES[p.agent] || p.agent, text: d }))
+  );
+
+  // All artifacts
+  const allArtifacts = phases.flatMap((p) =>
+    (p.data.artifacts || []).map((a) => ({ agent: PHASE_NAMES[p.agent] || p.agent, path: a }))
+  );
+
+  // Findings per phase (for detail section)
+  const findingsHtml = phases.map((p) => {
+    const name = PHASE_NAMES[p.agent] || p.agent;
+    const items = (p.data.findings || []).map((f) => `<li>${esc(f)}</li>`).join('');
+    return `<div class="phase-card">
+      <div class="phase-card-header">
+        <span class="ph-badge">${p.num}</span>
+        <strong>${esc(name)}</strong>
+        <span class="conf ${(p.data.confidence || 'low') === 'high' ? 'high' : (p.data.confidence || 'low') === 'medium' ? 'med' : 'low'}">${esc(p.data.confidence || '—')}</span>
+      </div>
+      <ul class="findings-list">${items || '<li>(no findings recorded)</li>'}</ul>
+    </div>`;
+  }).join('\n');
+
+  // UI mockup links (phase 3 artifacts)
+  const uiPhase = phases.find((p) => p.agent === 'ui-designer');
+  const mockupLinks = uiPhase
+    ? (uiPhase.data.artifacts || [])
+        .filter((a) => a.endsWith('.html'))
+        .map((a) => `<li><a href="../../${esc(a)}" target="_blank">${esc(path.basename(a))}</a></li>`)
+        .join('')
+    : '';
+
+  // ---- assemble HTML ------------------------------------------------------
+  const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(storyId)} Pipeline Report</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f8fafc;color:#1e293b;font-size:14px;line-height:1.6}
+a{color:#2563eb;text-decoration:none}a:hover{text-decoration:underline}
+.header{background:#0f172a;color:#f1f5f9;padding:24px 32px;display:flex;justify-content:space-between;align-items:flex-start}
+.header h1{font-size:22px;font-weight:700;letter-spacing:-.3px}
+.header .meta{font-size:12px;color:#94a3b8;margin-top:4px}
+.status-pill{padding:4px 14px;border-radius:20px;font-size:13px;font-weight:600;background:${statusColor};color:#fff;white-space:nowrap;margin-top:4px}
+.main{max-width:1100px;margin:0 auto;padding:24px 32px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:14px;font-weight:600}
+.metric-big{font-size:36px;font-weight:700;color:#0f172a;line-height:1}
+.metric-sub{font-size:12px;color:#64748b;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;background:#f1f5f9;border-bottom:2px solid #e2e8f0;color:#475569;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfc}
+.ph-num{font-weight:700;color:#94a3b8;font-size:12px;width:40px}
+.ts{font-size:12px;color:#94a3b8;white-space:nowrap}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.badge.pass{background:#dcfce7;color:#166534}
+.badge.fail{background:#fee2e2;color:#991b1b}
+.badge.pending{background:#f1f5f9;color:#64748b}
+.conf{display:inline-block;padding:1px 7px;border-radius:3px;font-size:11px;font-weight:600}
+.conf.high{background:#dcfce7;color:#166534}
+.conf.med{background:#fef9c3;color:#854d0e}
+.conf.low{background:#fee2e2;color:#991b1b}
+.section{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:20px}
+.section h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:16px;font-weight:600}
+ul.findings-list{list-style:none;padding:0}
+ul.findings-list li{padding:5px 0 5px 16px;border-bottom:1px solid #f8fafc;position:relative;font-size:13px;color:#334155}
+ul.findings-list li::before{content:'›';position:absolute;left:0;color:#94a3b8}
+ul.findings-list li:last-child{border-bottom:none}
+.phase-card{border:1px solid #e2e8f0;border-radius:8px;margin-bottom:12px;overflow:hidden}
+.phase-card-header{background:#f8fafc;padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0}
+.ph-badge{background:#0f172a;color:#fff;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700}
+.phase-card .findings-list{padding:8px 16px}
+.decisions-list{list-style:none;padding:0}
+.decisions-list li{padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
+.decisions-list li:last-child{border-bottom:none}
+.decisions-list .agent-tag{font-size:11px;background:#e0f2fe;color:#0369a1;border-radius:3px;padding:1px 6px;margin-right:6px;font-weight:600}
+.artifacts-list{list-style:none;padding:0;column-count:2;column-gap:16px}
+.artifacts-list li{padding:4px 0;font-size:12px;color:#475569;break-inside:avoid}
+.artifacts-list li::before{content:'📄 '}
+.footer{text-align:center;padding:24px;font-size:12px;color:#94a3b8;border-top:1px solid #e2e8f0;margin-top:8px}
+.sec-high{color:#dc2626;font-weight:600}
+.mockup-links{list-style:none;padding:0}
+.mockup-links li{padding:4px 0}
+.mockup-links li::before{content:'🖼 '}
+.ac-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ac-chip{background:#e0f2fe;color:#0369a1;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:600}
+.gate-meter{background:#e2e8f0;border-radius:4px;height:8px;margin-top:8px;overflow:hidden}
+.gate-meter-fill{height:100%;border-radius:4px;background:#2563eb;transition:width .3s}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="meta">${esc(storyId)} · Keel AI-SDLC Pipeline Report</div>
+    <h1>${esc(manifest.title || storyId)}</h1>
+    <div class="meta">Scope: ${esc(manifest.scope || 'feature')} · Started: ${esc((manifest.started_at || '').slice(0, 16).replace('T', ' ') || '—')} · Generated: ${esc(now)}</div>
+  </div>
+  <div style="text-align:right">
+    <div class="status-pill">${esc(statusLabel)}</div>
+    <div class="meta" style="margin-top:8px">Gates: ${manifest.gate_events || 0} / ${manifest.max_gates || DEFAULT_MAX_GATES}</div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ── Summary metrics ────────────────────────────────────────── -->
+<div class="grid2">
+  <div class="card">
+    <h2>Phases Complete</h2>
+    <div class="metric-big">${completed} <span style="font-size:20px;color:#94a3b8">/ ${expectedLen}</span></div>
+    <div class="gate-meter"><div class="gate-meter-fill" style="width:${Math.round(completed/expectedLen*100)}%"></div></div>
+    <div class="metric-sub">${Math.round(completed/expectedLen*100)}% of pipeline done</div>
+  </div>
+  <div class="card">
+    <h2>Test Suite</h2>
+    <div style="font-size:13px;color:#334155">${testSummary}</div>
+    <div style="margin-top:12px"><h2 style="margin-bottom:8px">Coverage</h2><ul class="findings-list">${coverageHtml}</ul></div>
+  </div>
+  <div class="card">
+    <h2>E2E Tests</h2>
+    <div style="font-size:13px;color:#334155">${e2eSummary}</div>
+    ${mockupLinks ? `<div style="margin-top:12px"><h2 style="margin-bottom:8px">UI Mockups</h2><ul class="mockup-links">${mockupLinks}</ul></div>` : ''}
+  </div>
+  <div class="card">
+    <h2>Security</h2>
+    ${highCount > 0 ? `<div class="metric-big sec-high">${highCount}</div><div class="metric-sub">HIGH finding${highCount > 1 ? 's' : ''} — RELEASE BLOCKED</div>` : '<div style="color:#16a34a;font-weight:700;font-size:18px">0 HIGH findings</div>'}
+    <div style="margin-top:12px"><ul class="findings-list">${secFindings}</ul></div>
+  </div>
+</div>
+
+<!-- ── Acceptance Criteria ──────────────────────────────────────── -->
+${allACs.length ? `<div class="section">
+  <h2>Acceptance Criteria</h2>
+  <div class="ac-chips">${allACs.map((ac) => `<span class="ac-chip">${esc(ac)}</span>`).join('')}</div>
+</div>` : ''}
+
+<!-- ── Phase pipeline ───────────────────────────────────────────── -->
+<div class="section">
+  <h2>Phase Pipeline</h2>
+  <table>
+    <thead><tr><th>#</th><th>Agent</th><th>Status</th><th>Confidence</th><th>Timestamp</th><th>Blockers</th></tr></thead>
+    <tbody>${phaseRows}</tbody>
+  </table>
+</div>
+
+<!-- ── Phase findings detail ────────────────────────────────────── -->
+<div class="section">
+  <h2>Phase Findings</h2>
+  ${findingsHtml || '<p style="color:#94a3b8">No phases completed yet.</p>'}
+</div>
+
+<!-- ── Decisions log ────────────────────────────────────────────── -->
+${allDecisions.length ? `<div class="section">
+  <h2>Decisions Log</h2>
+  <ul class="decisions-list">
+    ${allDecisions.map((d) => `<li><span class="agent-tag">${esc(d.agent)}</span>${esc(d.text)}</li>`).join('')}
+  </ul>
+</div>` : ''}
+
+<!-- ── Artifacts ────────────────────────────────────────────────── -->
+${allArtifacts.length ? `<div class="section">
+  <h2>Artifacts (${allArtifacts.length})</h2>
+  <ul class="artifacts-list">
+    ${allArtifacts.map((a) => `<li><span style="font-size:11px;color:#94a3b8">[${esc(a.agent)}]</span> ${esc(a.path)}</li>`).join('')}
+  </ul>
+</div>` : ''}
+
+</div>
+<div class="footer">Keel AI-SDLC · ${esc(storyId)} · ${esc(now)}</div>
+</body>
+</html>`;
+
+  // ---- write report -------------------------------------------------------
+  const outDir  = path.join('docs', 'reports');
+  const outFile = path.join(outDir, `${storyId}-pipeline-report.html`);
+  fs.mkdirSync(outDir, { recursive: true });
+  fs.writeFileSync(outFile, html, 'utf8');
+  console.log(`Report written: ${outFile}`);
+}
+
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|snapshot|restore|verify|resume|revert-check> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
@@ -731,6 +1136,8 @@ switch (cmd) {
   case 'gate': cmdGate(storyId, rest); break;
   case 'audit': cmdAudit(storyId, rest); break;
   case 'status': cmdStatus(storyId); break;
+  case 'describe': cmdDescribe(storyId); break;
+  case 'report': cmdReport(storyId); break;
   case 'snapshot': cmdSnapshot(storyId); break;
   case 'restore': cmdRestore(storyId, rest[0] || die(64, 'restore needs <snapshot-timestamp>')); break;
   case 'verify': cmdVerify(storyId); break;
