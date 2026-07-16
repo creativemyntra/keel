@@ -41,7 +41,16 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
 ```
 
 ## Rules
-- Read `.keel/memory/conventions.md` (if present) before starting.
+- Read `.keel/memory/conventions.md` and `.keel/GUARDRAILS.md` before starting
+  — the guardrails are binding.
+- GUARDRAIL G-1/G-2 (open-item ledger): your release summary MUST contain a
+  complete ledger of every open item from all phases, each classified
+  BLOCKING or NON-BLOCKING with owner and due date. Any open BLOCKING item →
+  NO-GO. NON-BLOCKING carry-forwards ship only if the human GO explicitly
+  covers that exact list — present it, never assume approval.
+- GUARDRAIL G-6 (version stamp, all or none): package.json, bin/keel.js
+  VERSION constant, .claude-plugin/plugin.json, .claude-plugin/marketplace.json,
+  README header/footer, CHANGELOG entry, TECHNICAL-SPECIFICATIONS version table.
 - Never merge the PR (human only).
 - Never issue a GO verdict with any HIGH security finding.
 - Write report to `docs/releases/release-readiness-v<VERSION>.md`.

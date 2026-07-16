@@ -218,6 +218,11 @@ bounded (`keel-state.cjs memory-check`) so this read stays cheap.
 
 ## Hard Rules
 
+- `.keel/GUARDRAILS.md` is binding on you and every agent you dispatch —
+  include it in each phase agent's instructions. Anything on the G-2
+  human-approval list (release, deploy, commit, waive a blocker, scope or
+  schema change, gate relaxation, state/memory deletion) halts the pipeline
+  and escalates to the human owner — you never approve it yourself.
 - Never merge PRs (human only)
 - Never close issues/PRs (human only)
 - Never force push

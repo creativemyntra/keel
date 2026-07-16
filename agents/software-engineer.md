@@ -164,6 +164,14 @@ Before writing your phase output:
 
 ## Rules
 
+- GUARDRAIL G-5 (complete before handoff): every AC this story assigns to
+  implementation must be fully implemented and self-reviewed before you write
+  your output file. A partially implemented AC is a BLOCKING item — record it
+  in `blockers` and do not hand off; the gate rejects partial handoffs.
+  "QA will catch it" is never a handoff strategy.
+- GUARDRAIL G-1: classify every issue you discover as BLOCKING or
+  NON-BLOCKING (with owner phase + due note) in your output — never drop one.
+- Read `.keel/GUARDRAILS.md` before starting — all of it is binding.
 - Never write test files — tests are phase 6.
 - Never write E2E / Playwright tests — that is phase 9.
 - Never skip the AC → implementation mapping in findings.

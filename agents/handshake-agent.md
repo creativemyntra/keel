@@ -144,3 +144,10 @@ halt decision — never write those files by hand.
 - If `.keel/state/<story-id>/` does not exist, report that the pipeline was not
   initialized and instruct the orchestrator to start from phase 1.
 - Never output credentials, keys, tokens, or PII.
+- Enforce `.keel/GUARDRAILS.md` at every gate: (G-1) every open item in the
+  phase output is classified BLOCKING or NON-BLOCKING with an owner — an
+  unclassified item is a FAIL; (G-2) anything on the human-approval list halts
+  here and is escalated to the owner, never self-approved; (G-3) the phase
+  output contains no secrets and no unverified claims presented as fact;
+  (G-5) every AC the phase owns is addressed or explicitly reassigned with the
+  owning phase named — a partial handoff is a FAIL, not a carry-forward.

@@ -1,0 +1,84 @@
+# Keel Pipeline Guardrails
+
+Binding rules for every agent and every gate in this repository. Added
+2026-07-16 at the human owner's direction after the v3.14.0 run. These rules
+override convenience. A gate that cannot prove compliance FAILS the phase.
+
+## G-1 · Open-item classification (blocking / non-blocking)
+
+Every issue, bug, finding, or follow-up task discovered in any phase MUST be
+classified at the moment of discovery as exactly one of:
+
+- **BLOCKING** — halts the pipeline at the current gate. The story does not
+  advance until it is fixed or the human owner explicitly waives it.
+- **NON-BLOCKING (small)** — recorded in the discovering phase's output file
+  with an owner phase and a due date, carried forward visibly through every
+  subsequent gate, and listed in the release manager's open-item ledger.
+
+An unclassified open item is itself a gate failure. Nothing is silently
+dropped, deferred without a record, or "left for QA to catch."
+
+## G-2 · Human approval gate
+
+The following ALWAYS halt and wait for explicit user approval — no agent or
+gate may self-approve, infer approval, or proceed on a default:
+
+- Releasing, deploying, committing, pushing, tagging, or merging branches
+- Waiving a BLOCKING item or shipping with any open BLOCKING item
+- Carrying NON-BLOCKING items into a release (the release summary must list
+  them and the human GO covers exactly that list)
+- Changing scope, acceptance criteria, or the output schema mid-story
+- Relaxing any gate criterion, retrying past `max_attempts`, or restoring state
+- Deleting or rewriting any state file, audit log, or memory entry
+
+## G-3 · No leakage
+
+- **Context**: agents exchange state ONLY through gate-validated phase output
+  files (`.keel/state/<story>/NN-agent.json`). No side channels, no verbal
+  carry-over, no reading another story's state to shortcut work.
+- **Secrets**: no tokens, credentials, API keys, or environment-variable
+  values in any phase output, finding, evidence file, log, or commit. Quote
+  only runner output and file paths.
+- **Claims**: an unverified claim must not propagate. Gates re-execute
+  executable claims; a claim that cannot be re-executed is labeled as such in
+  the handoff log, never passed forward as fact.
+
+## G-4 · No manipulation (evidence-or-silence)
+
+Every claim of a test run, scan, coverage number, or verification carries:
+(1) the file/suite confirmed to exist on disk, (2) the exact command executed
+this session, (3) the verbatim output. Missing any of the three → the claim is
+omitted and reported as "not run." Fabricating a result, naming a nonexistent
+suite, relaxing an assertion, or skipping a failing test is a gate FAIL,
+costs an attempt, and is recorded permanently in the audit log.
+
+## G-5 · Complete before handoff (definition of done per phase)
+
+A phase hands off ONLY when every acceptance criterion in the ticket that the
+phase owns is fully addressed — implemented, designed, or explicitly marked
+out-of-scope-for-this-phase with the owning phase named:
+
+- **ui-designer (3)**: every user-facing AC has a design spec and mockup
+  coverage before the architect sees it.
+- **software-engineer (5)**: every AC implemented and self-reviewed before
+  tdd-red sees it. Partial implementation is a gate FAIL, not a carry-forward.
+- **tdd-red/green (6-7), qa (8), e2e (9)**: every AC mapped to executed,
+  passing tests before the next phase.
+- The gate rejects any handoff where an AC is unaddressed and unexplained.
+
+## G-6 · Commits, versioning, deployment
+
+- Agents NEVER run git commit/push/tag/merge or any deploy action. The human
+  owner executes releases, on their explicit instruction only.
+- Version stamping checklist (all or none): `package.json`, `bin/keel.js`
+  VERSION constant, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
+  README header/footer, CHANGELOG entry, TECHNICAL-SPECIFICATIONS version table.
+- Release requires: all gates passed, open-item ledger presented (G-1),
+  explicit human GO (G-2).
+
+## G-7 · Memory governance
+
+Writes to `.keel/memory/` (conventions, lessons, decisions) happen only within
+memory-check caps, only by the phase that owns the insight, and only for the
+current story. Memory is never edited to alter history; wrong entries are
+corrected with a new dated line, not deletion.
