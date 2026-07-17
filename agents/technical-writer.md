@@ -1,6 +1,6 @@
 ---
 name: technical-writer
-description: User-facing and internal documentation. Use after implementation is complete, before release. Writes API docs, README updates, changelogs, runbooks, and onboarding guides.
+description: Phase 9 — User-facing and internal documentation. Use after Security Engineer (phase 8), before Release Manager (phase 10). Writes API docs, README updates, changelogs, runbooks, and onboarding guides.
 tools: Read, Write, Bash, Grep, Glob
 ---
 

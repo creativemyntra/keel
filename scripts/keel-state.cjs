@@ -34,16 +34,19 @@ const crypto = require('crypto');
 
 const AGENTS = [
   'product-owner', 'business-analyst', 'ui-designer', 'solution-architect', 'software-engineer',
-  'tdd-red', 'tdd-green', 'qa-engineer', 'e2e-engineer',
+  'qa-engineer', 'e2e-engineer',
   'security-engineer', 'technical-writer', 'release-manager',
 ];
 const CONFIDENCE = ['high', 'medium', 'low'];
+// Agents removed in v3.15.0 (TDD phases merged into software-engineer); kept for
+// backward-compatible validation of stories initialized before the restructure.
+const LEGACY_AGENTS = [...AGENTS, 'tdd-red', 'tdd-green'];
 const KNOWN_FIELDS = [
   'phase', 'agent', 'story_id', 'confidence', 'findings', 'acceptance_criteria_ids',
   'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp',
 ];
 const MAX_ATTEMPTS = 3;
-const DEFAULT_MAX_GATES = 48;   // pipeline budget: total gate events per story (12 phases × 3 attempts + overhead)
+const DEFAULT_MAX_GATES = 40;   // pipeline budget: total gate events per story (10 phases × 3 attempts + overhead)
 const DEFAULT_MAX_HOURS = 72;   // pipeline budget: wall-clock per story
 const LOCK_STALE_MS = 30000;
 const LOCK_WAIT_MS = 2000;
@@ -185,34 +188,30 @@ function copyDir(src, dest, skip) {
 
 // Pipeline scopes: which phases a story is expected to run.
 //
-// feature (12 phases):
+// feature (10 phases):
 //   1  product-owner      — intake / requirements
 //   2  business-analyst   — functional spec
 //   3  ui-designer        — screen flows, mockups, component states
 //   4  solution-architect — architecture + design
-//   5  software-engineer  — implementation (production code ONLY, no tests)
-//   6  tdd-red            — test case creation (write + verify meaningful failing tests)
-//   7  tdd-green          — full suite execution + coverage gate (≥80% changed lines)
-//   8  qa-engineer        — AC mapping, regression, integration validation
-//   9  e2e-engineer       — Playwright E2E browser tests
-//  10  security-engineer  — OWASP, threat model, dependency audit
-//  11  technical-writer   — docs, changelog, runbook
-//  12  release-manager    — go/no-go, deployment plan
+//   5  software-engineer  — implementation + unit tests + coverage gate (≥80%)
+//   6  qa-engineer        — AC mapping, regression, integration validation
+//   7  e2e-engineer       — Playwright E2E browser tests
+//   8  security-engineer  — OWASP, threat model, dependency audit
+//   9  technical-writer   — docs, changelog, runbook
+//  10  release-manager    — go/no-go, deployment plan
 //
-// defect (express lane — phases 1, 5, 6, 7, 8, 10):
+// defect (express lane — phases 1, 5, 6, 8):
 //   1  business-analyst   — triage + RCA import
-//   5  software-engineer  — root-cause fix
-//   6  tdd-red            — regression test (proves fix guards root cause)
-//   7  tdd-green          — revert-check + full suite green
-//   8  qa-engineer        — validation
-//  10  security-engineer  — diff-scoped security scan
+//   5  software-engineer  — root-cause fix + regression unit test
+//   6  qa-engineer        — validation
+//   8  security-engineer  — diff-scoped security scan
 //
-// Existing stories initialized under the old 8-phase scheme store their own
+// Existing stories initialized under older schemes store their own
 // expected_phases in their manifest.json — the engine always reads from the
 // manifest, so old stories are unaffected by this constant changing.
 const SCOPES = {
-  feature: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-  defect: [1, 5, 6, 7, 8, 10],
+  feature: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  defect: [1, 5, 6, 8],
 };
 
 function cmdInit(storyId, args) {
@@ -254,8 +253,19 @@ function validatePhaseFile(storyId, fileName) {
   catch (e) { return [`invalid JSON in ${file}: ${e.message}`]; }
 
   // schema checks (mirrors agent-output-schema.json)
-  if (!Number.isInteger(out.phase) || out.phase < 1 || out.phase > 12) errors.push('phase must be integer 1..12');
-  if (!AGENTS.includes(out.agent)) errors.push(`agent must be one of: ${AGENTS.join(', ')}`);
+  // Read the story's manifest to determine the valid phase ceiling — stories initialized
+  // before v3.15.0 may have expected_phases up to 12.
+  let storyMaxPhase = AGENTS.length; // 10 for current pipeline
+  if (fs.existsSync(manifestPath(storyId))) {
+    try {
+      const m = JSON.parse(fs.readFileSync(manifestPath(storyId), 'utf8'));
+      if (Array.isArray(m.expected_phases) && m.expected_phases.length > 0) {
+        storyMaxPhase = Math.max(...m.expected_phases);
+      }
+    } catch (_) { /* use pipeline default */ }
+  }
+  if (!Number.isInteger(out.phase) || out.phase < 1 || out.phase > storyMaxPhase) errors.push(`phase must be integer 1..${storyMaxPhase}`);
+  if (!LEGACY_AGENTS.includes(out.agent)) errors.push(`agent must be one of: ${AGENTS.join(', ')}`);
   if (typeof out.story_id !== 'string' || !out.story_id) errors.push('story_id missing');
   else if (out.story_id !== storyId) errors.push(`story_id "${out.story_id}" does not match directory "${storyId}"`);
   if (!CONFIDENCE.includes(out.confidence)) errors.push('confidence must be high|medium|low');
@@ -550,7 +560,10 @@ function cmdDescribe(storyId) {
   // Read timestamps from each completed phase file for display.
   const completedLines = files.map((f) => {
     const phaseNum = parseInt(f.slice(0, 2), 10);
-    const agentName = AGENTS[phaseNum - 1] || f.slice(3, -5);
+    // Prefer the name embedded in the filename (authoritative — the agent
+    // that ran wrote the file as NN-<agent>.json). Fall back to the AGENTS
+    // array only when the filename pattern is non-standard.
+    const agentName = f.slice(3, -5) || AGENTS[phaseNum - 1] || 'unknown';
     let ts = '';
     try {
       const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), f), 'utf8'));

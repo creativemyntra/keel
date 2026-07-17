@@ -47,7 +47,7 @@ rules are hard boundaries, not suggestions:
   claim (current default behavior).
 - **Tier NORMAL:** everything else with code changes. → Re-execute the tests
   for the changed area + the story's regression test; the FULL suite runs
-  once per story, at the qa-engineer gate (phase 8), not at every gate.
+  once per story, at the qa-engineer gate (phase 6), not at every gate.
 - **Tier TRIVIAL:** diff touches only docs/comments/message-strings/config,
   ≤ 10 changed lines, no security-sensitive paths. → Engine validate + run
   the story's regression test. You may accept an engine-recorded
@@ -84,11 +84,12 @@ rules are hard boundaries, not suggestions:
 2. **Referenced code resolves.** Classes/endpoints named in a design exist in
    the codebase (Grep) or are explicitly marked as new.
 3. **Phase-specific gates:**
-   - After software-engineer: tests referenced in artifacts exist as files. If
-     the phase fixed a defect, `findings` must reference an RCA document — open
-     it and check the root cause it names is what the diff actually changes
-     (an RCA that describes the symptom is not an RCA; this is a best-effort
-     judgment call, not a guarantee — say so in your notes when uncertain).
+   - After software-engineer: test file(s) must appear in artifacts. Verify
+     coverage ≥ 80% on changed lines is quoted in findings — no number = FAIL.
+     Run the test suite and confirm it passes. If the phase fixed a defect,
+     `findings` must reference an RCA document — open it and check the root
+     cause it names is what the diff actually changes (an RCA that describes
+     the symptom is not an RCA; best-effort judgment, say so when uncertain).
      Then run the automated revert check — the engine stashes the fix, proves
      the regression test fails without it, and restores it:
      ```
@@ -96,8 +97,7 @@ rules are hard boundaries, not suggestions:
      ```
      (Protocol: regression test committed or staged, fix unstaged.) Exit
      non-zero = the test does not prove the fix = gate FAIL.
-   - After qa-engineer: coverage ≥ 80% **as observed by you**, and every AC
-     mapped to a passing test.
+   - After qa-engineer: re-confirm coverage ≥ 80% (software-engineer reported it; QA re-runs), and every AC mapped to a passing test.
    - After security-engineer: zero HIGH findings recorded, AND the report's
      scanner inventory is complete — every configured scanner (Snyk when the
      CLI + token exist, SonarQube when `sonar-project.properties` or

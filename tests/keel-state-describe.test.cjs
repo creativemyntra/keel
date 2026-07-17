@@ -335,18 +335,18 @@ function patchManifestUpdatedAt(cwd, storyId, isoTimestamp) {
 }
 
 // ============================================================================
-// AC-4: "tdd-red" appears in remaining/in-progress phases (phase 5 = AGENTS[4])
+// AC-4: "qa-engineer" appears in remaining phases when current_phase=5 (AGENTS[5])
 // ============================================================================
 
 {
-  // A fresh story at current_phase=1 (default after init) has all 11 phases
+  // A fresh story at current_phase=1 (default after init) has all 10 phases
   // remaining. The "In progress" line should show the AGENTS name for phase 1
   // which is "product-owner". We verify the mapping is driven by AGENTS not a
   // hard-coded string by also checking a story whose current_phase is 5.
   const cwd = makeTmpDir('ac4b');
   engine(cwd, 'init', 'STORY-J', '--title', 'Phase-name mapping test');
 
-  // Advance current_phase to 5 directly in the manifest (tdd-red = AGENTS[4]).
+  // Advance current_phase to 5 (software-engineer in progress; qa-engineer = AGENTS[5] is next).
   const mfPath = path.join(cwd, '.keel', 'state', 'STORY-J', 'manifest.json');
   const mf = JSON.parse(fs.readFileSync(mfPath, 'utf8'));
   mf.current_phase = 5;
@@ -355,9 +355,9 @@ function patchManifestUpdatedAt(cwd, storyId, isoTimestamp) {
   const r = engine(cwd, 'describe', 'STORY-J');
 
   assert(
-    'AC-4 phase-names: current_phase=5 shows "tdd-red" (AGENTS[4])',
-    r.stdout.includes('tdd-red'),
-    `stdout did not contain "tdd-red" for current_phase=5:\n${r.stdout.slice(0, 400)}`
+    'AC-4 phase-names: current_phase=5 shows "qa-engineer" in remaining (AGENTS[5])',
+    r.stdout.includes('qa-engineer'),
+    `stdout did not contain "qa-engineer" for current_phase=5:\n${r.stdout.slice(0, 400)}`
   );
 }
 

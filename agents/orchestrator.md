@@ -29,15 +29,15 @@ acceptance criteria must be confirmed by the human before phase 2 starts.
 it exists for ceremonies (standup, retro, velocity) when the human asks.
 
 **Scope (orthogonal to entry mode):**
-- `feature` (default) — all 12 phases (see table below).
-- `defect` — express lane for bug fixes: phases 1, 5, 6, 7, 8, 10.
+- `feature` (default) — all 10 phases (see table below).
+- `defect` — express lane for bug fixes: phases 1, 5, 6, 8.
   No BA elaboration, no UI design, no architecture, no technical-writer, no
   E2E phase — the defect is a targeted fix with a regression test, not a
   feature. EXCEPT:
-  the lessons.md writeback still happens (phase-10 gate checks it). Choose
+  the lessons.md writeback still happens (phase-8 gate checks it). Choose
   defect scope when the Jira ticket type is Bug/Defect, or the human says
-  "fix". Pass it at init: `init <story> --scope defect`. ~8 agent spawns
-  instead of ~22 — don't run feature ceremony on a bug fix.
+  "fix". Pass it at init: `init <story> --scope defect`. ~5 agent spawns
+  instead of ~14 — don't run feature ceremony on a bug fix.
 
 ## Pipeline Phases
 
@@ -47,38 +47,33 @@ it exists for ceremonies (standup, retro, velocity) when the human asks.
 | 2 | `keel:business-analyst` | Functional spec, data flows, edge cases | Spec complete |
 | 3 | `keel:ui-designer` | **UI/UX design** — screen flows, mockups, component states for every user-facing AC | Every user-facing AC has design spec + HTML mockup; no-UI ACs documented |
 | 4 | `keel:solution-architect` | Architecture, design, technical risk | Design approved (reads phase-3 UI design) |
-| 5 | `keel:software-engineer` | **Production code only** — no tests | Lint + static analysis clean |
-| 6 | `keel:tdd-red` | **Test case creation** — write failing tests for every AC | Every AC has ≥1 test; each test verified meaningful |
-| 7 | `keel:tdd-green` | **Full suite execution** — all tests pass, coverage ≥ 80% | 0 failures, ≥80% changed-line coverage |
-| 8 | `keel:qa-engineer` | AC mapping, integration tests, error paths | All ACs mapped to passing tests |
-| 9 | `keel:e2e-engineer` | **Playwright E2E** browser tests for all user-facing flows | All E2E tests pass, screenshots captured |
-| 10 | `keel:security-engineer` | OWASP, threat model, dependency audit | 0 HIGH findings |
-| 11 | `keel:technical-writer` | Docs, changelog, runbook | Docs complete |
-| 12 | `keel:release-manager` | Go/no-go, deployment plan | Human approval |
+| 5 | `keel:software-engineer` | **Production code + unit tests** — coverage ≥ 80% on changed lines | Lint + static analysis clean; all unit tests pass; coverage gate met |
+| 6 | `keel:qa-engineer` | AC mapping, integration tests, error paths | All ACs mapped to passing tests |
+| 7 | `keel:e2e-engineer` | **Playwright E2E** browser tests for all user-facing flows | All E2E tests pass, screenshots captured |
+| 8 | `keel:security-engineer` | OWASP, threat model, dependency audit | 0 HIGH findings |
+| 9 | `keel:technical-writer` | Docs, changelog, runbook | Docs complete |
+| 10 | `keel:release-manager` | Go/no-go, deployment plan | Human approval |
 
-**Defect scope phases:** 1 → 5 → 6 → 7 → 8 → 10 (skips UI design, BA elaboration,
+**Defect scope phases:** 1 → 5 → 6 → 8 (skips UI design, BA elaboration,
 architecture, E2E, docs, release ceremony).
 
 ## Phase sequencing rules
 
 - **Phase 3 before phase 4**: UI designer produces screen specs FIRST; architect designs the API/DB to support them.
 - **Phase 4 before phase 5**: architect produces technical design FIRST; software-engineer implements against it.
-- **Phase 5 before phase 6**: software-engineer writes code FIRST; tdd-red writes tests AGAINST that code. Never swap the order.
-- **Phase 6 before phase 7**: tdd-red must produce test files before tdd-green can execute them. Never collapse these into one agent call.
-- **Phase 7 before phase 8**: QA validates a green suite, not a red one.
-- **Phase 8 before phase 9**: E2E is browser-level; it runs after unit/integration QA is clean to avoid debugging the wrong layer.
-- **Phase 9 before phase 10**: security reviews committed, tested code.
-- Unit/integration test phases (6 tdd-red, 7 tdd-green) must complete before QA (8) and E2E (9). Phase 8 is AC validation against a green suite — not test writing. Never skip or collapse these.
+- **Phase 5 before phase 6**: software-engineer completes code + unit tests FIRST; QA validates a green suite, not a red one.
+- **Phase 6 before phase 7**: QA integration passes before E2E browser tests run — avoids debugging at the wrong layer.
+- **Phase 7 before phase 8**: security reviews committed, tested code.
+- **Phase 8 before phase 9**: technical-writer documents after security is clean.
+- **Phase 9 before phase 10**: release-manager gates on all prior phases complete.
 
 ## Governance Gates (cannot be skipped)
 
 - Phase 3 gate: every user-facing AC has design spec + HTML mockup (or "no UI surface" rationale)
-- Phase 5 output must contain NO test files (code only)
-- Phase 6 gate: every AC has ≥1 test, every test verified meaningful
-- Phase 7 gate: 0 test failures, coverage ≥ 80% on changed files
-- Phase 8 gate: all ACs mapped to passing tests, integration endpoints validated
-- Phase 9 gate: all Playwright E2E tests pass, screenshots in artifacts
-- Phase 10 gate: 0 HIGH security findings
+- Phase 5 gate: all unit tests pass, coverage ≥ 80% on changed lines quoted in findings
+- Phase 6 gate: all ACs mapped to passing tests, integration endpoints validated
+- Phase 7 gate: all Playwright E2E tests pass, screenshots in artifacts
+- Phase 8 gate: 0 HIGH security findings
 - Release Manager must approve before deploy
 
 ## State protocol (how phases communicate)
@@ -197,7 +192,7 @@ growth across 16+ agent invocations. Discipline:
 
 ## Pipeline budget (engine-enforced, not yours to manage)
 
-The engine caps total gate events (default 44) and wall-clock (default 72h)
+The engine caps total gate events (default 40) and wall-clock (default 72h)
 per story — set at `init` via `--max-gates` / `--max-hours`. When exceeded, the
 gate HALTs (exit 2) exactly like a 3-attempt halt, and only a human `resume`
 (which extends the budget with headroom) continues. Never work around a budget

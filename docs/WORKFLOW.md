@@ -25,7 +25,7 @@ No bash needed, including on Windows.
 | | Jira ticket exists | No ticket |
 |---|---|---|
 | **Entry** | `/keel:from-jira <KEY>` — the ticket IS the requirements; BA **transcribes** ACs verbatim, never invents. No AI product-owner. | BA drafts ACs as a **proposal**; the human PO confirms before anything runs. PO agent only on explicit request. |
-| **Scope** | Ticket type Bug/Defect → **defect lane** (phases 1→5→6→7→8→10) | **feature lane** (phases 1–12, incl. dedicated UI design, TDD red/green, and E2E phases) |
+| **Scope** | Ticket type Bug/Defect → **defect lane** (phases 1→5→6→8) | **feature lane** (phases 1–10, incl. dedicated UI design, E2E, and security phases) |
 
 Human roles stay human: product-owner and scrum-master agents are never part
 of the automated pipeline.
@@ -33,7 +33,7 @@ of the automated pipeline.
 ## 3. The phase loop
 
 ```
-orchestrator ── engine: init <story> --scope <s>   (budget: 48 gates / 72h)
+orchestrator ── engine: init <story> --scope <s>   (budget: 40 gates / 72h)
      │
      ▼  (per phase in scope)
 phase agent ── reads: previous output + phase-1 ACs + conventions/lessons
@@ -49,7 +49,7 @@ gate ────── phase 1: gate-1-lite — orchestrator runs engine valida
      │        TRIVIAL  docs/strings/config, ≤10 lines, nothing sensitive
      │                 → engine validate + regression test only
      │        NORMAL   other code changes → changed-area tests + regression;
-     │                 full suite once per story (phase-8 gate)
+     │                 full suite once per story (phase-6 gate)
      │        FULL     auth/payments/data/security paths, >100 lines, new
      │                 deps, security & release gates → re-execute everything
      │      then judgment: RCA-vs-diff, patch patterns, scanner inventory

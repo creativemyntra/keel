@@ -60,10 +60,11 @@ out-of-scope-for-this-phase with the owning phase named:
 
 - **ui-designer (3)**: every user-facing AC has a design spec and mockup
   coverage before the architect sees it.
-- **software-engineer (5)**: every AC implemented and self-reviewed before
-  tdd-red sees it. Partial implementation is a gate FAIL, not a carry-forward.
-- **tdd-red/green (6-7), qa (8), e2e (9)**: every AC mapped to executed,
-  passing tests before the next phase.
+- **software-engineer (5)**: every AC implemented, unit-tested (coverage ≥ 80%
+  on changed lines), and self-reviewed before QA sees it. Partial work is a
+  gate FAIL, not a carry-forward.
+- **qa (6), e2e (7)**: every AC mapped to executed, passing tests before
+  the next phase.
 - The gate rejects any handoff where an AC is unaddressed and unexplained.
 
 ## G-6 · Commits, versioning, deployment

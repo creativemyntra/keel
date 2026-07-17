@@ -1,5 +1,5 @@
 name: 'Keel AI-SDLC Framework'
-description: 'Complete 12-phase AI-SDLC pipeline: Requirements → UI Design → Architecture → Code → TDD Red/Green → QA → E2E → Security → Docs → Release'
+description: 'Complete 10-phase AI-SDLC pipeline: Requirements → UI Design → Architecture → Code+Tests → QA → E2E (Playwright) → Security → Docs → Release'
 author: 'Amar Singh'
 
 branding:
@@ -8,7 +8,7 @@ branding:
 
 inputs:
   phase:
-    description: 'Phase to execute (init, brainstorm, req, design, dev, tdd-red, tdd-green, test, e2e-test, sec, release-check, deploy)'
+    description: 'Phase to execute (init, brainstorm, req, design, dev, test, e2e-test, sec, release-check, deploy)'
     required: true
     default: 'init'
   story-id:
@@ -91,20 +91,6 @@ runs:
       run: |
         echo "Running development phase..."
         node "$GITHUB_ACTION_PATH/bin/keel.js" dev --story=${{ inputs.story-id }} --scope=${{ inputs.scope }}
-
-    - name: Run TDD Red Phase
-      if: inputs.phase == 'tdd-red'
-      shell: bash
-      run: |
-        echo "Running TDD Red phase (test case creation)..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" tdd-red --story=${{ inputs.story-id }}
-
-    - name: Run TDD Green Phase
-      if: inputs.phase == 'tdd-green'
-      shell: bash
-      run: |
-        echo "Running TDD Green phase (suite execution + coverage gate)..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" tdd-green --story=${{ inputs.story-id }}
 
     - name: Run QA Phase
       if: inputs.phase == 'test'

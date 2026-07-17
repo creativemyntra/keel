@@ -1,8 +1,8 @@
-# Keel AI-SDLC Framework v3.14.3
+# Keel AI-SDLC Framework v3.15.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
-Automate your entire development lifecycle with 17 specialized AI agents across a 12-phase pipeline.  
+Automate your entire development lifecycle with 15 specialized AI agents across a 10-phase pipeline.  
 From ideation to production deployment in **2 hours** (vs 2 weeks manually).
 
 ---
@@ -16,24 +16,22 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.14.3 ✅
+# → keel v3.15.0 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
 
-# 4. Run the full 12-phase pipeline (recommended)
+# 4. Run the full 10-phase pipeline (recommended)
 /keel:implement-feature story="FEAT-1" feature="Your feature"
 
 # — or step through phases individually —
 /keel:req --story=FEAT-1 --feature="Your feature"  # Phase 2: BA requirements + ACs
 /keel:design --story=FEAT-1                         # Phases 3-4: UI design + architecture
-# (software-engineer phase 5 runs automatically inside the pipeline)
-/keel:tdd-red --story=FEAT-1                        # Phase 6: write failing tests for every AC
-/keel:tdd-green --story=FEAT-1                      # Phase 7: run suite — 0 failures, ≥ 80% coverage
-/keel:test --story=FEAT-1 --coverage-target=85      # Phase 8: QA + full AC traceability
-/keel:e2e-test --story=FEAT-1                       # Phase 9: Playwright E2E + screenshots
-/keel:sec --story=FEAT-1                            # Phase 10: OWASP + dependency audit
-/keel:release-check --story=FEAT-1                  # Phases 11-12: docs + go/no-go verdict
+# (software-engineer phase 5 runs automatically — code + unit tests)
+/keel:test --story=FEAT-1 --coverage-target=85      # Phase 6: QA + full AC traceability
+/keel:e2e-test --story=FEAT-1                       # Phase 7: Playwright E2E + screenshots
+/keel:sec --story=FEAT-1                            # Phase 8: OWASP + dependency audit
+/keel:release-check --story=FEAT-1                  # Phases 9-10: docs + go/no-go verdict
 /keel:deploy --story=FEAT-1 --rollout=canary        # Deploy after release-manager approval
 ```
 
@@ -45,23 +43,21 @@ claude plugin list
 
 **Keel** is a complete AI-SDLC (Artificial Intelligence Software Development Lifecycle) framework integrated with Claude Code as a plugin.
 
-It automates the entire software development process using **17 specialized autonomous agents**:
+It automates the entire software development process using **15 specialized autonomous agents**:
 
-**Pipeline Phase Agents (12):**
+**Pipeline Phase Agents (10):**
 | Phase | Agent | Role |
 |-------|-------|------|
 | 1 | **product-owner** | Requirements intake — proposals only; the human confirms ACs (or `/keel:from-jira` transcribes the ticket) |
 | 2 | **business-analyst** | Functional spec, data flows, edge cases |
 | 3 | **ui-designer** | UI/UX design — screen flows, design spec + HTML mockup for every user-facing AC |
 | 4 | **solution-architect** | Architecture, design, technical risk |
-| 5 | **software-engineer** | Production code only — no tests |
-| 6 | **tdd-red** | Test case creation — every AC gets tests, each verified meaningful |
-| 7 | **tdd-green** | Full suite execution — 0 failures, coverage ≥80% |
-| 8 | **qa-engineer** | AC-to-test mapping, integration tests, error paths |
-| 9 | **e2e-engineer** | Playwright browser E2E tests with screenshot evidence |
-| 10 | **security-engineer** | OWASP, threat model, dependency audit |
-| 11 | **technical-writer** | Docs, changelog, runbook |
-| 12 | **release-manager** | Go/no-go decision, deployment plan |
+| 5 | **software-engineer** | Production code + unit tests — coverage ≥ 80% on changed lines |
+| 6 | **qa-engineer** | AC-to-test mapping, integration tests, error paths |
+| 7 | **e2e-engineer** | Playwright browser E2E tests with screenshot evidence |
+| 8 | **security-engineer** | OWASP, threat model, dependency audit |
+| 9 | **technical-writer** | Docs, changelog, runbook |
+| 10 | **release-manager** | Go/no-go decision, deployment plan |
 
 **Meta & Support Agents (2):**
 | Agent | Role |
@@ -82,8 +78,8 @@ snapshots) is done by a zero-dependency **state engine**
 
 ### ✨ Key Features
 
-✅ **17 Specialized Agents** — 12 pipeline phase + 2 meta/support + 3 infrastructure agents  
-✅ **12-Phase Pipeline** — dedicated UI design (3), code-only implementation (5), TDD red/green split (6-7), and Playwright E2E (9) phases; defect express lane runs 1→5→6→7→8→10  
+✅ **15 Specialized Agents** — 10 pipeline phase + 2 meta/support + 3 infrastructure agents  
+✅ **10-Phase Pipeline** — dedicated UI design (3), code + unit tests in one phase (5), and Playwright E2E (7) phases; defect express lane runs 1→5→6→8  
 ✅ **Deterministic State Engine** — `keel-state.cjs` owns state, gates, retries, audit; zero tokens on clerk work  
 ✅ **File-Based Agent Memory** — phases share context via `.keel/state/`, committed to git  
 ✅ **Execution-Verified Gates** — the handshake gate re-runs tests instead of trusting claims (anti-hallucination)  
@@ -92,8 +88,8 @@ snapshots) is done by a zero-dependency **state engine**
 ✅ **Proactive Watchers** — hooks warn on coverage drops and shrinking test counts; halted/stale stories surface at session start  
 ✅ **Pipeline Dashboard** — `keel dashboard` serves a read-only local web view of all stories (loopback-only, auto-refreshing)  
 ✅ **Audit Trail** — per-story JSONL log supporting your compliance evidence process  
-✅ **TDD Workflow** — Red → Green → Refactor with governance gates  
-✅ **Coverage Gate** — ≥80% enforced before the security phase  
+✅ **Unit Testing in Phase 5** — software-engineer writes code and unit tests in one phase; coverage ≥ 80% gated before QA  
+✅ **Coverage Gate** — ≥80% enforced before the QA phase  
 ✅ **No Patch Development** — defect fixes require an RCA + revert-checked regression test; symptom patches fail the gate  
 ✅ **Security Phase** — OWASP Top 10 review + layered SAST/SCA: PHPStan & composer audit always, SonarQube & Snyk when configured  
 ✅ **Multi-Stack Support** — CakePHP 4.4 today; Laravel, Django, Rails on the roadmap  
@@ -102,7 +98,7 @@ snapshots) is done by a zero-dependency **state engine**
 
 ---
 
-## 🆕 What's New in v3.14.3
+## 🆕 What's New in v3.15.0
 
 - **G-8: Agent identity integrity** — handshake gate now HALTs immediately on any schema/enum mismatch that looks like framework-version skew. The gate will never advise a phase agent to relabel its output under a different agent identity to pass validation. Enforced in `agents/handshake-agent.md` and `.keel/GUARDRAILS.md`.
 - **G-9: No unverified quantitative baselines in intake** — PO briefs must mark all test counts, coverage figures, and performance numbers carried from prior stories as `[BASELINE: ~N — verify at phase 2]`. Business Analyst (phase 2) resolves every placeholder by running the actual tool before handing off. Enforced in `agents/product-owner.md`, `agents/business-analyst.md`, and `.keel/GUARDRAILS.md`.
@@ -160,7 +156,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.14.3 ✅
+# → keel v3.15.0 ✅
 ```
 
 ### Method 2: npm Global Package (⏳ not yet published — coming soon)
@@ -199,27 +195,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.14.3
+        uses: creativemyntra/keel@v3.15.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.14.3
+        uses: creativemyntra/keel@v3.15.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.14.3
+        uses: creativemyntra/keel@v3.15.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.14.3
+        uses: creativemyntra/keel@v3.15.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -235,9 +231,9 @@ jobs:
 # ─── One-command option (recommended) ───────────────────────────────────────
 /keel:init --mode=new --stack=cakephp
 /keel:implement-feature story="FEAT-1" feature="User subscription management"
-# Orchestrator runs all 12 phases automatically. Done. ✅
+# Orchestrator runs all 10 phases automatically. Done. ✅
 
-# ─── Step-by-step (all 12 phases) ───────────────────────────────────────────
+# ─── Step-by-step (all 10 phases) ───────────────────────────────────────────
 
 # Phase 1: Product Owner intake (human confirms ACs, or Jira ticket is the source)
 /keel:from-jira FEAT-1            # ← if Jira ticket exists, this is the entry point
@@ -249,7 +245,7 @@ jobs:
 # Produces: docs/requirements/FEAT-1-requirements.md
 # Includes: functional spec, data flows, edge cases, business rules
 
-# Phase 3: UI Designer (10 min)  ← NEW in v3.14.0
+# Phase 3: UI Designer (10 min)
 /keel:design --story=FEAT-1
 # Scans existing UI patterns → Markdown design spec + self-contained HTML mockup
 # Non-visual stories get a documented no-UI determination (skips mockup)
@@ -261,39 +257,30 @@ jobs:
 
 # Phase 5: Software Engineer (25 min)
 # (runs via /keel:implement-feature or orchestrator — no standalone CLI command)
-# Reads the approved design; writes production code only (no tests here)
-# Produces: src/Models/Subscription.php, src/Services/SubscriptionService.php, etc.
+# Reads the approved design; writes production code AND unit tests
+# Gate: all unit tests pass, coverage ≥ 80% on changed lines
+# Produces: src/Services/SubscriptionService.php + tests/Unit/SubscriptionServiceTest.php, etc.
 
-# Phase 6: TDD Red — write failing tests (15 min)
-/keel:tdd-red --story=FEAT-1
-# Writes PHPUnit tests for EVERY AC; verifies each test FAILS without implementation
-# Produces: tests/TestCase/Controller/FEAT-1Test.php (all tests red)
-
-# Phase 7: TDD Green — run suite, all must pass (15 min)
-/keel:tdd-green --story=FEAT-1
-# Executes the full test suite against the phase-5 implementation
-# Gate: 0 failures, coverage ≥ 80% on changed lines, no regression in pre-existing tests
-
-# Phase 8: QA — AC traceability + full suite gate (10 min)
+# Phase 6: QA — AC traceability + integration gate (10 min)
 /keel:test --story=FEAT-1 --coverage-target=85
 # Maps every AC to a passing test; integration tests; error-path validation
 # Produces: docs/qa/FEAT-1-qa-report.md
 
-# Phase 9: E2E — Playwright browser tests (10 min)  ← NEW in v3.13.0
+# Phase 7: E2E — Playwright browser tests (10 min)
 /keel:e2e-test --story=FEAT-1
 # Playwright tests for every user-facing flow; screenshot evidence captured
 # Blocks release on any E2E failure
 
-# Phase 10: Security (10 min)
+# Phase 8: Security (10 min)
 /keel:sec --story=FEAT-1
 # Consumes prescan.json (composer/npm audit + PHPStan baseline always run)
 # OWASP Top 10 review of changed files; 0 HIGH findings required to proceed
 # Produces: docs/security/FEAT-1-security-report.md
 
-# Phases 11-12: Technical Writer + Release Manager (10 min)
+# Phases 9-10: Technical Writer + Release Manager (10 min)
 /keel:release-check --story=FEAT-1
-# Phase 11 — Technical Writer: updates CHANGELOG, README, runbook, memory
-# Phase 12 — Release Manager: G-6 version stamp; issues GO or NO-GO with justification
+# Phase 9 — Technical Writer: updates CHANGELOG, README, runbook, memory
+# Phase 10 — Release Manager: G-6 version stamp; issues GO or NO-GO with justification
 
 # Deploy (15 min, only after release-manager GO verdict)
 /keel:deploy --story=FEAT-1 --rollout=canary
@@ -375,29 +362,22 @@ jobs:
 ### Development
 
 ```bash
-# Phase 5 — software-engineer writes production code (runs via /keel:implement-feature or orchestrator)
-
-# Phase 6 — TDD Red: write a failing test for every AC
-/keel:tdd-red --story=FEAT-1
-
-# Phase 7 — TDD Green: run the full suite; every test must pass, coverage ≥ 80% on changed lines
-/keel:tdd-green --story=FEAT-1
-
-/keel:tdd-refactor --story=FEAT-1   # Cleanup pass after green
+# Phase 5 — software-engineer: production code + unit tests (≥ 80% coverage)
+# Runs automatically via /keel:implement-feature or orchestrator
 ```
 
 ### Quality
 
 ```bash
-/keel:test --story=FEAT-1 --coverage-target=85  # Phase 8: QA — AC-to-test mapping + full suite gate
-/keel:e2e-test --story=FEAT-1                    # Phase 9: Playwright browser E2E + screenshots
-/keel:sec --story=FEAT-1                         # Phase 10: OWASP audit + dependency scan
+/keel:test --story=FEAT-1 --coverage-target=85  # Phase 6: QA — AC-to-test mapping + integration gate
+/keel:e2e-test --story=FEAT-1                    # Phase 7: Playwright browser E2E + screenshots
+/keel:sec --story=FEAT-1                         # Phase 8: OWASP audit + dependency scan
 ```
 
 ### Docs & Release
 
 ```bash
-/keel:release-check --story=FEAT-1              # Phases 11-12: technical-writer + release-manager go/no-go
+/keel:release-check --story=FEAT-1              # Phases 9-10: technical-writer + release-manager go/no-go
 ```
 
 ### Deployment
@@ -439,7 +419,7 @@ node bin/keel.js dashboard --port=8080   # custom port
 
 On start it prints `Dashboard: http://localhost:<port>`; stop it with Ctrl-C.
 
-- **Columns:** story ID, title, scope, current phase by agent name (e.g. `Phase 11 — Technical Writer`), status badge (COMPLETE / IN PROGRESS / HALTED), idle time — sorted most-recently-active first.
+- **Columns:** story ID, title, scope, current phase by agent name (e.g. `Phase 9 — Technical Writer`), status badge (COMPLETE / IN PROGRESS / HALTED), idle time — sorted most-recently-active first.
 - **Auto-refresh:** the page reloads every 30 seconds; a corrupt manifest renders as an error row instead of breaking the sweep.
 - **Empty state:** with no stories, the page prompts `Run keel init <story-id> to start.` — the server still runs.
 - **Port in use:** exits with `Error: port <N> is already in use. Use --port to specify a different port.`
@@ -627,7 +607,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.14.3
+- uses: creativemyntra/keel@v3.15.0
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -794,10 +774,10 @@ Then:
 
 ---
 
-**Version:** 3.14.3  
+**Version:** 3.15.0  
 **Released:** 2026-07-17  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.14.3 (https://github.com/creativemyntra/keel/releases/tag/v3.14.3)
+**Tag:** v3.15.0 (https://github.com/creativemyntra/keel/releases/tag/v3.15.0)

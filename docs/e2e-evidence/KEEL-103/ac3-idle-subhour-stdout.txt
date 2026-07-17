@@ -5,32 +5,30 @@ STDOUT:
 E2E-AC3 · AC-3 idle fixture
 ----------------------------------------
 Scope:          feature
-Current phase:  1 / 12 (product-owner)
+Current phase:  1 / 10 (product-owner)
 Halted:         no
 Idle:           3m 30s
-Started:        2026-07-17T13:47:52.609Z
+Started:        2026-07-17T14:34:12.006Z
 
 Completed phases:
   (none)
 
 In progress:
-  ➤  1   product-owner (started 2026-07-17 13:44)
+  ➤  1   product-owner (started 2026-07-17 14:30)
 
 Remaining:
      2   business-analyst
      3   ui-designer
      4   solution-architect
      5   software-engineer
-     6   tdd-red
-     7   tdd-green
-     8   qa-engineer
-     9   e2e-engineer
-     10  security-engineer
-     11  technical-writer
-     12  release-manager
+     6   qa-engineer
+     7   e2e-engineer
+     8   security-engineer
+     9   technical-writer
+     10  release-manager
 
 Attempts (this story):  0 failures
-Gate events used:       0 / 48
+Gate events used:       0 / 40
 
 
 STDERR:

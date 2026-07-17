@@ -2,6 +2,19 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.15.0] - 2026-07-17 - PIPELINE RESTRUCTURE: 10-PHASE (TDD RED/GREEN MERGED INTO SOFTWARE-ENGINEER)
+
+### Changed
+- **10-phase pipeline** — removed `tdd-red` (phase 6) and `tdd-green` (phase 7) as separate pipeline phases. `software-engineer` (phase 5) now writes production code AND unit tests in one phase; coverage ≥ 80% on changed lines is a hard gate before QA sees the output.
+- **Phase renumbering** — qa-engineer: 8 → 6, e2e-engineer: 9 → 7, security-engineer: 10 → 8, technical-writer: 11 → 9, release-manager: 12 → 10.
+- **Defect lane** — updated to phases [1, 5, 6, 8] (business-analyst triage, software-engineer fix, qa-engineer validation, security-engineer diff scan); no E2E phase for defects.
+- **Budget** — `DEFAULT_MAX_GATES` reduced from 48 → 40 (10 phases × 3 attempts + overhead).
+- **`agent-output-schema.json`** — `maximum` phase reduced from 12 → 10; `agent` enum removes `tdd-red` and `tdd-green`.
+- **`keel-state.cjs`** — AGENTS array is now 10 entries; LEGACY_AGENTS retains `tdd-red`/`tdd-green` for backward-compatible validation of stories initialized before this version; `validatePhaseFile` reads the story manifest's `expected_phases` to determine the valid phase ceiling (supports in-flight 12-phase stories).
+- **Deleted agents** — `agents/tdd-red.md`, `agents/tdd-green.md`, `commands/tdd-red.md`, `commands/tdd-green.md`, `commands/tdd-refactor.md`.
+- **All agent specs, orchestrator, handshake, guardrails, dashboard, README, TECHNICAL-SPECIFICATIONS, WORKFLOW.md, QUICK-START, skills/implement-feature** updated to reflect the 10-phase pipeline.
+- **Test suite** — 236/236 tests pass (44 keel-state-describe + 44 keel-state-describe-e2e + 129 keel-dashboard + 19 keel-dashboard-host-e2e).
+
 ## [3.14.3] - 2026-07-17 - GUARDRAIL HARDENING: IDENTITY INTEGRITY + BASELINE VERIFICATION (G-8, G-9)
 
 ### Changed

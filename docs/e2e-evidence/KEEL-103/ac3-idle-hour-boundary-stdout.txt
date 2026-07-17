@@ -5,32 +5,30 @@ STDOUT:
 E2E-AC3B · AC-3 hour boundary fixture
 ----------------------------------------
 Scope:          feature
-Current phase:  1 / 12 (product-owner)
+Current phase:  1 / 10 (product-owner)
 Halted:         no
 Idle:           1h 2m
-Started:        2026-07-17T13:47:52.879Z
+Started:        2026-07-17T14:34:12.277Z
 
 Completed phases:
   (none)
 
 In progress:
-  ➤  1   product-owner (started 2026-07-17 12:45)
+  ➤  1   product-owner (started 2026-07-17 13:32)
 
 Remaining:
      2   business-analyst
      3   ui-designer
      4   solution-architect
      5   software-engineer
-     6   tdd-red
-     7   tdd-green
-     8   qa-engineer
-     9   e2e-engineer
-     10  security-engineer
-     11  technical-writer
-     12  release-manager
+     6   qa-engineer
+     7   e2e-engineer
+     8   security-engineer
+     9   technical-writer
+     10  release-manager
 
 Attempts (this story):  0 failures
-Gate events used:       0 / 48
+Gate events used:       0 / 40
 
 
 STDERR:

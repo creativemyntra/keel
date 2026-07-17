@@ -22,7 +22,7 @@ const path = require('path');
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-// Display labels for phases 1-12. Parallel to AGENTS in keel-state.cjs but
+// Display labels for phases 1-10. Parallel to AGENTS in keel-state.cjs but
 // NOT shared — sharing would require modifying keel-state.cjs, violating AC-7.
 const PHASE_NAMES = [
   'Product Owner',      // phase 1
@@ -30,20 +30,18 @@ const PHASE_NAMES = [
   'UI Designer',        // phase 3
   'Solution Architect', // phase 4
   'Software Engineer',  // phase 5
-  'TDD Red',            // phase 6
-  'TDD Green',          // phase 7
-  'QA Engineer',        // phase 8
-  'E2E Engineer',       // phase 9
-  'Security Engineer',  // phase 10
-  'Technical Writer',   // phase 11
-  'Release Manager',    // phase 12
+  'QA Engineer',        // phase 6
+  'E2E Engineer',       // phase 7
+  'Security Engineer',  // phase 8
+  'Technical Writer',   // phase 9
+  'Release Manager',    // phase 10
 ];
 
 // Mirrors keel-state.cjs SCOPES — duplicated intentionally to avoid touching
 // that file (AC-7). Keep in sync manually on scope additions.
 const SCOPES = {
-  feature: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-  defect:  [1, 5, 6, 7, 8, 10],
+  feature: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  defect:  [1, 5, 6, 8],
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

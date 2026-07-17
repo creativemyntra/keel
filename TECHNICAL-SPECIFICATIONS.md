@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.14.3 - Technical Specifications
+# Keel AI-SDLC Framework v3.15.0 - Technical Specifications
 
 **Document Version:** 1.9  
 **Last Updated:** 2026-07-17  
@@ -36,7 +36,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - **Enterprise Compliance:** 6 standards (CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX)
 
 ### Core Capabilities
-1. Autonomous agent orchestration across 12 phases
+1. Autonomous agent orchestration across 10 phases
 2. Test-driven development (TDD) automation
 3. Security scanning and compliance checking
 4. Multi-stack support (CakePHP, Laravel, Django, Rails)
@@ -100,7 +100,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - State Management Agent (maintains global state)
 
 **Layer 3: Execution Layer**
-- 12 Phase Agents (Intake → Requirements → UI Design → Architecture → Code → TDD Red → TDD Green → QA → E2E → Security → Docs → Release)
+- 10 Phase Agents (Intake → Requirements → UI Design → Architecture → Code+Tests → QA → E2E → Security → Docs → Release)
 - 1 Support Agent (Scrum Master — human-invoked only)
 - 3 Infrastructure Agents (Audit, State Management, Handshake)
 
@@ -133,7 +133,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 
 ---
 
-### 2. Phase Agents (12 Total)
+### 2. Phase Agents (10 Total)
 
 #### Phase 1: Product Owner Agent
 - Story intake from Jira or human proposal
@@ -156,41 +156,31 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - Technical risk assessment (ADRs)
 
 #### Phase 5: Software Engineer Agent
-- Production code only — no tests written here
-- PSR-12 / ESLint compliance
-- CodeGraph impact-scoped implementation
+- Production code + unit tests in one phase
+- Coverage ≥ 80% on changed lines gated before QA
+- PSR-12 / ESLint compliance, CodeGraph impact-scoped implementation
 
-#### Phase 6: TDD Red Agent (v3.13.0)
-- Writes unit + integration test suite against phase-5 implementation
-- Verifies every test would fail without the implementation
-- No coverage gate here — that is phase 7
-
-#### Phase 7: TDD Green Agent (v3.13.0)
-- Executes full test suite; every test must pass
-- Coverage ≥ 80% on changed lines
-- No regression in pre-existing tests
-
-#### Phase 8: QA Engineer Agent
+#### Phase 6: QA Engineer Agent (v3.15.0)
 - Maps every AC to a passing test
 - Runs integration tests against live endpoints
 - Full suite gate (once per story)
 
-#### Phase 9: E2E Engineer Agent (v3.14.0)
+#### Phase 7: E2E Engineer Agent
 - Playwright browser E2E tests for every user-facing flow
 - Screenshot evidence captured
 - Blocks release on any E2E failure
 
-#### Phase 10: Security Engineer Agent
+#### Phase 8: Security Engineer Agent
 - OWASP Top 10 scanning
 - Consumes prescan.json (static-first)
 - Blocks release on any HIGH finding
 
-#### Phase 11: Technical Writer Agent
+#### Phase 9: Technical Writer Agent
 - README and CHANGELOG updates
 - API docs, runbooks, and onboarding guides
 - Memory writeback to conventions.md
 
-#### Phase 12: Release Manager Agent
+#### Phase 10: Release Manager Agent
 - Go/no-go decision
 - G-6 version stamp across all 7 locations
 - Deployment readiness and release documentation
@@ -365,26 +355,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.14.3
+- Version: v3.15.0
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.14.3`
+- Installation: `npm install -g @amarsingh/keel@3.15.0`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.14.3`
+- Image: `amarsingh/keel:3.15.0`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.14.3`
+- Pull: `docker pull amarsingh/keel:3.15.0`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.14.3`
+- Version: `v3.15.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.14.3`
+- Usage: `uses: creativemyntra/keel@v3.15.0`
 
 ---
 
@@ -474,6 +464,7 @@ Record in Audit Trail
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
+| 3.15.0 | 2026-07-17 | PRODUCTION | Pipeline restructure: 10 phases — tdd-red/tdd-green merged into software-engineer (code+tests+coverage ≥ 80%); qa-engineer→6, e2e-engineer→7, security-engineer→8, technical-writer→9, release-manager→10; DEFAULT_MAX_GATES 48→40; backward-compat LEGACY_AGENTS for in-flight stories |
 | 3.14.3 | 2026-07-17 | PRODUCTION | Guardrail hardening: G-8 agent identity integrity (schema mismatch = HALT, no relabeling); G-9 no unverified baselines in intake; release-manager framework-debt gate added |
 | 3.14.3 | 2026-07-17 | PRODUCTION | Doc-patch: complete 12-phase/17-agent documentation sync — README, ALL-AGENTS-COMPLETE-GUIDE, TECHNICAL-SPECIFICATIONS, QUICK-START, WORKFLOW.md; architecture diagram corrected (all Phase Agent columns show 12) |
 | 3.14.1 | 2026-07-17 | PRODUCTION | Dashboard Host-header allowlist — DNS-rebinding hardening (KEEL-105, closes KEEL-104 LOW-1): guard-first 403/400 contract, 238/238 tests green, 0 HIGH security findings |

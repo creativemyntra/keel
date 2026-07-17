@@ -1,5 +1,7 @@
 # Test Plan: KEEL-105
 
+> **Historical note:** This artifact was generated under the 12-phase pipeline (v3.14.x). Phase numbers and agent names reflect the schema active at execution time.
+
 Story: Dashboard Host-header allowlist (DNS-rebinding hardening, ADR-004)
 
 New tests: 59 unit (appended to `tests/keel-dashboard.test.cjs`, after the frozen 70-test

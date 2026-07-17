@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Keel AI-SDLC Framework v3.14.3 -- CLI Dispatcher (ESM)
+ * Keel AI-SDLC Framework v3.15.0 -- CLI Dispatcher (ESM)
  * Author : Amar Singh <support@creativemyntra.com>
  * License: MIT
  */
@@ -9,7 +9,7 @@ import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const VERSION   = '3.14.3';
+const VERSION   = '3.15.0';
 const KEEL_DIR  = resolve(__dirname, '..');
 
 function parseArgs(argv) {
@@ -103,48 +103,6 @@ const ROUTES = {
     ]);
   },
 
-  'tdd-red'(c) {
-    emit('5a', ['keel:software-engineer'], c.story, [
-      '1. Read docs/requirements/' + c.story + '-requirements.md',
-      '2. Write PHPUnit tests for EVERY acceptance criterion -- no implementation yet',
-      '3. Standards: declare(strict_types=1), IntegrationTestTrait, >=2 assertions/test',
-      '4. Run: vendor/bin/phpunit tests/TestCase/',
-      '5. CONFIRM all new tests FAIL. If any pass, the test is wrong -- fix it.',
-      '6. Show test output proving the red state',
-      '',
-      'Do NOT write any implementation code.',
-      'Save to: tests/TestCase/Controller/' + (c.story || 'Feature') + 'Test.php',
-    ]);
-  },
-
-  'tdd-green'(c) {
-    emit('5b', ['keel:software-engineer'], c.story, [
-      '1. Read the failing tests from Phase 5a',
-      '2. Write MINIMUM implementation to make all tests pass',
-      '3. Standards: declare(strict_types=1), PSR-12, PHPStan L5+',
-      '4. Run: vendor/bin/phpunit -- CONFIRM all tests PASS',
-      '5. Run: vendor/bin/phpcs --standard=PSR12 src/ -- fix all violations',
-      '6. Show passing test output',
-      '',
-      'Files to create:',
-      '  src/Controller/<Name>Controller.php',
-      '  config/routes.php (add route)',
-      '  Any Model/Table/Entity files required',
-    ]);
-  },
-
-  'tdd-refactor'(c) {
-    emit('5c', ['keel:software-engineer'], c.story, [
-      '1. Identify: duplication, methods >30 lines, magic strings, missing type hints',
-      '2. Refactor ONE issue at a time -- run tests after each change',
-      '3. Add PHPDoc explaining WHY for non-obvious logic',
-      '4. Final: vendor/bin/phpunit -- all green',
-      '5. Final: vendor/bin/phpstan analyse --level=5 src/ -- 0 errors',
-      '',
-      'Tests must stay green throughout. No new behaviour during refactor.',
-    ]);
-  },
-
   test(c) {
     console.log('\n[KEEL PHASE 6 -- QA TESTING]  Story: ' + c.story);
     console.log('-'.repeat(60));
@@ -224,19 +182,17 @@ function showHelp() {
     '  /keel <command> [options]             (Claude Code / Claude Desktop)',
     '  node bin/keel.js <command> [options]  (terminal)',
     '',
-    'PIPELINE (12 phases — use /keel:implement-feature to run all)',
+    'PIPELINE (10 phases — use /keel:implement-feature to run all)',
     '  PH    COMMAND          AGENT',
     '  1-2   req              keel:product-owner -> keel:business-analyst',
     '  3     design           keel:ui-designer',
     '  4     design           keel:solution-architect',
-    '  5     (orchestrator)   keel:software-engineer',
-    '  6     tdd-red          keel:tdd-red',
-    '  7     tdd-green        keel:tdd-green',
-    '  8     test             keel:qa-engineer',
-    '  9     e2e-test         keel:e2e-engineer',
-    '  10    sec              keel:security-engineer',
-    '  11    (orchestrator)   keel:technical-writer',
-    '  12    deploy           keel:release-manager',
+    '  5     (orchestrator)   keel:software-engineer  [code + unit tests]',
+    '  6     test             keel:qa-engineer',
+    '  7     e2e-test         keel:e2e-engineer        [Playwright]',
+    '  8     sec              keel:security-engineer',
+    '  9     (orchestrator)   keel:technical-writer',
+    '  10    deploy           keel:release-manager',
     '  --    dashboard        [standalone — starts local HTTP server]',
     '',
     'OPTIONS',

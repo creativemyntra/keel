@@ -86,7 +86,7 @@ This invokes ALL agents automatically:
 ## 📊 WHAT YOU GET
 
 ✅ **17 Agents** working in sync:
-- 12 pipeline phase agents (intake → requirements → UI design → architecture → code → tdd-red → tdd-green → QA → E2E → security → docs → release)
+- 10 pipeline phase agents (intake → requirements → UI design → architecture → code+tests → QA → E2E → security → docs → release)
 - 2 meta/support agents (orchestrator, scrum-master)
 - 3 infrastructure agents (audit, state-management, handshake)
 

@@ -12,7 +12,7 @@ The orchestrator will:
    state engine (or resume from `current_phase` if already initialized).
    **Scope:** if `--scope` is given, use it; otherwise infer from the ticket
    type — Bug/Defect → `--scope defect` (express lane: intake → engineer →
-   QA → security, ~8 spawns), anything else → `feature` (all 12 phases).
+   QA → security, ~5 spawns), anything else → `feature` (all 10 phases).
 2. Run phase 1 as a **Jira import** by `keel:business-analyst` (it has the Jira
    MCP read tools): fetch the ticket, transcribe its summary, description, and
    acceptance criteria into `01-business-analyst.json` — numbering the ACs

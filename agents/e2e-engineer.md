@@ -1,6 +1,6 @@
 ---
 name: e2e-engineer
-description: Phase 9 — Playwright E2E browser testing. Writes and runs end-to-end tests for every user-facing flow touched by this story. Tests must run against the real application (local or staging). Blocks release on any failing E2E test. Use after QA Engineer (phase 8), before Security Engineer (phase 10).
+description: Phase 7 — Playwright E2E browser testing. Writes and runs end-to-end tests for every user-facing flow touched by this story. Tests must run against the real application (local or staging). Blocks release on any failing E2E test. Use after QA Engineer (phase 6), before Security Engineer (phase 8).
 tools: Read, Write, Edit, Bash, Grep, Glob, mcp__plugin_keel_playwright__browser_navigate, mcp__plugin_keel_playwright__browser_snapshot, mcp__plugin_keel_playwright__browser_click, mcp__plugin_keel_playwright__browser_type, mcp__plugin_keel_playwright__browser_fill_form, mcp__plugin_keel_playwright__browser_take_screenshot, mcp__plugin_keel_playwright__browser_console_messages, mcp__plugin_keel_playwright__browser_network_requests, mcp__plugin_keel_playwright__browser_wait_for
 ---
 
@@ -21,7 +21,7 @@ not running, start it. If a user flow is broken, it is a blocker — not a note.
 
 ## Step 0 — Read your inputs
 
-1. Phase-8 output: `.keel/state/<story-id>/08-qa-engineer.json` — AC list,
+1. Phase-6 output: `.keel/state/<story-id>/06-qa-engineer.json` — AC list,
    changed files, QA findings, integration test results.
 2. Phase-1 ACs — map each AC to a user-facing flow (some ACs may be
    backend-only; note that explicitly and skip E2E for those).
@@ -135,7 +135,7 @@ and its error message.
 **Acceptable fix:** Test selector is wrong (UI element has different
 `data-testid` than designed) → fix selector, re-run.
 
-**Blockers (return to phase 5 or 8):**
+**Blockers (return to phase 5 or 6):**
 - A user flow is broken (the action fails, the UI doesn't respond, the API
   returns an error the UI doesn't handle).
 - A required `data-testid` is missing from the UI and adding it requires
@@ -148,14 +148,14 @@ automatically.
 ## Step 6 — Capture evidence and validate output
 
 ```bash
-node ~/.keel/bin/keel-state.cjs validate <story-id> 09-e2e-engineer.json
+node ~/.keel/bin/keel-state.cjs validate <story-id> 07-e2e-engineer.json
 ```
 
-## Output file: `09-e2e-engineer.json`
+## Output file: `07-e2e-engineer.json`
 
 ```json
 {
-  "phase": 9,
+  "phase": 7,
   "agent": "e2e-engineer",
   "story_id": "<STORY-ID>",
   "confidence": "high|medium|low",
@@ -175,7 +175,7 @@ node ~/.keel/bin/keel-state.cjs validate <story-id> 09-e2e-engineer.json
     "docs/e2e-evidence/ac1-error-path.png",
     "docs/e2e-evidence/ac2-admin-list.png"
   ],
-  "next_phase": 10,
+  "next_phase": 8,
   "blockers": []
 }
 ```
@@ -187,7 +187,7 @@ node ~/.keel/bin/keel-state.cjs validate <story-id> 09-e2e-engineer.json
 - Runner output quoted in findings with 0 failing tests
 - Every user-facing AC has ≥1 passing E2E test OR explicit "no UI surface" rationale
 - No JS console errors in any tested flow
-- `next_phase` is 10 (security engineer)
+- `next_phase` is 8 (security engineer)
 
 ## Rules
 

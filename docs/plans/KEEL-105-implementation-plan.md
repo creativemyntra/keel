@@ -1,5 +1,7 @@
 # Implementation Plan — KEEL-105 Dashboard Host-Header Allowlist
 
+> **Historical note:** This artifact was generated under the 12-phase pipeline (v3.14.x). Phase numbers and agent names reflect the schema active at execution time.
+
 **Phase:** 5 (software-engineer) | **Date:** 2026-07-16 | **Design:** docs/design/KEEL-105-design.md | **ADR:** ADR-004
 
 ## Files to change

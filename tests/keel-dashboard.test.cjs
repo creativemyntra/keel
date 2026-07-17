@@ -376,7 +376,7 @@ function spawnEngine(cwd, ...args) {
     {
       story_id: 'DONE-1', title: 'Done story', scope: 'defect',
       current_phase: 6, status: 'COMPLETE',
-      phase_label: 'Phase 6 — TDD Red', idle: '1h 2m',
+      phase_label: 'Phase 6 — QA Engineer', idle: '1h 2m',
       updated_at: new Date().toISOString(), error: null,
     },
     {
@@ -576,7 +576,7 @@ function spawnEngine(cwd, ...args) {
   assert(
     'AC-3 readStories: story row has phase_label derived from PHASE_NAMES',
     stories.length > 0 && stories[0].phase_label &&
-    stories[0].phase_label.includes('TDD Red'),
+    stories[0].phase_label.includes('QA Engineer'),
     `phase_label: ${stories[0] && stories[0].phase_label}`
   );
 
@@ -810,8 +810,8 @@ function spawnEngine(cwd, ...args) {
 
 {
   assert(
-    'AC-2 PHASE_NAMES: has 12 entries',
-    Array.isArray(PHASE_NAMES) && PHASE_NAMES.length === 12,
+    'AC-2 PHASE_NAMES: has 10 entries',
+    Array.isArray(PHASE_NAMES) && PHASE_NAMES.length === 10,
     `length: ${PHASE_NAMES && PHASE_NAMES.length}`
   );
 
@@ -822,15 +822,15 @@ function spawnEngine(cwd, ...args) {
   );
 
   assert(
-    'AC-2 PHASE_NAMES: phase 6 (index 5) is "TDD Red"',
-    PHASE_NAMES[5] === 'TDD Red',
+    'AC-2 PHASE_NAMES: phase 6 (index 5) is "QA Engineer"',
+    PHASE_NAMES[5] === 'QA Engineer',
     `PHASE_NAMES[5]: "${PHASE_NAMES[5]}"`
   );
 
   assert(
-    'AC-2 PHASE_NAMES: phase 12 (index 11) is "Release Manager"',
-    PHASE_NAMES[11] === 'Release Manager',
-    `PHASE_NAMES[11]: "${PHASE_NAMES[11]}"`
+    'AC-2 PHASE_NAMES: phase 10 (index 9) is "Release Manager"',
+    PHASE_NAMES[9] === 'Release Manager',
+    `PHASE_NAMES[9]: "${PHASE_NAMES[9]}"`
   );
 }
 
