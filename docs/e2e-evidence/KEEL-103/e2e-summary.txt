@@ -1,7 +1,7 @@
-KEEL-103 E2E subprocess test run — 2026-07-17T13:18:50.088Z
+KEEL-103 E2E subprocess test run — 2026-07-17T13:47:53.297Z
 Node: v26.1.0   Engine: C:\Users\Matellio_Amar-Nath\keel\scripts\keel-state.cjs
 
-Result: 46 / 46 passed
+Result: 44 / 44 passed
 
 PASS  AC-1 live describe: exit code is 0
 PASS  AC-1 live describe: stdout contains story ID KEEL-103
@@ -31,10 +31,8 @@ PASS  AC-4 phase names: completed phase shows agent name "software-engineer"
 PASS  AC-4 phase names: completed phase shows agent name "tdd-red"
 PASS  AC-4 phase names: completed phase shows agent name "tdd-green"
 PASS  AC-4 phase names: completed phase shows agent name "qa-engineer"
-PASS  AC-4 phase names: in-progress phase shows "e2e-engineer" (AGENTS[7])
-PASS  AC-4 phase names: remaining phases include "security-engineer"
-PASS  AC-4 phase names: remaining phases include "technical-writer"
-PASS  AC-4 phase names: remaining phases include "release-manager"
+PASS  AC-4 phase names: in-progress shows "complete" for finished story
+PASS  AC-4 phase names: release-manager NOT in remaining (out-of-scope for KEEL-103)
 PASS  AC-5 regression: status --all exits 0
 PASS  AC-5 regression: status --all output is valid JSON
 PASS  AC-5 regression: status --all returns a JSON array

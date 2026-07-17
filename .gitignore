@@ -41,13 +41,9 @@ build/clover.xml
 
 # OS
 Thumbs.db
-.DS_Store
 
 # Temporary files
 *.bak
-*.swp
-*.swo
-*~
 .temp/
 
 # Project-specific

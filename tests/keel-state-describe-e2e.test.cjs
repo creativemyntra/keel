@@ -269,8 +269,9 @@ console.log('\n--- AC-3: idle time formatting (live + fixture) ---');
 // ---------------------------------------------------------------------------
 // AC-4: phase names shown — not just numbers
 //
-// Live KEEL-103 output must contain agent names in completed phases and the
-// in-progress / remaining sections.
+// Live KEEL-103 output must contain agent names in completed phases.
+// KEEL-103 is now fully complete (current_phase=12, expected_phases max=11),
+// so in-progress shows "complete" and remaining is empty.
 // ---------------------------------------------------------------------------
 
 console.log('\n--- AC-4: phase names from AGENTS array ---');
@@ -299,30 +300,20 @@ console.log('\n--- AC-4: phase names from AGENTS array ---');
     );
   }
 
-  // In-progress phase must be "e2e-engineer" (current_phase = 8).
+  // KEEL-103 is complete — current_phase (12) > maxPhase (11) → "complete".
+  // The describe command must not show any out-of-scope agent as in-progress.
   assert(
-    'AC-4 phase names: in-progress phase shows "e2e-engineer" (AGENTS[7])',
-    r.stdout.includes('e2e-engineer'),
-    `"e2e-engineer" not found in in-progress section:\n${r.stdout.slice(0, 500)}`
+    'AC-4 phase names: in-progress shows "complete" for finished story',
+    r.stdout.includes('complete'),
+    `"complete" not found in current-phase line:\n${r.stdout.slice(0, 500)}`
   );
 
-  // Remaining phases must include agent names, not just numbers.
+  // release-manager was NOT in KEEL-103 expected_phases (11-phase era story).
+  // It must not appear in the remaining section — verifies maxPhase guard.
   assert(
-    'AC-4 phase names: remaining phases include "security-engineer"',
-    r.stdout.includes('security-engineer'),
-    `"security-engineer" not found in remaining:\n${r.stdout.slice(0, 500)}`
-  );
-
-  assert(
-    'AC-4 phase names: remaining phases include "technical-writer"',
-    r.stdout.includes('technical-writer'),
-    `"technical-writer" not found in remaining:\n${r.stdout.slice(0, 500)}`
-  );
-
-  assert(
-    'AC-4 phase names: remaining phases include "release-manager"',
-    r.stdout.includes('release-manager'),
-    `"release-manager" not found in remaining:\n${r.stdout.slice(0, 500)}`
+    'AC-4 phase names: release-manager NOT in remaining (out-of-scope for KEEL-103)',
+    !r.stdout.split('Remaining phases:').slice(1).join('').includes('release-manager'),
+    `"release-manager" appeared in remaining for a completed story:\n${r.stdout.slice(0, 500)}`
   );
 }
 

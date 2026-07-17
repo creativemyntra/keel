@@ -185,26 +185,27 @@ function copyDir(src, dest, skip) {
 
 // Pipeline scopes: which phases a story is expected to run.
 //
-// feature (11 phases):
+// feature (12 phases):
 //   1  product-owner      — intake / requirements
 //   2  business-analyst   — functional spec
-//   3  solution-architect — architecture + design
-//   4  software-engineer  — implementation (production code ONLY, no tests)
-//   5  tdd-red            — test case creation (write + verify meaningful failing tests)
-//   6  tdd-green          — full suite execution + coverage gate (≥80% changed lines)
-//   7  qa-engineer        — AC mapping, regression, integration validation
-//   8  e2e-engineer       — Playwright E2E browser tests
-//   9  security-engineer  — OWASP, threat model, dependency audit
-//  10  technical-writer   — docs, changelog, runbook
-//  11  release-manager    — go/no-go, deployment plan
+//   3  ui-designer        — screen flows, mockups, component states
+//   4  solution-architect — architecture + design
+//   5  software-engineer  — implementation (production code ONLY, no tests)
+//   6  tdd-red            — test case creation (write + verify meaningful failing tests)
+//   7  tdd-green          — full suite execution + coverage gate (≥80% changed lines)
+//   8  qa-engineer        — AC mapping, regression, integration validation
+//   9  e2e-engineer       — Playwright E2E browser tests
+//  10  security-engineer  — OWASP, threat model, dependency audit
+//  11  technical-writer   — docs, changelog, runbook
+//  12  release-manager    — go/no-go, deployment plan
 //
-// defect (express lane — phases 1, 4-7, 9):
+// defect (express lane — phases 1, 5, 6, 7, 8, 10):
 //   1  business-analyst   — triage + RCA import
-//   4  software-engineer  — root-cause fix
-//   5  tdd-red            — regression test (proves fix guards root cause)
-//   6  tdd-green          — revert-check + full suite green
-//   7  qa-engineer        — validation
-//   9  security-engineer  — diff-scoped security scan
+//   5  software-engineer  — root-cause fix
+//   6  tdd-red            — regression test (proves fix guards root cause)
+//   7  tdd-green          — revert-check + full suite green
+//   8  qa-engineer        — validation
+//  10  security-engineer  — diff-scoped security scan
 //
 // Existing stories initialized under the old 8-phase scheme store their own
 // expected_phases in their manifest.json — the engine always reads from the
@@ -529,13 +530,18 @@ function cmdDescribe(storyId) {
     .sort();
   const completedPhaseNums = files.map((f) => parseInt(f.slice(0, 2), 10));
 
-  // Current in-progress phase name; "complete" when beyond the last defined phase.
-  const inProgress = manifest.current_phase > 12
+  // Remaining phases: same expected_phases fallback chain as cmdStatus line 452.
+  // Must be computed before inProgress so maxPhase is available.
+  const expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
+  const maxPhase = Math.max(...expected);
+
+  // Current in-progress phase name; "complete" when beyond the last phase in scope.
+  // Use maxPhase (not hardcoded 12) so old stories with smaller expected_phases sets
+  // show "complete" correctly rather than pointing at an out-of-scope agent.
+  const inProgress = manifest.current_phase > maxPhase
     ? 'complete'
     : (AGENTS[manifest.current_phase - 1] || 'complete');
 
-  // Remaining phases: same expected_phases fallback chain as cmdStatus line 452.
-  const expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
   const remaining = expected
     .filter((p) => p > manifest.current_phase && !completedPhaseNums.includes(p))
     .map((p) => AGENTS[p - 1])
@@ -574,7 +580,7 @@ function cmdDescribe(storyId) {
   console.log(`${manifest.story_id} · ${manifest.title || '(no title)'}`);
   console.log(SEP);
   console.log(`Scope:          ${manifest.scope || 'feature'}`);
-  console.log(`Current phase:  ${manifest.current_phase} / 11 (${inProgress})`);
+  console.log(`Current phase:  ${manifest.current_phase} / ${maxPhase} (${inProgress})`);
   console.log(`Halted:         ${manifest.halted === true ? 'yes' : 'no'}`);
   console.log(`Idle:           ${idle}`);
   console.log(`Started:        ${manifest.started_at || 'unknown'}`);

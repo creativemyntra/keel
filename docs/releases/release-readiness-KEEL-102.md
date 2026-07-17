@@ -1,4 +1,6 @@
-# Release Readiness: KEEL-102 — Engine `status --all` lists every story
+# Release Readiness: KEEL-102 — Engine `status --all` lists every story *(Historical — v3.12.0 / 8-phase era)*
+
+> **Note:** Written 2026-07-09 against Keel v3.12.0 (8-phase pipeline). Current pipeline is 12 phases (v3.14.3+). Kept as a historical audit record — do not use as a process template.
 
 **Date:** 2026-07-09 | **Scope:** feature | **Pipeline:** phases 1–8 complete (manifest `current_phase: 8`, `halted` absent/false, 7 gate events)
 **Release flow:** plain-git (no PRs) — the repo owner's explicit in-session approval is the human approval gate.

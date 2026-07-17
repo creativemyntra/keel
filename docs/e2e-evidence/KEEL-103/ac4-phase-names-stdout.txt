@@ -5,9 +5,9 @@ STDOUT:
 KEEL-103 · Add describe command to keel-state.cjs
 ----------------------------------------
 Scope:          feature
-Current phase:  12 / 11 (release-manager)
+Current phase:  12 / 11 (complete)
 Halted:         no
-Idle:           75h 4m
+Idle:           75h 33m
 Started:        2026-07-14T05:11:35.927Z
 
 Completed phases:
@@ -24,7 +24,7 @@ Completed phases:
   ✓  11  technical-writer
 
 In progress:
-  ➤  12  release-manager (started 2026-07-14 10:14)
+  (complete)
 
 Remaining:
   (none)
