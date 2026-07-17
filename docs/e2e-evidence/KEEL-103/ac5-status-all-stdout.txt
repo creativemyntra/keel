@@ -29,7 +29,7 @@ STDOUT:
   {
     "story_id": "KEEL-105",
     "scope": "feature",
-    "current_phase": 8,
+    "current_phase": 13,
     "halted": false
   }
 ]
