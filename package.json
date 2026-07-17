@@ -1,6 +1,6 @@
 {
   "name": "@amarsingh/keel",
-  "version": "3.14.2",
+  "version": "3.14.3",
   "description": "Keel AI-SDLC Framework - Complete AI-powered software development lifecycle automation",
   "type": "module",
   "main": "bin/keel.js",

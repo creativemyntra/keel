@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.14.2
+# Keel AI-SDLC Framework v3.14.3
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.14.2 ✅
+# → keel v3.14.3 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -102,6 +102,12 @@ snapshots) is done by a zero-dependency **state engine**
 
 ---
 
+## 🆕 What's New in v3.14.3
+
+- **G-8: Agent identity integrity** — handshake gate now HALTs immediately on any schema/enum mismatch that looks like framework-version skew. The gate will never advise a phase agent to relabel its output under a different agent identity to pass validation. Enforced in `agents/handshake-agent.md` and `.keel/GUARDRAILS.md`.
+- **G-9: No unverified quantitative baselines in intake** — PO briefs must mark all test counts, coverage figures, and performance numbers carried from prior stories as `[BASELINE: ~N — verify at phase 2]`. Business Analyst (phase 2) resolves every placeholder by running the actual tool before handing off. Enforced in `agents/product-owner.md`, `agents/business-analyst.md`, and `.keel/GUARDRAILS.md`.
+- **Release Manager: framework debt gate** — release-manager checklist now requires all open framework improvement tasks from prior stories to be DONE (with commit reference) or explicitly waived by the human before a GO verdict is issued.
+
 ## 🆕 What's New in v3.14.2
 
 - **Documentation: complete 12-phase workflow** — README, TECHNICAL-SPECIFICATIONS.md, ALL-AGENTS-COMPLETE-GUIDE.md, QUICK-START-CLAUDE-CODE.md, and docs/WORKFLOW.md all updated to reflect the full 12-phase/17-agent pipeline (UI Designer, TDD Red/Green, E2E Engineer correctly documented). Stale 8-phase/8-agent references eliminated. Architecture diagram fixed (all Phase Agent columns now show 12). No code or behaviour changes.
@@ -154,7 +160,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.14.2 ✅
+# → keel v3.14.3 ✅
 ```
 
 ### Method 2: npm Global Package (⏳ not yet published — coming soon)
@@ -193,27 +199,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.14.2
+        uses: creativemyntra/keel@v3.14.3
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.14.2
+        uses: creativemyntra/keel@v3.14.3
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.14.2
+        uses: creativemyntra/keel@v3.14.3
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.14.2
+        uses: creativemyntra/keel@v3.14.3
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -621,7 +627,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.14.2
+- uses: creativemyntra/keel@v3.14.3
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -788,10 +794,10 @@ Then:
 
 ---
 
-**Version:** 3.14.2  
+**Version:** 3.14.3  
 **Released:** 2026-07-17  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.14.2 (https://github.com/creativemyntra/keel/releases/tag/v3.14.2)
+**Tag:** v3.14.3 (https://github.com/creativemyntra/keel/releases/tag/v3.14.3)

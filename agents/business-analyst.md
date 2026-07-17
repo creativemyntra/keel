@@ -44,3 +44,12 @@ Save to: `docs/analysis/<STORY-ID>-analysis.md`
 - Never invent business rules — surface ambiguity as open questions.
 - Flag any requirement that touches payment, authentication, or PII data.
 - Coordinate with Solution Architect before proposing data model changes.
+- **Resolve all `[BASELINE: ~N — verify at phase 2]` placeholders before
+  handing off.** For every such marker in the PO brief: run the actual tool
+  (test suite, coverage report, benchmark) and replace the placeholder with the
+  measured value and the command used. Example: `[BASELINE: ~N — verify at
+  phase 2]` → `129 tests (node tests/keel-dashboard.test.cjs, 2026-07-17)`.
+  A placeholder that reaches phase 3 is an unverified claim and a gate FAIL.
+  If the tool cannot be run (missing env, no runner), record it as
+  `[UNVERIFIABLE: reason]` and classify it BLOCKING so the human resolves it
+  before development begins.

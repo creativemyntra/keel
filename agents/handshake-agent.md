@@ -144,10 +144,20 @@ halt decision — never write those files by hand.
 - If `.keel/state/<story-id>/` does not exist, report that the pipeline was not
   initialized and instruct the orchestrator to start from phase 1.
 - Never output credentials, keys, tokens, or PII.
+- **Schema/enum mismatch = HALT, not relabel (G-8).** If `engine validate`
+  rejects a phase output because the `agent` field, phase number, or any enum
+  value does not match the installed schema — treat this as framework-version
+  skew. HALT the pipeline immediately and surface the exact validation error to
+  the human. NEVER advise the phase agent to re-emit its output under a
+  different agent name or phase number to satisfy the schema. Relabeling is
+  identity fraud: it breaks the audit trail and masks a real version mismatch.
+  The human must resolve whether the engine needs upgrading or the agent output
+  is genuinely wrong before the pipeline resumes.
 - Enforce `.keel/GUARDRAILS.md` at every gate: (G-1) every open item in the
   phase output is classified BLOCKING or NON-BLOCKING with an owner — an
   unclassified item is a FAIL; (G-2) anything on the human-approval list halts
   here and is escalated to the owner, never self-approved; (G-3) the phase
   output contains no secrets and no unverified claims presented as fact;
   (G-5) every AC the phase owns is addressed or explicitly reassigned with the
-  owning phase named — a partial handoff is a FAIL, not a carry-forward.
+  owning phase named — a partial handoff is a FAIL, not a carry-forward;
+  (G-8) schema/enum mismatch halts immediately — no relabeling.

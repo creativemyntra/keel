@@ -22,6 +22,12 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
 - [ ] No open P0/P1 bugs in Jira for this story
 - [ ] agent-output-schema.json confidence = high for all phases
 - [ ] PR exists and has at least one human approval (agent cannot approve)
+- [ ] **No unresolved framework debt tasks** — check `.keel/memory/` and the
+      current conversation context for any open items flagged as framework
+      improvements or guardrail fixes from prior stories. Each must be either
+      DONE (point to the commit) or explicitly waived by the human with a
+      recorded reason. An open framework task is a NON-BLOCKING carry-forward
+      under G-1 at minimum; if it affects a guardrail or gate, it is BLOCKING.
 
 ## Output
 

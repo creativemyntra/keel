@@ -82,3 +82,26 @@ Writes to `.keel/memory/` (conventions, lessons, decisions) happen only within
 memory-check caps, only by the phase that owns the insight, and only for the
 current story. Memory is never edited to alter history; wrong entries are
 corrected with a new dated line, not deletion.
+
+## G-8 · Agent identity integrity (schema/enum mismatch = HALT)
+
+If the state engine's `validate` command rejects a phase output because the
+`agent` field, phase number, or any enum value does not match the installed
+schema, the handshake gate HALTS immediately and surfaces the error to the
+human. The gate NEVER advises a phase agent to re-emit its output under a
+different agent name or phase number to satisfy the schema. Relabeling is
+identity fraud: it corrupts the audit trail and conceals a real
+framework-version mismatch. The human resolves whether the engine needs
+upgrading or the agent output is genuinely wrong; the pipeline does not
+resume until that decision is recorded.
+
+## G-9 · No unverified quantitative baselines in intake
+
+PO briefs and Business Analyst specs MUST NOT assert specific test counts,
+coverage percentages, performance numbers, or regression baselines carried
+over from prior-story artifacts. These figures change between stories.
+Any such figure in an intake document must be marked
+`[BASELINE: ~N — verify at phase 2]`. The Business Analyst resolves every
+placeholder by running the actual tool at phase 2, recording the measured
+value and the command used. A `[BASELINE: …]` placeholder that survives past
+phase 2 is an unverified claim and a gate FAIL at the phase-2 handshake.

@@ -2,6 +2,15 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.14.3] - 2026-07-17 - GUARDRAIL HARDENING: IDENTITY INTEGRITY + BASELINE VERIFICATION (G-8, G-9)
+
+### Changed
+- **G-8 · Agent identity integrity (schema/enum mismatch = HALT)** — `agents/handshake-agent.md` and `.keel/GUARDRAILS.md` now mandate an immediate HALT when `engine validate` rejects a phase output due to a schema/enum mismatch. The gate must never advise relabeling the agent identity or phase number to pass validation — that is identity fraud and corrupts the audit trail. The human resolves the version skew before the pipeline resumes.
+- **G-9 · No unverified quantitative baselines in intake** — `agents/product-owner.md` and `agents/business-analyst.md` now require that all test counts, coverage percentages, and performance numbers carried from prior-story artifacts be marked `[BASELINE: ~N — verify at phase 2]` at intake. The Business Analyst resolves every placeholder by running the actual tool at phase 2. A placeholder surviving past phase 2 is a gate FAIL. Enforced in `GUARDRAILS.md` as G-9.
+- **Release Manager: framework debt gate** — `agents/release-manager.md` checklist now includes a check for open framework improvement tasks from prior stories. Each must be DONE (with commit reference) or explicitly waived by the human before a GO verdict. This closes the process gap where guardrail-fix tasks #4 and #5 were not blocked the v3.14.2 release.
+
+No code or behaviour changes to `scripts/` or `bin/`.
+
 ## [3.14.2] - 2026-07-17 - DOCUMENTATION SYNC: COMPLETE 12-PHASE/17-AGENT PIPELINE
 
 ### Changed

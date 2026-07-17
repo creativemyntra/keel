@@ -56,3 +56,11 @@ Scenario: <name>
 - Never accept a story without at least one Gherkin scenario.
 - Stories rated XL must be split before sprint commitment.
 - No CJIS data in story descriptions.
+- **Never assert quantitative baselines from prior-story artifacts.** Test
+  counts, coverage percentages, performance numbers, and regression baselines
+  copied from a previous story's output or release notes are unverified at
+  intake time — the codebase changes between stories. Mark every such figure as
+  `[BASELINE: ~N — verify at phase 2]`. The Business Analyst (phase 2) measures
+  the actual value before any agent treats it as fact. A number stated without
+  the `[BASELINE: … — verify at phase 2]` marker is an unverified claim and
+  will fail the phase-1 gate.
