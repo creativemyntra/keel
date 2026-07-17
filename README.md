@@ -189,27 +189,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.12.0
+        uses: creativemyntra/keel@v3.14.1
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.12.0
+        uses: creativemyntra/keel@v3.14.1
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.12.0
+        uses: creativemyntra/keel@v3.14.1
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.12.0
+        uses: creativemyntra/keel@v3.14.1
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -222,50 +222,74 @@ jobs:
 ### Feature: User Subscription Management
 
 ```bash
-# Step 1: Initialize Project (5 min)
+# ─── One-command option (recommended) ───────────────────────────────────────
 /keel:init --mode=new --stack=cakephp
+/keel:implement-feature story="FEAT-1" feature="User subscription management"
+# Orchestrator runs all 12 phases automatically. Done. ✅
 
-# Step 2: Define Requirements (10 min)
+# ─── Step-by-step (all 12 phases) ───────────────────────────────────────────
+
+# Phase 1: Product Owner intake (human confirms ACs, or Jira ticket is the source)
+/keel:from-jira FEAT-1            # ← if Jira ticket exists, this is the entry point
+# — or for a new idea:
 /keel:req --story=FEAT-1 --feature="User subscription management"
-# Creates: docs/requirements/FEAT-1-requirements.md
-# Includes: User stories, acceptance criteria, API spec, data model
 
-# Step 3: Design Architecture (15 min)
+# Phase 2: Business Analyst (10 min)
+# (runs inside /keel:req above)
+# Produces: docs/requirements/FEAT-1-requirements.md
+# Includes: functional spec, data flows, edge cases, business rules
+
+# Phase 3: UI Designer (10 min)  ← NEW in v3.14.0
 /keel:design --story=FEAT-1
-# Creates: docs/design/FEAT-1-design.md
-# Includes: System components, database schema, API design, implementation plan
+# Scans existing UI patterns → Markdown design spec + self-contained HTML mockup
+# Non-visual stories get a documented no-UI determination (skips mockup)
+# Produces: docs/design/FEAT-1-mockup.html + design spec
 
-# Step 4: Develop with TDD - Red Phase (20 min)
+# Phase 4: Solution Architect (15 min)  ← also invoked by /keel:design
+# ADR, API contracts, DB schema, component diagram, technical risks
+# Produces: docs/design/FEAT-1-design.md
+
+# Phase 5: Software Engineer (25 min)
+# (runs via /keel:implement-feature or orchestrator — no standalone CLI command)
+# Reads the approved design; writes production code only (no tests here)
+# Produces: src/Models/Subscription.php, src/Services/SubscriptionService.php, etc.
+
+# Phase 6: TDD Red — write failing tests (15 min)
 /keel:tdd-red --story=FEAT-1
-# Creates: tests/Unit/SubscriptionTest.php
-# Output: 4 failing tests (red phase)
+# Writes PHPUnit tests for EVERY AC; verifies each test FAILS without implementation
+# Produces: tests/TestCase/Controller/FEAT-1Test.php (all tests red)
 
-# Step 5: Develop with TDD - Green Phase (25 min)
+# Phase 7: TDD Green — run suite, all must pass (15 min)
 /keel:tdd-green --story=FEAT-1
-# Creates: src/Models/Subscription.php
-# Output: 4 tests passing (green phase)
+# Executes the full test suite against the phase-5 implementation
+# Gate: 0 failures, coverage ≥ 80% on changed lines, no regression in pre-existing tests
 
-# Step 6: Develop with TDD - Refactor Phase (20 min)
-/keel:tdd-refactor --story=FEAT-1
-# Creates: src/Services/SubscriptionService.php
-# Output: Code refactored, tests still passing
-
-# Step 7: Run Comprehensive Tests (15 min)
+# Phase 8: QA — AC traceability + full suite gate (10 min)
 /keel:test --story=FEAT-1 --coverage-target=85
-# Output: 9/9 tests passing (100%), 87% code coverage ✅
+# Maps every AC to a passing test; integration tests; error-path validation
+# Produces: docs/qa/FEAT-1-qa-report.md
 
-# Step 8: Security Scanning (10 min)
+# Phase 9: E2E — Playwright browser tests (10 min)  ← NEW in v3.13.0
+/keel:e2e-test --story=FEAT-1
+# Playwright tests for every user-facing flow; screenshot evidence captured
+# Blocks release on any E2E failure
+
+# Phase 10: Security (10 min)
 /keel:sec --story=FEAT-1
-# Output: 0 vulnerabilities, PCI compliant ✅
+# Consumes prescan.json (composer/npm audit + PHPStan baseline always run)
+# OWASP Top 10 review of changed files; 0 HIGH findings required to proceed
+# Produces: docs/security/FEAT-1-security-report.md
 
-# Step 9: Deploy to Production (15 min)
+# Phases 11-12: Technical Writer + Release Manager (10 min)
+/keel:release-check --story=FEAT-1
+# Phase 11 — Technical Writer: updates CHANGELOG, README, runbook, memory
+# Phase 12 — Release Manager: G-6 version stamp; issues GO or NO-GO with justification
+
+# Deploy (15 min, only after release-manager GO verdict)
 /keel:deploy --story=FEAT-1 --rollout=canary
-# Phase 1: 5% of users (30 min monitoring)
-# Phase 2: 25% of users (2 hour monitoring)
-# Phase 3: 100% of users (stable)
+# Canary: 5% → 25% → 100% with monitoring checkpoints; rollback auto-triggers on error spike
 
-# TOTAL TIME: 2 hours
-# MANUAL TIME: 2 weeks (10x faster! ⚡)
+# TOTAL: ~2 hours end-to-end  (vs 2 weeks manually ⚡)
 ```
 
 ---
@@ -593,7 +617,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.12.0
+- uses: creativemyntra/keel@v3.14.1
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -728,23 +752,14 @@ If Keel helps you build faster, please star the repo!
 
 ### Documentation
 ```bash
-# View all available commands
-/keel --help
+# View all CLI commands and governance rules
+node bin/keel.js --help
 
-# Get command-specific help
-/keel:init --help
-/keel:req --help
-/keel:design --help
-/keel:test --help
-/keel:deploy --help
-```
-
-### Reading Files
-```bash
-# Read full documentation
-cat ~/README.md
-cat ~/ALL-AGENTS-COMPLETE-GUIDE.md
-cat ~/TECHNICAL-SPECIFICATIONS.md
+# Key docs (in repo root)
+# ALL-AGENTS-COMPLETE-GUIDE.md  — all 17 agents, phase-by-phase reference
+# TECHNICAL-SPECIFICATIONS.md   — architecture & state protocol
+# docs/WORKFLOW.md               — cost model, token economy, phase loop
+# CHANGELOG.md                   — full release history
 ```
 
 ### Reporting Issues
@@ -755,14 +770,14 @@ https://github.com/creativemyntra/keel/issues
 ## 🎉 Ready to Build 10x Faster?
 
 ```bash
-/plugin add marketplace keel
+claude plugin marketplace add https://github.com/creativemyntra/keel
+claude plugin install keel
 ```
 
 Then:
 ```bash
-/keel --version
 /keel:init --mode=new --stack=cakephp
-/keel:req --story=FEAT-1 --feature="Your first feature"
+/keel:implement-feature story="FEAT-1" feature="Your first feature"
 ```
 
 **Welcome to the future of software development!** 🚀
