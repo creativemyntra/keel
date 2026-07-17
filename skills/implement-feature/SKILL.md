@@ -1,6 +1,6 @@
 ---
 name: implement-feature
-description: Run the full 11-phase AI-SDLC pipeline from story to tested, E2E-validated, security-reviewed implementation.
+description: Run the full 12-phase AI-SDLC pipeline from story to tested, E2E-validated, security-reviewed implementation.
 ---
 
 # implement-feature
@@ -24,7 +24,7 @@ drift from the governed one.
    - the story ID and the user's feature description / story reference,
    - any constraints the user stated (deadline, scope, stack).
 3. The orchestrator owns everything from there: it initializes
-   `.keel/state/<story-id>/` through the state engine, sequences the 11 phase
+   `.keel/state/<story-id>/` through the state engine, sequences the 12 phase
    agents in order, runs the handshake gate after every phase, and enforces the
    bounded retry loop (3 attempts → halt and escalate):
 
@@ -48,7 +48,7 @@ drift from the governed one.
 ```markdown
 ## Feature Implementation: <STORY-ID> — <result>
 
-- Phases completed: <N>/11 (state: .keel/state/<STORY-ID>/)
+- Phases completed: <N>/12 (state: .keel/state/<STORY-ID>/)
 - Unit tests: <N> passing, coverage <X>% on changed files
 - E2E tests: <N> passing (Playwright)
 - Security: <HIGH finding count> HIGH findings

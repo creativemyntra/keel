@@ -21,14 +21,20 @@ claude plugin list
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
 
-# 4. Start building features
-/keel:req --story=FEAT-1 --feature="Your feature"
-/keel:design --story=FEAT-1
-/keel:tdd-red --story=FEAT-1
-/keel:tdd-green --story=FEAT-1
-/keel:test --story=FEAT-1 --coverage-target=85
-/keel:sec --story=FEAT-1
-/keel:deploy --story=FEAT-1 --rollout=canary
+# 4. Run the full 12-phase pipeline (recommended)
+/keel:implement-feature story="FEAT-1" feature="Your feature"
+
+# — or step through phases individually —
+/keel:req --story=FEAT-1 --feature="Your feature"  # Phase 2: BA requirements + ACs
+/keel:design --story=FEAT-1                         # Phases 3-4: UI design + architecture
+# (software-engineer phase 5 runs automatically inside the pipeline)
+/keel:tdd-red --story=FEAT-1                        # Phase 6: write failing tests for every AC
+/keel:tdd-green --story=FEAT-1                      # Phase 7: run suite — 0 failures, ≥ 80% coverage
+/keel:test --story=FEAT-1 --coverage-target=85      # Phase 8: QA + full AC traceability
+/keel:e2e-test --story=FEAT-1                       # Phase 9: Playwright E2E + screenshots
+/keel:sec --story=FEAT-1                            # Phase 10: OWASP + dependency audit
+/keel:release-check --story=FEAT-1                  # Phases 11-12: docs + go/no-go verdict
+/keel:deploy --story=FEAT-1 --rollout=canary        # Deploy after release-manager approval
 ```
 
 **Done!** Your feature is in production. ✅
@@ -314,41 +320,58 @@ jobs:
 /keel:init --mode=existing --stack=laravel # Add Keel to existing project
 ```
 
-### Planning
+### Planning & Design
 
 ```bash
-/keel:from-jira HART-287                          # Start development straight from a Jira ticket
-/keel:brainstorm --goal="Your goal"              # Generate ideas
-/keel:req --story=FEAT-1 --jira=TICKET-KEY        # Requirements from a Jira ticket (or --feature="...")
-/keel:design --story=FEAT-1                       # Design architecture
+/keel:from-jira HART-287                          # Start straight from a Jira ticket (ticket IS the requirements)
+/keel:brainstorm --goal="Your goal"               # Generate ideas
+/keel:req --story=FEAT-1 --jira=TICKET-KEY        # Phase 2: BA requirements + ACs (or --feature="...")
+/keel:design --story=FEAT-1                       # Phases 3-4: UI designer (mockup) + solution architect
 ```
 
 > **Human roles stay human:** the product-owner and scrum-master agents are
 > never auto-invoked in the delivery pipeline. When a Jira ticket exists, the
 > ticket is the requirements (transcribed, never rewritten); without one, AI
 > drafts are proposals the human PO confirms.
+>
+> **UI Designer (phase 3)** runs automatically before architecture — it scans
+> existing UI patterns and produces a Markdown design spec + HTML mockup for
+> every user-facing AC. Non-visual stories get a documented no-UI determination.
 
-### Development (TDD)
+### Development
 
 ```bash
-/keel:tdd-red --story=FEAT-1        # Write failing tests
-/keel:tdd-green --story=FEAT-1      # Write code to pass tests
-/keel:tdd-refactor --story=FEAT-1   # Refactor code
+# Phase 5 — software-engineer writes production code (runs via /keel:implement-feature or orchestrator)
+
+# Phase 6 — TDD Red: write a failing test for every AC
+/keel:tdd-red --story=FEAT-1
+
+# Phase 7 — TDD Green: run the full suite; every test must pass, coverage ≥ 80% on changed lines
+/keel:tdd-green --story=FEAT-1
+
+/keel:tdd-refactor --story=FEAT-1   # Cleanup pass after green
 ```
 
 ### Quality
 
 ```bash
-/keel:test --story=FEAT-1 --coverage-target=85  # Run comprehensive tests
-/keel:sec --story=FEAT-1                         # Security scanning
+/keel:test --story=FEAT-1 --coverage-target=85  # Phase 8: QA — AC-to-test mapping + full suite gate
+/keel:e2e-test --story=FEAT-1                    # Phase 9: Playwright browser E2E + screenshots
+/keel:sec --story=FEAT-1                         # Phase 10: OWASP audit + dependency scan
+```
+
+### Docs & Release
+
+```bash
+/keel:release-check --story=FEAT-1              # Phases 11-12: technical-writer + release-manager go/no-go
 ```
 
 ### Deployment
 
 ```bash
-/keel:deploy --story=FEAT-1 --rollout=canary  # Deploy with canary rollout
+/keel:deploy --story=FEAT-1 --rollout=canary     # Deploy with canary rollout
 /keel:deploy --story=FEAT-1 --rollout=blue-green  # Blue-green deployment
-/keel:deploy --story=FEAT-1 --rollout=instant  # Instant deployment
+/keel:deploy --story=FEAT-1 --rollout=instant     # Instant deployment
 ```
 
 ### Utilities
