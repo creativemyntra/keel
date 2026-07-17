@@ -26,7 +26,7 @@
 ## System Overview
 
 ### Purpose
-Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development lifecycle automation platform. It orchestrates 13 autonomous agents across 8 development phases to deliver production-ready features in 2-4 hours vs. 2 weeks.
+Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development lifecycle automation platform. It orchestrates 17 autonomous agents across 12 development phases to deliver production-ready features in 2-4 hours vs. 2 weeks.
 
 ### Key Metrics
 - **Code Coverage Target:** ≥80% (Current: 95%)
@@ -65,7 +65,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ┌───▼────┐      ┌──────▼──────┐    ┌────▼─────┐
 │ Phase  │      │   Phase     │    │  Phase   │
 │ Agents │      │   Agents    │    │  Agents  │
-│ (8)    │      │   (8)       │    │  (8)     │
+│ (12)   │      │   (8)       │    │  (8)     │
 └────────┘      └─────────────┘    └──────────┘
     │                  │                  │
     └──────────────────┼──────────────────┘
@@ -133,60 +133,78 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 
 ---
 
-### 2. Phase Agents (8 Total)
+### 2. Phase Agents (12 Total)
 
-#### Phase 1: Init Agent
-- Project scaffolding
-- Stack selection (CakePHP/Laravel/Django/Rails)
-- Initial project structure
+#### Phase 1: Product Owner Agent
+- Story intake from Jira or human proposal
+- Acceptance criteria definition
+- Scope boundary
 
-#### Phase 2: Brainstorm Agent
-- Feature ideation
-- Business goal analysis
-- Scope definition
+#### Phase 2: Business Analyst Agent
+- Functional spec elaboration
+- Data flows and domain rules
+- Edge cases and error paths
 
-#### Phase 3-4: Requirement/Design Agents
-- BDD specifications
-- Architecture design
-- API contracts
-- Database schema
+#### Phase 3: UI Designer Agent (v3.14.0)
+- Scans existing UI patterns in the project
+- Produces Markdown design spec + self-contained HTML mockup
+- No-UI determination for non-visual stories
+
+#### Phase 4: Solution Architect Agent
+- Architecture and design patterns
+- API contracts and DB schema
+- Technical risk assessment (ADRs)
 
 #### Phase 5: Software Engineer Agent
-- TDD implementation (Red → Green → Refactor)
-- Code generation
-- PSR-12 compliance (PHP 8.1+)
+- Production code only — no tests written here
+- PSR-12 / ESLint compliance
+- CodeGraph impact-scoped implementation
 
-#### Phase 6: QA Engineer Agent
-- Test validation
-- Coverage reporting
-- Acceptance criteria checking
+#### Phase 6: TDD Red Agent (v3.13.0)
+- Writes unit + integration test suite against phase-5 implementation
+- Verifies every test would fail without the implementation
+- No coverage gate here — that is phase 7
 
-#### Phase 7: Security Engineer Agent
+#### Phase 7: TDD Green Agent (v3.13.0)
+- Executes full test suite; every test must pass
+- Coverage ≥ 80% on changed lines
+- No regression in pre-existing tests
+
+#### Phase 8: QA Engineer Agent
+- Maps every AC to a passing test
+- Runs integration tests against live endpoints
+- Full suite gate (once per story)
+
+#### Phase 9: E2E Engineer Agent (v3.14.0)
+- Playwright browser E2E tests for every user-facing flow
+- Screenshot evidence captured
+- Blocks release on any E2E failure
+
+#### Phase 10: Security Engineer Agent
 - OWASP Top 10 scanning
-- Vulnerability assessment
-- Dependency audit
-- Compliance verification
+- Consumes prescan.json (static-first)
+- Blocks release on any HIGH finding
 
-#### Phase 8: Release Manager Agent
+#### Phase 11: Technical Writer Agent
+- README and CHANGELOG updates
+- API docs, runbooks, and onboarding guides
+- Memory writeback to conventions.md
+
+#### Phase 12: Release Manager Agent
 - Go/no-go decision
-- Deployment readiness
-- Release documentation
+- G-6 version stamp across all 7 locations
+- Deployment readiness and release documentation
 
 ---
 
-### 3. Support Agents (2 Total)
+### 3. Support Agents (1 Total)
 
 #### Scrum Master Agent
 - Sprint planning
 - Velocity tracking
 - Impediment removal
 - Ceremony coordination
-
-#### Technical Writer Agent
-- Documentation generation
-- Changelog management
-- Runbook creation
-- API documentation
+- Human-invoked only — never part of the delivery pipeline
 
 ---
 

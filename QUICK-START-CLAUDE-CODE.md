@@ -1,7 +1,7 @@
-# Keel v3.14.0 — Claude Code Quick Start
+# Keel v3.14.1 — Claude Code Quick Start
 
 **Status:** ✅ Framework is ready to use NOW  
-**Date:** 2026-07-08  
+**Date:** 2026-07-17  
 **Installation:** Already complete  
 
 ---

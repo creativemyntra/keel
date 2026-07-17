@@ -1,6 +1,6 @@
-# Keel v3.14.0 — Complete Agent Guide
+# Keel v3.14.1 — Complete Agent Guide
 
-**Framework Version:** 3.14.0  
+**Framework Version:** 3.14.1  
 **Total Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
@@ -61,7 +61,7 @@ These agents work sequentially to take a feature from idea to production.
 
 ### What It Does
 - Receives your feature request
-- Decomposes it into 8 sequential phases
+- Decomposes it into 12 sequential phases
 - Routes to the correct specialist agent for each phase
 - Enforces governance gates between phases
 - Produces final delivery summary
@@ -72,14 +72,18 @@ These agents work sequentially to take a feature from idea to production.
 Your Request: "Build user payment export"
          ↓
 [ORCHESTRATOR decides:]
-  1. Need Product Owner for requirements
-  2. Need Business Analyst for specs
-  3. Need Solution Architect for design
-  4. Need Software Engineer for code
-  5. Need QA Engineer for validation
-  6. Need Security Engineer for audit
-  7. Need Technical Writer for docs
-  8. Need Release Manager for go/no-go
+  1.  Product Owner     — requirements + ACs
+  2.  Business Analyst  — functional spec + data flows
+  3.  UI Designer       — design spec + HTML mockup (or no-UI determination)
+  4.  Solution Architect — architecture, API contracts, ADRs
+  5.  Software Engineer — production code (no tests)
+  6.  TDD Red           — write tests (must fail without implementation)
+  7.  TDD Green         — run tests; all pass, coverage ≥ 80%
+  8.  QA Engineer       — full suite gate, AC-to-test mapping
+  9.  E2E Engineer      — Playwright browser tests + screenshots
+  10. Security Engineer — OWASP audit, prescan results
+  11. Technical Writer  — README, CHANGELOG, docs
+  12. Release Manager   — go/no-go, G-6 version stamp
          ↓
 [Routes through all agents]
          ↓
@@ -846,7 +850,7 @@ Phase 1 output → Handshake validates → Audit logs
                 ↓
 Phase 2 output → Handshake validates → Audit logs
                 ↓
-... (through all 8 phases)
+... (through all 12 phases)
 ```
 
 ### Compliance Reports
@@ -881,7 +885,7 @@ AND timestamp >= '2026-01-01';
 **Compliance:** ACID, SOC2, HIPAA, GDPR, PCI-DSS  
 
 ### What It Does
-- Maintains global state across all 8 phases
+- Maintains global state across all 12 phases
 - Snapshots after each phase (immutable)
 - Supports point-in-time recovery
 - Detects conflicts (concurrent writes)
@@ -907,7 +911,7 @@ AND timestamp >= '2026-01-01';
       "completed_at": "2026-07-07T10:15:00Z",
       "state_snapshot": {...}
     },
-    // ... through all 8 phases
+    // ... through all 12 phases
   ],
   
   "current_state": {
@@ -1044,7 +1048,7 @@ Phase 3 receives:
   
         + generates Phase 3 output
 
-... (repeats through all 8 phases)
+... (repeats through all 12 phases)
 ```
 
 ### Memory Continuity
@@ -1101,15 +1105,19 @@ Response: {
 # One command invokes all 17 agents
 /keel:implement-feature story="FEAT-123" feature="User payment export"
 
-# This automatically:
-# 1. Product Owner → defines requirements
-# 2. Business Analyst → writes specs
-# 3. Solution Architect → designs system
-# 4. Software Engineer → implements with TDD
-# 5. QA Engineer → validates tests
-# 6. Security Engineer → audits code
-# 7. Technical Writer → documents
-# 8. Release Manager → approves
+# This automatically runs all 12 pipeline phases:
+# 1.  Product Owner     → requirements + ACs
+# 2.  Business Analyst  → functional spec + data flows
+# 3.  UI Designer       → design spec + HTML mockup
+# 4.  Solution Architect → architecture, API contracts
+# 5.  Software Engineer → production code (no tests)
+# 6.  TDD Red           → write tests (fail without impl)
+# 7.  TDD Green         → run tests; all pass, ≥ 80% coverage
+# 8.  QA Engineer       → full suite gate, AC traceability
+# 9.  E2E Engineer      → Playwright browser tests + screenshots
+# 10. Security Engineer → OWASP audit, prescan results
+# 11. Technical Writer  → README, CHANGELOG, docs
+# 12. Release Manager   → go/no-go, G-6 version stamp
 #
 # While audit, state management, and handshake run continuously
 ```
@@ -1146,21 +1154,36 @@ Day 6: Validate & release
 
 # 📊 AGENT SUMMARY TABLE
 
-| # | Agent | Type | Purpose | Input | Output |
-|---|-------|------|---------|-------|--------|
-| 1 | **Orchestrator** | Routing | Route through pipeline | Feature request | Delivery summary |
-| 2 | **Product Owner** | Requirements | User stories | Goal | User story + ACs |
-| 3 | **Business Analyst** | Specs | Functional details | Story | Spec + data flows |
-| 4 | **Solution Architect** | Design | Technical design | Spec | API + DB schema |
-| 5 | **Software Engineer** | Code | TDD implementation | Design | Code + tests |
-| 6 | **QA Engineer** | Testing | Validation | Code | QA report |
-| 7 | **Security Engineer** | Security | OWASP audit | Code | Security report |
-| 8 | **Release Manager** | Approval | Go/no-go | Reports | Release verdict |
-| 9 | **Scrum Master** | Ceremonies | Team health | Sprint data | Metrics + health |
-| 10 | **Technical Writer** | Docs | Documentation | Code | API docs, CHANGELOG |
-| 11 | **Audit Agent** | Logging | Compliance trail | All phases | Audit logs |
-| 12 | **State Management** | Memory | Global state | All phases | Snapshots + recovery |
-| 13 | **Handshake Agent** | Validation | Phase transitions | Phase output | Validated context |
+**Pipeline Phase Agents (12)**
+
+| Phase | Agent | Purpose | Key Output |
+|-------|-------|---------|------------|
+| 1 | **Product Owner** | Requirements + ACs | Story brief, AC list |
+| 2 | **Business Analyst** | Functional spec, data flows, edge cases | BA spec, domain rules |
+| 3 | **UI Designer** *(v3.14.0)* | Design spec + HTML mockup (or no-UI determination) | Markdown spec, mockup.html |
+| 4 | **Solution Architect** | Architecture, API contracts, DB schema, ADRs | Design doc, API spec |
+| 5 | **Software Engineer** | Production code only (no tests) | Implemented feature files |
+| 6 | **TDD Red** *(v3.13.0)* | Write failing tests for every AC | Unit + integration test suite |
+| 7 | **TDD Green** *(v3.13.0)* | Run all tests; all pass, coverage ≥ 80% | Coverage report |
+| 8 | **QA Engineer** | AC-to-test mapping, full suite gate | QA report |
+| 9 | **E2E Engineer** *(v3.14.0)* | Playwright browser tests + screenshots | E2E spec, evidence screenshots |
+| 10 | **Security Engineer** | OWASP audit, dependency scan, compliance | Security report (0 HIGH to release) |
+| 11 | **Technical Writer** | README, CHANGELOG, runbooks, memory | Updated docs, conventions.md |
+| 12 | **Release Manager** | Go/no-go, G-6 stamp across 7 locations | Release verdict, version bumps |
+
+**Support Agents (1)**
+
+| Agent | Purpose | Invoked by |
+|-------|---------|------------|
+| **Scrum Master** | Sprint ceremonies, velocity, impediment removal | Human only — never pipeline |
+
+**Infrastructure Agents (3)**
+
+| Agent | Purpose |
+|-------|---------|
+| **Orchestrator** | Routes all work, enforces gates, manages phase flow |
+| **Handshake Agent** | Phase-to-phase validation + context passing |
+| **State Management Agent** | Locked state, atomic writes, audit trail, snapshots |
 
 ---
 
@@ -1173,7 +1196,7 @@ Day 6: Validate & release
 
 ---
 
-**Framework:** Keel AI-SDLC Framework v3.12.0  
+**Framework:** Keel AI-SDLC Framework v3.14.1  
 **License:** MIT  
 **Author:** Amar Singh  
 **Repository:** https://github.com/creativemyntra/keel  
