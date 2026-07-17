@@ -65,7 +65,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ┌───▼────┐      ┌──────▼──────┐    ┌────▼─────┐
 │ Phase  │      │   Phase     │    │  Phase   │
 │ Agents │      │   Agents    │    │  Agents  │
-│ (12)   │      │   (8)       │    │  (8)     │
+│ (12)   │      │   (12)      │    │  (12)    │
 └────────┘      └─────────────┘    └──────────┘
     │                  │                  │
     └──────────────────┼──────────────────┘
