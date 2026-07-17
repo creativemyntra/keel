@@ -1,5 +1,7 @@
 # KEEL-104 Implementation Plan — Add Pipeline Status Web Dashboard
 
+> **Historical note:** This artifact was generated under the 12-phase pipeline (v3.14.x). Phase numbers and agent names reflect the schema active at execution time.
+
 **Phase:** 5 (Software Engineer)
 **Date:** 2026-07-14
 **Story:** KEEL-104

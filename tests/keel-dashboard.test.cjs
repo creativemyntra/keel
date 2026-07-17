@@ -937,7 +937,7 @@ function spawnEngine(cwd, ...args) {
 // ══════════════════════════════════════════════════════════════════════════════
 // KEEL-105 — Host-header allowlist (DNS-rebinding guard, ADR-004)
 //
-// Appended by phase 6 (tdd-red). The 70 KEEL-104 baseline tests above are the
+// Appended by software-engineer (phase 5/6 under old 12-phase schema). The 70 KEEL-104 baseline tests above are the
 // frozen AC-5 baseline and MUST NOT be modified.
 //
 // Assert-name prefix: "K105 AC-n ..." (KEEL-105 acceptance criteria — distinct

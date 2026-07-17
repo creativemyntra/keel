@@ -40,8 +40,8 @@ Generate a single-page HTML pipeline report for a keel story.
 |---------|--------|
 | Status badge (COMPLETE / IN PROGRESS / HALTED) | manifest.json |
 | Phases complete progress bar | manifest + phase files |
-| Test suite summary | tdd-green phase findings |
-| Coverage per file | tdd-green + qa-engineer findings |
+| Test suite summary | software-engineer phase findings |
+| Coverage per file | software-engineer + qa-engineer findings |
 | E2E test summary | e2e-engineer findings |
 | UI mockup links | ui-designer artifacts |
 | Security findings | security-engineer findings |

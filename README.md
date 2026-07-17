@@ -100,6 +100,13 @@ snapshots) is done by a zero-dependency **state engine**
 
 ## 🆕 What's New in v3.15.0
 
+- **10-phase pipeline** — `tdd-red` and `tdd-green` removed as separate phases. `software-engineer` (phase 5) now writes production code **and** unit tests in one phase; coverage ≥ 80% on changed lines is a hard gate before QA sees the output. Simpler pipeline, fewer spawns, no confusion about who owns tests.
+- **Phase renumbering** — qa-engineer→6, e2e-engineer→7, security-engineer→8, technical-writer→9, release-manager→10. Defect lane updated to phases [1, 5, 6, 8].
+- **Backward-compatible engine** — `keel-state.cjs` retains `LEGACY_AGENTS` and reads `manifest.expected_phases` so stories initialized under the old 12-phase schema continue to validate correctly without needing re-initialization.
+- **Budget** — `DEFAULT_MAX_GATES` reduced from 48 → 40 (10 phases × 3 attempts + overhead).
+
+## 🆕 What's New in v3.14.3
+
 - **G-8: Agent identity integrity** — handshake gate now HALTs immediately on any schema/enum mismatch that looks like framework-version skew. The gate will never advise a phase agent to relabel its output under a different agent identity to pass validation. Enforced in `agents/handshake-agent.md` and `.keel/GUARDRAILS.md`.
 - **G-9: No unverified quantitative baselines in intake** — PO briefs must mark all test counts, coverage figures, and performance numbers carried from prior stories as `[BASELINE: ~N — verify at phase 2]`. Business Analyst (phase 2) resolves every placeholder by running the actual tool before handing off. Enforced in `agents/product-owner.md`, `agents/business-analyst.md`, and `.keel/GUARDRAILS.md`.
 - **Release Manager: framework debt gate** — release-manager checklist now requires all open framework improvement tasks from prior stories to be DONE (with commit reference) or explicitly waived by the human before a GO verdict is issued.

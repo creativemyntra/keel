@@ -27,24 +27,19 @@ This single command invokes the orchestrator, which routes through all 12 pipeli
 
 ---
 
-## 🆕 NEW AGENTS (v3.13.0–v3.14.0)
+## 🆕 PIPELINE HISTORY
 
-Four agents were added when the pipeline was restructured from 8 to 12 phases
-(the sections below this table predate the restructure — the phase numbering in
-[`agents/orchestrator.md`](agents/orchestrator.md) is authoritative):
+**v3.15.0** — restructured from 12 to **10 phases**: `tdd-red` and `tdd-green` merged
+into `software-engineer` (phase 5 now writes production code + unit tests; coverage ≥ 80%
+is a hard gate). `ui-designer` (v3.14.0) and `e2e-engineer` (v3.13.0) remain as dedicated
+phases. Phase numbering in [`agents/orchestrator.md`](agents/orchestrator.md) is
+authoritative.
 
-| Phase | Agent | Role |
-|-------|-------|------|
-| 3 | **ui-designer** (v3.14.0) | UI/UX design before implementation — scans existing UI patterns, produces a Markdown design spec + self-contained HTML mockup for every user-facing AC. No Figma required. |
-| 6 | **tdd-red** (v3.13.0) | Test case creation — writes the unit/integration suite against the phase-5 implementation; verifies every test is meaningful (would fail without the implementation). |
-| 7 | **tdd-green** (v3.13.0) | Full suite execution — every test passes, coverage ≥80% on changed lines, no regressions. |
-| 9 | **e2e-engineer** (v3.13.0) | Playwright browser E2E tests for every user-facing flow, with screenshot evidence; blocks release on any failure. |
-
-Full 12-phase order: product-owner (1) → business-analyst (2) → ui-designer (3)
-→ solution-architect (4) → software-engineer (5, production code only) →
-tdd-red (6) → tdd-green (7) → qa-engineer (8) → e2e-engineer (9) →
-security-engineer (10) → technical-writer (11) → release-manager (12).
-Defect express lane: 1 → 5 → 6 → 7 → 8 → 10.
+Current 10-phase order: product-owner (1) → business-analyst (2) → ui-designer (3)
+→ solution-architect (4) → software-engineer (5, code + unit tests, coverage ≥ 80%) →
+qa-engineer (6) → e2e-engineer (7) → security-engineer (8) →
+technical-writer (9) → release-manager (10).
+Defect express lane: 1 → 5 → 6 → 8.
 
 ---
 
@@ -416,14 +411,9 @@ class PaymentExporter {
 # Invoked automatically by orchestrator
 /keel:implement-feature story="FEAT-123" feature="Payment export"
 
-# Or invoke TDD phases individually
-/keel:tdd-red --story=FEAT-123         # Write failing tests
-/keel:tdd-green --story=FEAT-123       # Implement to pass
-/keel:tdd-refactor --story=FEAT-123    # Clean up code
 ```
 
 ### Key Rules
-- ❌ Never skip TDD Red phase
 - ❌ Never output secrets/credentials/API keys
 - ✅ Run tests after every code change
 - 🚨 Flag CJIS-adjacent data handling
@@ -850,7 +840,7 @@ Phase 1 output → Handshake validates → Audit logs
                 ↓
 Phase 2 output → Handshake validates → Audit logs
                 ↓
-... (through all 12 phases)
+... (through all 10 phases)
 ```
 
 ### Compliance Reports
@@ -885,7 +875,7 @@ AND timestamp >= '2026-01-01';
 **Compliance:** ACID, SOC2, HIPAA, GDPR, PCI-DSS  
 
 ### What It Does
-- Maintains global state across all 12 phases
+- Maintains global state across all 10 phases
 - Snapshots after each phase (immutable)
 - Supports point-in-time recovery
 - Detects conflicts (concurrent writes)
@@ -911,7 +901,7 @@ AND timestamp >= '2026-01-01';
       "completed_at": "2026-07-07T10:15:00Z",
       "state_snapshot": {...}
     },
-    // ... through all 12 phases
+    // ... through all 10 phases
   ],
   
   "current_state": {
@@ -1048,7 +1038,7 @@ Phase 3 receives:
   
         + generates Phase 3 output
 
-... (repeats through all 12 phases)
+... (repeats through all 10 phases)
 ```
 
 ### Memory Continuity
@@ -1130,10 +1120,8 @@ Day 1: Create story
 Day 2-3: Elaborate & design
   /keel:analyze-story story="FEAT-123"
 
-Day 4-5: Implement with TDD
-  /keel:tdd-red --story=FEAT-123
-  /keel:tdd-green --story=FEAT-123
-  /keel:tdd-refactor --story=FEAT-123
+Day 4-5: Implement (code + unit tests in one phase)
+  /keel:implement-feature story="FEAT-123"
 
 Day 6: Validate & release
   /keel:release-check story="FEAT-123"

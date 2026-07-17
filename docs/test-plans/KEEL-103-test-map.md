@@ -1,5 +1,7 @@
 # Test Plan: KEEL-103
 
+> **Historical note:** This artifact was generated under the 12-phase pipeline (v3.14.x). Phase numbers and agent names reflect the schema active at execution time.
+
 Story: Add `describe` command to `keel-state.cjs`
 
 | AC-id | Test file | Test method (assert label) | Category | Verified meaningful |

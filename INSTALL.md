@@ -45,7 +45,7 @@ claude plugin install .
 ## Option D — GitHub Action (CI/CD)
 
 ```yaml
-- uses: creativemyntra/keel@v3.14.3
+- uses: creativemyntra/keel@v3.15.0
   with:
     story: FEAT-1
     phase: full-pipeline
@@ -65,9 +65,6 @@ All commands are namespaced under the plugin: `/keel:<command>`.
 | `/keel:from-jira <KEY>` | Start development directly from a Jira ticket (the ticket is the requirements) |
 | `/keel:req --story=FEAT-1` | Write BDD requirements |
 | `/keel:design --story=FEAT-1` | Architecture, DB schema, API contracts |
-| `/keel:tdd-red --story=FEAT-1` | Write failing tests |
-| `/keel:tdd-green --story=FEAT-1` | Implement to pass tests |
-| `/keel:tdd-refactor --story=FEAT-1` | Refactor with tests green |
 | `/keel:test --story=FEAT-1` | Run full test suite + coverage gate |
 | `/keel:sec --story=FEAT-1` | OWASP security scan |
 | `/keel:impact <Class or file>` | CodeGraph impact analysis (blast radius of a change) |
@@ -76,13 +73,12 @@ All commands are namespaced under the plugin: `/keel:<command>`.
 
 ## Agents
 
-17 agents install with the plugin (invoke via the Task tool or let the
+15 agents install with the plugin (invoke via the Task tool or let the
 orchestrator route): `keel:orchestrator`, `keel:product-owner`,
 `keel:business-analyst`, `keel:ui-designer`, `keel:solution-architect`,
-`keel:software-engineer`, `keel:tdd-red`, `keel:tdd-green`,
-`keel:qa-engineer`, `keel:e2e-engineer`, `keel:security-engineer`,
-`keel:technical-writer`, `keel:release-manager`, `keel:scrum-master`,
-plus infrastructure agents `keel:handshake-agent`,
+`keel:software-engineer`, `keel:qa-engineer`, `keel:e2e-engineer`,
+`keel:security-engineer`, `keel:technical-writer`, `keel:release-manager`,
+`keel:scrum-master`, plus infrastructure agents `keel:handshake-agent`,
 `keel:state-management-agent`, `keel:audit-agent`.
 
 ## Skills

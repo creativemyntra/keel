@@ -39,7 +39,7 @@ cover in your output's `findings`.
    node ~/.keel/bin/build-codegraph.cjs --impact <ClassOrFile>
    ```
    Any dependent without test coverage goes on your retest list — inform the
-   tdd-red agent via your phase output's `findings`. A surprising blast radius
+   qa-engineer via your phase output's `findings`. A surprising blast radius
    (auth, payments, data integrity) is worth flagging in `blockers` before
    proceeding.
    **The impact set is also your context budget**: load ONLY the files in the

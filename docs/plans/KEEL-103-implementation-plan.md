@@ -1,5 +1,7 @@
 # KEEL-103 Implementation Plan — Add `describe` command to keel-state.cjs
 
+> **Historical note:** This artifact was generated under the 12-phase pipeline (v3.14.x). Phase numbers and agent names reflect the schema active at execution time.
+
 **Story:** KEEL-103  
 **Date:** 2026-07-14  
 **Author:** software-engineer (phase 4)

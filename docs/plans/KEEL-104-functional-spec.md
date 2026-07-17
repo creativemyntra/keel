@@ -1,5 +1,7 @@
 # KEEL-104 Functional Spec — Add pipeline status web dashboard
 
+> **Historical note:** This artifact was generated under the 12-phase pipeline (v3.14.x). Phase numbers and agent names reflect the schema active at execution time.
+
 **Story:** KEEL-104  
 **Phase:** 2 (Business Analyst)  
 **Date:** 2026-07-14
