@@ -1,4 +1,4 @@
-# Audit Record — Install-to-Pipeline E2E (KEEL-102, v3.12.0)
+# Audit Record — Install-to-Pipeline E2E (KEEL-102, v3.12.0) [HISTORICAL]
 
 | | |
 |---|---|

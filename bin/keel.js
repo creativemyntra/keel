@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Keel AI-SDLC Framework v3.14.1 -- CLI Dispatcher (ESM)
+ * Keel AI-SDLC Framework v3.14.3 -- CLI Dispatcher (ESM)
  * Author : Amar Singh <support@creativemyntra.com>
  * License: MIT
  */
@@ -224,18 +224,19 @@ function showHelp() {
     '  /keel <command> [options]             (Claude Code / Claude Desktop)',
     '  node bin/keel.js <command> [options]  (terminal)',
     '',
-    'PIPELINE',
-    '  PH    COMMAND          AGENT(S)',
-    '  1     init             keel:orchestrator',
-    '  2     brainstorm       keel:product-owner',
-    '  3     req              keel:product-owner -> keel:business-analyst',
+    'PIPELINE (12 phases — use /keel:implement-feature to run all)',
+    '  PH    COMMAND          AGENT',
+    '  1-2   req              keel:product-owner -> keel:business-analyst',
+    '  3     design           keel:ui-designer',
     '  4     design           keel:solution-architect',
-    '  5a    tdd-red          keel:software-engineer',
-    '  5b    tdd-green        keel:software-engineer',
-    '  5c    tdd-refactor     keel:software-engineer',
-    '  6     test             keel:qa-engineer  [+ phpunit phpcs phpstan]',
-    '  7     sec              keel:security-engineer  [+ composer audit]',
-    '  8     deploy           keel:technical-writer -> keel:release-manager',
+    '  5     (orchestrator)   keel:software-engineer',
+    '  6     tdd-red          keel:tdd-red',
+    '  7     tdd-green        keel:tdd-green',
+    '  8     test             keel:qa-engineer',
+    '  9     e2e-test         keel:e2e-engineer',
+    '  10    sec              keel:security-engineer',
+    '  11    (orchestrator)   keel:technical-writer',
+    '  12    deploy           keel:release-manager',
     '  --    dashboard        [standalone — starts local HTTP server]',
     '',
     'OPTIONS',

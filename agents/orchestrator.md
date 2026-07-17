@@ -68,7 +68,7 @@ architecture, E2E, docs, release ceremony).
 - **Phase 7 before phase 8**: QA validates a green suite, not a red one.
 - **Phase 8 before phase 9**: E2E is browser-level; it runs after unit/integration QA is clean to avoid debugging the wrong layer.
 - **Phase 9 before phase 10**: security reviews committed, tested code.
-- All three test phases (6, 7, 8) must complete before E2E (9). Never skip.
+- Unit/integration test phases (6 tdd-red, 7 tdd-green) must complete before QA (8) and E2E (9). Phase 8 is AC validation against a green suite — not test writing. Never skip or collapse these.
 
 ## Governance Gates (cannot be skipped)
 
