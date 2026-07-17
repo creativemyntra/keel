@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.14.1
+# Keel AI-SDLC Framework v3.14.2
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.14.1 ✅
+# → keel v3.14.2 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -102,6 +102,10 @@ snapshots) is done by a zero-dependency **state engine**
 
 ---
 
+## 🆕 What's New in v3.14.2
+
+- **Documentation: complete 12-phase workflow** — README, TECHNICAL-SPECIFICATIONS.md, ALL-AGENTS-COMPLETE-GUIDE.md, QUICK-START-CLAUDE-CODE.md, and docs/WORKFLOW.md all updated to reflect the full 12-phase/17-agent pipeline (UI Designer, TDD Red/Green, E2E Engineer correctly documented). Stale 8-phase/8-agent references eliminated. Architecture diagram fixed (all Phase Agent columns now show 12). No code or behaviour changes.
+
 ## 🆕 What's New in v3.14.1
 
 - **Dashboard Host-header allowlist — DNS-rebinding hardening (KEEL-105, closes KEEL-104 LOW-1)** — `scripts/keel-dashboard.cjs` now validates the `Host` header before any routing. Only the loopback literals `localhost`, `127.0.0.1`, and `[::1]` are accepted (case-insensitive, optional `:port` suffix). Disallowed hosts get `403 Forbidden`; a missing `Host` header gets `400 Bad Request` per RFC 9112 (ADR-004 D-1). Both rejections use a constant plain-text body with `Content-Type: text/plain; charset=utf-8`, `X-Content-Type-Options: nosniff`, and `Cache-Control: no-store` — no request data echoed, zero filesystem I/O on the rejection path. Guard runs before routing so the renderer is structurally unreachable on rejection. All KEEL-104 invariants preserved: loopback-only bind, HTML-escaping, `EADDRINUSE` handling, `keel-state.cjs` and `bin/keel.js` byte-unchanged. See [Security posture (ADR-003, ADR-004)](#security-posture-adr-003-adr-004) below.
@@ -150,7 +154,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.14.1 ✅
+# → keel v3.14.2 ✅
 ```
 
 ### Method 2: npm Global Package (⏳ not yet published — coming soon)
@@ -189,27 +193,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.14.1
+        uses: creativemyntra/keel@v3.14.2
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.14.1
+        uses: creativemyntra/keel@v3.14.2
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.14.1
+        uses: creativemyntra/keel@v3.14.2
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.14.1
+        uses: creativemyntra/keel@v3.14.2
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -617,7 +621,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.14.1
+- uses: creativemyntra/keel@v3.14.2
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -784,10 +788,10 @@ Then:
 
 ---
 
-**Version:** 3.14.1  
+**Version:** 3.14.2  
 **Released:** 2026-07-17  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.14.1 (https://github.com/creativemyntra/keel/releases/tag/v3.14.1)
+**Tag:** v3.14.2 (https://github.com/creativemyntra/keel/releases/tag/v3.14.2)

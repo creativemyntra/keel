@@ -2,6 +2,17 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.14.2] - 2026-07-17 - DOCUMENTATION SYNC: COMPLETE 12-PHASE/17-AGENT PIPELINE
+
+### Changed
+- **README.md** — complete rewrite of the Available Commands section (all 12 pipeline phases, tdd-green note fixed, e2e-test and release-check commands added), and the Complete Workflow section (all 12 phases with correct descriptions; removed wrong "Creates: src/Models/*.php" claims from tdd-green; stale `@v3.12.0` GitHub Action versions updated). Quick Start leads with `/keel:implement-feature`.
+- **ALL-AGENTS-COMPLETE-GUIDE.md** — orchestrator diagram updated to 12 sequential phases; all "through all 8 phases" references replaced; Agent Summary Table rebuilt into three-table layout (12 pipeline + 1 support + 3 infrastructure).
+- **TECHNICAL-SPECIFICATIONS.md** — "13 agents across 8 phases" → "17 agents across 12 phases"; phase agents section lists all 12 correctly; Technical Writer moved from Support to pipeline; architecture diagram Phase Agent columns all corrected to (12).
+- **QUICK-START-CLAUDE-CODE.md** and **docs/WORKFLOW.md** — version references updated to v3.14.2.
+- **skills/implement-feature/SKILL.md** — phase count corrected to 12.
+
+No code or behaviour changes. All prior release contracts (KEEL-105, KEEL-104, KEEL-103) unchanged.
+
 ## [3.14.1] - 2026-07-17 - DASHBOARD HOST-HEADER ALLOWLIST (KEEL-105)
 
 ### Security

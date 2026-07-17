@@ -9,7 +9,7 @@ import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const VERSION   = '3.14.1';
+const VERSION   = '3.14.2';
 const KEEL_DIR  = resolve(__dirname, '..');
 
 function parseArgs(argv) {

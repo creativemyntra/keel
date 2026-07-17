@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.14.1 - Technical Specifications
+# Keel AI-SDLC Framework v3.14.2 - Technical Specifications
 
 **Document Version:** 1.9  
 **Last Updated:** 2026-07-17  
@@ -365,26 +365,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.14.1
+- Version: v3.14.2
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.14.1`
+- Installation: `npm install -g @amarsingh/keel@3.14.2`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.14.1`
+- Image: `amarsingh/keel:3.14.2`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.14.1`
+- Pull: `docker pull amarsingh/keel:3.14.2`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.14.1`
+- Version: `v3.14.2`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.14.1`
+- Usage: `uses: creativemyntra/keel@v3.14.2`
 
 ---
 
@@ -474,6 +474,7 @@ Record in Audit Trail
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
+| 3.14.2 | 2026-07-17 | PRODUCTION | Doc-patch: complete 12-phase/17-agent documentation sync — README, ALL-AGENTS-COMPLETE-GUIDE, TECHNICAL-SPECIFICATIONS, QUICK-START, WORKFLOW.md; architecture diagram corrected (all Phase Agent columns show 12) |
 | 3.14.1 | 2026-07-17 | PRODUCTION | Dashboard Host-header allowlist — DNS-rebinding hardening (KEEL-105, closes KEEL-104 LOW-1): guard-first 403/400 contract, 238/238 tests green, 0 HIGH security findings |
 | 3.14.0 | 2026-07-15 | PRODUCTION | Pipeline status web dashboard (KEEL-104): `keel dashboard --port=<N>`, read-only, loopback-only |
 | 3.13.0 | 2026-07-14 | PRODUCTION | Describe command: human-readable story inspection (KEEL-103) |
@@ -522,7 +523,7 @@ Record in Audit Trail
 
 ---
 
-**Document Version:** 1.9  
+**Document Version:** 2.0  
 **Last Updated:** 2026-07-17  
 **Status:** PRODUCTION  
 **Next Review:** 2026-10-17 (quarterly)
