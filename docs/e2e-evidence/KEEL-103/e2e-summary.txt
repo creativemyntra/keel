@@ -1,7 +1,7 @@
-KEEL-103 E2E subprocess test run — 2026-07-16T05:08:46.784Z
+KEEL-103 E2E subprocess test run — 2026-07-17T07:17:02.251Z
 Node: v26.1.0   Engine: C:\Users\Matellio_Amar-Nath\keel\scripts\keel-state.cjs
 
-Result: 45 / 45 passed
+Result: 46 / 46 passed
 
 PASS  AC-1 live describe: exit code is 0
 PASS  AC-1 live describe: stdout contains story ID KEEL-103
@@ -43,6 +43,7 @@ PASS  AC-5 regression: story KEEL-101 has exactly {story_id,scope,current_phase,
 PASS  AC-5 regression: story KEEL-102 has exactly {story_id,scope,current_phase,halted}
 PASS  AC-5 regression: story KEEL-103 has exactly {story_id,scope,current_phase,halted}
 PASS  AC-5 regression: story KEEL-104 has exactly {story_id,scope,current_phase,halted}
+PASS  AC-5 regression: story KEEL-105 has exactly {story_id,scope,current_phase,halted}
 PASS  AC-5 regression: KEEL-103 entry has scope=feature
 PASS  AC-5 regression: KEEL-103 entry current_phase matches live manifest
 PASS  AC-5 regression: KEEL-103 entry has halted=false

@@ -1,7 +1,7 @@
-# Keel AI-SDLC Framework v3.14.0 - Technical Specifications
+# Keel AI-SDLC Framework v3.14.1 - Technical Specifications
 
 **Document Version:** 1.9  
-**Last Updated:** 2026-07-09  
+**Last Updated:** 2026-07-17  
 **Status:** PRODUCTION  
 **Author:** Amar Singh  
 **Audience:** Development Team, Future Maintainers, Contributors  
@@ -347,26 +347,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.14.0
+- Version: v3.14.1
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.14.0`
+- Installation: `npm install -g @amarsingh/keel@3.14.1`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.14.0`
+- Image: `amarsingh/keel:3.14.1`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.14.0`
+- Pull: `docker pull amarsingh/keel:3.14.1`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.14.0`
+- Version: `v3.14.1`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.14.0`
+- Usage: `uses: creativemyntra/keel@v3.14.1`
 
 ---
 
@@ -456,7 +456,8 @@ Record in Audit Trail
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
-| 3.14.0 | 2026-07-15 | PENDING RELEASE | Pipeline status web dashboard (KEEL-104): `keel dashboard --port=<N>`, read-only, loopback-only |
+| 3.14.1 | 2026-07-17 | PRODUCTION | Dashboard Host-header allowlist — DNS-rebinding hardening (KEEL-105, closes KEEL-104 LOW-1): guard-first 403/400 contract, 238/238 tests green, 0 HIGH security findings |
+| 3.14.0 | 2026-07-15 | PRODUCTION | Pipeline status web dashboard (KEEL-104): `keel dashboard --port=<N>`, read-only, loopback-only |
 | 3.13.0 | 2026-07-14 | PRODUCTION | Describe command: human-readable story inspection (KEEL-103) |
 | 3.12.0 | 2026-07-09 | PRODUCTION | Install-to-pipeline e2e (KEEL-102), status --all, gate auto-audit, Windows packaging fixes |
 | 3.11.0 | 2026-07-09 | PRODUCTION | Smart economy: .keel/economy.yml owner choices, prescan static-first security, CodeGraph context budget, output caps |
@@ -503,7 +504,7 @@ Record in Audit Trail
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-07-08  
+**Document Version:** 1.9  
+**Last Updated:** 2026-07-17  
 **Status:** PRODUCTION  
-**Next Review:** 2026-10-08 (quarterly)
+**Next Review:** 2026-10-17 (quarterly)

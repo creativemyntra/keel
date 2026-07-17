@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.14.0
+# Keel AI-SDLC Framework v3.14.1
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.14.0 ✅
+# → keel v3.14.1 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -96,6 +96,10 @@ snapshots) is done by a zero-dependency **state engine**
 
 ---
 
+## 🆕 What's New in v3.14.1
+
+- **Dashboard Host-header allowlist — DNS-rebinding hardening (KEEL-105, closes KEEL-104 LOW-1)** — `scripts/keel-dashboard.cjs` now validates the `Host` header before any routing. Only the loopback literals `localhost`, `127.0.0.1`, and `[::1]` are accepted (case-insensitive, optional `:port` suffix). Disallowed hosts get `403 Forbidden`; a missing `Host` header gets `400 Bad Request` per RFC 9112 (ADR-004 D-1). Both rejections use a constant plain-text body with `Content-Type: text/plain; charset=utf-8`, `X-Content-Type-Options: nosniff`, and `Cache-Control: no-store` — no request data echoed, zero filesystem I/O on the rejection path. Guard runs before routing so the renderer is structurally unreachable on rejection. All KEEL-104 invariants preserved: loopback-only bind, HTML-escaping, `EADDRINUSE` handling, `keel-state.cjs` and `bin/keel.js` byte-unchanged. See [Security posture (ADR-003, ADR-004)](#security-posture-adr-003-adr-004) below.
+
 ## 🆕 What's New in v3.14.0
 
 - **`keel dashboard` — pipeline status web dashboard (KEEL-104)** — `node bin/keel.js dashboard [--port=<N>]` serves a local, read-only web view of every story in `.keel/state/` at `http://localhost:7772` (default): story ID, title, scope, current phase by agent name, status badge (COMPLETE / IN PROGRESS / HALTED), and idle time. Auto-refreshes every 30 seconds. Binds to `127.0.0.1` only, performs zero filesystem writes, zero new dependencies. See [Pipeline Dashboard](#pipeline-dashboard) below.
@@ -140,7 +144,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.14.0 ✅
+# → keel v3.14.1 ✅
 ```
 
 ### Method 2: npm Global Package (⏳ not yet published — coming soon)
@@ -365,20 +369,31 @@ jobs:
 A read-only local web view of every story in `.keel/state/` — it never writes to disk.
 
 ```bash
-node bin/keel.js dashboard               # serves http://localhost:7772
-node bin/keel.js dashboard --port=8080   # custom port (equals form via the CLI)
+node scripts/keel-dashboard.cjs --port 8080   # run the server directly (flag is space-separated: --port <N>)
 
-# or run the server script directly (space-separated flag form):
-node scripts/keel-dashboard.cjs --port 8080
+# or via the CLI wrapper (the wrapper parses the equals form only):
+node bin/keel.js dashboard               # serves http://localhost:7772
+node bin/keel.js dashboard --port=8080   # custom port
 ```
+
+> **Flag syntax:** the server script takes the space-separated form `--port <N>`; the
+> `bin/keel.js` wrapper takes `--port=<N>`. Using the wrong form for a surface does not
+> error — the server silently starts on the default port 7772.
 
 On start it prints `Dashboard: http://localhost:<port>`; stop it with Ctrl-C.
 
 - **Columns:** story ID, title, scope, current phase by agent name (e.g. `Phase 11 — Technical Writer`), status badge (COMPLETE / IN PROGRESS / HALTED), idle time — sorted most-recently-active first.
 - **Auto-refresh:** the page reloads every 30 seconds; a corrupt manifest renders as an error row instead of breaking the sweep.
 - **Empty state:** with no stories, the page prompts `Run keel init <story-id> to start.` — the server still runs.
-- **Local-only by design:** binds to `127.0.0.1` (unreachable from the network); all state-derived output is HTML-escaped; strictly read-only (no write endpoints, zero filesystem writes); zero new npm dependencies.
 - **Port in use:** exits with `Error: port <N> is already in use. Use --port to specify a different port.`
+
+#### Security posture (ADR-003, ADR-004)
+
+- **Loopback-only bind:** the server listens on `127.0.0.1` only — it is unreachable from the LAN.
+- **Host-header allowlist (DNS-rebinding guard):** every request's `Host` header must be a loopback literal — `localhost`, `127.0.0.1`, or `[::1]` — matched case-insensitively, with an optional `:port` suffix. A DNS-rebound attacker hostname can never equal a loopback literal, so rebinding requests are rejected before any routing or state read happens.
+- **403 rejection contract:** a disallowed `Host` receives `403 Forbidden` with a constant plain-text body (`Content-Type: text/plain; charset=utf-8`), `X-Content-Type-Options: nosniff`, and `Cache-Control: no-store`. No request data is ever echoed back, and the rejection path performs zero filesystem I/O.
+- **Missing Host is 400:** a request without a `Host` header receives `400 Bad Request` under the same constant-body header contract — it is malformed per RFC 9112, not merely refused (ADR-004 D-1/D-3).
+- **Strictly read-only:** only `GET /` is served (anything else is 404); zero filesystem writes; all state-derived output is HTML-escaped; zero new npm dependencies.
 
 ---
 
@@ -731,10 +746,10 @@ Then:
 
 ---
 
-**Version:** 3.14.0  
-**Released:** 2026-07-15  
+**Version:** 3.14.1  
+**Released:** 2026-07-17  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.14.0 (https://github.com/creativemyntra/keel/releases/tag/v3.14.0)
+**Tag:** v3.14.1 (https://github.com/creativemyntra/keel/releases/tag/v3.14.1)

@@ -1,0 +1,6 @@
+command: node scripts/keel-dashboard.cjs --port 7894
+--- stdout ---
+Dashboard: http://localhost:7894
+
+--- stderr ---
+

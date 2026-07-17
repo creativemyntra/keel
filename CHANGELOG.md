@@ -2,6 +2,17 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.14.1] - 2026-07-17 - DASHBOARD HOST-HEADER ALLOWLIST (KEEL-105)
+
+### Security
+- **Dashboard Host-header allowlist (KEEL-105, closes KEEL-104 LOW-1)** — `scripts/keel-dashboard.cjs` now validates the `Host` header before any routing: only the loopback literals `localhost`, `127.0.0.1`, and `[::1]` are accepted (case-insensitive, optional 1–5-digit `:port` suffix), closing the DNS-rebinding vector recorded in the v3.14.0 security review. Disallowed hosts get `403 Forbidden`; a missing `Host` header gets `400 Bad Request` — malformed per RFC 9112, not merely refused (ADR-004 D-1). Both rejections send a constant plain-text body with `Content-Type: text/plain; charset=utf-8`, `X-Content-Type-Options: nosniff`, and `Cache-Control: no-store`; no request data is echoed and the rejection path performs zero filesystem I/O (ADR-004 D-3). The guard runs before routing, so the renderer is structurally unreachable on rejection (bad Host + `/nope` → 403, not 404). Deliberately no DNS resolution or IP canonicalization (ADR-004 D-2). All KEEL-104 invariants preserved byte-for-byte: loopback-only bind, zero fs writes, HTML-escaping, `EADDRINUSE` handling, `keel-state.cjs` and `bin/keel.js` untouched.
+
+### Added
+- Guard test coverage: allowed/disallowed Host predicate tables (case, suffix-domain, userinfo, unbracketed `::1`, port variants), raw-socket HTTP/1.0 missing-Host case, mutation-verified red phase (6 targeted mutants), and 3 new Playwright E2E tests (`tests/e2e/KEEL-105-dashboard-host.spec.ts`).
+
+### Fixed
+- **Docs: dashboard `--port` flag syntax stated per surface** — the server script (`scripts/keel-dashboard.cjs`) takes the space-separated form `--port <N>`, while the `bin/keel.js` CLI wrapper takes `--port=<N>`; README now documents both explicitly and warns that the wrong form silently falls back to port 7772 (QA-flagged wording discrepancy in the KEEL-105 brief).
+
 ## [3.14.0] - 2026-07-15 - PIPELINE STATUS WEB DASHBOARD (KEEL-104)
 
 ### Added
@@ -456,6 +467,6 @@ MIT - See [LICENSE](LICENSE) for details
 
 ---
 
-Last Updated: 2026-07-07
-Version: 2.1.0
+Last Updated: 2026-07-17
+Version: 3.14.1
 Status: Production Ready ✅

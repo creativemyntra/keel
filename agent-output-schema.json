@@ -9,17 +9,21 @@
     "phase": {
       "type": "integer",
       "minimum": 1,
-      "maximum": 8,
-      "description": "Pipeline phase number (1=product-owner … 8=release-manager)"
+      "maximum": 12,
+      "description": "Pipeline phase number (1=product-owner … 12=release-manager)"
     },
     "agent": {
       "type": "string",
       "enum": [
         "product-owner",
         "business-analyst",
+        "ui-designer",
         "solution-architect",
         "software-engineer",
+        "tdd-red",
+        "tdd-green",
         "qa-engineer",
+        "e2e-engineer",
         "security-engineer",
         "technical-writer",
         "release-manager"

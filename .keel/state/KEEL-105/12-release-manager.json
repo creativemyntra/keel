@@ -1,0 +1,38 @@
+{
+  "phase": 12,
+  "agent": "release-manager",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "QA gate (phase 8): 238/238 tests green — tests/keel-dashboard.test.cjs 129/129, tests/keel-dashboard-host-e2e.test.cjs 19/19, tests/keel-state-describe.test.cjs 44/44, tests/keel-state-describe-e2e.test.cjs 46/46. Zero regressions. Changed-line coverage 100% (58/58 lines). File-level coverage 95.41% stmts — well above 80% gate. AC-5 PASS, AC-6 PASS (19/19 ≥ 19 required).",
+    "AC traceability: all 8 ACs from 02-business-analyst.json accounted for. AC-1/2/3/4/5/6 verified by phases 7/8/9/10; AC-7 by phase 11 (README security-posture subsection + CHANGELOG entry confirmed in 11-technical-writer.json); AC-8 completed this phase (G-6 stamp applied).",
+    "Security gate (phase 10): 0 HIGH, 0 MEDIUM, 1 LOW (pre-existing NON-BLOCKING per G-1: 404-branch omits nosniff/no-store/charset — KEEL-104 frozen code, owner phase-12 open-item ledger, due 2026-08-16). DNS-rebinding threat CLOSED. VERDICT: PASS — no HIGH findings block release.",
+    "CHANGELOG.md: '[Unreleased]' heading replaced with '## [3.14.1] - 2026-07-17 - DASHBOARD HOST-HEADER ALLOWLIST (KEEL-105)'. Entry present and correctly dated.",
+    "README.md: updated header title, verify badge, footer version/date/tag, and 'What's New in v3.14.1' section added describing the Host-header allowlist with ADR-004 references. AC-7 security posture subsection already in place from phase 11.",
+    "G-6 version stamp applied — all 7 locations bumped 3.14.0 → 3.14.1: (1) package.json version field; (2) bin/keel.js VERSION constant + comment; (3) .claude-plugin/plugin.json version; (4) .claude-plugin/marketplace.json plugins[0].version; (5) README.md header/badge/verify-output/footer; (6) CHANGELOG.md [Unreleased] → [3.14.1] - 2026-07-17; (7) TECHNICAL-SPECIFICATIONS.md header + version-history table new row + deployment-channel versions + Last Updated date.",
+    "TECHNICAL-SPECIFICATIONS.md version history table: 3.14.0 row status updated to PRODUCTION; new 3.14.1 row added with release date 2026-07-17 and notes summarising the Host-header allowlist, test counts, and security verdict.",
+    "PR gate: pipeline completed, human approval required before merge to prod per G-2 and GUARDRAILS.md. No merge executed by this agent.",
+    "Open-item ledger (non-blocking, G-1): (1) 404-branch header gap (nosniff/no-store/charset) in keel-dashboard.cjs — pre-existing KEEL-104 frozen code, owner: follow-up chore, due 2026-08-16 (carried from phase 10). No P0/P1 blockers open for KEEL-105.",
+    "VERDICT: GO — all gates passed, 0 HIGH security findings, 238/238 tests green, G-6 stamp complete, open-item ledger presented."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6", "AC-7", "AC-8"],
+  "decisions": [
+    "Version assigned as 3.14.1 (security patch): only keel-dashboard.cjs guard code changed, no new public API, all pre-existing invariants preserved — patch increment is correct per semver.",
+    "Release date stamped 2026-07-17 (today per environment context) across CHANGELOG, README footer, and TECHNICAL-SPECIFICATIONS.",
+    "TECHNICAL-SPECIFICATIONS.md 3.14.0 row status updated from 'PENDING RELEASE' to 'PRODUCTION' as that version was released 2026-07-16 per memory entry keel-104-v3140-release-pending.md.",
+    "Classified the 404-branch header gap as NON-BLOCKING (G-1): it is pre-existing KEEL-104 code explicitly frozen byte-unchanged by AC-4; fixing it here would violate the approved invariant. Recorded in open-item ledger with due date 2026-08-16.",
+    "PR approval gate recorded as PENDING HUMAN — agent cannot self-approve per GUARDRAILS.md G-2. GO verdict issued conditioned on human approval before merge."
+  ],
+  "artifacts": [
+    "package.json",
+    "bin/keel.js",
+    ".claude-plugin/plugin.json",
+    ".claude-plugin/marketplace.json",
+    "README.md",
+    "CHANGELOG.md",
+    "TECHNICAL-SPECIFICATIONS.md"
+  ],
+  "next_phase": null,
+  "blockers": [],
+  "timestamp": "2026-07-17T10:45:00Z"
+}

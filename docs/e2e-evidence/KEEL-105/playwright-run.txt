@@ -1,0 +1,19 @@
+
+Running 14 tests using 2 workers
+
+  ✓   2 tests\e2e\KEEL-104-dashboard.spec.ts:154:3 › KEEL-104 dashboard — real repo state via `keel dashboard --port` › AC-1/AC-5: startup stdout announces overridden port (14ms)
+  ✓   1 tests\e2e\KEEL-105-dashboard-host.spec.ts:136:3 › KEEL-105 dashboard host allowlist — allowed hosts via real browser › AC-1: browser at http://localhost:<port> (Host: localhost:<port>) gets 200 and full dashboard (1.6s)
+  ✓   3 tests\e2e\KEEL-104-dashboard.spec.ts:158:3 › KEEL-104 dashboard — real repo state via `keel dashboard --port` › AC-2: page loads with title, header and a 6-column table of every story in .keel/state (1.5s)
+  ✓   4 tests\e2e\KEEL-105-dashboard-host.spec.ts:158:3 › KEEL-105 dashboard host allowlist — allowed hosts via real browser › AC-1: browser at http://127.0.0.1:<port> (Host: 127.0.0.1:<port>) gets 200 and full dashboard (839ms)
+  ✓   5 tests\e2e\KEEL-104-dashboard.spec.ts:200:3 › KEEL-104 dashboard — real repo state via `keel dashboard --port` › AC-2: status badges show correct state and color per story (1.2s)
+  ✓   7 tests\e2e\KEEL-104-dashboard.spec.ts:235:3 › KEEL-104 dashboard — real repo state via `keel dashboard --port` › AC-3: stories sorted by updated_at descending (899ms)
+  ✓   8 tests\e2e\KEEL-104-dashboard.spec.ts:243:3 › KEEL-104 dashboard — real repo state via `keel dashboard --port` › AC-4: auto-refresh meta tag present with 30s interval (960ms)
+  ✓   6 tests\e2e\KEEL-105-dashboard-host.spec.ts:178:3 › KEEL-105 dashboard host allowlist — allowed hosts via real browser › AC-1/AC-2 boundary: allowed host + unknown path still routes to 404 (guard does not swallow routing) (1.2s)
+  ✓   9 tests\e2e\KEEL-104-dashboard.spec.ts:249:3 › KEEL-104 dashboard — real repo state via `keel dashboard --port` › AC-5: footer shows the overridden port (842ms)
+  ✓  10 tests\e2e\KEEL-104-dashboard.spec.ts:254:3 › KEEL-104 dashboard — real repo state via `keel dashboard --port` › unknown path returns 404 Not found (1.2s)
+  ✓  11 tests\e2e\KEEL-104-dashboard.spec.ts:286:3 › KEEL-104 dashboard — empty state (no .keel/state directory) › AC-6: shows "No stories found." with keel init hint; no table rendered (1.4s)
+  ✓  12 tests\e2e\KEEL-104-dashboard.spec.ts:335:3 › KEEL-104 dashboard — XSS safety (malicious manifest content) › malicious title is escaped: rendered as text, no script/img injected, no dialogs (1.3s)
+  ✓  13 tests\e2e\KEEL-104-dashboard.spec.ts:399:3 › KEEL-104 dashboard — badge color truth table (fixture with all three states) › AC-2: COMPLETE green, IN PROGRESS amber, HALTED red — all three asserted (695ms)
+  ✓  14 tests\e2e\KEEL-104-dashboard.spec.ts:440:3 › KEEL-104 dashboard — default port (no --port flag) › AC-1: defaults to port 7772 and serves the dashboard (571ms)
+
+  14 passed (21.9s)

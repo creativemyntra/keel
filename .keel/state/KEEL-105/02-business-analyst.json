@@ -1,0 +1,46 @@
+{
+  "phase": 2,
+  "agent": "business-analyst",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "Functional spec elaborated in docs/analysis/KEEL-105-analysis.md: pure exported predicate (isAllowedHost) validates req.headers.host FIRST in the startDashboard() request handler of scripts/keel-dashboard.cjs, before GET-/ routing and the 404 branch — readStories()/generateHTML() unreachable on rejection (AC-2).",
+    "Validation algorithm (analysis §1 FS-3): lowercase value, parse bracketed [::1] vs plain host, strip optional 1-5-digit :port suffix, exact-match against {localhost, 127.0.0.1, [::1]}. Literal string comparison only — no DNS resolution, no IP/IPv6 canonicalization (AC-1).",
+    "Fail-closed rule (analysis §3 BR-2): any malformed Host rejects — empty port, non-numeric port, extra colons, unbracketed ::1, trailing dot, userinfo@, unclosed bracket, expanded IPv6 form, empty string.",
+    "Rejection contract (analysis §1 FS-4): 403, text/plain charset=utf-8, short constant body, zero request data echoed in body or headers (AC-2). Recommend retaining X-Content-Type-Options: nosniff for parity with the 200 path.",
+    "Missing-Host (HTTP/1.0 clients) is AC-3: architect decides 400 vs 403 in phase 4 and records rationale; same static-plain-text no-echo constraints apply either way. Documented as OQ-1 in analysis §6.",
+    "22 edge cases enumerated as an allow/reject table in analysis §4, including case variants (LOCALHOST), port variants (:65535, empty, alpha, double-colon), IPv6 bracket forms, DNS-rebinding hostnames (evil.com, localhost.evil.com, 127.0.0.1.evil.com), and non-GET/non-root paths with bad Host (403 precedes 404).",
+    "Invariants confirmed against current scripts/keel-dashboard.cjs source (AC-4): listen(port, '127.0.0.1') loopback bind, zero fs writes, escHtml, EADDRINUSE stderr+exit(1), CLI --port parsing (parsePort), keel-state.cjs byte-untouched. Only the request handler plus one new exported helper change.",
+    "Test mapping (AC-5, AC-6) in analysis §5: new unit table-tests for the predicate plus handler-level renderer-not-reached assertions in tests/keel-dashboard.test.cjs (70 existing); node-level E2E via http.request with explicit Host header for allowed/disallowed/port/missing-Host cases; tests/e2e/KEEL-104-dashboard.spec.ts (10 Playwright) stays green unchanged — browsers cannot spoof Host, so node E2E carries the disallowed cases.",
+    "Regression baseline (AC-5): tests/keel-dashboard.test.cjs (70), tests/keel-state-describe.test.cjs (44), tests/keel-state-describe-e2e.test.cjs (46, verified 46/46 passing), tests/e2e/KEEL-104-dashboard.spec.ts (10). Note: the brief's stated count of 45 with 1 known pre-existing KEEL-103 failure was stale — the actual suite contains 46 tests and all 46 pass; downstream phases must carry 46/46 passing as the true baseline, not the brief's figures.",
+    "AC-7 (README security posture + CHANGELOG) and AC-8 (release-manager version proposal + full G-6 stamp checklist) are out-of-scope-for-this-phase; owning phases: technical-writer and release-manager respectively (G-5 named handoff).",
+    "Open questions for solution-architect, all NON-BLOCKING per G-1 (analysis §6): OQ-1 missing-Host status choice (AC-3, owner phase 4); OQ-2 whether port suffix must equal the bound port — brief literal accepts any numeric port, stricter is still AC-1-compliant (owner phase 4); OQ-3 exact 403 body text and nosniff on rejections (owner phase 4).",
+    "Security/PII flag (analysis §7): security-hardening story; no payment/auth/PII data — dashboard renders story metadata only, loopback-bound. No data-model changes, so no architect coordination needed on data model.",
+    "Guardrails compliance: G-1 (3 open questions classified non-blocking with owner phase 4), G-3 (no secrets, paths only), G-4 (no test runs claimed — none executed this phase; the 46/46 figure comes from the handshake gate's verified count), G-5 (all 8 ACs addressed or explicitly assigned to owning phase), G-6 (no commit/deploy), G-7 (no memory writes)."
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5",
+    "AC-6",
+    "AC-7",
+    "AC-8"
+  ],
+  "decisions": [
+    "Host validation placed before ALL routing (including the 404 branch) — sole way to guarantee AC-2's renderer-never-reached and keep 404 reachable only by allowed hosts.",
+    "Fail-closed parsing: every malformed Host value rejects — security hardening must not guess intent; matches brief line 10.",
+    "Literal allowlist comparison, no canonicalization — [0:0:0:0:0:0:0:1], 127.0.0.2, localhost. all reject; browsers send the literal forms, and canonicalization would widen the attack surface for zero benefit.",
+    "New predicate exported via module.exports for direct CJS unit testing — follows the existing escHtml/parsePort pattern in scripts/keel-dashboard.cjs; no new files, honoring the single-file change surface.",
+    "Disallowed-Host E2E coverage assigned to node http.request tests, not Playwright — browsers cannot set a spoofed Host header; existing 10 Playwright tests remain the unchanged-behavior regression check.",
+    "Did not decide AC-3 status code, port-strictness, or 403 body text — brief assigns these to the architect; recorded as OQ-1..OQ-3 with default recommendations rather than inventing business rules.",
+    "Corrected regression baseline from the brief's stale figures (45 tests, 1 known KEEL-103 failure) to the verified reality (46 tests, 46/46 passing) per handshake-gate finding — downstream phases inherit the verified baseline."
+  ],
+  "artifacts": [
+    "docs/analysis/KEEL-105-analysis.md"
+  ],
+  "next_phase": 3,
+  "blockers": [],
+  "timestamp": "2026-07-16T00:00:00Z"
+}

@@ -104,6 +104,28 @@ function escHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// Loopback-literal Host allowlist (ADR-004, KEEL-105 DNS-rebinding guard).
+// Anchored — suffix domains (localhost.evil.com), userinfo (@), trailing dot,
+// unbracketed ::1, expanded IPv6, empty/alpha/extra-colon ports, whitespace
+// all fail closed. Deliberately NO DNS resolution and NO IP canonicalization
+// (127.0.0.2, 0x7f.0.0.1 reject): browsers send these literal forms, and
+// canonicalizing would widen the attack surface (ADR-004 D-2).
+const ALLOWED_HOST_RE = /^(localhost|127\.0\.0\.1|\[::1\])(:\d{1,5})?$/;
+
+/**
+ * Fail-closed Host-header allowlist predicate.
+ * Allows only loopback literals — localhost, 127.0.0.1, [::1] — with an
+ * optional 1-5-digit port suffix, case-insensitive. Any 1-5-digit port is
+ * accepted (syntax-only): the rebinding vector lives entirely in the host
+ * part, and the client already connected to the real bound port (ADR-004).
+ * Non-string input (e.g. undefined from a missing header) returns false.
+ * @param {*} host  Raw Host header value (req.headers.host).
+ * @returns {boolean}
+ */
+function isAllowedHost(host) {
+  return typeof host === 'string' && ALLOWED_HOST_RE.test(host.toLowerCase());
+}
+
 /**
  * Renders a colored status badge as an inline HTML span.
  * Colors: COMPLETE=#16a34a HALTED=#dc2626 IN PROGRESS=#d97706
@@ -355,6 +377,25 @@ ${bodyContent}
 // ─── HTTP server ──────────────────────────────────────────────────────────────
 
 /**
+ * Writes a static plain-text rejection response (400/403). The body is
+ * always a constant string — never request data (Host value, URL, method),
+ * so there is no reflected-XSS / log-injection surface (ADR-004 D-3).
+ * nosniff for parity with the 200 path; no-store so no intermediary ever
+ * caches a rejection. Performs zero fs I/O (zero-fs-writes invariant).
+ * @param {import('http').ServerResponse} res
+ * @param {number} status  400 or 403.
+ * @param {string} body    Constant reason phrase.
+ */
+function rejectRequest(res, status, body) {
+  res.writeHead(status, {
+    'Content-Type':           'text/plain; charset=utf-8',
+    'X-Content-Type-Options': 'nosniff',
+    'Cache-Control':          'no-store',
+  });
+  res.end(body);
+}
+
+/**
  * Creates and starts the HTTP server. Writes to stdout/stderr only —
  * never to .keel/state/. Blocks the process until killed (Ctrl-C).
  * Binds to 127.0.0.1 (loopback only) — security requirement (ADR-003 §13.1):
@@ -363,6 +404,22 @@ ${bodyContent}
  */
 function startDashboard({ port, stateDir }) {
   const server = http.createServer((req, res) => {
+    // Host-header allowlist guard (ADR-004) — MUST stay the first statements
+    // so readStories()/generateHTML() are structurally unreachable on
+    // rejection and the 404 branch is reachable only with a valid Host.
+    const host = req.headers.host; // Node keeps the FIRST value on duplicates
+    if (host === undefined) {
+      // RFC 9112 §3.2: a Host-less request is malformed → 400. Node's
+      // HTTP/1.1 parser already 400s these before the handler runs; this
+      // branch covers HTTP/1.0 / raw-socket clients so both layers present
+      // one consistent contract (ADR-004 D-1).
+      rejectRequest(res, 400, 'Bad Request');
+      return;
+    }
+    if (!isAllowedHost(host)) {
+      rejectRequest(res, 403, 'Forbidden');
+      return;
+    }
     if (req.method === 'GET' && (req.url === '/' || req.url === '')) {
       const stories = readStories(stateDir);
       const html    = generateHTML(stories, port);
@@ -410,6 +467,7 @@ main();
 
 module.exports = {
   escHtml,
+  isAllowedHost,
   idleTime,
   formatIdle,
   deriveStatus,

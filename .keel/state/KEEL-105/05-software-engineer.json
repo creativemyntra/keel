@@ -1,0 +1,36 @@
+{
+  "phase": 5,
+  "agent": "software-engineer",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "Implemented AC-1 (D-2): ALLOWED_HOST_RE at scripts/keel-dashboard.cjs:113 and pure predicate isAllowedHost() at :125, exported at :470 (module.exports gains exactly one key). Anchored case-insensitive allowlist {localhost, 127.0.0.1, [::1]} with optional 1-5-digit port; no DNS, no canonicalization.",
+    "Implemented AC-2 (D-3): guard is the first statements of the http.createServer callback in startDashboard(); disallowed Host -> rejectRequest(res, 403, 'Forbidden') at scripts/keel-dashboard.cjs:420 via helper at :389. Guard precedes GET-/ and 404 routing, so readStories()/generateHTML() are structurally unreachable on rejection; constant body, zero request echo.",
+    "Implemented AC-3 (D-1): missing Host (host === undefined) -> rejectRequest(res, 400, 'Bad Request') at scripts/keel-dashboard.cjs:416 with RFC 9112 s3.2 rationale in code comment; covers HTTP/1.0 / raw-socket clients for layer-consistency with Node's parser.",
+    "AC-4 verified this session: git status/diff clean for scripts/keel-state.cjs and bin/keel.js (byte-untouched); diff of keel-dashboard.cjs is additive-only — loopback bind (:449), EADDRINUSE handler, parsePort, escHtml, and the 404 branch byte-unchanged; rejection path performs zero fs I/O.",
+    "Both rejection responses send exactly Content-Type: text/plain; charset=utf-8, X-Content-Type-Options: nosniff, Cache-Control: no-store (D-3/OQ-3) — confirmed in live responses this session.",
+    "Predicate table verified by execution: 9 allow + 19 reject (incl. localhost:, localhost:7772:80, evil.com:7772, localhost.evil.com, 127.0.0.1.evil.com, user@localhost, localhost., ::1 unbracketed, [0:0:0:0:0:0:0:1], [::1, [::1]x, whitespace, 127.0.0.2, 0x7f.0.0.1, 6-digit port) + 5 non-string inputs — ALL PASS.",
+    "Live HTTP contract verified on port 7799: allowed Host -> 200 with unchanged 200-path headers; Host: evil.com -> 403 'Forbidden' with the 3 rejection headers and no echo; Host: LOCALHOST:7799 -> 200 (case-insensitive); bad Host + non-/ path -> 403 not 404; valid Host + /nope -> 404 'Not found' Content-Type: text/plain (unchanged); raw-socket HTTP/1.0 without Host -> 400 'Bad Request'.",
+    "Regression (AC-5, node suites) run this session with zero test modifications: tests/keel-dashboard.test.cjs 70/70, tests/keel-state-describe.test.cjs 44/44, tests/keel-state-describe-e2e.test.cjs 46/46 — all passed. Playwright suite (10) is phase-9 scope, not run here.",
+    "Security shift-left: npm audit --audit-level=high -> found 0 vulnerabilities; zero new dependencies added (regex + built-ins only). composer audit N/A (no PHP in change surface); snyk/sonar not configured.",
+    "node --check scripts/keel-dashboard.cjs passes. eslint: NOT RUN — repository has no ESLint configuration file (verified: eslint exits asking for config); static-analysis claim beyond syntax check is therefore not applicable.",
+    "Test intelligence for phase 6 (full detail in docs/plans/KEEL-105-implementation-plan.md): isAllowedHost table test over analysis s4 rows plus undefined/non-string/''; handler tests with mocked req/res asserting 400/403 exact bodies, exact 3 rejection headers, no request data echoed, readStories/generateHTML NOT invoked on rejection, 404-after-valid-Host ordering; E2E missing-Host case MUST use raw socket / HTTP/1.0 request line (D-7 — Node's HTTP/1.1 parser pre-rejects Host-less requests before the handler); keep the existing monkey-patch suppress-pattern, do NOT add a require.main guard (D-6).",
+    "Impact set / retest list for tdd-red: scripts/keel-dashboard.cjs (changed), tests/keel-dashboard.test.cjs (70, extend), tests/keel-state-describe.test.cjs (44, retest), tests/keel-state-describe-e2e.test.cjs (46, retest), tests/KEEL-104-dashboard.spec.ts (10, phase-9 retest), bin/keel.js (spawner, no change needed). .keel/graph/codegraph.json is PHP-only — manual impact set adopted from 04-solution-architect.json.",
+    "Design debt left in place per D-6 (not fixed, recorded): main() runs unconditionally at require time in scripts/keel-dashboard.cjs — follow-up chore for a require.main guard after the AC-5 baseline unfreezes.",
+    "No test files created or modified this phase; no doc changes beyond the mandated implementation-plan artifact; no commits made; pre-existing working-tree modifications (KEEL-105 state files, KEEL-103 e2e evidence, agent-output-schema.json) were present before this phase and were not touched."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5"],
+  "decisions": [
+    "Adopted architect design D-1..D-7 verbatim — predicate, regex, statuses, bodies, headers, and guard placement match docs/design/KEEL-105-design.md exactly; no deviations.",
+    "rejectRequest() helper intentionally NOT exported — module.exports gains only isAllowedHost, per the architect's one-new-key contract; helper is covered indirectly via handler tests.",
+    "Rejection bodies are inline constant literals ('Forbidden', 'Bad Request') matching the existing 'Not found' style parity mandated by D-3, rather than module-level constants — keeps the diff minimal and the contract byte-exact.",
+    "AC-6, AC-7, AC-8 are NOT descoped — they are downstream-phase deliverables per the approved brief and architect handoff: AC-6 (new unit + E2E tests) owned by phase 6 tdd-red using the test intelligence in this output and docs/plans/KEEL-105-implementation-plan.md; AC-7 (README security posture + CHANGELOG) owned by phase 11 technical-writer; AC-8 (security patch version proposal, e.g. 3.14.1, with G-6 stamp checklist) owned by phase 12 release-manager."
+  ],
+  "artifacts": [
+    "scripts/keel-dashboard.cjs",
+    "docs/plans/KEEL-105-implementation-plan.md"
+  ],
+  "next_phase": 6,
+  "blockers": [],
+  "timestamp": "2026-07-16T00:00:00Z"
+}

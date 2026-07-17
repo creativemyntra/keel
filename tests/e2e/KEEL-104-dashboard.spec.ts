@@ -30,6 +30,7 @@ const EVIDENCE_DIR = path.join(REPO_ROOT, 'docs', 'e2e-evidence', 'KEEL-104');
 const CLI_PORT = Number(process.env.KEEL_E2E_PORT ?? 7891);
 const EMPTY_PORT = CLI_PORT + 1; // 7892
 const XSS_PORT = CLI_PORT + 2;   // 7893
+const BADGE_PORT = CLI_PORT + 4; // 7895 (+3 = 7894 is reserved by the KEEL-105 spec)
 const DEFAULT_PORT = 7772;       // AC-1 default
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -84,6 +85,37 @@ async function waitForServer(port: number, timeoutMs = 15000): Promise<void> {
   throw new Error(`Server on port ${port} did not respond within ${timeoutMs}ms`);
 }
 
+/**
+ * KEEL-105 maintenance: expectations for the "real repo state" block are now
+ * derived from the live manifests instead of a hard-coded July-2026 snapshot
+ * (which rotted the moment story KEEL-105 was initialised). This mirrors only
+ * the trivial, documented sort contract (updated_at DESC, ISO-8601
+ * lexicographic; error rows last) — not the server's rendering logic.
+ */
+interface ExpectedStory { id: string; updated_at: string; error: boolean }
+
+function readExpectedStories(): ExpectedStory[] {
+  const stateDir = path.join(REPO_ROOT, '.keel', 'state');
+  const rows: ExpectedStory[] = [];
+  for (const ent of fs.readdirSync(stateDir, { withFileTypes: true })) {
+    if (!ent.isDirectory()) continue;
+    try {
+      const m = JSON.parse(
+        fs.readFileSync(path.join(stateDir, ent.name, 'manifest.json'), 'utf8'),
+      );
+      rows.push({ id: m.story_id || ent.name, updated_at: m.updated_at || '', error: false });
+    } catch {
+      rows.push({ id: ent.name, updated_at: '', error: true });
+    }
+  }
+  rows.sort((a, b) => {
+    if (a.error && !b.error) return 1;
+    if (!a.error && b.error) return -1;
+    return (b.updated_at || '').localeCompare(a.updated_at || '');
+  });
+  return rows;
+}
+
 function collectPageErrors(page: import('@playwright/test').Page): string[] {
   const errors: string[] = [];
   page.on('console', (msg) => {
@@ -123,8 +155,9 @@ test.describe('KEEL-104 dashboard — real repo state via `keel dashboard --port
     expect(server.stdout).toContain(`Dashboard: http://localhost:${CLI_PORT}`);
   });
 
-  test('AC-2: page loads with title, header and a 6-column table of all 4 stories', async ({ page }) => {
+  test('AC-2: page loads with title, header and a 6-column table of every story in .keel/state', async ({ page }) => {
     const errors = collectPageErrors(page);
+    const expected = readExpectedStories();
     await page.goto(BASE);
 
     await expect(page).toHaveTitle('Keel Pipeline Dashboard');
@@ -135,19 +168,27 @@ test.describe('KEEL-104 dashboard — real repo state via `keel dashboard --port
       'Story ID', 'Title', 'Scope', 'Current Phase', 'Status', 'Idle Time',
     ]);
 
-    // 4 story rows (KEEL-101..104 exist in .keel/state/)
-    await expect(page.locator('tbody tr')).toHaveCount(4);
+    // one row per story directory in .keel/state/ (derived, not hard-coded)
+    expect(expected.length).toBeGreaterThanOrEqual(4);
+    await expect(page.locator('tbody tr')).toHaveCount(expected.length);
 
-    // KEEL-104 row: title, scope, phase name (not number only), badge, idle
+    // KEEL-104 row: title, scope, phase label, badge — the story is closed, so
+    // its manifest (current_phase 13 → plain "Phase 13" label, COMPLETE) is frozen.
     const row104 = page.locator('tbody tr', { hasText: 'KEEL-104' });
     await expect(row104.locator('td').nth(1)).toHaveText('Add pipeline status web dashboard');
     await expect(row104.locator('td').nth(2)).toHaveText('feature');
-    await expect(row104.locator('td').nth(3)).toHaveText('Phase 9 — E2E Engineer');
-    await expect(row104.locator('td').nth(4).locator('span')).toHaveText('IN PROGRESS');
+    await expect(row104.locator('td').nth(3)).toHaveText('Phase 13');
+    await expect(row104.locator('td').nth(4).locator('span')).toHaveText('COMPLETE');
+
+    // Every phase cell uses the designed label format
+    const phaseCells = await page.locator('tbody tr td:nth-child(4)').allTextContents();
+    for (const label of phaseCells) {
+      expect(label.trim()).toMatch(/^(Phase \d+( — .+)?|unknown)$/);
+    }
 
     // Idle time convention: "Xh Ym" (>= 60 min) or "Xm Ys" (< 60 min) or "unknown"
     const idleCells = await page.locator('tbody tr td:nth-child(6)').allTextContents();
-    expect(idleCells).toHaveLength(4);
+    expect(idleCells).toHaveLength(expected.length);
     for (const idle of idleCells) {
       expect(idle.trim()).toMatch(/^(\d+h \d+m|\d+m \d+s|unknown)$/);
     }
@@ -159,24 +200,44 @@ test.describe('KEEL-104 dashboard — real repo state via `keel dashboard --port
   test('AC-2: status badges show correct state and color per story', async ({ page }) => {
     await page.goto(BASE);
 
-    // KEEL-104: 8 of 12 phase files -> IN PROGRESS (amber #d97706)
-    const badge104 = page.locator('tbody tr', { hasText: 'KEEL-104' }).locator('td').nth(4).locator('span');
-    await expect(badge104).toHaveText('IN PROGRESS');
-    await expect(badge104).toHaveCSS('background-color', 'rgb(217, 119, 6)');
-
-    // KEEL-101/102/103: all expected phase files present -> COMPLETE (green #16a34a)
-    for (const id of ['KEEL-101', 'KEEL-102', 'KEEL-103']) {
+    // KEEL-101..104 are closed stories: all expected phase files are present
+    // on disk forever -> COMPLETE (green #16a34a). Frozen facts, safe to pin.
+    for (const id of ['KEEL-101', 'KEEL-102', 'KEEL-103', 'KEEL-104']) {
       const badge = page.locator('tbody tr', { hasText: id }).locator('td').nth(4).locator('span');
       await expect(badge).toHaveText('COMPLETE');
       await expect(badge).toHaveCSS('background-color', 'rgb(22, 163, 74)');
+    }
+
+    // Full badgeHtml() text -> background-color mapping, asserted in the
+    // browser over EVERY rendered badge (scripts/keel-dashboard.cjs lines
+    // 135-140). The unit suite (tests/keel-dashboard.test.cjs) asserts badge
+    // TEXT only, so this browser-level check is the sole guard on the colors.
+    // Deriving the expected color from each badge's own text at test time
+    // keeps the assertion exact for in-flight stories (KEEL-105, KEEL-106+)
+    // regardless of which state they are in when the suite runs. Error rows
+    // render an em-dash instead of a badge span, hence the valid-row count.
+    const BADGE_COLORS: Record<string, string> = {
+      'COMPLETE':    'rgb(22, 163, 74)',   // #16a34a green
+      'IN PROGRESS': 'rgb(217, 119, 6)',   // #d97706 amber
+      'HALTED':      'rgb(220, 38, 38)',   // #dc2626 red
+    };
+    const badgeLocator = page.locator('tbody tr td:nth-child(5) span');
+    const badgeCount = await badgeLocator.count();
+    expect(badgeCount).toBe(readExpectedStories().filter((s) => !s.error).length);
+    for (let i = 0; i < badgeCount; i++) {
+      const badge = badgeLocator.nth(i);
+      const text = (await badge.textContent())?.trim() ?? '';
+      expect(Object.keys(BADGE_COLORS)).toContain(text);
+      await expect(badge).toHaveCSS('background-color', BADGE_COLORS[text]);
     }
   });
 
   test('AC-3: stories sorted by updated_at descending', async ({ page }) => {
     await page.goto(BASE);
     const ids = await page.locator('tbody tr td:first-child').allTextContents();
-    // manifest updated_at: 104=07-14T15:57, 103=07-14T10:14, 102=07-09T17:43, 101=07-09T14:03
-    expect(ids.map((s) => s.trim())).toEqual(['KEEL-104', 'KEEL-103', 'KEEL-102', 'KEEL-101']);
+    // Expected order derived from live manifests (updated_at DESC, error rows last)
+    const expected = readExpectedStories().map((s) => s.id);
+    expect(ids.map((s) => s.trim())).toEqual(expected);
   });
 
   test('AC-4: auto-refresh meta tag present with 30s interval', async ({ page }) => {
@@ -291,6 +352,67 @@ test.describe('KEEL-104 dashboard — XSS safety (malicious manifest content)', 
     expect(dialogCount).toBe(0);
     expect(errors).toEqual([]);
     await page.screenshot({ path: path.join(EVIDENCE_DIR, 'xss-escaped.png'), fullPage: true });
+  });
+});
+
+// ─── AC-2 — badge color truth table (deterministic fixture) ──────────────────
+//
+// The live-repo badge test above derives expected colors from whatever badge
+// text is rendered, so a state absent from the repo at run time (e.g. HALTED,
+// or IN PROGRESS once every story closes) would not be exercised there. This
+// fixture pins one story per deriveStatus() state so all three text->color
+// pairs are asserted in the browser on every run, independent of repo state.
+
+test.describe('KEEL-104 dashboard — badge color truth table (fixture with all three states)', () => {
+  let server: ServerHandle;
+  let tmpDir: string;
+  const BASE = `http://localhost:${BADGE_PORT}`;
+
+  test.beforeAll(async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'keel104-badges-'));
+    const stateDir = path.join(tmpDir, '.keel', 'state');
+    const now = new Date().toISOString();
+    const mkStory = (id: string, extra: Record<string, unknown>, phaseFiles: string[]) => {
+      const dir = path.join(stateDir, id);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({
+        story_id: id, title: `${id} fixture`, scope: 'feature',
+        expected_phases: [1, 2], current_phase: 2, updated_at: now, ...extra,
+      }, null, 2));
+      for (const f of phaseFiles) fs.writeFileSync(path.join(dir, f), '{}');
+    };
+    mkStory('FIX-COMPLETE', {}, ['01-a.json', '02-b.json']); // all expected phases done
+    mkStory('FIX-PROGRESS', {}, ['01-a.json']);              // partial -> IN PROGRESS
+    mkStory('FIX-HALTED', { halted: true }, ['01-a.json']);  // manifest.halted -> HALTED
+    server = startServer(
+      [path.join(REPO_ROOT, 'scripts', 'keel-dashboard.cjs'), '--port', String(BADGE_PORT)],
+      tmpDir,
+    );
+    await waitForServer(BADGE_PORT);
+  });
+
+  test.afterAll(() => {
+    killTree(server.proc);
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test('AC-2: COMPLETE green, IN PROGRESS amber, HALTED red — all three asserted', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await page.goto(BASE);
+
+    const cases: Array<[string, string, string]> = [
+      ['FIX-COMPLETE', 'COMPLETE',    'rgb(22, 163, 74)'],  // #16a34a
+      ['FIX-PROGRESS', 'IN PROGRESS', 'rgb(217, 119, 6)'],  // #d97706
+      ['FIX-HALTED',   'HALTED',      'rgb(220, 38, 38)'],  // #dc2626
+    ];
+    for (const [id, text, color] of cases) {
+      const badge = page.locator('tbody tr', { hasText: id }).locator('td').nth(4).locator('span');
+      await expect(badge).toHaveText(text);
+      await expect(badge).toHaveCSS('background-color', color);
+    }
+
+    expect(errors).toEqual([]);
+    await page.screenshot({ path: path.join(EVIDENCE_DIR, 'ac2-badge-color-truth-table.png'), fullPage: true });
   });
 });
 

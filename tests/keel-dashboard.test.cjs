@@ -934,6 +934,427 @@ function spawnEngine(cwd, ...args) {
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// KEEL-105 — Host-header allowlist (DNS-rebinding guard, ADR-004)
+//
+// Appended by phase 6 (tdd-red). The 70 KEEL-104 baseline tests above are the
+// frozen AC-5 baseline and MUST NOT be modified.
+//
+// Assert-name prefix: "K105 AC-n ..." (KEEL-105 acceptance criteria — distinct
+// from the KEEL-104 "AC-n" names above).
+//
+// Red-check hook: KEEL_DASHBOARD_MUTANT=<abs path> points ONLY the KEEL-105
+// tests below at a mutated copy of keel-dashboard.cjs, so every new test can
+// be proven meaningful (it must FAIL when the guard is neutered). The baseline
+// tests above always run against the real module. Production source is never
+// modified on disk — mutants are generated into os.tmpdir() by the phase-6
+// verification run.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const K105_MUTANT = process.env.KEEL_DASHBOARD_MUTANT || null;
+let k105mod;
+if (K105_MUTANT) {
+  // A mutant copy also calls main() at require time (design debt D-6) —
+  // suppress its listen() exactly like the top-of-file pattern.
+  const saved = http.createServer;
+  http.createServer = function (handler) {
+    const srv = _realCreateServer(handler);
+    srv.listen = function () { return srv; };
+    return srv;
+  };
+  k105mod = require(K105_MUTANT);
+  http.createServer = saved;
+} else {
+  k105mod = require(DASHBOARD); // cache hit — real module already loaded above
+}
+
+const k105IsAllowedHost  = k105mod.isAllowedHost;
+const k105StartDashboard = k105mod.startDashboard;
+
+/**
+ * Captures the request handler that startDashboard registers, without ever
+ * binding a port. Returns { handler, listenArgs }.
+ */
+function k105Capture(stateDir, port) {
+  let handler    = null;
+  let listenArgs = null;
+  const saved = http.createServer;
+  http.createServer = (h) => {
+    handler = h;
+    return {
+      on()           { return this; },
+      listen(...a)   { listenArgs = a; return this; },
+    };
+  };
+  k105StartDashboard({ port: port || 7772, stateDir });
+  http.createServer = saved;
+  return { handler, listenArgs };
+}
+
+/** Minimal ServerResponse double — records status, headers, body. */
+function k105MakeRes() {
+  return {
+    statusCode: null,
+    headers:    null,
+    body:       '',
+    ended:      false,
+    writeHead(status, headers) { this.statusCode = status; this.headers = headers || {}; },
+    end(chunk)                 { if (chunk !== undefined) this.body += String(chunk); this.ended = true; },
+  };
+}
+
+/** Runs the captured handler once against a fake req; returns the res double. */
+function k105Dispatch(stateDir, req) {
+  const { handler } = k105Capture(stateDir);
+  const res = k105MakeRes();
+  handler(req, res);
+  return res;
+}
+
+// Shared fixture: a state dir with one story, so the 200 path renders content.
+const k105Tmp      = makeTmpDir('k105-handler');
+const k105StateDir = makeStateDir(k105Tmp);
+writeManifest(k105StateDir, {
+  story_id:      'K105-S1',
+  title:         'Host guard fixture story',
+  updated_at:    '2026-07-16T00:00:00.000Z',
+  current_phase: 6,
+});
+
+// ─── K105 AC-1: isAllowedHost() export + predicate table ─────────────────────
+
+{
+  assert(
+    'K105 AC-1 isAllowedHost: exported as a function from keel-dashboard.cjs',
+    typeof k105IsAllowedHost === 'function',
+    `typeof isAllowedHost === ${typeof k105IsAllowedHost}`
+  );
+}
+
+{
+  // Allowed loopback literals — case-insensitive, optional 1-5 digit port.
+  const allow = [
+    'localhost',
+    'LOCALHOST',
+    'Localhost:7772',
+    'localhost:7772',
+    '127.0.0.1',
+    '127.0.0.1:65535',
+    '[::1]',
+    '[::1]:80',
+    '[::1]:99999', // syntax-only port check (ADR-004 D-2, documented)
+  ];
+  for (const h of allow) {
+    assert(
+      `K105 AC-1 isAllowedHost: allows "${h}"`,
+      k105IsAllowedHost(h) === true,
+      `isAllowedHost("${h}") returned false — loopback literal over-blocked`
+    );
+  }
+}
+
+{
+  // Fail-closed rejects — rebinding/suffix/userinfo/malformed forms.
+  const reject = [
+    '::1',                 // unbracketed IPv6
+    '[0:0:0:0:0:0:0:1]',   // expanded IPv6 (no canonicalization by design)
+    'localhost:',          // empty port
+    'localhost:abc',       // alpha port
+    'localhost:123456',    // 6-digit port
+    'localhost:7772:80',   // double port
+    'evil.com',
+    'evil.com:7772',
+    'localhost.evil.com',  // DNS-rebinding suffix attack
+    '127.0.0.1.evil.com',  // DNS-rebinding suffix attack
+    'user@localhost',      // userinfo
+    'localhost.',          // trailing dot
+    '[::1',                // unterminated bracket
+    '[::1]x',              // trailing junk
+    '',                    // empty string
+    ' localhost',          // leading whitespace
+    'localhost ',          // trailing whitespace
+    '127.0.0.2',           // non-127.0.0.1 loopback (no canonicalization)
+    '0x7f.0.0.1',          // hex-octet loopback encoding
+  ];
+  for (const h of reject) {
+    assert(
+      `K105 AC-1 isAllowedHost: rejects "${h}"`,
+      k105IsAllowedHost(h) === false,
+      `isAllowedHost("${h}") returned true — fail-closed contract broken`
+    );
+  }
+}
+
+{
+  // Non-string inputs must return false (never throw).
+  const nonStrings = [
+    ['undefined', undefined],
+    ['null',      null],
+    ['number',    12700],
+    ['object',    { host: 'localhost' }],
+    ['array',     ['localhost']],
+  ];
+  for (const [label, v] of nonStrings) {
+    let result = null;
+    let threw  = false;
+    try { result = k105IsAllowedHost(v); } catch (_) { threw = true; }
+    assert(
+      `K105 AC-1 isAllowedHost: non-string input (${label}) returns false without throwing`,
+      !threw && result === false,
+      threw ? 'threw an exception' : `returned ${result}`
+    );
+  }
+}
+
+// ─── K105 AC-3: missing Host header → 400 Bad Request ────────────────────────
+
+{
+  const res = k105Dispatch(k105StateDir, { method: 'GET', url: '/', headers: {} });
+
+  assert(
+    'K105 AC-3 handler: missing Host header returns status 400',
+    res.statusCode === 400,
+    `status=${res.statusCode}`
+  );
+
+  assert(
+    'K105 AC-3 handler: missing-Host body is exactly "Bad Request"',
+    res.body === 'Bad Request',
+    `body="${res.body}"`
+  );
+
+  assert(
+    'K105 AC-3 handler: 400 response has Content-Type text/plain; charset=utf-8',
+    res.headers && res.headers['Content-Type'] === 'text/plain; charset=utf-8',
+    `headers=${JSON.stringify(res.headers)}`
+  );
+
+  assert(
+    'K105 AC-3 handler: 400 response has X-Content-Type-Options nosniff',
+    res.headers && res.headers['X-Content-Type-Options'] === 'nosniff',
+    `headers=${JSON.stringify(res.headers)}`
+  );
+
+  assert(
+    'K105 AC-3 handler: 400 response has Cache-Control no-store',
+    res.headers && res.headers['Cache-Control'] === 'no-store',
+    `headers=${JSON.stringify(res.headers)}`
+  );
+
+  assert(
+    'K105 AC-3 handler: 400 response sends exactly 3 headers',
+    res.headers && Object.keys(res.headers).length === 3,
+    `header keys: ${res.headers ? Object.keys(res.headers).join(',') : 'null'}`
+  );
+}
+
+// ─── K105 AC-2: disallowed Host → 403 Forbidden ───────────────────────────────
+
+{
+  const res = k105Dispatch(k105StateDir, {
+    method: 'GET', url: '/', headers: { host: 'evil.com' },
+  });
+
+  assert(
+    'K105 AC-2 handler: Host evil.com returns status 403',
+    res.statusCode === 403,
+    `status=${res.statusCode}`
+  );
+
+  assert(
+    'K105 AC-2 handler: 403 body is exactly "Forbidden"',
+    res.body === 'Forbidden',
+    `body="${res.body}"`
+  );
+
+  assert(
+    'K105 AC-2 handler: 403 response has Content-Type text/plain; charset=utf-8',
+    res.headers && res.headers['Content-Type'] === 'text/plain; charset=utf-8',
+    `headers=${JSON.stringify(res.headers)}`
+  );
+
+  assert(
+    'K105 AC-2 handler: 403 response has X-Content-Type-Options nosniff',
+    res.headers && res.headers['X-Content-Type-Options'] === 'nosniff',
+    `headers=${JSON.stringify(res.headers)}`
+  );
+
+  assert(
+    'K105 AC-2 handler: 403 response has Cache-Control no-store',
+    res.headers && res.headers['Cache-Control'] === 'no-store',
+    `headers=${JSON.stringify(res.headers)}`
+  );
+
+  assert(
+    'K105 AC-2 handler: 403 response sends exactly 3 headers',
+    res.headers && Object.keys(res.headers).length === 3,
+    `header keys: ${res.headers ? Object.keys(res.headers).join(',') : 'null'}`
+  );
+}
+
+// K105 AC-2: rejection echoes zero request data (Host, URL, method)
+{
+  const res = k105Dispatch(k105StateDir, {
+    method: 'POST',
+    url:    '/probe-url-marker?q=echo-canary',
+    headers: { host: 'evil-echo-check.example' },
+  });
+
+  const surface = res.body + JSON.stringify(res.headers);
+
+  assert(
+    'K105 AC-2 handler: rejection body/headers echo no Host value',
+    res.statusCode === 403 && !surface.includes('evil-echo-check'),
+    `status=${res.statusCode} surface="${surface}"`
+  );
+
+  assert(
+    'K105 AC-2 handler: rejection body/headers echo no request URL',
+    !surface.includes('probe-url-marker') && !surface.includes('echo-canary'),
+    `surface="${surface}"`
+  );
+}
+
+// K105 AC-2: renderer is unreachable on rejection — readStories never entered
+// (its first statement is fs.existsSync(stateDirPath)), and the body is not HTML.
+{
+  const { handler } = k105Capture(k105StateDir);
+  const res = k105MakeRes();
+
+  const realExists = fs.existsSync;
+  let stateDirTouched = false;
+  fs.existsSync = (p) => {
+    if (String(p) === k105StateDir) stateDirTouched = true;
+    return realExists(p);
+  };
+  handler({ method: 'GET', url: '/', headers: { host: 'evil.com' } }, res);
+  fs.existsSync = realExists;
+
+  assert(
+    'K105 AC-2 handler: readStories() is NOT invoked on rejection (stateDir never touched)',
+    stateDirTouched === false,
+    'fs.existsSync(stateDir) was called during a rejected request'
+  );
+
+  assert(
+    'K105 AC-2 handler: rejection body contains no HTML (generateHTML unreachable)',
+    !res.body.includes('<!DOCTYPE') && !res.body.includes('<html'),
+    `body="${res.body.slice(0, 120)}"`
+  );
+}
+
+// K105 AC-2: empty-string Host is present-but-invalid → 403 (not 400)
+{
+  const res = k105Dispatch(k105StateDir, { method: 'GET', url: '/', headers: { host: '' } });
+
+  assert(
+    'K105 AC-2 handler: empty-string Host returns 403 (present but disallowed)',
+    res.statusCode === 403 && res.body === 'Forbidden',
+    `status=${res.statusCode} body="${res.body}"`
+  );
+}
+
+// K105 AC-2: guard precedes routing — bad Host + non-/ path → 403, not 404
+{
+  const res = k105Dispatch(k105StateDir, {
+    method: 'GET', url: '/nope', headers: { host: 'evil.com:7772' },
+  });
+
+  assert(
+    'K105 AC-2 handler: bad Host + non-/ path returns 403 not 404 (guard before routing)',
+    res.statusCode === 403,
+    `status=${res.statusCode} body="${res.body}"`
+  );
+}
+
+// ─── K105 AC-1/AC-4: allowed hosts still reach the renderer unchanged ────────
+
+{
+  const res = k105Dispatch(k105StateDir, {
+    method: 'GET', url: '/', headers: { host: 'localhost:7772' },
+  });
+
+  assert(
+    'K105 AC-1 handler: Host localhost:7772 returns 200',
+    res.statusCode === 200,
+    `status=${res.statusCode}`
+  );
+
+  assert(
+    'K105 AC-1 handler: 200 body is the dashboard HTML with fixture story',
+    res.body.includes('<!DOCTYPE html>') && res.body.includes('K105-S1'),
+    `body starts "${res.body.slice(0, 60)}"`
+  );
+
+  assert(
+    'K105 AC-4 handler: 200-path headers unchanged (text/html, no-store, nosniff)',
+    res.headers &&
+      res.headers['Content-Type'] === 'text/html; charset=utf-8' &&
+      res.headers['Cache-Control'] === 'no-store' &&
+      res.headers['X-Content-Type-Options'] === 'nosniff',
+    `headers=${JSON.stringify(res.headers)}`
+  );
+}
+
+// K105 AC-1: case-insensitive host part end-to-end through the handler
+{
+  const res = k105Dispatch(k105StateDir, {
+    method: 'GET', url: '/', headers: { host: 'LOCALHOST:7772' },
+  });
+
+  assert(
+    'K105 AC-1 handler: Host LOCALHOST:7772 (uppercase) returns 200',
+    res.statusCode === 200,
+    `status=${res.statusCode} body="${res.body.slice(0, 60)}"`
+  );
+}
+
+// K105 AC-4: valid Host + unknown path still hits the unchanged 404 branch
+{
+  const res = k105Dispatch(k105StateDir, {
+    method: 'GET', url: '/nope', headers: { host: '127.0.0.1:7772' },
+  });
+
+  assert(
+    'K105 AC-4 handler: valid Host + /nope returns 404 "Not found" (baseline branch intact)',
+    res.statusCode === 404 && res.body === 'Not found',
+    `status=${res.statusCode} body="${res.body}"`
+  );
+}
+
+// K105 AC-4: server still binds loopback only
+{
+  const { listenArgs } = k105Capture(k105StateDir, 7772);
+
+  assert(
+    'K105 AC-4 startDashboard: listen() binds 127.0.0.1 (loopback-only invariant)',
+    Array.isArray(listenArgs) && listenArgs[0] === 7772 && listenArgs[1] === '127.0.0.1',
+    `listen args: ${JSON.stringify(listenArgs)}`
+  );
+}
+
+// K105 AC-4: rejection path performs zero fs writes
+{
+  const { handler } = k105Capture(k105StateDir);
+  const res = k105MakeRes();
+
+  const spies = ['writeFileSync', 'appendFileSync', 'mkdirSync', 'rmSync', 'renameSync'];
+  const saved = {};
+  let wrote = null;
+  for (const fn of spies) {
+    saved[fn] = fs[fn];
+    fs[fn] = (...a) => { wrote = `${fn}(${String(a[0])})`; return saved[fn](...a); };
+  }
+  handler({ method: 'GET', url: '/', headers: { host: 'evil.com' } }, res);
+  for (const fn of spies) fs[fn] = saved[fn];
+
+  assert(
+    'K105 AC-4 handler: rejection performs zero fs writes (zero-fs-writes invariant)',
+    wrote === null && res.statusCode === 403,
+    `fs write detected: ${wrote}; status=${res.statusCode}`
+  );
+}
+
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
 const failed = results.filter((r) => !r.pass);

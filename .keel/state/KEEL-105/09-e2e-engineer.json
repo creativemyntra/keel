@@ -1,0 +1,45 @@
+{
+  "phase": 9,
+  "agent": "e2e-engineer",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "Browser-testable surface identified: browsers derive Host from the navigated URL and cannot spoof it, so per the phase-2 BA decision the disallowed-Host (403) and missing-Host (400) branches are NOT browser flows — they remain covered by tests/keel-dashboard-host-e2e.test.cjs (19/19 green in phase 8). The browser-relevant assertion is the positive path: a real Chromium browser on an allowed host renders the dashboard normally.",
+    "Wrote tests/e2e/KEEL-105-dashboard-host.spec.ts (3 new Playwright tests, real server `node scripts/keel-dashboard.cjs --port 7894` against real repo state): (1) http://localhost:7894 -> 200 + full dashboard render + response headers content-type text/html, x-content-type-options nosniff, cache-control no-store; (2) http://127.0.0.1:7894 -> same contract; (3) allowed host + /nope -> 404 'Not found' proving the guard rejects on Host only and never swallows KEEL-104 routing.",
+    "[::1] allowlist entry is not browser-testable: the server intentionally binds 127.0.0.1 (IPv4 loopback only, AC-4), so no IPv6 browser connection can be established. The [::1] Host value is exercised at header-parsing level by the unit suite (tests/keel-dashboard.test.cjs). Rationale documented in the spec header.",
+    "AC-5 deferred Playwright portion CLOSED: full run this session `npx playwright test tests/e2e/KEEL-104-dashboard.spec.ts tests/e2e/KEEL-105-dashboard-host.spec.ts --reporter=list` -> '14 passed (21.9s)' (11 KEEL-104 + 3 new KEEL-105), zero failures, run twice with identical green results ('14 passed (20.6s)' second run). Verbatim output: docs/e2e-evidence/KEEL-105/playwright-run.txt.",
+    "Initial baseline run of the untouched KEEL-104 spec was '3 failed, 7 passed' — all 3 failures were test-data rot, NOT dashboard regressions: the spec had hard-coded the July-14 repo snapshot (exactly 4 stories, KEEL-104 'Phase 9 — E2E Engineer' IN PROGRESS, sort order starting at KEEL-104). The live repo now legitimately has 5 stories, KEEL-105 is newest, and KEEL-104 finished its pipeline (12/12 phase files -> COMPLETE, manifest current_phase 13). The dashboard rendered the new state correctly in every failing case.",
+    "Fixed the rot durably in tests/e2e/KEEL-104-dashboard.spec.ts: row count and sort order are now derived at test time from the live .keel/state manifests (mirroring only the documented sort contract: updated_at DESC ISO-8601 lexicographic, error rows last — scripts/keel-dashboard.cjs lines 225-231), and badge pins moved to frozen facts (closed stories KEEL-101..104 are permanently COMPLETE green rgb(22,163,74)). Suite no longer rots when KEEL-106+ stories are initialised.",
+    "GATE RETRY FIX (attempt 1 findings addressed): (a) the live-repo badge test now asserts the FULL badgeHtml() text->background-color mapping over every rendered badge, deriving the expected color from each badge's own text at test time — COMPLETE->rgb(22,163,74), IN PROGRESS->rgb(217,119,6), HALTED->rgb(220,38,38) — durable against KEEL-106+ (KEEL-105 is IN PROGRESS this run, so the amber assertion executed against a live badge); (b) the false comment claiming the unit suite covers the amber color was corrected — the comment now states the unit suite asserts badge TEXT only and this browser check is the sole color guard; (c) NEW deterministic fixture block 'badge color truth table' (port 7895, tmp .keel/state with FIX-COMPLETE / FIX-PROGRESS / FIX-HALTED via manifest.halted=true) asserts all three text+color pairs on every run regardless of live repo state, closing the gap where HALTED red (or amber, once all stories close) would otherwise go unexercised. Screenshot: docs/e2e-evidence/KEEL-104/ac2-badge-color-truth-table.png shows all three badges rendered green/amber/red.",
+    "Zero JS console errors and zero pageerrors in every browser flow (collectPageErrors asserts errors === [] in both specs; XSS test additionally asserts zero dialogs).",
+    "Screenshot evidence captured: docs/e2e-evidence/KEEL-105/ac1-allowed-host-localhost.png (full dashboard, 5 rows, KEEL-105 IN PROGRESS at Phase 9 — E2E Engineer, footer Port 7894), ac1-allowed-host-127.0.0.1.png, allowed-host-404-routing.png, allowed-host-startup-stdout.txt. Screenshots visually verified — they show the final rendered state, not blank pages.",
+    "AC-2/AC-3 (403 disallowed / 400 missing Host): no browser surface by protocol definition — covered by raw-socket Node e2e suite per BA decision and ADR-004 D-7; explicitly NOT duplicated in Playwright (scope directive).",
+    "AC-4 invariants respected by this phase: scripts/keel-dashboard.cjs and scripts/keel-state.cjs untouched (test files only changed); all test servers bound loopback; all listeners released after run (netstat shows no LISTEN on 7772/7891-7894 post-run).",
+    "AC-6 browser slice: the new allowed-host tests complement the phase 6-8 unit/e2e coverage; combined story test surface is now 129 unit + 19 raw-socket e2e + 14 Playwright, all green this session or (Node suites) in phase 8.",
+    "Side effect recorded: the KEEL-104 spec refreshes its own evidence files on each run — docs/e2e-evidence/KEEL-104/*.png and *-stdout.txt regenerated this session (same assertions, current state). Pre-existing modification noise on docs/e2e-evidence/KEEL-103/* was already in git status before this phase began (not produced here).",
+    "Deferred to downstream owners (unchanged from phase 8, not gaps): AC-7 README security posture + CHANGELOG + '--port <N>' flag-syntax doc fix (NON-BLOCKING G-1 item) -> phase 11 technical-writer; AC-8 security-patch version proposal + G-6 stamp checklist -> phase 12 release-manager."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6"],
+  "decisions": [
+    "Did NOT write Playwright tests for disallowed/missing Host: browsers cannot emit a spoofed or absent Host header, so a Playwright test would have to bypass the browser (request context header override), duplicating tests/keel-dashboard-host-e2e.test.cjs without adding browser-level confidence — per BA decision the raw-socket suite owns that coverage.",
+    "Classified the 3 initial KEEL-104 spec failures as test-data rot (hard-coded repo snapshot), not regressions, after verifying via manifests that the dashboard output was correct for current state; fixed by deriving expectations from live manifests and pinning only frozen facts.",
+    "Gate attempt 1 correctly flagged that the first version of the rot fix weakened the badge assertions (amber IN PROGRESS and red HALTED colors were no longer asserted anywhere) and carried a false coverage comment. Fixed per the gate prescription (text-derived color mapping over all rendered badges + corrected comment) and additionally added a deterministic 3-state fixture test so no badge color can silently lose coverage as repo state evolves.",
+    "Ran the KEEL-105 spec against the real repo state (not a tmp fixture) so the browser assertion covers the production-shaped page including the in-flight KEEL-105 row itself.",
+    "Used port 7894 (KEEL_E2E_HOST_PORT overridable) to avoid the KEEL-104 spec's 7891-7893 range and the 7772 default, allowing both specs to run concurrently in one Playwright session.",
+    "Executed the full 13-test run twice (second run also captured to evidence file) to demonstrate the green result is deterministic, since the first tee attempt failed on a not-yet-created evidence directory.",
+    "AC-7 (README security posture + CHANGELOG) and AC-8 (version proposal + G-6 stamp checklist) carried forward with named downstream owners — AC-7 -> phase 11 technical-writer, AC-8 -> phase 12 release-manager — out-of-scope-for-this-phase per the approved brief's phase ownership, not descoped (G-5)."
+  ],
+  "artifacts": [
+    "tests/e2e/KEEL-105-dashboard-host.spec.ts",
+    "tests/e2e/KEEL-104-dashboard.spec.ts",
+    "docs/e2e-evidence/KEEL-105/playwright-run.txt",
+    "docs/e2e-evidence/KEEL-105/ac1-allowed-host-localhost.png",
+    "docs/e2e-evidence/KEEL-105/ac1-allowed-host-127.0.0.1.png",
+    "docs/e2e-evidence/KEEL-105/allowed-host-404-routing.png",
+    "docs/e2e-evidence/KEEL-105/allowed-host-startup-stdout.txt",
+    "docs/e2e-evidence/KEEL-104/ac2-badge-color-truth-table.png"
+  ],
+  "next_phase": 10,
+  "blockers": [],
+  "timestamp": "2026-07-17T07:45:00Z"
+}
