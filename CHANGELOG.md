@@ -2,7 +2,7 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
-## [3.15.0] - 2026-07-17 - PIPELINE RESTRUCTURE: 10-PHASE (TDD RED/GREEN MERGED INTO SOFTWARE-ENGINEER)
+## [3.15.0] - 2026-07-20 - PIPELINE RESTRUCTURE: 10-PHASE (TDD RED/GREEN MERGED INTO SOFTWARE-ENGINEER)
 
 ### Changed
 - **10-phase pipeline** — removed `tdd-red` (phase 6) and `tdd-green` (phase 7) as separate pipeline phases. `software-engineer` (phase 5) now writes production code AND unit tests in one phase; coverage ≥ 80% on changed lines is a hard gate before QA sees the output.
