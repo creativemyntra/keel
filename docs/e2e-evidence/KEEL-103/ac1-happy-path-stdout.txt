@@ -7,7 +7,7 @@ KEEL-103 · Add describe command to keel-state.cjs
 Scope:          feature
 Current phase:  12 / 11 (complete)
 Halted:         no
-Idle:           76h 20m
+Idle:           76h 31m
 Started:        2026-07-14T05:11:35.927Z
 
 Completed phases:
