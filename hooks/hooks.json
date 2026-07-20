@@ -1,30 +1,23 @@
 {
   "hooks": {
     "SessionStart": [
-      {
-        "matcher": "startup",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-init.cjs\""
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-watch.cjs\" --stale-check"
-          }
-        ]
-      }
+      { "matcher": "startup", "hooks": [
+        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-init.cjs\"" },
+        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-watch.cjs\" --stale-check" }
+      ]}
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-classify-gate.cjs\" --stage=prompt" }] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Task|Write|Edit|Bash", "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-classify-gate.cjs\" --stage=pre" }] }
     ],
     "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-watch.cjs\" --post-bash"
-          }
-        ]
-      }
+      { "matcher": "Bash", "hooks": [
+        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-watch.cjs\" --post-bash" },
+        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-classify-gate.cjs\" --stage=post" }
+      ]},
+      { "matcher": "Read|Grep|mcp__.*", "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-classify-gate.cjs\" --stage=post" }] }
     ]
   }
 }

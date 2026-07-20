@@ -76,6 +76,14 @@ architecture, E2E, docs, release ceremony).
 - Phase 8 gate: 0 HIGH security findings
 - Release Manager must approve before deploy
 
+## Data Classification Gate precondition (fail-closed)
+
+Before spawning phase 1: confirm `hooks/hooks.json` wires `keel-classify-gate.cjs`
+into `UserPromptSubmit`, `PreToolUse` (matcher incl. `Task`), and `PostToolUse`
+(matcher incl. `Bash|Read|Grep|mcp__.*`), and that `scripts/keel-classify-gate.cjs`
++ `config/cjis-patterns.json` exist. Missing either → halt before phase 1, tell
+the human which file/entry is absent. Not skippable via economy settings.
+
 ## State protocol (how phases communicate)
 
 Agents share context through files — the repository is the only shared memory.
@@ -225,3 +233,4 @@ bounded (`keel-state.cjs memory-check`) so this read stays cheap.
 - Never delete branches
 - No CJIS data output
 - Never output credentials, keys, tokens, PII
+- Never spawn a phase agent when the Data Classification Gate precondition above fails

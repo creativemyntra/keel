@@ -29,3 +29,4 @@ Rules:
   this flow — those are human roles; the ticket is the human's voice.
 - The AC set imported in phase 1 is the anti-drift contract for the whole
   pipeline, same as a PO-authored phase 1.
+- The Jira MCP fetch passes through the gate's `PostToolUse` check (matcher `mcp__.*`) if wired — a ticket containing CJIS narrative content is still hard-blocked before it reaches `01-business-analyst.json`.

@@ -2,6 +2,27 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.16.0] - 2026-07-20 - CJIS DATA CLASSIFICATION GATE (client-side compensating control)
+
+### Added
+- **`scripts/keel-classify-gate.cjs`** — fail-closed PII/CJIS pattern scanner wired into three hook stages (UserPromptSubmit, PreToolUse, PostToolUse). Exit 0 = CLEAR, exit 2 = BLOCK. Scans base64/hex-encoded variants. Logs hash-only incidents to `~/.keel/security/incidents.jsonl`.
+- **`config/cjis-patterns.json`** — pattern catalogue: SSN, PHONE, EMAIL, DOB, NAME_NARRATIVE, ADDRESS + four HART-specific placeholder categories (NCIC_ID, LEID, HART_CASE_ID, HART_SUBJECT_ID — non-functional until Forseti supplies real formats).
+- **`keel-state.cjs security-status [--since <ISO-8601>]`** — read-only query over the global incident log.
+- **Security officer webhook** — optional best-effort Slack/webhook notify on block; disabled by default (`security-officer-default.yml`).
+
+### Changed
+- **`hooks/hooks.json`** — wires `keel-classify-gate.cjs` into UserPromptSubmit, PreToolUse (Task|Write|Edit|Bash), and PostToolUse (Bash, Read|Grep|mcp__.*).
+- **`agents/security-engineer.md`** — CJIS gate verification added to checklist and scanner inventory table; unwired gate = HIGH finding.
+- **`agents/orchestrator.md`** — Data Classification Gate precondition check before phase 1; hard rule added.
+- **`agents/audit-agent.md`** — CJIS incident log section added; hash-only construction noted.
+- **`agents/handshake-agent.md`** — gate integrity check added as item 3 in judgment checks.
+- **`scripts/keel-init.cjs`** — gate health-check at session start; `keel-classify-gate.cjs` added to install list; `security-officer-default.yml` written on first run.
+- **`skills/investigate-defect/SKILL.md`**, **`skills/review-code/SKILL.md`**, **`skills/generate-tests/SKILL.md`** — CJIS-aware rules appended.
+- **`commands/from-jira.md`**, **`commands/req.md`** — gate PostToolUse coverage noted.
+
+### Notes
+Client-side compensating control only — not a network proxy. Bypassable by editing `hooks.json`. HART-specific pattern categories are non-functional placeholders pending Forseti input.
+
 ## [3.15.0] - 2026-07-20 - PIPELINE RESTRUCTURE: 10-PHASE (TDD RED/GREEN MERGED INTO SOFTWARE-ENGINEER)
 
 ### Changed

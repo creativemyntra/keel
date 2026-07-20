@@ -44,3 +44,4 @@ Invoke when the user says "generate tests", "write tests", "/keel test", or prov
 - Every test class name ends in `Test`, every method starts with `test`.
 - Tests must be independent — no shared mutable state.
 - Target ≥80% coverage of the tested class.
+- Category 4 (Negative/Security) tests for a CJIS-adjacent endpoint must assert the gate blocks known PII patterns (SSN, DOB, NCIC/LEID) before they reach any AI-pipeline call.

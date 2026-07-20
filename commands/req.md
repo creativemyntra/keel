@@ -21,3 +21,4 @@ Create requirements for: $ARGUMENTS
 Then invoke `keel:business-analyst` for phase 2 elaboration (functional spec,
 data flows, edge cases) and run `keel:handshake-agent` on each phase output.
 Outputs go to `.keel/state/<story-id>/` per `agent-output-schema.json`.
+A `--jira=<KEY>` fetch is subject to the gate's PostToolUse check like any other MCP call — see `commands/from-jira.md`.

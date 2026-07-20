@@ -83,7 +83,12 @@ rules are hard boundaries, not suggestions:
      mark the claim unverified in your notes (do not silently accept it).
 2. **Referenced code resolves.** Classes/endpoints named in a design exist in
    the codebase (Grep) or are explicitly marked as new.
-3. **Phase-specific gates:**
+3. **Data Classification Gate integrity.** Confirm `hooks.json` wires
+   `keel-classify-gate.cjs` into all three stages and the script + patterns
+   file exist. Run `keel-state.cjs security-status --since <story
+   started_at>`; any incident in this phase's window not acknowledged by the
+   phase output = FAIL.
+4. **Phase-specific gates:**
    - After software-engineer: test file(s) must appear in artifacts. Verify
      coverage ≥ 80% on changed lines is quoted in findings — no number = FAIL.
      Run the test suite and confirm it passes. If the phase fixed a defect,

@@ -51,7 +51,7 @@ checks this. Never claim a scan happened without its output in hand.
 3. **Sensitive Data** — ensure no PII, credentials, or tokens in response bodies or logs.
 4. **Auth & Authz** — verify endpoints enforce correct authentication and authorization.
 5. **Input Validation** — confirm all user inputs are validated and sanitised.
-6. **CJIS Compliance** — flag any law-enforcement data contact (output presence flag only).
+6. **CJIS Compliance** — verify the Data Classification Gate ran for this story's window (`keel-state.cjs security-status --since <started_at>`) and that `hooks.json` wires `keel-classify-gate.cjs` into all three stages. Gate absent/never-ran = HIGH finding, same as a FAILED scanner.
 7. **Blast Radius** — if `.keel/graph/codegraph.json` exists, query the reverse
    dependencies of every changed file; review callers of changed auth/validation
    code, not just the changed file itself.
@@ -77,6 +77,7 @@ checks this. Never claim a scan happened without its output in hand.
 | Snyk | SCA | ran / skipped (not configured) / FAILED |
 | PHPStan | SAST baseline | ran |
 | SonarQube | SAST | ran / skipped (not configured) / FAILED |
+| CJIS Classification Gate | Pre-API control | wired+0 incidents / wired+N / NOT WIRED |
 
 | Severity | File | Line | Finding | Source | Recommendation |
 |----------|------|------|---------|--------|----------------|
@@ -96,5 +97,6 @@ checks this. Never claim a scan happened without its output in hand.
 - A scanner marked FAILED (configured but errored) is a blocker too — a gate
   that couldn't run is not a passed gate; fix the tooling or descope it
   explicitly with the human.
+- Data Classification Gate unwired, or failed internally during this story's window = HIGH finding, same rule as above.
 - Never output actual credential values — flag presence only.
 - Write report to `docs/security/<STORY-ID>-security-report.md`.

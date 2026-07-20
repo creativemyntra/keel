@@ -25,6 +25,7 @@
  *   node keel-state.cjs revert-check <story-id> --test <filter-or-path> [--runner "vendor/bin/phpunit"]
  *   node keel-state.cjs prescan  <story-id>
  *   node keel-state.cjs memory-check
+ *   node keel-state.cjs security-status [--since <ISO-8601>]
  */
 'use strict';
 
@@ -1141,12 +1142,26 @@ ${allArtifacts.length ? `<div class="section">
   console.log(`Report written: ${outFile}`);
 }
 
+// Global (not story-scoped) CJIS incident log from keel-classify-gate.cjs.
+// Read-only — this command never writes to ~/.keel/security/incidents.jsonl.
+function cmdSecurityStatus(args) {
+  const os = require('os');
+  const log = path.join(process.env.KEEL_HOME || path.join(os.homedir(), '.keel'), 'security', 'incidents.jsonl');
+  const since = flag(args, '--since');
+  if (!fs.existsSync(log)) return console.log(JSON.stringify({ count: 0, incidents: [] }, null, 2));
+  const incidents = fs.readFileSync(log, 'utf8').trim().split('\n').filter(Boolean)
+    .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+    .filter((e) => e && (!since || e.ts >= since));
+  console.log(JSON.stringify({ count: incidents.length, incidents }, null, 2));
+}
+
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
+if (cmd === 'security-status') { cmdSecurityStatus(process.argv.slice(3)); process.exit(0); }
 if (!storyId) die(64, USAGE);
 if (cmd === 'status' && storyId === '--all') { cmdStatusAll(); process.exit(0); }
 switch (cmd) {

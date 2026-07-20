@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Keel AI-SDLC Framework v3.15.0 -- CLI Dispatcher (ESM)
+ * Keel AI-SDLC Framework v3.16.0 -- CLI Dispatcher (ESM)
  * Author : Amar Singh <support@creativemyntra.com>
  * License: MIT
  */
@@ -9,7 +9,7 @@ import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const VERSION   = '3.15.0';
+const VERSION   = '3.16.0';
 const KEEL_DIR  = resolve(__dirname, '..');
 
 function parseArgs(argv) {

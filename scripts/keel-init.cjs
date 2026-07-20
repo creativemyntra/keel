@@ -25,11 +25,19 @@ try {
   // 1+2: every session — engine install + plugin-root record
   const binDir = path.join(KEEL_HOME, 'bin');
   fs.mkdirSync(binDir, { recursive: true });
-  for (const script of ['keel-state.cjs', 'keel-watch.cjs', 'build-codegraph.cjs']) {
+  for (const script of ['keel-state.cjs', 'keel-watch.cjs', 'build-codegraph.cjs', 'keel-classify-gate.cjs']) {
     const src = path.join(PLUGIN_ROOT, 'scripts', script);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(binDir, script));
   }
   fs.writeFileSync(path.join(KEEL_HOME, 'plugin-root'), PLUGIN_ROOT + '\n');
+  // CJIS gate health-check — visibility only, cannot block session start.
+  try {
+    const gateOk = fs.existsSync(path.join(PLUGIN_ROOT, 'scripts', 'keel-classify-gate.cjs'))
+      && fs.existsSync(path.join(PLUGIN_ROOT, 'config', 'cjis-patterns.json'));
+    const hooksOk = gateOk && /keel-classify-gate\.cjs/.test(
+      fs.readFileSync(path.join(PLUGIN_ROOT, 'hooks', 'hooks.json'), 'utf8'));
+    if (!gateOk || !hooksOk) console.error('KEEL WARNING: CJIS Data Classification Gate missing/unwired — no client-side PII interception this session.');
+  } catch (e) { console.error(`keel-init warning: gate check failed: ${e.message}`); }
 
   // 3: first run only
   const initialized = path.join(KEEL_HOME, '.initialized');
@@ -89,6 +97,7 @@ snyk:
   enabled: false
   severity_threshold: high
 `);
+    writeDefault('security-officer-default.yml', `security_officer:\n  enabled: false\n  channel: "#cjis-incidents"\n`);
 
     fs.writeFileSync(initialized, '');
     console.log(`Keel: initialized ${KEEL_HOME} (config + secrets + engine installed to ~/.keel/bin)`);
