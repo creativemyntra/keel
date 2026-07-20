@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.15.0
+# Keel AI-SDLC Framework v3.16.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# → keel v3.15.0 ✅
+# → keel v3.16.0 ✅
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -98,6 +98,13 @@ snapshots) is done by a zero-dependency **state engine**
 
 ---
 
+## 🆕 What's New in v3.16.0
+
+- **CJIS Data Classification Gate** — `scripts/keel-classify-gate.cjs` + `config/cjis-patterns.json` add an automated data-classification check. The gate runs via `hooks/hooks.json` (wired to `UserPromptSubmit`, `PreToolUse`, and `PostToolUse` stages) and blocks stories that touch CJIS-adjacent data patterns without the required classification annotation. See G-10 in `.keel/GUARDRAILS.md`.
+- **`keel-state.cjs security-status` command** — prints a human-readable summary of the current CJIS gate status for a story: which patterns matched, which were cleared, and whether the gate passed.
+- **All agent specs updated** — security-engineer, orchestrator, audit-agent, and handshake-agent updated to reference the classify gate and route CJIS-flagged stories through the mandatory data-classification check.
+- **Version bump** — 3.15.0 → 3.16.0 across `package.json`, `bin/keel.js`, and plugin files.
+
 ## 🆕 What's New in v3.15.0
 
 - **10-phase pipeline** — `tdd-red` and `tdd-green` removed as separate phases. `software-engineer` (phase 5) now writes production code **and** unit tests in one phase; coverage ≥ 80% on changed lines is a hard gate before QA sees the output. Simpler pipeline, fewer spawns, no confusion about who owns tests.
@@ -163,7 +170,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.15.0 ✅
+# → keel v3.16.0 ✅
 ```
 
 ### Method 2: npm Global Package (⏳ not yet published — coming soon)
@@ -202,27 +209,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.15.0
+        uses: creativemyntra/keel@v3.16.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.15.0
+        uses: creativemyntra/keel@v3.16.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.15.0
+        uses: creativemyntra/keel@v3.16.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.15.0
+        uses: creativemyntra/keel@v3.16.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -614,7 +621,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.15.0
+- uses: creativemyntra/keel@v3.16.0
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -781,10 +788,10 @@ Then:
 
 ---
 
-**Version:** 3.15.0  
-**Released:** 2026-07-17  
+**Version:** 3.16.0  
+**Released:** 2026-07-20  
 **Status:** PRODUCTION READY ✅  
 **Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.15.0 (https://github.com/creativemyntra/keel/releases/tag/v3.15.0)
+**Tag:** v3.16.0 (https://github.com/creativemyntra/keel/releases/tag/v3.16.0)

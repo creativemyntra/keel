@@ -1,7 +1,7 @@
-# Keel AI-SDLC Framework v3.15.0 - Technical Specifications
+# Keel AI-SDLC Framework v3.16.0 - Technical Specifications
 
-**Document Version:** 1.9  
-**Last Updated:** 2026-07-17  
+**Document Version:** 2.0  
+**Last Updated:** 2026-07-20  
 **Status:** PRODUCTION  
 **Author:** Amar Singh  
 **Audience:** Development Team, Future Maintainers, Contributors  
@@ -355,26 +355,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.15.0
+- Version: v3.16.0
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.15.0`
+- Installation: `npm install -g @amarsingh/keel@3.16.0`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.15.0`
+- Image: `amarsingh/keel:3.16.0`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.15.0`
+- Pull: `docker pull amarsingh/keel:3.16.0`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.15.0`
+- Version: `v3.16.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.15.0`
+- Usage: `uses: creativemyntra/keel@v3.16.0`
 
 ---
 
@@ -401,6 +401,16 @@ Record in Audit Trail
 - **SAST:** SonarQube scanning (code quality)
 - **DAST:** N/A (CLI tool, no web endpoints)
 - **Secrets Scanning:** git-secrets pre-commit hook
+
+### Infrastructure Scripts (v3.16.0)
+
+| Script | Purpose | Hook Stage(s) |
+|--------|---------|---------------|
+| `scripts/keel-state.cjs` | Deterministic state engine — schema validation, gating, audit, snapshots | CLI / engine |
+| `scripts/keel-dashboard.cjs` | Read-only pipeline status web dashboard (loopback-only) | CLI |
+| `scripts/keel-classify-gate.cjs` | CJIS Data Classification Gate — detects CJIS-adjacent patterns; blocks stories lacking required classification annotations | `UserPromptSubmit`, `PreToolUse`, `PostToolUse` |
+
+Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three stages. The classify gate must be present in `hooks.json` for every story involving CJIS-adjacent data (see G-10 in `.keel/GUARDRAILS.md`). Pattern definitions live in `config/cjis-patterns.json`; Forseti-specific pattern formats are placeholders until real formats are provided from Forseti.
 
 ---
 
@@ -464,6 +474,7 @@ Record in Audit Trail
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
+| 3.16.0 | 2026-07-20 | PRODUCTION | CJIS Data Classification Gate: `scripts/keel-classify-gate.cjs` + `config/cjis-patterns.json`; `hooks/hooks.json` wired (UserPromptSubmit, PreToolUse, PostToolUse); `keel-state.cjs security-status` command; security-engineer, orchestrator, audit-agent, handshake-agent specs updated |
 | 3.15.0 | 2026-07-17 | PRODUCTION | Pipeline restructure: 10 phases — tdd-red/tdd-green merged into software-engineer (code+tests+coverage ≥ 80%); qa-engineer→6, e2e-engineer→7, security-engineer→8, technical-writer→9, release-manager→10; DEFAULT_MAX_GATES 48→40; backward-compat LEGACY_AGENTS for in-flight stories |
 | 3.14.3 | 2026-07-17 | PRODUCTION | Guardrail hardening: G-8 agent identity integrity (schema mismatch = HALT, no relabeling); G-9 no unverified baselines in intake; release-manager framework-debt gate added |
 | 3.14.3 | 2026-07-17 | PRODUCTION | Doc-patch: complete 12-phase/17-agent documentation sync — README, ALL-AGENTS-COMPLETE-GUIDE, TECHNICAL-SPECIFICATIONS, QUICK-START, WORKFLOW.md; architecture diagram corrected (all Phase Agent columns show 12) |
@@ -516,6 +527,6 @@ Record in Audit Trail
 ---
 
 **Document Version:** 2.0  
-**Last Updated:** 2026-07-17  
+**Last Updated:** 2026-07-20  
 **Status:** PRODUCTION  
-**Next Review:** 2026-10-17 (quarterly)
+**Next Review:** 2026-10-20 (quarterly)

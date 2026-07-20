@@ -1,6 +1,6 @@
-# Keel v3.14.1 — Complete Agent Guide
+# Keel v3.16.0 — Complete Agent Guide
 
-**Framework Version:** 3.14.1  
+**Framework Version:** 3.16.0  
 **Total Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
@@ -1173,6 +1173,14 @@ Day 6: Validate & release
 | **Handshake Agent** | Phase-to-phase validation + context passing |
 | **State Management Agent** | Locked state, atomic writes, audit trail, snapshots |
 
+**Infrastructure Scripts (v3.16.0)**
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/keel-state.cjs` | Deterministic state engine (schema validation, gating, audit, snapshots) |
+| `scripts/keel-dashboard.cjs` | Read-only pipeline status web dashboard (loopback-only) |
+| `scripts/keel-classify-gate.cjs` | CJIS Data Classification Gate — detects CJIS-adjacent data patterns and blocks unclassified stories; wired via `hooks/hooks.json` on `UserPromptSubmit`, `PreToolUse`, and `PostToolUse` stages |
+
 ---
 
 ## 🚀 Next Steps
@@ -1184,7 +1192,7 @@ Day 6: Validate & release
 
 ---
 
-**Framework:** Keel AI-SDLC Framework v3.14.1  
+**Framework:** Keel AI-SDLC Framework v3.16.0  
 **License:** MIT  
 **Author:** Amar Singh  
 **Repository:** https://github.com/creativemyntra/keel  

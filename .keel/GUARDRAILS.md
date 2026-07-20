@@ -106,3 +106,24 @@ Any such figure in an intake document must be marked
 placeholder by running the actual tool at phase 2, recording the measured
 value and the command used. A `[BASELINE: …]` placeholder that survives past
 phase 2 is an unverified claim and a gate FAIL at the phase-2 handshake.
+
+## G-10 · Data Classification Gate (v3.16.0)
+
+`scripts/keel-classify-gate.cjs` must be wired into `hooks/hooks.json` for
+all stories involving CJIS-adjacent data. The gate runs on `UserPromptSubmit`,
+`PreToolUse`, and `PostToolUse` stages and checks story artifacts against the
+patterns in `config/cjis-patterns.json`. A story that touches CJIS-adjacent
+data patterns without the required classification annotation is a BLOCKING
+finding — the pipeline does not advance past the current gate until the
+annotation is added or a human owner explicitly waives it (G-2 applies).
+
+**Gate absent = HIGH finding.** If `keel-classify-gate.cjs` is not registered
+in `hooks/hooks.json` and the story scope includes CJIS-adjacent data, the
+security-engineer and release-manager phases must both flag this as a HIGH
+finding — the release cannot proceed until the gate is wired.
+
+**Forseti follow-up:** Pattern placeholders in `config/cjis-patterns.json`
+marked `[FORSETI-FORMAT-PENDING]` need real format strings from Forseti before
+they will match anything in practice. Until those formats are supplied, the gate
+provides partial coverage only — security-engineer must note this limitation in
+its phase output.

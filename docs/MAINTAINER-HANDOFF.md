@@ -1,7 +1,7 @@
-# Keel AI-SDLC Framework v3.14.0 - Maintainer Handoff
+# Keel AI-SDLC Framework v3.16.0 - Maintainer Handoff
 
-**Document Version:** 1.9  
-**Last Updated:** 2026-07-09  
+**Document Version:** 2.0  
+**Last Updated:** 2026-07-20  
 **Prepared By:** Amar Singh  
 **For:** Future Development Team & Maintainers  
 **Status:** PRODUCTION  
@@ -38,9 +38,9 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ### Key Facts
 
 - **Language:** JavaScript (Node.js)
-- **Current Version:** 3.14.0
+- **Current Version:** 3.16.0
 - **Status:** Production-ready
-- **Release Date:** 2026-07-09
+- **Release Date:** 2026-07-20
 - **Platforms Supported:** CakePHP, Laravel, Django, Rails
 - **Distribution Channels:** Claude Code, npm, Docker, GitHub Action
 
@@ -310,6 +310,14 @@ git push origin feature/KEEL-001-new-skill
 - [ ] Code coverage ≥85%
 - [ ] Security audit clean
 - [ ] Documentation reviewed
+- [ ] `hooks/hooks.json` registers `keel-classify-gate.cjs` on `UserPromptSubmit`, `PreToolUse`, `PostToolUse` (v3.16.0+)
+- [ ] `config/cjis-patterns.json` patterns reviewed — Forseti-format placeholders still pending real format strings from Forseti
+
+### CJIS Gate Notes (v3.16.0)
+
+`scripts/keel-classify-gate.cjs` is the CJIS Data Classification Gate introduced in v3.16.0. It must be wired in `hooks/hooks.json` for any story touching CJIS-adjacent data — absence is a HIGH finding (see G-10 in `.keel/GUARDRAILS.md`).
+
+**Forseti follow-up:** Pattern entries in `config/cjis-patterns.json` marked `[FORSETI-FORMAT-PENDING]` are placeholder strings. Until real format strings are supplied from Forseti, the gate detects only the patterns that are fully defined. New maintainers should chase this with the Forseti integration owner before relying on the gate for full CJIS coverage.
 
 ### Release Steps
 
@@ -652,11 +660,11 @@ This handoff is successful when:
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-07-08  
+**Document Version:** 2.0  
+**Last Updated:** 2026-07-20  
 **Prepared By:** Amar Singh  
 **Status:** PRODUCTION  
-**Next Review:** 2026-10-08 (quarterly)
+**Next Review:** 2026-10-20 (quarterly)
 
 ---
 
