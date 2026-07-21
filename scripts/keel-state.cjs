@@ -370,6 +370,28 @@ function cmdGate(storyId, args) {
     }
 
     if (verdict === 'PASS') {
+      // ENGINE-ENFORCED PRECONDITION (added post-audit, 2026-07-20): a PASS
+      // verdict is a claim that the referenced phase file exists and is
+      // schema/AC/artifact valid. Previously this command trusted the caller
+      // to have run `validate` first and reported honestly — nothing stopped
+      // `gate --verdict PASS` from being called against a missing or broken
+      // phase file, which silently advanced current_phase with no real work
+      // behind it. The engine now re-runs the same checks `validate` runs,
+      // every time, as a precondition of accepting PASS. This cannot be
+      // bypassed by a caller choosing not to run `validate` first.
+      const prefix2 = String(phase).padStart(2, '0') + '-';
+      const phaseFile = fs.readdirSync(stateDir(storyId))
+        .find((f) => f.startsWith(prefix2) && f.endsWith('.json'));
+      if (!phaseFile) {
+        die(1, `GATE REFUSED: no phase-${prefix2.slice(0, 2)} output file found in ${stateDir(storyId)} — cannot record PASS for work that does not exist. Run the phase agent and write its output file first.`);
+      }
+      const gateErrors = validatePhaseFile(storyId, phaseFile);
+      if (gateErrors.length) {
+        console.error(`GATE REFUSED: ${phaseFile} fails validation — ${gateErrors.length} error(s):`);
+        gateErrors.forEach((e) => console.error(`  - ${e}`));
+        die(1, 'A PASS verdict cannot be recorded against an invalid phase file. Fix the phase output (or call gate --verdict FAIL to log the attempt) and retry.');
+      }
+
       delete manifest.attempts[key];
       if (manifest.attempt_hashes) delete manifest.attempt_hashes[key];
       // advance to the next phase IN SCOPE (defect scope skips 2-3 and 7-8),
@@ -384,20 +406,14 @@ function cmdGate(storyId, args) {
       appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_passed', notes });
       // auto-audit the phase completion — the separate `audit --phase-file`
       // step proved fragile in practice (a fast-model gate skipped it in the
-      // KEEL-102 e2e), so the engine owns it on PASS
-      const prefix2 = String(phase).padStart(2, '0') + '-';
-      const phaseFile = fs.readdirSync(stateDir(storyId))
-        .find((f) => f.startsWith(prefix2) && f.endsWith('.json'));
-      if (phaseFile) {
-        try {
-          const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
-          appendAudit(storyId, {
-            phase: out.phase, agent: out.agent, action: 'phase_completed',
-            outputs: [phaseFile], artifacts: out.artifacts || [], decisions: out.decisions || [],
-            git_commit: null, notes: 'auto-audited on gate PASS',
-          });
-        } catch { /* unparseable phase file would have failed validate; skip */ }
-      }
+      // KEEL-102 e2e), so the engine owns it on PASS. phaseFile is already
+      // known-valid at this point (checked above), so this parse cannot fail.
+      const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+      appendAudit(storyId, {
+        phase: out.phase, agent: out.agent, action: 'phase_completed',
+        outputs: [phaseFile], artifacts: out.artifacts || [], decisions: out.decisions || [],
+        git_commit: null, notes: 'auto-audited on gate PASS',
+      });
       console.log(`PASS recorded: phase ${phase} -> ${label}`);
       return;
     }
