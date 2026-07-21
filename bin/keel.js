@@ -58,6 +58,13 @@ const ROUTES = {
   },
 
   brainstorm(c) {
+    // Note (KEEL-R11): the Claude Code skill (commands/brainstorm.md) asks
+    // 2-3 probe questions via AskUserQuestion before diverging. This plain
+    // CLI dispatcher has no interactive-question mechanism, so it cannot
+    // replicate that step -- it stays a lighter-weight, non-interactive path
+    // by necessity. See KEEL-R16 in the remediation runbook for the open
+    // question of whether this dispatcher should keep diverging from the
+    // prompt files at all.
     emit('pre-1', ['keel:product-owner'], '', [
       'Goal: "' + c.goal + '"',
       '',
