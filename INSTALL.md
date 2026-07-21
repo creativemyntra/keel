@@ -99,6 +99,7 @@ orchestrator route): `keel:orchestrator`, `keel:product-owner`,
      and a false self-claimed release-manager integration, respectively). See the
      Keel remediation plan, item 4, for the full cross-reference. -->
 | `keel:implement-feature` | "implement feature", "build this" |
+| `keel:task-breakdown` | "task breakdown", "break down tasks" |
 
 ---
 
