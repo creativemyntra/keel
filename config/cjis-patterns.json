@@ -2,7 +2,10 @@
   "_comment": "NCIC_ID/LEID/HART_CASE_ID/HART_SUBJECT_ID are placeholders — replace with real formats from Forseti before relying on them. Both severities hard-block (ticket scenario 7: block over convenience).",
   "allowlist": [
     { "description": "Keel project author domain — strip before scanning to allow marketplace display", "pattern": "creativemyntra\\.com" },
-    { "description": "matellio.com project domain — strip before scanning", "pattern": "matellio\\.com" }
+    { "description": "matellio.com project domain — strip before scanning", "pattern": "matellio\\.com" },
+    { "description": "GHA uses: directive - CI version pins are not PII", "pattern": "uses:\\s+[\\w./-]+@[\\w.-]+" },
+    { "description": "npm scoped package ref with embedded slash - not PII", "pattern": "@[\\w-]+\\/[\\w.-]+(?:@[\\w.-]+)?" },
+    { "description": "Semver version pin word@vN.N - digit-starting domain is not PII", "pattern": "\\b[\\w-]+@v?[0-9]+\\.[0-9]+[\\w.-]*\\b" }
   ],
   "patterns": [
     { "category": "SSN", "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b", "flags": "g", "severity": "hard" },
