@@ -36,3 +36,19 @@ Initialize Keel in this repository. Arguments: $ARGUMENTS
    (skip gracefully if the project has no src/ yet).
 5. Verify `agent-output-schema.json` is reachable in the plugin root.
 6. Summarize what was created and suggest `/keel:brainstorm` or `/keel:req` as the next step.
+7. **Offer integration setup** (new — only after scaffolding succeeds):
+   - Detect whether this is an interactive session (a human can answer
+     AskUserQuestion) or non-interactive (a `claude -p` / GitHub Action run).
+   - **Interactive:** ask once, via AskUserQuestion —
+     "Run the setup wizard now (recommended)" / "Use all defaults — I'll run
+     /keel:setup later" / "Skip". Route accordingly: the first option invokes
+     `/keel:setup` immediately; the other two just print a one-line status
+     ("Jira/GitHub/Playwright default to zero-config; run /keel:setup <name>
+     any time to change that") and stop.
+   - **Non-interactive:** skip the question entirely — print the same
+     one-line status and continue. Never block a CI run waiting for an
+     AskUserQuestion answer that cannot arrive.
+   - Either way, print a bundled-MCP status line: check `.mcp.json` for
+     `atlassian`/`playwright` entries and whether either needs OAuth
+     (`~/.keel/config/jira.yml` absent or `enabled: false` → "not yet
+     authenticated — run /mcp to connect").
