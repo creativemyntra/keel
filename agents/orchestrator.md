@@ -76,17 +76,25 @@ parallelize phases within a single story.
 
 The real, safe levers are:
 
-- **Overlap phase 6 (QA) execution with phase 7 (E2E) test-authoring.**
-  e2e-engineer can start WRITING Playwright specs as soon as phase 5's output
-  exists; it must not EXECUTE them until qa-engineer's phase-6 gate PASSes
-  (running E2E against code QA hasn't validated wastes the run and risks
-  debugging at the wrong layer — the reason phase 6 precedes 7 in the first
-  place). Spawn both agents together; gate e2e-engineer's execution step on
-  qa-engineer's PASS, not its own start.
-- **Overlap phase 8 (security) with phase 9 (docs drafting).** technical-writer
-  can draft API docs/changelog/README updates as soon as phase 7 completes.
-  Its own gate still requires phase 8's PASS before finalizing — nothing ships
-  before security clears, only the drafting work moves earlier.
+- **Overlap phase 6 (QA) execution with phase 7 (E2E) test-authoring (KEEL-R14).**
+  As soon as phase 5's output exists, spawn `keel:e2e-engineer --mode=author`
+  alongside `keel:qa-engineer` — it writes Playwright specs but does not run
+  them or write `07-e2e-engineer.json` (running E2E against code QA hasn't
+  validated wastes the run and risks debugging at the wrong layer — the reason
+  phase 6 precedes 7 in the first place). Only once qa-engineer's phase-6 gate
+  PASSes, re-invoke as `keel:e2e-engineer --mode=execute` to run the tests and
+  write the real phase-7 output. Never let the author-mode spawn write the
+  phase-7 output file itself — that is the handshake gate's signal that phase
+  6 was actually validated first.
+- **Overlap phase 8 (security) with phase 9 (docs drafting) (KEEL-R14).** As
+  soon as phase 7 completes, spawn `keel:technical-writer --mode=draft` to
+  write API docs/changelog/README updates into their real target paths. Its
+  gate still requires phase 8's PASS before finalizing — once security PASSes,
+  re-invoke as `keel:technical-writer --mode=finalize` to reconcile the draft
+  against phase 8's actual findings (redacting anything security flagged) and
+  write the real phase-9 output. Never let the draft-mode spawn write
+  `09-technical-writer.json` — nothing is documented as final before security
+  clears.
 - **Background the prescan starting at phase 5**, re-running incrementally
   rather than once cold at phase 8, so security-engineer inherits an
   already-warm result.
