@@ -370,6 +370,43 @@ function cmdGate(storyId, args) {
     }
 
     if (verdict === 'PASS') {
+      // ENGINE-ENFORCED PRECONDITION (added post-audit, 2026-07-20): a PASS
+      // verdict is a claim that the referenced phase file exists and is
+      // schema/AC/artifact valid. Previously this command trusted the caller
+      // to have run `validate` first and reported honestly — nothing stopped
+      // `gate --verdict PASS` from being called against a missing or broken
+      // phase file, which silently advanced current_phase with no real work
+      // behind it. The engine now re-runs the same checks `validate` runs,
+      // every time, as a precondition of accepting PASS. This cannot be
+      // bypassed by a caller choosing not to run `validate` first.
+      //
+      // SECOND PRECONDITION (KEEL-R18, found via live testing 2026-07-21):
+      // the check above validates the FILE for the requested phase, but did
+      // nothing to stop `gate --phase N` from being called when N is not the
+      // story's actual current_phase -- a caller could skip an entire phase
+      // (its own gate never called, or previously REFUSED) and jump straight
+      // to gating a later one, and the pipeline would still reach "complete"
+      // with a gap in the middle of the audit trail. Reproduced live: phase
+      // 8's gate was refused (bad artifact reference), phase 9's gate was
+      // still accepted immediately after, and `status` reported the story
+      // complete with no trace that phase 8 never actually passed. Refuse
+      // any gate call that isn't for the story's current phase.
+      if (phase !== manifest.current_phase) {
+        die(1, `GATE REFUSED: story is at phase ${manifest.current_phase}, not phase ${phase} — cannot record PASS out of sequence. Gate phase ${manifest.current_phase} first (or run resume if a human has deliberately decided to skip ahead).`);
+      }
+      const prefix2 = String(phase).padStart(2, '0') + '-';
+      const phaseFile = fs.readdirSync(stateDir(storyId))
+        .find((f) => f.startsWith(prefix2) && f.endsWith('.json'));
+      if (!phaseFile) {
+        die(1, `GATE REFUSED: no phase-${prefix2.slice(0, 2)} output file found in ${stateDir(storyId)} — cannot record PASS for work that does not exist. Run the phase agent and write its output file first.`);
+      }
+      const gateErrors = validatePhaseFile(storyId, phaseFile);
+      if (gateErrors.length) {
+        console.error(`GATE REFUSED: ${phaseFile} fails validation — ${gateErrors.length} error(s):`);
+        gateErrors.forEach((e) => console.error(`  - ${e}`));
+        die(1, 'A PASS verdict cannot be recorded against an invalid phase file. Fix the phase output (or call gate --verdict FAIL to log the attempt) and retry.');
+      }
+
       delete manifest.attempts[key];
       if (manifest.attempt_hashes) delete manifest.attempt_hashes[key];
       // advance to the next phase IN SCOPE (defect scope skips 2-3 and 7-8),
@@ -384,20 +421,14 @@ function cmdGate(storyId, args) {
       appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_passed', notes });
       // auto-audit the phase completion — the separate `audit --phase-file`
       // step proved fragile in practice (a fast-model gate skipped it in the
-      // KEEL-102 e2e), so the engine owns it on PASS
-      const prefix2 = String(phase).padStart(2, '0') + '-';
-      const phaseFile = fs.readdirSync(stateDir(storyId))
-        .find((f) => f.startsWith(prefix2) && f.endsWith('.json'));
-      if (phaseFile) {
-        try {
-          const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
-          appendAudit(storyId, {
-            phase: out.phase, agent: out.agent, action: 'phase_completed',
-            outputs: [phaseFile], artifacts: out.artifacts || [], decisions: out.decisions || [],
-            git_commit: null, notes: 'auto-audited on gate PASS',
-          });
-        } catch { /* unparseable phase file would have failed validate; skip */ }
-      }
+      // KEEL-102 e2e), so the engine owns it on PASS. phaseFile is already
+      // known-valid at this point (checked above), so this parse cannot fail.
+      const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+      appendAudit(storyId, {
+        phase: out.phase, agent: out.agent, action: 'phase_completed',
+        outputs: [phaseFile], artifacts: out.artifacts || [], decisions: out.decisions || [],
+        git_commit: null, notes: 'auto-audited on gate PASS',
+      });
       console.log(`PASS recorded: phase ${phase} -> ${label}`);
       return;
     }
@@ -798,15 +829,20 @@ function cmdPrescan(storyId) {
     catch { return false; }
   };
 
-  run('composer-audit', 'composer audit --no-interaction', exists('composer.json'), 'not applicable — no composer.json');
+  run('composer-audit', 'composer audit --no-interaction',
+    exists('composer.json') && onPath('composer'),
+    exists('composer.json') ? 'not applicable — composer not on PATH' : 'not applicable — no composer.json');
   run('phpstan', 'vendor/bin/phpstan analyse --no-progress --error-format=raw',
     exists(path.join('vendor', 'bin', 'phpstan')) || exists(path.join('vendor', 'bin', 'phpstan.bat')),
     'not applicable — phpstan not installed');
   run('npm-audit', 'npm audit --package-lock-only',
     exists('package.json') && (exists('package-lock.json') || exists('npm-shrinkwrap.json')),
     exists('package.json') ? 'no lockfile — generate one or audit manually' : 'not applicable — no package.json');
-  const snykReady = onPath('snyk') && (process.env.SNYK_TOKEN || exists(path.join(keelHome, 'secrets', 'snyk.token')));
-  run('snyk', 'snyk test --severity-threshold=high', snykReady, 'not configured — snyk CLI or token missing');
+  const hasProjectManifest = ['package.json', 'go.mod', 'pom.xml', 'build.gradle',
+    'requirements.txt', 'Pipfile', 'poetry.lock', 'Gemfile', 'composer.json'].some((f) => exists(f));
+  const snykReady = hasProjectManifest && onPath('snyk') && (process.env.SNYK_TOKEN || exists(path.join(keelHome, 'secrets', 'snyk.token')));
+  run('snyk', 'snyk test --severity-threshold=high', snykReady,
+    hasProjectManifest ? 'not configured — snyk CLI or token missing' : 'not applicable — no supported project manifests');
   const sonarReady = onPath('sonar-scanner') && (exists('sonar-project.properties') || exists(path.join(keelHome, 'config', 'sonarqube.yml')));
   run('sonar-scanner', 'sonar-scanner', sonarReady, 'not configured — scanner or project config missing');
 

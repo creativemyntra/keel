@@ -1,0 +1,30 @@
+{
+  "phase": 3,
+  "agent": "solution-architect",
+  "story_id": "KEEL-102",
+  "confidence": "high",
+  "findings": [
+    "Design: new cmdStatusAll() in scripts/keel-state.cjs placed after cmdStatus; dispatcher intercept `if (cmd === 'status' && storyId === '--all') { cmdStatusAll(); process.exit(0); }` inserted between the `!storyId` guard (line 652) and the switch (line 653), mirroring the existing memory-check early-exit idiom — runs before readManifest can die on a literal '--all' lookup.",
+    "Enumeration: non-recursive readdir of .keel/state/ with withFileTypes; stories = directories containing manifest.json only; files, .lock, *.tmp, and a literal '--all' dir skipped (B-4/B-6/BR-6); snapshots/ never surfaces since it lives inside story dirs.",
+    "Corrupt manifests use a local try/catch (skip-and-mark, B-5) — deliberately NOT readJson()/readManifest(), which die(1) and would abort the sweep; the sole die is B-9 (state root unreadable), giving BR-1's unconditional exit-0 otherwise.",
+    "Lock-free read-only is safe: writeManifest() is tmp+renameSync (atomic on NTFS and POSIX, keel-state.cjs:70-78), so a reader never sees a torn manifest; taking N locks would let a busy/wedged story block or fail the sweep, contradicting BR-1. Recorded as ADR-001.",
+    "Field projection exactly {story_id, scope (default 'feature'), current_phase (?? null), halted (=== true)} per BR-2/AC-1; no sequencing-gap evaluation in --all mode (B-8) so exit-0 stays simple; output sorted via localeCompare (BR-5), JSON.stringify(...,null,2) matching single-story format.",
+    "AC-3 guard is structural: cmdStatus, its switch case, and the !storyId dispatcher check are byte-for-byte untouched; the new path is only reachable via the new branch. USAGE string updated to 'status <story-id>|--all' — lesson L-1 checked, no hard-coded paths added to user-facing strings.",
+    "Impact analysis: .keel/graph/codegraph.json absent (Node engine repo); manual scan shows status consumers are commands/health.md step 1 (the requesting feature) and human CLI use; cmdStatus has no internal callers beyond the dispatcher. Blast radius: one file, additive. DB schema and API contract: n/a (local CLI, stdout/exit-code contract per B-1..B-10).",
+    "Test plan maps suite assertions to behaviors: 2-story fixture proves B-1/BR-2/BR-5; absent and empty state dir prove B-2/B-3; corrupt-manifest-plus-healthy-sibling proves B-5; root artifact filtering proves B-4/B-6; halted/defect fixtures prove B-7/B-8; unchanged single-story deep object and exit-1 on missing manifest plus full green engine suite prove B-10/AC-3."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3"],
+  "decisions": [
+    "ADR-001: status --all is lock-free read-only with skip-and-mark corrupt-manifest handling; only nonzero exit is an unreadable .keel/state/ root",
+    "Dispatcher intercept placed as an early-exit line before the switch, after the !storyId guard ('--all' is truthy so the guard needs no change)",
+    "cmdStatusAll uses local try/catch per story instead of readJson/readManifest to preserve B-5; comment in code prevents refactor regression",
+    "No new dependencies, no new files in the engine; single additive change to scripts/keel-state.cjs plus test suite additions",
+    "Future fleet commands (e.g. verify --all) must follow the ADR-001 pattern"
+  ],
+  "artifacts": [
+    "docs/design/KEEL-102-design.md",
+    ".keel/memory/decisions/ADR-001-status-all-read-only-listing.md"
+  ],
+  "next_phase": 4,
+  "timestamp": "2026-07-09T17:05:00.000Z"
+}

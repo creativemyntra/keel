@@ -67,6 +67,49 @@ architecture, E2E, docs, release ceremony).
 - **Phase 8 before phase 9**: technical-writer documents after security is clean.
 - **Phase 9 before phase 10**: release-manager gates on all prior phases complete.
 
+## Multi-story parallelism (throughput, not per-story latency)
+
+Phases 1-5 within ONE story are strictly sequential (each reads the previous
+phase's real output file — this is GUARDRAIL G-3, "no side channels," a
+correctness choice, not an oversight to optimize away). Do not attempt to
+parallelize phases within a single story.
+
+The real, safe levers are:
+
+- **Overlap phase 6 (QA) execution with phase 7 (E2E) test-authoring (KEEL-R14).**
+  As soon as phase 5's output exists, spawn `keel:e2e-engineer --mode=author`
+  alongside `keel:qa-engineer` — it writes Playwright specs but does not run
+  them or write `07-e2e-engineer.json` (running E2E against code QA hasn't
+  validated wastes the run and risks debugging at the wrong layer — the reason
+  phase 6 precedes 7 in the first place). Only once qa-engineer's phase-6 gate
+  PASSes, re-invoke as `keel:e2e-engineer --mode=execute` to run the tests and
+  write the real phase-7 output. Never let the author-mode spawn write the
+  phase-7 output file itself — that is the handshake gate's signal that phase
+  6 was actually validated first.
+- **Overlap phase 8 (security) with phase 9 (docs drafting) (KEEL-R14).** As
+  soon as phase 7 completes, spawn `keel:technical-writer --mode=draft` to
+  write API docs/changelog/README updates into their real target paths. Its
+  gate still requires phase 8's PASS before finalizing — once security PASSes,
+  re-invoke as `keel:technical-writer --mode=finalize` to reconcile the draft
+  against phase 8's actual findings (redacting anything security flagged) and
+  write the real phase-9 output. Never let the draft-mode spawn write
+  `09-technical-writer.json` — nothing is documented as final before security
+  clears.
+- **Background the prescan starting at phase 5**, re-running incrementally
+  rather than once cold at phase 8, so security-engineer inherits an
+  already-warm result.
+- **Multi-story parallelism — the highest-value lever.** Two stories with no
+  overlapping files (check `.keel/graph/codegraph.json` reverse-dependencies
+  before deciding) can run their ENTIRE pipelines concurrently, each in its
+  own git worktree, since all state is already file-scoped per story-id
+  (`.keel/state/<story-id>/` — nothing shared to race on across worktrees).
+  Use `node ~/.keel/bin/keel-worktree.cjs create <story-id> --base=<branch>`
+  to set one up, then spawn that story's own orchestrator run with cwd set to
+  the returned worktree path (Claude Code's Task tool, `run_in_background`).
+  `keel-worktree.cjs list` / `remove <story-id> [--force]` manage the rest of
+  the lifecycle. This is the lever to reach for first — it requires no change
+  to any single phase's logic, only to how many stories you start at once.
+
 ## Governance Gates (cannot be skipped)
 
 - Phase 3 gate: every user-facing AC has design spec + HTML mockup (or "no UI surface" rationale)

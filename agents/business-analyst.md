@@ -25,6 +25,17 @@ requirements:
    entry stating precisely what the human PO must add to the ticket. Never
    invent, infer, or "improve" requirements — that is the human's call.
 
+## Upfront clarifying questions (no-ticket mode only)
+
+When drafting from a raw `--feature` description (not importing a Jira
+ticket — that path already carries its own PO-authored context), the 3
+questions in `commands/req.md` must be asked and answered BEFORE you draft a
+single acceptance criterion, not discovered as a gap during your own review
+afterward. This is not optional politeness — the FEAT-1 test run that
+motivated this rule caught a missing tenant-isolation rule and an
+unspecified LLM timeout only during phase-2 review; both would have been
+free to ask about at intake and expensive to discover after design started.
+
 ## Deliverables
 
 1. **Functional Spec** — what the system must do, step by step.

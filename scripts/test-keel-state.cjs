@@ -34,6 +34,11 @@ function engine(cwd, ...cliArgs) {
   return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
 }
 
+function engineWithEnv(cwd, env, ...cliArgs) {
+  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8', env });
+  return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
+}
+
 function engineAsync(cwd, ...cliArgs) {
   return new Promise((resolve) => {
     const p = spawn(process.execPath, [ENGINE, ...cliArgs], { cwd });
@@ -122,8 +127,11 @@ async function main() {
   {
     const cwd = makeTmpDir('budget');
     engine(cwd, 'init', 'S-5', '--max-gates', '2');
+    writePhaseFile(cwd, 'S-5', 1, 'product-owner', ['intake']);
     engine(cwd, 'gate', 'S-5', '--phase', '1', '--verdict', 'PASS');
+    writePhaseFile(cwd, 'S-5', 2, 'business-analyst', ['spec']);
     engine(cwd, 'gate', 'S-5', '--phase', '2', '--verdict', 'PASS');
+    writePhaseFile(cwd, 'S-5', 3, 'ui-designer', ['design']);
     const r = engine(cwd, 'gate', 'S-5', '--phase', '3', '--verdict', 'PASS');
     const m = readManifest(cwd, 'S-5');
     assert('gate budget exceeded: HALT exit 2 + halted flag',
@@ -139,9 +147,11 @@ async function main() {
   {
     const cwd = makeTmpDir('restore');
     engine(cwd, 'init', 'S-6');
+    writePhaseFile(cwd, 'S-6', 1, 'product-owner', ['intake']);
     engine(cwd, 'gate', 'S-6', '--phase', '1', '--verdict', 'PASS');
     engine(cwd, 'snapshot', 'S-6');
     const snap = fs.readdirSync(path.join(cwd, '.keel', 'state', 'S-6', 'snapshots'))[0];
+    writePhaseFile(cwd, 'S-6', 2, 'business-analyst', ['spec']);
     engine(cwd, 'gate', 'S-6', '--phase', '2', '--verdict', 'PASS');
     const auditFile = path.join(cwd, '.keel', 'state', 'S-6', 'audit-log.jsonl');
     const before = fs.readFileSync(auditFile, 'utf8').split('\n').filter(Boolean).length;
@@ -156,17 +166,24 @@ async function main() {
   {
     const cwd = makeTmpDir('scope');
     engine(cwd, 'init', 'S-8', '--scope', 'defect');
+    writePhaseFile(cwd, 'S-8', 1, 'product-owner', ['intake']);
     const r = engine(cwd, 'gate', 'S-8', '--phase', '1', '--verdict', 'PASS');
     const m = readManifest(cwd, 'S-8');
     assert('defect scope: gate PASS on phase 1 advances to 5, not 2',
       m.current_phase === 5 && /1 -> 5/.test(r.out), `current_phase=${m.current_phase}`);
+    writePhaseFile(cwd, 'S-8', 5, 'software-engineer', ['fix']);
     engine(cwd, 'gate', 'S-8', '--phase', '5', '--verdict', 'PASS');
+    writePhaseFile(cwd, 'S-8', 6, 'qa-engineer', ['validated']);
     engine(cwd, 'gate', 'S-8', '--phase', '6', '--verdict', 'PASS');
-    engine(cwd, 'gate', 'S-8', '--phase', '7', '--verdict', 'PASS');
-    engine(cwd, 'gate', 'S-8', '--phase', '8', '--verdict', 'PASS');
-    const last = engine(cwd, 'gate', 'S-8', '--phase', '10', '--verdict', 'PASS');
+    writePhaseFile(cwd, 'S-8', 8, 'security-engineer', ['0 HIGH']);
+    // defect scope's expected_phases is [1,5,6,8] (orchestrator.md: "Defect
+    // scope phases: 1 -> 5 -> 6 -> 8" -- no phase 7/9/10). Pre-fix, this test
+    // used to gate a bogus phase 10 here and it silently "passed" because
+    // gate never validated anything -- exactly the bug this patch closes.
+    // Phase 8 is genuinely the last phase for a defect-scoped story.
+    const last = engine(cwd, 'gate', 'S-8', '--phase', '8', '--verdict', 'PASS');
     assert('defect scope: final gate reports complete',
-      /10 -> complete/.test(last.out), last.out.slice(0, 120));
+      /8 -> complete/.test(last.out), last.out.slice(0, 120));
   }
 
   // ---- gate PASS auto-audits the phase (KEEL-102 e2e finding) ----------
@@ -179,6 +196,63 @@ async function main() {
     assert('gate PASS auto-appends phase_completed (no separate audit call)',
       /"action":"phase_completed"/.test(log) && /"agent":"business-analyst"/.test(log),
       log.slice(-200));
+  }
+
+  // ---- gate PASS refuses to advance without a valid phase file (2026-07-20 fix) ----
+  // Regression test for the audit finding: gate used to accept --verdict PASS
+  // with no corresponding phase file on disk at all, silently advancing the
+  // pipeline. This must never regress.
+  {
+    const cwd = makeTmpDir('gate-refuse');
+    engine(cwd, 'init', 'S-11');
+    const noFile = engine(cwd, 'gate', 'S-11', '--phase', '1', '--verdict', 'PASS', '--notes', 'no phase file exists');
+    const m1 = readManifest(cwd, 'S-11');
+    assert('gate PASS refuses when no phase file exists on disk',
+      noFile.code === 1 && /GATE REFUSED/.test(noFile.out) && m1.current_phase === 1,
+      `code=${noFile.code} current_phase=${m1.current_phase} out=${noFile.out.slice(0, 100)}`);
+
+    fs.writeFileSync(path.join(cwd, '.keel', 'state', 'S-11', '01-product-owner.json'), JSON.stringify({
+      phase: 1, agent: 'product-owner', story_id: 'S-11', confidence: 'high',
+      findings: ['x'], acceptance_criteria_ids: ['AC-1'], decisions: [],
+      artifacts: ['this-file-does-not-exist.md'], next_phase: 2,
+    }));
+    const badArtifact = engine(cwd, 'gate', 'S-11', '--phase', '1', '--verdict', 'PASS', '--notes', 'artifact does not exist');
+    const m2 = readManifest(cwd, 'S-11');
+    assert('gate PASS refuses when the phase file references a nonexistent artifact',
+      badArtifact.code === 1 && /GATE REFUSED/.test(badArtifact.out) && /does not exist on disk/.test(badArtifact.out) && m2.current_phase === 1,
+      `code=${badArtifact.code} current_phase=${m2.current_phase}`);
+
+    writePhaseFile(cwd, 'S-11', 1, 'product-owner', ['intake, no bogus artifacts this time']);
+    const good = engine(cwd, 'gate', 'S-11', '--phase', '1', '--verdict', 'PASS', '--notes', 'now valid');
+    assert('gate PASS succeeds once the phase file is genuinely valid',
+      good.code === 0 && /PASS recorded/.test(good.out), good.out.slice(0, 100));
+  }
+
+  // ---- gate PASS refuses to skip a phase (KEEL-R18, found via live testing
+  // 2026-07-21) -- reproduces exactly what happened against a real project:
+  // phase N's gate is never successfully recorded (refused or just never
+  // called), yet phase N+1's gate is still accepted because the engine only
+  // checked THAT phase's own file, never that the story was actually AT that
+  // phase. Must never regress. --------------------------------------------
+  {
+    const cwd = makeTmpDir('gate-skip-phase');
+    engine(cwd, 'init', 'S-13');
+    writePhaseFile(cwd, 'S-13', 1, 'product-owner', ['intake']);
+    engine(cwd, 'gate', 'S-13', '--phase', '1', '--verdict', 'PASS', '--notes', 'ok');
+    // current_phase is now 2. Skip writing/gating phase 2 entirely, and try
+    // to jump straight to gating phase 3 (a genuinely valid phase-3 file).
+    writePhaseFile(cwd, 'S-13', 3, 'ui-designer', ['designed without BA ever running']);
+    const skip = engine(cwd, 'gate', 'S-13', '--phase', '3', '--verdict', 'PASS', '--notes', 'skip ahead');
+    const m = readManifest(cwd, 'S-13');
+    assert('gate PASS refuses to skip an un-gated phase, even with a valid file for the later phase',
+      skip.code === 1 && /GATE REFUSED/.test(skip.out) && /out of sequence/.test(skip.out) && m.current_phase === 2,
+      `code=${skip.code} current_phase=${m.current_phase} out=${skip.out.slice(0, 150)}`);
+
+    // The correct, in-sequence phase must still succeed.
+    writePhaseFile(cwd, 'S-13', 2, 'business-analyst', ['elaborated']);
+    const inSeq = engine(cwd, 'gate', 'S-13', '--phase', '2', '--verdict', 'PASS', '--notes', 'in sequence');
+    assert('gate PASS still succeeds for the actual current phase',
+      inSeq.code === 0 && /PASS recorded/.test(inSeq.out), inSeq.out.slice(0, 100));
   }
 
   // ---- prescan: honest inventory even with zero tools available --------
@@ -194,12 +268,41 @@ async function main() {
       `code=${r.code} scanners=${inv ? inv.scanners.length : 'none'}`);
   }
 
+  // ---- prescan: composer-audit honestly skips when composer isn't on
+  // PATH, instead of "running" and reporting a false PRESCAN DIRTY from a
+  // shell-not-found exit code (found via live testing against a real
+  // CakePHP project in a sandbox with no composer binary on PATH -- every
+  // other scanner in this list already checked onPath() before running;
+  // composer-audit was the one exception, 2026-07-21) --------------------
+  {
+    const cwd = makeTmpDir('prescan-composer-no-path');
+    engine(cwd, 'init', 'S-12');
+    fs.writeFileSync(path.join(cwd, 'composer.json'), '{"require":{"php":">=8.1"}}\n');
+    // Strip all non-essential tools from PATH so composer (and snyk, etc.) are
+    // not found — ensures the test is environment-agnostic regardless of what's
+    // installed on the host machine.  node's bin dir is intentionally excluded:
+    // keel-state.cjs is launched via absolute path (process.execPath), and on
+    // many machines npm-global tools like snyk are co-installed there.
+    const sysPathEntries = process.platform === 'win32'
+      ? [(process.env.WINDIR || process.env.SystemRoot || 'C:\\Windows') + '\\System32']
+      : ['/usr/bin', '/bin', '/usr/local/bin'];
+    const strippedPath = sysPathEntries.join(path.delimiter);
+    const r = engineWithEnv(cwd, { ...process.env, PATH: strippedPath }, 'prescan', 'S-12');
+    const file = path.join(cwd, '.keel', 'state', 'S-12', 'prescan.json');
+    const inv = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+    const composerEntry = inv && inv.scanners.find((s) => s.name === 'composer-audit');
+    assert('prescan: composer-audit skips honestly (not a false DIRTY) when composer.json exists but composer is not on PATH',
+      r.code === 0 && composerEntry && composerEntry.status === 'skipped' && /not on PATH/.test(composerEntry.reason || ''),
+      `code=${r.code} entry=${JSON.stringify(composerEntry)}`);
+  }
+
   // ---- status --all: fleet listing (KEEL-102) --------------------------
   {
     // (a) two-story fixture: FLEET-A feature (advanced past phase 1),
     //     FLEET-B defect halted via 3 gate FAILs on the same phase.
     const cwd = makeTmpDir('fleet');
     engine(cwd, 'init', 'FLEET-A', '--title', 'feature story');
+    writePhaseFile(cwd, 'FLEET-A', 1, 'product-owner', ['intake']);
     engine(cwd, 'gate', 'FLEET-A', '--phase', '1', '--verdict', 'PASS');
     engine(cwd, 'init', 'FLEET-B', '--scope', 'defect');
     engine(cwd, 'gate', 'FLEET-B', '--phase', '1', '--verdict', 'FAIL', '--notes', 'f1');

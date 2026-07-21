@@ -1,7 +1,7 @@
-# Keel v3.16.0 — Complete Agent Guide
+# Keel v3.16.1 — Complete Agent Guide
 
-**Framework Version:** 3.16.0  
-**Total Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
+**Framework Version:** 3.16.1  
+**Total Agents:** 15 (10 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
 
@@ -15,13 +15,13 @@
 /keel:implement-feature story="FEAT-123" feature="User payment export"
 ```
 
-This single command invokes the orchestrator, which routes through all 12 pipeline phases automatically.
+This single command invokes the orchestrator, which routes through all 10 pipeline phases automatically.
 
 ---
 
 ## 📊 AGENT TYPES
 
-### **PIPELINE PHASE AGENTS (12)** — Deliver the feature through 12 sequential phases
+### **PIPELINE PHASE AGENTS (10)** — Deliver the feature through 10 sequential phases
 ### **META/SUPPORT AGENTS (2)** — Orchestrator (routing) + Scrum Master (ceremonies)
 ### **INFRASTRUCTURE AGENTS (3)** — Handshake gate, state management, audit
 
@@ -147,8 +147,8 @@ Scenario: Handle no payments
 
 ### How to Use
 ```bash
-# Invoke directly to refine a story
-/keel:create-prd goal="Allow customers to export payment data"
+# Invoke directly to draft requirements (keel:create-prd was removed 2026-07-20 -- dead-code cleanup, see remediation plan item 4)
+/keel:req --story="FEAT-123" --feature="Allow customers to export payment data"
 
 # Or via orchestrator (automatic)
 /keel:implement-feature story="FEAT-123" feature="Payment export"
@@ -227,8 +227,8 @@ Q: What currencies if user has multi-currency transactions?
 
 ### How to Use
 ```bash
-# Invoke to elaborate a story into specs
-/keel:analyze-story story="FEAT-123"
+# Invoke to elaborate a story into specs (keel:analyze-story was removed 2026-07-20 -- dead-code cleanup, see remediation plan item 4)
+/keel:req --story="FEAT-123"
 
 # Or via orchestrator
 /keel:implement-feature story="FEAT-123" feature="Payment export"
@@ -459,11 +459,12 @@ class PaymentExporter {
 
 ### How to Use
 ```bash
-# Invoked automatically by orchestrator
+# Invoked automatically by orchestrator -- software-engineer writes code AND
+# unit tests in this one phase (3.15.0 merged tdd-red/tdd-green into it).
+# keel:generate-tests was a separate skill removed 2026-07-20 (dead-code
+# cleanup, see remediation plan item 4) -- there is currently no standalone
+# command for just this phase; use the orchestrator.
 /keel:implement-feature story="FEAT-123" feature="Payment export"
-
-# Or invoke directly
-/keel:generate-tests story="FEAT-123" feature="Payment export"
 ```
 
 ### Key Rules
@@ -652,11 +653,11 @@ These agents help organize work and document features.
 
 ### How to Use
 ```bash
-# Plan next sprint
-/keel:sprint-planning
-
-# Or discuss with orchestrator
-/keel:implement-feature story="FEAT-123" feature="..."
+# Scrum Master is a manual/on-demand agent, not a pipeline phase or a skill
+# command (keel:sprint-planning was removed 2026-07-20 -- dead-code cleanup,
+# see remediation plan item 4). Invoke the agent directly by name when you
+# want ceremony/reporting help:
+# "Use the keel:scrum-master agent to plan next sprint from the backlog"
 ```
 
 ### Key Rules
@@ -1092,7 +1093,7 @@ Response: {
 
 ## Simplest Usage
 ```bash
-# One command invokes all 17 agents
+# One command invokes all 15 agents
 /keel:implement-feature story="FEAT-123" feature="User payment export"
 
 # This automatically runs all 12 pipeline phases:
@@ -1115,10 +1116,10 @@ Response: {
 ## Typical Workflow
 ```
 Day 1: Create story
-  /keel:create-prd goal="Export payment data"
+  /keel:req --story="FEAT-123" --feature="Export payment data"
 
 Day 2-3: Elaborate & design
-  /keel:analyze-story story="FEAT-123"
+  /keel:design --story="FEAT-123"
 
 Day 4-5: Implement (code + unit tests in one phase)
   /keel:implement-feature story="FEAT-123"
@@ -1129,14 +1130,17 @@ Day 6: Validate & release
 
 ## Individual Agent Skills
 ```bash
-/keel:sprint-planning              # Scrum Master
-/keel:create-prd                   # Product Owner
-/keel:analyze-story                # Business Analyst
-/keel:generate-tests               # Software Engineer TDD
+/keel:req                          # Product Owner + Business Analyst
+/keel:design                       # UI Designer + Solution Architect
 /keel:review-code                  # Security Engineer
 /keel:release-check                # Release Manager
 /keel:implement-feature            # ALL AGENTS (orchestrator)
 ```
+(keel:sprint-planning, keel:create-prd, keel:analyze-story, and
+keel:generate-tests were removed 2026-07-20 as dead code with no
+cross-references anywhere else in the plugin -- see remediation plan item 4.
+Scrum Master remains available as a manually-invoked agent, not a skill
+command.)
 
 ---
 
@@ -1173,7 +1177,7 @@ Day 6: Validate & release
 | **Handshake Agent** | Phase-to-phase validation + context passing |
 | **State Management Agent** | Locked state, atomic writes, audit trail, snapshots |
 
-**Infrastructure Scripts (v3.16.0)**
+**Infrastructure Scripts (v3.16.1)**
 
 | Script | Purpose |
 |--------|---------|
@@ -1192,10 +1196,10 @@ Day 6: Validate & release
 
 ---
 
-**Framework:** Keel AI-SDLC Framework v3.16.0  
+**Framework:** Keel AI-SDLC Framework v3.16.1  
 **License:** MIT  
 **Author:** Amar Singh  
 **Repository:** https://github.com/creativemyntra/keel  
 
-✅ **All 17 agents ready to deliver enterprise-grade features in hours, not weeks!**
+✅ **All 15 agents ready to deliver enterprise-grade features in hours, not weeks!**
 

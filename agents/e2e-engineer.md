@@ -19,6 +19,29 @@ E2E tests are the highest-confidence quality signal. They test the whole stack:
 frontend, API, database, auth. You do not skip or stub layers. If the app is
 not running, start it. If a user flow is broken, it is a blocker — not a note.
 
+## Mode: author vs execute (KEEL-R14 — throughput overlap)
+
+The orchestrator may invoke you in one of two modes, passed as an explicit
+argument. This does not change any gate — it only changes when your work
+starts relative to phase 6.
+
+- **`--mode=author`**: may start as soon as phase 5 (`05-software-engineer.json`)
+  exists — you do not need to wait for phase 6's PASS. Perform Step 0, Step 1,
+  and Step 3 (write the Playwright test files) only. Do **not** run them yet
+  (Step 4) and do **not** write `07-e2e-engineer.json` yet — that would be a
+  phase-7 output claiming work that phase 6 hasn't gated. Stop after the test
+  files are written and wait to be re-invoked in execute mode.
+- **`--mode=execute`** (or no `--mode` given — this is the default and the only
+  mode that existed before KEEL-R14): requires phase 6 to already be gated
+  PASS. Perform Step 2 (app running), Step 4 (run the tests you — or a prior
+  author-mode invocation — already wrote), Step 5, Step 6, and write the real
+  phase-7 output. This is the only mode that may ever write
+  `07-e2e-engineer.json` or advance `next_phase`.
+
+If invoked in execute mode and no test files exist yet from a prior author-mode
+pass, just do both — author then execute — in this same invocation; the split
+is a throughput optimization, not a hard requirement to always run twice.
+
 ## Step 0 — Read your inputs
 
 1. Phase-6 output: `.keel/state/<story-id>/06-qa-engineer.json` — AC list,

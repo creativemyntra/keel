@@ -1,0 +1,30 @@
+{
+  "phase": 5,
+  "agent": "qa-engineer",
+  "story_id": "KEEL-101",
+  "confidence": "high",
+  "findings": [
+    "Full engine suite executed: 'node scripts/test-keel-state.cjs' — 11/11 passed, 0 failing (exit 0).",
+    "Regression test executed: 'node scripts/test-halt-message-paths.cjs' — PASS (exit 0): both halt/stale messages instruct 'node ~/.keel/bin/keel-state.cjs resume'.",
+    "AC-1 mapped and verified in test source: test-halt-message-paths.cjs lines 18-25 read scripts/keel-watch.cjs, locate the (unique, line 96) 'HALTED' message line and assert it contains 'node ~/.keel/bin/keel-state.cjs resume' — a genuine content assertion on the exact changed line.",
+    "AC-2 mapped and verified in test source: test-halt-message-paths.cjs lines 27-34 read scripts/keel-state.cjs, locate the (unique, line 156) 'Keel pipeline HALTED' Slack text line and assert the same required string — genuine content assertion on the exact changed line.",
+    "Revert-check independently re-executed by QA: 'node ~/.keel/bin/keel-state.cjs revert-check KEEL-101 --test scripts/test-halt-message-paths.cjs --runner node' → 'PASS: regression test fails without the fix and passes with it' (exit 0); working tree verified restored afterward (fixes present, regression test re-passes).",
+    "Coverage (honest): no JS coverage driver installed (no c8/nyc/jest) — global % unmeasurable, no number fabricated. Change coverage by analysis: git diff is exactly 2 changed message-string lines; 2/2 changed lines directly asserted by the regression test (match strings unique per file).",
+    "Baseline trend: .keel/watch/baseline.json absent — no trend comparison possible; test count grew 11 -> 12 (regression added), no erosion observed.",
+    "RCA gate: engineer output references docs/defects/KEEL-101-rca.md — file exists, names a cause (v3.9.0 migration commit 1685e2d missed resume text duplicated as hard-coded strings in two runtime messages; no single source of truth), not a symptom; includes 5-whys and prevention.",
+    "Patch-pattern check on git diff of scripts/keel-watch.cjs and scripts/keel-state.cjs: each hunk changes only text inside one template-literal message string — no control-flow change, no swallowed errors, no timeouts, no special-casing.",
+    "Verdict: PASS — QA report written to docs/qa/KEEL-101-qa-report.md."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2"],
+  "decisions": [
+    "Applied spec intent to the Node stack: runner is 'node scripts/test-keel-state.cjs' + the regression script, not phpunit; integration/HTTP steps inapplicable to a message-text-only CLI defect.",
+    "Coverage gate applied to changed lines (2/2 = 100% asserted) with global % explicitly declared unmeasurable rather than inventing a figure, since no coverage driver exists in the repo.",
+    "Re-ran the engine revert-check independently instead of trusting the phase-4 record, since the required git state (test staged, fixes unstaged) was still in place.",
+    "Verified AC assertions bind to the actual changed lines by grepping match-string uniqueness ('HALTED' once in keel-watch.cjs line 96; 'Keel pipeline HALTED' once in keel-state.cjs line 156)."
+  ],
+  "artifacts": [
+    "docs/qa/KEEL-101-qa-report.md"
+  ],
+  "next_phase": 6,
+  "timestamp": "2026-07-09T13:41:00Z"
+}

@@ -21,15 +21,40 @@ const https = require('https');
 
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
 const KEEL_HOME = process.env.KEEL_HOME || path.join(os.homedir(), '.keel');
-const PATTERNS_FILE = path.join(PLUGIN_ROOT, 'config', 'cjis-patterns.json');
 const INCIDENT_LOG = path.join(KEEL_HOME, 'security', 'incidents.jsonl');
+
+// PATTERNS_FILE resolution (fixed 2026-07-20 -- audit finding F-08):
+// This script is invoked two different ways in practice: (1) from its real
+// location, ${CLAUDE_PLUGIN_ROOT}/scripts/keel-classify-gate.cjs, which is how
+// hooks/hooks.json actually wires it -- CLAUDE_PLUGIN_ROOT is set correctly by
+// Claude Code, so PLUGIN_ROOT above resolves right; (2) from the "stable path"
+// copy at ~/.keel/bin/keel-classify-gate.cjs that keel-init.cjs makes for every
+// other engine script -- there, with no CLAUDE_PLUGIN_ROOT set, the fallback
+// path.resolve(__dirname, '..') resolves to ~/.keel itself (one directory too
+// shallow), so config/cjis-patterns.json was never found there and the
+// fail-closed gate blocked everything. Fix: try the real plugin-root location
+// first, then a copy under KEEL_HOME that keel-init.cjs now also stages
+// (mirroring how it stages the .cjs scripts), so the gate works from either
+// invocation path instead of only the one Claude Code happens to use today.
+function resolvePatternsFile() {
+  const candidates = [
+    path.join(PLUGIN_ROOT, 'config', 'cjis-patterns.json'),
+    path.join(KEEL_HOME, 'config', 'cjis-patterns.json'),
+  ];
+  const found = candidates.find((c) => fs.existsSync(c));
+  return found || candidates[0]; // fall through to the first path so the error message below is still meaningful
+}
+const PATTERNS_FILE = resolvePatternsFile();
 
 function block(reason) { process.stderr.write(`CJIS GATE BLOCK: ${reason}\n`); process.exit(2); }
 
 function loadPatterns() {
   const parsed = JSON.parse(fs.readFileSync(PATTERNS_FILE, 'utf8')); // throws -> fail-closed
   if (!Array.isArray(parsed.patterns) || !parsed.patterns.length) throw new Error('no patterns');
-  return parsed.patterns.map((p) => ({ ...p, re: new RegExp(p.pattern, p.flags || 'gi') }));
+  return {
+    patterns: parsed.patterns.map((p) => ({ ...p, re: new RegExp(p.pattern, p.flags || 'gi') })),
+    allowlist: (parsed.allowlist || []).map((a) => ({ ...a, re: new RegExp(a.pattern, 'gi') })),
+  };
 }
 
 function readStdin() {
@@ -60,9 +85,13 @@ function decodedVariants(text) {
   return out;
 }
 
-function classify(text, patterns) {
+function classify(text, patterns, allowlist = []) {
+  // Strip allowlisted domains/content before scanning to avoid false positives
+  // on known-safe project addresses (e.g. marketplace author email).
+  let scrubbed = text;
+  for (const a of allowlist) { a.re.lastIndex = 0; scrubbed = scrubbed.replace(a.re, '<<ALLOWLISTED>>'); }
   const matched = new Set();
-  for (const v of decodedVariants(text)) for (const p of patterns) { p.re.lastIndex = 0; if (p.re.test(v)) matched.add(p.category); }
+  for (const v of decodedVariants(scrubbed)) for (const p of patterns) { p.re.lastIndex = 0; if (p.re.test(v)) matched.add(p.category); }
   if (!matched.size) return { category: 'CLEAR', matched: [] };
   const hard = [...matched].some((c) => patterns.find((p) => p.category === c)?.severity === 'hard');
   return { category: hard ? 'CJIS_VIOLATION' : 'SUSPECT', matched: [...matched] };
@@ -100,7 +129,8 @@ async function main() {
   catch (e) { return block(`unreadable hook payload: ${e.message}`); }
 
   const text = extractText(stage, hook);
-  const { category, matched } = classify(text, loadPatterns());
+  const { patterns, allowlist } = loadPatterns();
+  const { category, matched } = classify(text, patterns, allowlist);
   if (category === 'CLEAR') process.exit(0);
 
   const contentHash = crypto.createHash('sha256').update(text).digest('hex');

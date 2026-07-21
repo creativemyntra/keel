@@ -1,0 +1,26 @@
+{
+  "phase": 9,
+  "agent": "security-engineer",
+  "story_id": "KEEL-103",
+  "confidence": "high",
+  "findings": [
+    "Scanner inventory: composer-audit skipped (no composer.json); phpstan skipped (not installed); npm-audit skipped (no lockfile); snyk skipped (not configured); sonar-scanner skipped (not configured). All skips are inapplicable/not-configured — not failures. No scanner ran with a dirty exit.",
+    "Path traversal (OWASP A01 / A03): stateDir() constructs the path as path.join('.keel','state',storyId) with no sanitization. A value like '../../etc/passwd' would resolve outside the project tree. However: (1) this is a local developer CLI, not a network-facing service; (2) the identical pattern is used by every other command (init, gate, status, verify, etc.) — describe introduces zero new surface; (3) the traversal can only reach files readable by the OS user running the CLI, who already has full filesystem access. Severity: LOW. No code change required for this story; recommend a shared storyId guard as a follow-on hardening task.",
+    "Command injection: cmdDescribe makes no shell calls (no execSync/spawn). It uses only fs.readdirSync, fs.readFileSync, JSON.parse, path.join, and console.log. No injection vector exists. NONE.",
+    "Sensitive data / information disclosure: output renders manifest fields (story_id, title, scope, phase numbers, timestamps, attempt counts, gate event counts). None of these are credentials, PII, or secrets. The title field is author-supplied metadata. No token or secret values flow through cmdDescribe. NONE.",
+    "Authentication / authorisation: CLI tool, single-user local execution. No auth layer applies. NONE.",
+    "Input validation: storyId is passed unsanitised to path.join — same as all peer commands (see path traversal note above). No new validation gap introduced. LOW (pre-existing, shared).",
+    "CJIS: no law-enforcement data contact. Flag: absent.",
+    "Zero new npm dependencies confirmed: cmdDescribe uses only fs, path (Node built-ins), and module-level constants (AGENTS, SCOPES, DEFAULT_MAX_GATES) — all pre-existing. package.json unchanged.",
+    "Blast radius via codegraph: codegraph.json contains only PHP HealthController nodes. scripts/keel-state.cjs has no PHP callers. Reverse-dependency set for the changed file is empty — no callers of new auth/validation code to audit.",
+    "OWASP Top 10 checklist: A01 (Broken Access Control) — N/A CLI; A02 (Crypto Failures) — N/A; A03 (Injection) — no shell calls, none; A04 (Insecure Design) — read-only display, sound; A05 (Security Misconfiguration) — N/A; A06 (Vulnerable Components) — no new deps; A07 (Auth Failures) — N/A CLI; A08 (Software Integrity) — N/A; A09 (Logging) — no sensitive data logged; A10 (SSRF) — no network calls."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5"],
+  "decisions": [],
+  "artifacts": [
+    ".keel/state/KEEL-103/09-security-engineer.json"
+  ],
+  "next_phase": 10,
+  "blockers": [],
+  "timestamp": "2026-07-14T10:00:00.000Z"
+}

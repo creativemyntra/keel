@@ -1,7 +1,7 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
- * Keel AI-SDLC Framework v3.16.0 -- CLI Dispatcher (ESM)
- * Author : Amar Singh <support@creativemyntra.com>
+ * Keel AI-SDLC Framework v3.16.2 -- CLI Dispatcher (ESM)
+ * Author : Amar Singh (creativemyntra)
  * License: MIT
  */
 import { spawnSync } from 'child_process';
@@ -9,7 +9,7 @@ import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const VERSION   = '3.16.0';
+const VERSION   = '3.16.2';
 const KEEL_DIR  = resolve(__dirname, '..');
 
 function parseArgs(argv) {
@@ -58,7 +58,14 @@ const ROUTES = {
   },
 
   brainstorm(c) {
-    emit(2, ['keel:product-owner'], '', [
+    // Note (KEEL-R11): the Claude Code skill (commands/brainstorm.md) asks
+    // 2-3 probe questions via AskUserQuestion before diverging. This plain
+    // CLI dispatcher has no interactive-question mechanism, so it cannot
+    // replicate that step -- it stays a lighter-weight, non-interactive path
+    // by necessity. See KEEL-R16 in the remediation runbook for the open
+    // question of whether this dispatcher should keep diverging from the
+    // prompt files at all.
+    emit('pre-1', ['keel:product-owner'], '', [
       'Goal: "' + c.goal + '"',
       '',
       '1. Generate 5+ distinct feature ideas addressing the goal',
@@ -71,7 +78,7 @@ const ROUTES = {
   },
 
   req(c) {
-    emit(3, ['keel:product-owner', 'keel:business-analyst'], c.story, [
+    emit('1-2', ['keel:product-owner', 'keel:business-analyst'], c.story, [
       'Feature: "' + c.feature + '"',
       '',
       'keel:product-owner:',
@@ -91,13 +98,21 @@ const ROUTES = {
   },
 
   design(c) {
-    emit(4, ['keel:solution-architect'], c.story, [
+    emit('3-4', ['keel:ui-designer', 'keel:solution-architect'], c.story, [
+      'keel:ui-designer (phase 3):',
+      '1. Scan existing UI stack (CSS framework, component library, design language)',
+      '2. Classify every AC: browser-UI / CLI-output / no-UI',
+      '3. Layout + ASCII sketch + states table + microcopy per browser-UI AC',
+      '4. Self-contained HTML mockup per browser-UI AC (CDN only, no build step)',
+      'Save to: docs/design/' + c.story + '-ui-design.md + mockup HTML files',
+      '',
+      'keel:solution-architect (phase 4):',
       '1. Architecture Decision Record: context, options, decision, consequences',
       '2. API contract: endpoint, method, auth, request/response schema, error codes',
       '3. DB schema: tables, columns, indexes, foreign keys',
       '4. Component diagram: which classes/services interact',
       '5. Technical risks with mitigations',
-      '6. Confirm CakePHP 4.4 conventions (Controller suffix, Table/Entity, App\\ ns)',
+      '6. Confirm CakePHP conventions (check composer.json version -- do not assume 4.4)',
       '',
       'Save to: docs/design/' + c.story + '-design.md',
     ]);
@@ -124,8 +139,27 @@ const ROUTES = {
     ]);
   },
 
+  'e2e-test'(c) {
+    console.log('\n[KEEL PHASE 7 -- E2E TESTING]  Story: ' + c.story);
+    console.log('-'.repeat(60));
+    console.log('\n> checking app is running...');
+    const health = run('curl', ['-s', '-o', '/dev/null', '-w', '%{http_code}', 'http://localhost:8080/health']);
+    console.log(health.status === 0 ? 'App responded.' : 'WARNING: app did not respond on :8080/health -- start it before running Playwright.');
+    console.log('\n> npx playwright test...');
+    run('npx', ['playwright', 'test', 'tests/e2e/' + c.story + '-*.spec.ts', '--reporter=list']);
+    emit(7, ['keel:e2e-engineer'], c.story, [
+      '1. Map each user-facing AC to a browser flow (skip backend-only ACs, note why)',
+      '2. Write Playwright tests: tests/e2e/' + c.story + '-<feature>.spec.ts',
+      '3. Use data-testid selectors, never CSS classes or text',
+      '4. Check browser console for JS errors on every flow -- a console error is a failure',
+      '5. Screenshot final state of each test to docs/e2e-evidence/',
+      '',
+      'Verdict: PASS (all green, no console errors) or FAIL',
+    ]);
+  },
+
   sec(c) {
-    console.log('\n[KEEL PHASE 7 -- SECURITY]  Story: ' + c.story);
+    console.log('\n[KEEL PHASE 8 -- SECURITY]  Story: ' + c.story);
     console.log('-'.repeat(60));
     console.log('\n> composer audit (CVE check)...');
     const a = run('composer', ['audit']);
@@ -133,7 +167,7 @@ const ROUTES = {
     console.log('PASS: No known CVEs.');
     console.log('\n> PHPStan L5...');
     run('vendor/bin/phpstan', ['analyse', '--level=5', 'src/']);
-    emit(7, ['keel:security-engineer'], c.story, [
+    emit(8, ['keel:security-engineer'], c.story, [
       '1. OWASP Top 10 review of changed files:',
       '   A01 Access Control | A02 Crypto | A03 Injection',
       '   A05 Misconfig | A07 Auth | A09 Logging | A10 SSRF',
@@ -152,7 +186,7 @@ const ROUTES = {
   },
 
   deploy(c) {
-    emit(8, ['keel:technical-writer', 'keel:release-manager'], c.story, [
+    emit('9-10', ['keel:technical-writer', 'keel:release-manager'], c.story, [
       'Rollout: ' + c.rollout + ' | Version: v' + VERSION,
       '',
       'keel:technical-writer:',
@@ -182,7 +216,7 @@ function showHelp() {
     '  /keel <command> [options]             (Claude Code / Claude Desktop)',
     '  node bin/keel.js <command> [options]  (terminal)',
     '',
-    'PIPELINE (10 phases — use /keel:implement-feature to run all)',
+    'PIPELINE (10 phases â€” use /keel:implement-feature to run all)',
     '  PH    COMMAND          AGENT',
     '  1-2   req              keel:product-owner -> keel:business-analyst',
     '  3     design           keel:ui-designer',
@@ -193,7 +227,7 @@ function showHelp() {
     '  8     sec              keel:security-engineer',
     '  9     (orchestrator)   keel:technical-writer',
     '  10    deploy           keel:release-manager',
-    '  --    dashboard        [standalone — starts local HTTP server]',
+    '  --    dashboard        [standalone â€” starts local HTTP server]',
     '',
     'OPTIONS',
     '  --story=<ID>             Story ID (e.g. FEAT-1, HEALTH-1)',

@@ -1,0 +1,43 @@
+{
+  "phase": 2,
+  "agent": "business-analyst",
+  "story_id": "KEEL-103",
+  "confidence": "high",
+  "findings": [
+    "AC-1 output format: a fixed-width labeled block written to stdout via sequential console.log calls; separator line is a plain dash run (e.g., 40 dashes); fields left-aligned with colon+space delimiter; block ends with a trailing blank line. No JSON serialization.",
+    "AC-1 field set (in order): Story, Title, Status, Started, Idle, Completed phases, In-progress phase, Remaining phases, Gate events, Attempts.",
+    "AC-2 missing-story path: cmdDescribe calls readManifest(storyId) which already calls die(1, 'FAIL: no manifest for story <id> ...') to stderr and exits 1. No duplicate error string needed.",
+    "AC-3 idle-time source: manifest.updated_at (written on every writeManifest call, line 74). Formula: elapsed = Date.now() - new Date(manifest.updated_at).getTime(). If elapsed >= 3600000: format as Xh Ym (hours = Math.floor(elapsed/3600000), minutes = Math.floor((elapsed % 3600000) / 60000)). If elapsed < 3600000: format as Xm Ys (minutes = Math.floor(elapsed/60000), seconds = Math.floor((elapsed % 60000) / 1000)).",
+    "AC-4 completed phases detection: fs.readdirSync(stateDir(storyId)).filter(f => /^\\d{2}-.+\\.json$/.test(f)).sort() — same pattern used in cmdStatus line 448. Display as comma-separated list of agent names via AGENTS[phaseNum-1] lookup, or the string '(none)' if the array is empty.",
+    "AC-4 in-progress phase: manifest.current_phase. Agent name: AGENTS[manifest.current_phase - 1]. If manifest.current_phase > 11, display 'complete'.",
+    "AC-4 remaining phases: manifest.expected_phases (or SCOPES[manifest.scope] or SCOPES.feature as fallback) filtered to entries > manifest.current_phase that do not already appear in the completed-phase set. Display as comma-separated agent names, or '(none)' if empty.",
+    "AC-4 gate events line: 'Gate events: N / M' where N = manifest.gate_events (default 0) and M = manifest.max_gates (default DEFAULT_MAX_GATES = 44). max_gates may be absent for stories initialized before it was added; use the same fallback: manifest.max_gates || DEFAULT_MAX_GATES.",
+    "AC-4 attempts line: display JSON.stringify(manifest.attempts) inline, e.g. '{}' when no active failures. Manifest.attempts is an object keyed by phase string; deleted on PASS, so only in-progress failures appear.",
+    "Halted-story edge case: prepend a warning line 'WARNING: pipeline is HALTED — human resume required' before the separator when manifest.halted === true. Absence of the field must be treated as false (line 14 of phase-1 findings).",
+    "Zero-completed-phases edge case: completed list shows '(none)'; in-progress shows phase 1 agent name; remaining shows phases 2-11 agent names. No crash from Math.max of empty set — guard with phases.length === 0 before computing maxDone.",
+    "All-done edge case (phase 11 gated PASS): manifest.current_phase advances to 12 (next after 11 not found in expected_phases). In-progress field shows 'complete'; remaining shows '(none)'. Idle time still computed normally from updated_at.",
+    "AC-5 regression scope: cmdDescribe is a new function added to keel-state.cjs. cmdStatus (line 446) and cmdStatusAll (line 475) are not modified. The switch block at line 728 gains one new case 'describe'. The USAGE string at line 722 gains 'describe' in the command list. No other lines change.",
+    "Lock policy: describe is read-only (reads manifest.json and lists stateDir files only, no writeManifest call). Per ADR-001 and the phase-1 decision, no withLock wrapper is needed.",
+    "New case wiring: main switch adds case 'describe': cmdDescribe(storyId); break; — identical pattern to existing cases. cmdDescribe takes only storyId (no rest args needed for MVP)."
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5"
+  ],
+  "decisions": [
+    "Output format is a sequential console.log block (not JSON.stringify). This is deliberate human-readable divergence from cmdStatus per phase-1 decision.",
+    "Separator line width is 40 dashes — fixed, not computed from content width. Sufficient for readability without complexity.",
+    "Idle time uses floor rounding at both places (hours/minutes for >=60min, minutes/seconds for <60min) to avoid displaying negative values at boundary.",
+    "Attempts field displays raw manifest.attempts object as JSON string. A richer attempt-history read from audit-log is deferred per phase-1 decision ('MVP the simpler read from manifest.attempts is sufficient').",
+    "max_gates fallback of 44 (DEFAULT_MAX_GATES) is applied for stories that predate the field — same logic as cmdGate line 349.",
+    "describe does not validate or write any state. It is strictly a display command; all mutation paths remain in cmdGate, cmdResume, etc.",
+    "AC-5 enforcement: the only structural changes to the file are one new function (cmdDescribe), one new switch case, and an update to the USAGE string. Lines 446-502 (cmdStatus, cmdStatusAll) are byte-for-byte unchanged."
+  ],
+  "artifacts": [
+    ".keel/state/KEEL-103/02-business-analyst.json"
+  ],
+  "next_phase": 3
+}

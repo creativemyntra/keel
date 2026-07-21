@@ -1,0 +1,37 @@
+{
+  "phase": 10,
+  "agent": "security-engineer",
+  "story_id": "KEEL-104",
+  "confidence": "high",
+  "findings": [
+    "Scanner inventory (prescan.json absent for KEEL-104 — stack run directly this phase): npm audit (SCA baseline) ran = 0 vulnerabilities; Snyk skipped (not configured: no CLI on PATH, no SNYK_TOKEN, no ~/.keel/secrets/snyk.token); SonarQube skipped (not configured: no sonar-project.properties, no ~/.keel/config/sonarqube.yml); composer audit + PHPStan N/A (no composer.json/vendor — pure Node repo); node --check scripts/keel-dashboard.cjs ran = pass; manual OWASP Top 10 diff review ran",
+    "Loopback bind VERIFIED in code: server.listen(port, '127.0.0.1') at scripts/keel-dashboard.cjs:392 — dashboard unreachable from LAN, matches ADR-003 §13.1",
+    "Read-only claim VERIFIED: only fs.existsSync/readdirSync/readFileSync used; zero write/rename/mkdir/unlink APIs, no child_process/exec/eval; requires only http/fs/path built-ins",
+    "XSS: escHtml (& < > \" ') applied to every state-derived interpolation (story_id, title, scope, phase_label, status, idle, error message, timestamp); 404 handler does not echo req.url; X-Content-Type-Options: nosniff and Cache-Control: no-store set; phase-9 E2E confirmed script/img XSS fixture rendered inert",
+    "Path traversal / SSRF: none — request URL is never mapped to the filesystem (only GET / is served, everything else is a static 404); server makes no outbound requests",
+    "Injection: bin/keel.js:193 launches dashboard via spawnSync argv array (no shell) — no shell/argument injection; --port re-validated by parsePort (integer 1..65535, else default 7772)",
+    "EADDRINUSE handled per ADR-003: stderr guidance + process.exit(1) at scripts/keel-dashboard.cjs:381-390",
+    "AC-7 guard: keel-dashboard.cjs never requires keel-state.cjs; working-tree diff of scripts/keel-state.cjs contains zero dashboard references (that diff belongs to prior KEEL-103 describe work); status --all byte-compatibility was regression-verified in phase 8",
+    "Dependencies: zero new runtime deps (AC constraint honoured); only new devDependency is @playwright/test ^1.61.1 (test-only); npm audit clean",
+    "Sensitive data: dashboard HTML exposes only story metadata (id/title/scope/phase/status/timestamps) — no PII, credentials, or env values; docs/e2e-evidence/KEEL-104/ stdout captures and tests grepped clean for token/secret/password/authorization",
+    "LOW-1 (scripts/keel-dashboard.cjs:365-379): no Host-header validation — a DNS-rebinding page in a local browser could read dashboard HTML despite the loopback bind; exposed data is low-sensitivity story metadata; recommend rejecting requests whose Host is not localhost/127.0.0.1 (fix within 30 days)",
+    "LOW-2 (gitleaks-report.json, repo root, untracked, dated 2026-07-14): both findings are placeholder 'YOUR_TOKEN' curl examples in docs = false positives, no live secrets; the scan artifact itself must not be committed — add gitleaks-report.json to .gitignore before release commit",
+    "INFO: no Content-Security-Policy header (page uses inline styles/handlers, escaping compensates); malformed-manifest error rows may render local filesystem paths from e.message; each GET performs an unthrottled full .keel/state sweep — all acceptable for a loopback-only dev tool, optional hardening",
+    "Blast radius: reverse dependencies of changed files traced manually — keel-dashboard.cjs is consumed only by bin/keel.js dashboard route and the two test files; .keel/graph/codegraph.json is stale (2026-07-14, PHP scaffold nodes only, no JS files) and should be regenerated",
+    "CJIS: no law-enforcement data contact. Verdict: PASS — 0 HIGH, 0 MEDIUM, 2 LOW, 3 INFO; no release blockers"
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6", "AC-7"],
+  "decisions": [
+    "AC-1..AC-7 carried forward from 01-business-analyst.json unchanged — no drift, no descoping",
+    "Snyk and SonarQube classified skipped (not configured), not FAILED: no partial configuration exists (no CLI/token/properties file), so their absence is not a gate failure",
+    "PHP baselines (composer audit, PHPStan) descoped as N/A for this pure-Node repo; Node equivalents substituted: npm audit + node --check + manual OWASP review of the diff",
+    "Both LOW findings are non-blocking: LOW-1 gets a follow-up (Host-header allowlist), LOW-2 is a pre-commit hygiene action (.gitignore entry) for the release manager in phase 12",
+    "Security report delivered inline in this phase output per run instructions; no separate docs/security markdown artifact written"
+  ],
+  "artifacts": [
+    ".keel/state/KEEL-104/10-security-engineer.json"
+  ],
+  "next_phase": 11,
+  "blockers": [],
+  "timestamp": "2026-07-15T14:05:00.000Z"
+}
