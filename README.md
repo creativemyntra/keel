@@ -340,8 +340,7 @@ jobs:
 ✅ 9 tests passing (100%)
 ✅ 87% code coverage
 ✅ 0 OWASP violations
-✅ 0 security vulnerabilities
-✅ PCI DSS compliant
+✅ 0 security vulnerabilities (scanner findings, not a compliance attestation)
 ```
 
 ---
@@ -791,7 +790,7 @@ Then:
 **Version:** 3.16.0  
 **Released:** 2026-07-20  
 **Status:** PRODUCTION READY ✅  
-**Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
+**Agents:** 15 (10 pipeline phase + 2 meta/support (scrum-master, product-owner-standalone-use) + 3 infrastructure (handshake, audit, state-management))
 **License:** MIT  
 **Author:** Amar Singh  
 **Tag:** v3.16.0 (https://github.com/creativemyntra/keel/releases/tag/v3.16.0)
