@@ -78,14 +78,13 @@ keel/
 │   └── plugin.yml                # Claude Code manifest
 ├── .claude-plugin/               # Plugin system files
 │   ├── marketplace.json
-│   └── skills/                   # 11 available skills
+│   └── skills/                   # 6 available skills (5 dead ones removed
+│       │                        # 2026-07-20: sprint-planning, create-prd,
+│       │                        # analyze-story, generate-tests, generate-report
+│       │                        # -- see remediation plan item 4)
 │       ├── keel/
-│       ├── sprint-planning/
-│       ├── create-prd/
-│       ├── analyze-story/
 │       ├── investigate-defect/
 │       ├── create-mom/
-│       ├── generate-tests/
 │       ├── e2e-test/
 │       ├── review-code/
 │       ├── release-check/
@@ -207,8 +206,8 @@ mkdir -p skills/my-skill
 
 2. Create SKILL.md:
 ```bash
-# Copy template from existing skill
-cp skills/sprint-planning/SKILL.md \
+# Copy template from an existing skill
+cp skills/release-check/SKILL.md \
    skills/my-skill/SKILL.md
 ```
 

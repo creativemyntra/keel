@@ -4,6 +4,15 @@
 **Date:** 2026-07-17  
 **Installation:** Already complete  
 
+> **Note (2026-07-20):** this file predates the v3.13-3.16 pipeline restructure
+> (it still describes a 7-step/7-agent flow; the shipped pipeline is 10 phases,
+> 15 agents, and includes ui-designer + e2e-engineer, neither mentioned below).
+> References to the 5 skills removed in the 2026-07-20 dead-code cleanup
+> (`sprint-planning`, `create-prd`, `analyze-story`, `generate-tests`,
+> `generate-report`) have been fixed in place below. The step-count/agent-count
+> mismatch has not — treat README.md's own Quick Start section as authoritative
+> until this file gets a full rewrite.
+
 ---
 
 ## 🎯 START HERE
@@ -15,13 +24,7 @@
 
 ### Step 2: Test the Framework
 
-Try one of these commands NOW:
-
-```bash
-/keel:create-prd goal="Build a user authentication system"
-```
-
-Or:
+Try this command NOW:
 
 ```bash
 /keel:implement-feature story="FEAT-001" feature="User login with email and password"
@@ -37,15 +40,13 @@ Use these skills immediately:
 
 | Command | What It Does | When to Use |
 |---------|-------------|------------|
-| `/keel:sprint-planning` | Create sprint plans from backlog + team capacity | Sprint planning |
-| `/keel:create-prd` | Write PRD from raw feature request | New feature ideas |
-| `/keel:analyze-story` | Elaborate backlog story with functional specs | Refining stories |
 | `/keel:investigate-defect` | Root cause analysis of bugs | Bug triage |
 | `/keel:create-mom` | Minutes of meeting from transcript | Documenting meetings |
-| `/keel:generate-tests` | 5 test categories (unit, integration, e2e, perf, sec) | Test planning |
 | `/keel:e2e-test` | Playwright E2E test generation | Browser automation |
 | `/keel:review-code` | Security + QA review on staged changes | Code review |
 | `/keel:release-check` | Full release-readiness validation | Before deployment |
+| `/keel:req` | BDD requirements + acceptance criteria for a story | New feature ideas |
+| `/keel:design` | UI design + architecture for a story | Refining stories |
 | `/keel:implement-feature` | FULL PIPELINE: design → code → test → security | End-to-end feature delivery |
 
 ---
@@ -69,10 +70,10 @@ This invokes ALL agents automatically:
 ### Advanced: Use Multiple Commands
 ```bash
 # 1. Create requirements
-/keel:create-prd goal="Build subscription analytics"
+/keel:req --story=FEAT-100 --feature="Build subscription analytics"
 
 # 2. Design the system
-/keel:analyze-story story="FEAT-100" 
+/keel:design --story=FEAT-100
 
 # 3. Implement everything
 /keel:implement-feature story="FEAT-100" feature="Real-time analytics dashboard"
@@ -111,11 +112,11 @@ This invokes ALL agents automatically:
 
 ### Q: Why not `/keel --version`?
 
-**A:** Claude Code's plugin system uses skills-based commands. The skills (e.g., `/keel:sprint-planning`) are the primary interface. The root `/keel` command is being registered. Use `/keel:implement-feature` instead — it does everything `/keel` would do.
+**A:** Claude Code's plugin system uses skills-based commands. The skills (e.g., `/keel:req`, `/keel:design`) are the primary interface. The root `/keel` command is being registered. Use `/keel:implement-feature` instead — it does everything `/keel` would do.
 
 ### Q: Is the framework working?
 
-**A:** Yes, 100%! All 17 agents are deployed. Try `/keel:sprint-planning` — it will work immediately.
+**A:** Yes! All 15 agents are deployed across the 10-phase pipeline. Try `/keel:req --story=TEST --feature="test"` — it will work immediately.
 
 ### Q: What about the root `/keel` command?
 
@@ -136,7 +137,7 @@ This invokes ALL agents automatically:
 
 ## 🔧 IF SOMETHING ISN'T WORKING
 
-### Command not found: `/keel:sprint-planning`
+### Command not found: `/keel:req` (or any skill)
 → Close and reopen Claude Code completely
 
 ### "agent not found" error
@@ -164,8 +165,8 @@ This invokes ALL agents automatically:
 
 Before starting, verify you can:
 
-- [ ] Run `/keel:sprint-planning` (should invoke agents)
-- [ ] Run `/keel:create-prd goal="Test"` (should create a PRD)
+- [ ] Run `/keel:req --story=TEST --feature="Test"` (should draft requirements)
+- [ ] Run `/keel:design --story=TEST` (should produce a design doc)
 - [ ] Run `/keel:implement-feature story="TEST" feature="Test feature"` (full pipeline)
 
 If all 3 work, the framework is fully operational.

@@ -53,7 +53,9 @@ OAuth prompt (run `/mcp` and authenticate the `atlassian` server if needed).
 4. The wizard verifies connectivity and writes `~/.keel/config/jira.yml`.
 
 Used by: `product-owner`, `business-analyst`, `scrum-master`, `release-manager`
-agents and the `sprint-planning` / `analyze-story` skills.
+agents, and (as a skill) `req` / `implement-feature`. (`sprint-planning` and
+`analyze-story` were removed 2026-07-20 as dead code -- see remediation plan
+item 4; their functionality lives in `req.md` and the `scrum-master` agent.)
 
 ## 2. GitHub
 

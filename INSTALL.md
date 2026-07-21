@@ -85,15 +85,19 @@ orchestrator route): `keel:orchestrator`, `keel:product-owner`,
 
 | Skill | Trigger |
 |-------|---------|
-| `keel:sprint-planning` | "plan sprint" |
-| `keel:create-prd` | "create PRD" |
-| `keel:analyze-story` | "analyze story" |
 | `keel:investigate-defect` | "RCA", "investigate bug" |
 | `keel:create-mom` | "minutes of meeting" |
-| `keel:generate-tests` | "generate tests" |
 | `keel:e2e-test` | "e2e test", "playwright" |
 | `keel:review-code` | "review code" |
 | `keel:release-check` | "release check", "go/no-go" |
+
+<!-- Removed 2026-07-20 (dead-code audit): keel:sprint-planning, keel:create-prd,
+     keel:analyze-story, keel:generate-tests, and keel:generate-report were each
+     referenced only by this table (or, for generate-report, nowhere at all) and
+     duplicated an existing agent's or command's job (scrum-master, product-owner
+     + req.md, business-analyst phase 2 + req.md, software-engineer + qa-engineer,
+     and a false self-claimed release-manager integration, respectively). See the
+     Keel remediation plan, item 4, for the full cross-reference. -->
 | `keel:implement-feature` | "implement feature", "build this" |
 
 ---
