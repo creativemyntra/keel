@@ -236,6 +236,25 @@ async function main() {
       `code=${r.code} scanners=${inv ? inv.scanners.length : 'none'}`);
   }
 
+  // ---- prescan: composer-audit honestly skips when composer isn't on
+  // PATH, instead of "running" and reporting a false PRESCAN DIRTY from a
+  // shell-not-found exit code (found via live testing against a real
+  // CakePHP project in a sandbox with no composer binary on PATH -- every
+  // other scanner in this list already checked onPath() before running;
+  // composer-audit was the one exception, 2026-07-21) --------------------
+  {
+    const cwd = makeTmpDir('prescan-composer-no-path');
+    engine(cwd, 'init', 'S-12');
+    fs.writeFileSync(path.join(cwd, 'composer.json'), '{"require":{"php":">=8.1"}}\n');
+    const r = engine(cwd, 'prescan', 'S-12');
+    const file = path.join(cwd, '.keel', 'state', 'S-12', 'prescan.json');
+    const inv = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+    const composerEntry = inv && inv.scanners.find((s) => s.name === 'composer-audit');
+    assert('prescan: composer-audit skips honestly (not a false DIRTY) when composer.json exists but composer is not on PATH',
+      r.code === 0 && composerEntry && composerEntry.status === 'skipped' && /not on PATH/.test(composerEntry.reason || ''),
+      `code=${r.code} entry=${JSON.stringify(composerEntry)}`);
+  }
+
   // ---- status --all: fleet listing (KEEL-102) --------------------------
   {
     // (a) two-story fixture: FLEET-A feature (advanced past phase 1),
