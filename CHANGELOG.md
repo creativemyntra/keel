@@ -2,6 +2,15 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.16.2] - 2026-07-21 - BRAINSTORM TEMPLATE: RESTORE HANDOFF BRIEF; OSS CLEANUP
+
+### Fixed
+- **`docs/brainstorms/TEMPLATE.md`** — restored lightweight **Handoff Brief** section (user story, rough ACs, data entities, external integrations, design-phase risks, complexity estimate) removed during OSS cleanup. Provides req-agent with a structured intake artifact at the brainstorm → Phase 2 boundary.
+- **`docs/brainstorms/EXAMPLE-monetization-strategy.md`** — same: filled-in Handoff Brief for Concept 1 (subscription tiers) without internal ticket IDs.
+- Removed stale `KEEL-42` / `KEEL-50` Jira ticket references from both brainstorm files (OSS distribution cleanup).
+
+---
+
 ## [3.16.1] - 2026-07-21 - PRESCAN HARDENING: SNYK SKIP ON NO-MANIFEST DIRS; COMPOSER-AUDIT TEST ENV ISOLATION
 
 ### Fixed
