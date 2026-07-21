@@ -27,6 +27,7 @@ Initialize Keel in this repository. Arguments: $ARGUMENTS
    - `.keel/state/` — per-story pipeline state
    - `.keel/memory/decisions/` — ADRs (cross-story memory)
    - `.keel/memory/conventions.md` — project conventions (seed with an empty dated header)
+   - `.keel/memory/lessons.md` — cross-story lessons learned (seed with an empty dated header; agents read this at startup — ENOENT here is a crash, not a soft failure)
    - `.keel/economy.yml` — token-economy choices (committed, team-shared); seed
      with the conservative defaults from the orchestrator's Economy decisions
      section (`model_tiering: true`, `static_first_security: true`,
@@ -34,7 +35,7 @@ Initialize Keel in this repository. Arguments: $ARGUMENTS
      `output_caps: true`) and tell the user which knobs are opt-in
 4. Build the initial CodeGraph: `node ~/.keel/bin/build-codegraph.cjs .`
    (skip gracefully if the project has no src/ yet).
-5. Verify `agent-output-schema.json` is reachable in the plugin root.
+5. Verify `agent-output-schema.json` is reachable — check `$CLAUDE_PLUGIN_ROOT/agent-output-schema.json` first, then `~/.keel/config/agent-output-schema.json` (staged on every session start by keel-init.cjs). If neither exists, STOP and tell the developer — phase agents cannot validate their output without it.
 6. Summarize what was created and suggest `/keel:brainstorm` or `/keel:req` as the next step.
 7. **Offer integration setup** (new — only after scaffolding succeeds):
    - Detect whether this is an interactive session (a human can answer

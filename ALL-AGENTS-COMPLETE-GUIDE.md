@@ -1,7 +1,7 @@
-# Keel v3.16.0 — Complete Agent Guide
+# Keel v3.16.1 — Complete Agent Guide
 
-**Framework Version:** 3.16.0  
-**Total Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
+**Framework Version:** 3.16.1  
+**Total Agents:** 15 (10 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
 
@@ -15,13 +15,13 @@
 /keel:implement-feature story="FEAT-123" feature="User payment export"
 ```
 
-This single command invokes the orchestrator, which routes through all 12 pipeline phases automatically.
+This single command invokes the orchestrator, which routes through all 10 pipeline phases automatically.
 
 ---
 
 ## 📊 AGENT TYPES
 
-### **PIPELINE PHASE AGENTS (12)** — Deliver the feature through 12 sequential phases
+### **PIPELINE PHASE AGENTS (10)** — Deliver the feature through 10 sequential phases
 ### **META/SUPPORT AGENTS (2)** — Orchestrator (routing) + Scrum Master (ceremonies)
 ### **INFRASTRUCTURE AGENTS (3)** — Handshake gate, state management, audit
 
@@ -1093,7 +1093,7 @@ Response: {
 
 ## Simplest Usage
 ```bash
-# One command invokes all 17 agents
+# One command invokes all 15 agents
 /keel:implement-feature story="FEAT-123" feature="User payment export"
 
 # This automatically runs all 12 pipeline phases:
@@ -1177,7 +1177,7 @@ command.)
 | **Handshake Agent** | Phase-to-phase validation + context passing |
 | **State Management Agent** | Locked state, atomic writes, audit trail, snapshots |
 
-**Infrastructure Scripts (v3.16.0)**
+**Infrastructure Scripts (v3.16.1)**
 
 | Script | Purpose |
 |--------|---------|
@@ -1196,10 +1196,10 @@ command.)
 
 ---
 
-**Framework:** Keel AI-SDLC Framework v3.16.0  
+**Framework:** Keel AI-SDLC Framework v3.16.1  
 **License:** MIT  
 **Author:** Amar Singh  
 **Repository:** https://github.com/creativemyntra/keel  
 
-✅ **All 17 agents ready to deliver enterprise-grade features in hours, not weeks!**
+✅ **All 15 agents ready to deliver enterprise-grade features in hours, not weeks!**
 

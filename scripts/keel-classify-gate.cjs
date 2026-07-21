@@ -51,7 +51,10 @@ function block(reason) { process.stderr.write(`CJIS GATE BLOCK: ${reason}\n`); p
 function loadPatterns() {
   const parsed = JSON.parse(fs.readFileSync(PATTERNS_FILE, 'utf8')); // throws -> fail-closed
   if (!Array.isArray(parsed.patterns) || !parsed.patterns.length) throw new Error('no patterns');
-  return parsed.patterns.map((p) => ({ ...p, re: new RegExp(p.pattern, p.flags || 'gi') }));
+  return {
+    patterns: parsed.patterns.map((p) => ({ ...p, re: new RegExp(p.pattern, p.flags || 'gi') })),
+    allowlist: (parsed.allowlist || []).map((a) => ({ ...a, re: new RegExp(a.pattern, 'gi') })),
+  };
 }
 
 function readStdin() {
@@ -82,9 +85,13 @@ function decodedVariants(text) {
   return out;
 }
 
-function classify(text, patterns) {
+function classify(text, patterns, allowlist = []) {
+  // Strip allowlisted domains/content before scanning to avoid false positives
+  // on known-safe project addresses (e.g. marketplace author email).
+  let scrubbed = text;
+  for (const a of allowlist) { a.re.lastIndex = 0; scrubbed = scrubbed.replace(a.re, '<<ALLOWLISTED>>'); }
   const matched = new Set();
-  for (const v of decodedVariants(text)) for (const p of patterns) { p.re.lastIndex = 0; if (p.re.test(v)) matched.add(p.category); }
+  for (const v of decodedVariants(scrubbed)) for (const p of patterns) { p.re.lastIndex = 0; if (p.re.test(v)) matched.add(p.category); }
   if (!matched.size) return { category: 'CLEAR', matched: [] };
   const hard = [...matched].some((c) => patterns.find((p) => p.category === c)?.severity === 'hard');
   return { category: hard ? 'CJIS_VIOLATION' : 'SUSPECT', matched: [...matched] };
@@ -122,7 +129,8 @@ async function main() {
   catch (e) { return block(`unreadable hook payload: ${e.message}`); }
 
   const text = extractText(stage, hook);
-  const { category, matched } = classify(text, loadPatterns());
+  const { patterns, allowlist } = loadPatterns();
+  const { category, matched } = classify(text, patterns, allowlist);
   if (category === 'CLEAR') process.exit(0);
 
   const contentHash = crypto.createHash('sha256').update(text).digest('hex');

@@ -1,7 +1,7 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
- * Keel AI-SDLC Framework v3.16.0 -- CLI Dispatcher (ESM)
- * Author : Amar Singh <support@creativemyntra.com>
+ * Keel AI-SDLC Framework v3.16.1 -- CLI Dispatcher (ESM)
+ * Author : Amar Singh (creativemyntra)
  * License: MIT
  */
 import { spawnSync } from 'child_process';
@@ -9,7 +9,7 @@ import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const VERSION   = '3.16.0';
+const VERSION   = '3.16.1';
 const KEEL_DIR  = resolve(__dirname, '..');
 
 function parseArgs(argv) {
@@ -216,7 +216,7 @@ function showHelp() {
     '  /keel <command> [options]             (Claude Code / Claude Desktop)',
     '  node bin/keel.js <command> [options]  (terminal)',
     '',
-    'PIPELINE (10 phases — use /keel:implement-feature to run all)',
+    'PIPELINE (10 phases â€” use /keel:implement-feature to run all)',
     '  PH    COMMAND          AGENT',
     '  1-2   req              keel:product-owner -> keel:business-analyst',
     '  3     design           keel:ui-designer',
@@ -227,7 +227,7 @@ function showHelp() {
     '  8     sec              keel:security-engineer',
     '  9     (orchestrator)   keel:technical-writer',
     '  10    deploy           keel:release-manager',
-    '  --    dashboard        [standalone — starts local HTTP server]',
+    '  --    dashboard        [standalone â€” starts local HTTP server]',
     '',
     'OPTIONS',
     '  --story=<ID>             Story ID (e.g. FEAT-1, HEALTH-1)',

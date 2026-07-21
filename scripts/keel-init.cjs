@@ -53,6 +53,10 @@ try {
   fs.mkdirSync(cfgDir, { recursive: true });
   const patternsSrc = path.join(PLUGIN_ROOT, 'config', 'cjis-patterns.json');
   if (fs.existsSync(patternsSrc)) fs.copyFileSync(patternsSrc, path.join(cfgDir, 'cjis-patterns.json'));
+  // Stage agent-output-schema.json so agents can resolve it from KEEL_HOME
+  // without requiring CLAUDE_PLUGIN_ROOT to be set (F-01 from init audit).
+  const schemaSrc = path.join(PLUGIN_ROOT, 'agent-output-schema.json');
+  if (fs.existsSync(schemaSrc)) fs.copyFileSync(schemaSrc, path.join(cfgDir, 'agent-output-schema.json'));
   fs.writeFileSync(path.join(KEEL_HOME, 'plugin-root'), PLUGIN_ROOT + '\n');
   __logTiming('engine-and-config-staged');
   // CJIS gate health-check — visibility only, cannot block session start.

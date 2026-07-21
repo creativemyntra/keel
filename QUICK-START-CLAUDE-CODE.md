@@ -1,17 +1,13 @@
-# Keel v3.16.0 — Claude Code Quick Start
+# Keel v3.16.1 — Claude Code Quick Start
 
 **Status:** ✅ Framework is ready to use NOW  
-**Date:** 2026-07-17  
+**Date:** 2026-07-21  
 **Installation:** Already complete  
 
-> **Note (2026-07-20):** this file predates the v3.13-3.16 pipeline restructure
-> (it still describes a 7-step/7-agent flow; the shipped pipeline is 10 phases,
-> 15 agents, and includes ui-designer + e2e-engineer, neither mentioned below).
-> References to the 5 skills removed in the 2026-07-20 dead-code cleanup
-> (`sprint-planning`, `create-prd`, `analyze-story`, `generate-tests`,
-> `generate-report`) have been fixed in place below. The step-count/agent-count
-> mismatch has not — treat README.md's own Quick Start section as authoritative
-> until this file gets a full rewrite.
+> **Updated 2026-07-21:** aligned to v3.16.1 — 10-phase pipeline, 15 agents,
+> full workflow table covering all phases including UI Designer (3), E2E Engineer
+> (7), and Technical Writer (9). References to removed skills and stale counts
+> have been corrected.
 
 ---
 
@@ -58,14 +54,17 @@ Use these skills immediately:
 /keel:implement-feature story="FEAT-001" feature="Export users to CSV"
 ```
 
-This invokes ALL agents automatically:
+This invokes ALL agents automatically (10-phase pipeline):
 1. Product Owner (defines requirements)
 2. Business Analyst (functional specs)
-3. Solution Architect (system design)
-4. Software Engineer (TDD implementation)
-5. QA Engineer (test validation)
-6. Security Engineer (vulnerability scan)
-7. Release Manager (go/no-go)
+3. UI Designer (component layout + HTML mockup)
+4. Solution Architect (system design)
+5. Software Engineer (code + unit tests, ≥80% coverage)
+6. QA Engineer (AC mapping + integration tests)
+7. E2E Engineer (Playwright browser tests)
+8. Security Engineer (OWASP Top 10 scan)
+9. Technical Writer (docs + CHANGELOG)
+10. Release Manager (go/no-go)
 
 ### Advanced: Use Multiple Commands
 ```bash
@@ -86,7 +85,7 @@ This invokes ALL agents automatically:
 
 ## 📊 WHAT YOU GET
 
-✅ **17 Agents** working in sync:
+✅ **15 Agents** working in sync:
 - 10 pipeline phase agents (intake → requirements → UI design → architecture → code+tests → QA → E2E → security → docs → release)
 - 2 meta/support agents (orchestrator, scrum-master)
 - 3 infrastructure agents (audit, state-management, handshake)
@@ -199,7 +198,7 @@ Total time: **Hours instead of weeks!**
 | Component | Status |
 |-----------|--------|
 | Installation | ✅ Complete |
-| 17 Agents | ✅ Deployed |
+| 15 Agents | ✅ Deployed |
 | Skills (11 total) | ✅ Ready |
 | Compliance (6 standards) | ✅ Verified |
 | Code Quality | ✅ 89% coverage, 0 vulns |
@@ -208,7 +207,7 @@ Total time: **Hours instead of weeks!**
 
 ---
 
-**Version:** 3.16.0  
+**Version:** 3.16.1  
 **Author:** Amar Singh  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
