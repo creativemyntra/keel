@@ -21,8 +21,30 @@ const https = require('https');
 
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
 const KEEL_HOME = process.env.KEEL_HOME || path.join(os.homedir(), '.keel');
-const PATTERNS_FILE = path.join(PLUGIN_ROOT, 'config', 'cjis-patterns.json');
 const INCIDENT_LOG = path.join(KEEL_HOME, 'security', 'incidents.jsonl');
+
+// PATTERNS_FILE resolution (fixed 2026-07-20 -- audit finding F-08):
+// This script is invoked two different ways in practice: (1) from its real
+// location, ${CLAUDE_PLUGIN_ROOT}/scripts/keel-classify-gate.cjs, which is how
+// hooks/hooks.json actually wires it -- CLAUDE_PLUGIN_ROOT is set correctly by
+// Claude Code, so PLUGIN_ROOT above resolves right; (2) from the "stable path"
+// copy at ~/.keel/bin/keel-classify-gate.cjs that keel-init.cjs makes for every
+// other engine script -- there, with no CLAUDE_PLUGIN_ROOT set, the fallback
+// path.resolve(__dirname, '..') resolves to ~/.keel itself (one directory too
+// shallow), so config/cjis-patterns.json was never found there and the
+// fail-closed gate blocked everything. Fix: try the real plugin-root location
+// first, then a copy under KEEL_HOME that keel-init.cjs now also stages
+// (mirroring how it stages the .cjs scripts), so the gate works from either
+// invocation path instead of only the one Claude Code happens to use today.
+function resolvePatternsFile() {
+  const candidates = [
+    path.join(PLUGIN_ROOT, 'config', 'cjis-patterns.json'),
+    path.join(KEEL_HOME, 'config', 'cjis-patterns.json'),
+  ];
+  const found = candidates.find((c) => fs.existsSync(c));
+  return found || candidates[0]; // fall through to the first path so the error message below is still meaningful
+}
+const PATTERNS_FILE = resolvePatternsFile();
 
 function block(reason) { process.stderr.write(`CJIS GATE BLOCK: ${reason}\n`); process.exit(2); }
 
