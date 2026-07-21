@@ -34,6 +34,11 @@ function engine(cwd, ...cliArgs) {
   return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
 }
 
+function engineWithEnv(cwd, env, ...cliArgs) {
+  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8', env });
+  return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
+}
+
 function engineAsync(cwd, ...cliArgs) {
   return new Promise((resolve) => {
     const p = spawn(process.execPath, [ENGINE, ...cliArgs], { cwd });
@@ -273,7 +278,16 @@ async function main() {
     const cwd = makeTmpDir('prescan-composer-no-path');
     engine(cwd, 'init', 'S-12');
     fs.writeFileSync(path.join(cwd, 'composer.json'), '{"require":{"php":">=8.1"}}\n');
-    const r = engine(cwd, 'prescan', 'S-12');
+    // Strip all non-essential tools from PATH so composer (and snyk, etc.) are
+    // not found — ensures the test is environment-agnostic regardless of what's
+    // installed on the host machine.  node's bin dir is intentionally excluded:
+    // keel-state.cjs is launched via absolute path (process.execPath), and on
+    // many machines npm-global tools like snyk are co-installed there.
+    const sysPathEntries = process.platform === 'win32'
+      ? [(process.env.WINDIR || process.env.SystemRoot || 'C:\\Windows') + '\\System32']
+      : ['/usr/bin', '/bin', '/usr/local/bin'];
+    const strippedPath = sysPathEntries.join(path.delimiter);
+    const r = engineWithEnv(cwd, { ...process.env, PATH: strippedPath }, 'prescan', 'S-12');
     const file = path.join(cwd, '.keel', 'state', 'S-12', 'prescan.json');
     const inv = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
     const composerEntry = inv && inv.scanners.find((s) => s.name === 'composer-audit');

@@ -838,8 +838,11 @@ function cmdPrescan(storyId) {
   run('npm-audit', 'npm audit --package-lock-only',
     exists('package.json') && (exists('package-lock.json') || exists('npm-shrinkwrap.json')),
     exists('package.json') ? 'no lockfile — generate one or audit manually' : 'not applicable — no package.json');
-  const snykReady = onPath('snyk') && (process.env.SNYK_TOKEN || exists(path.join(keelHome, 'secrets', 'snyk.token')));
-  run('snyk', 'snyk test --severity-threshold=high', snykReady, 'not configured — snyk CLI or token missing');
+  const hasProjectManifest = ['package.json', 'go.mod', 'pom.xml', 'build.gradle',
+    'requirements.txt', 'Pipfile', 'poetry.lock', 'Gemfile', 'composer.json'].some((f) => exists(f));
+  const snykReady = hasProjectManifest && onPath('snyk') && (process.env.SNYK_TOKEN || exists(path.join(keelHome, 'secrets', 'snyk.token')));
+  run('snyk', 'snyk test --severity-threshold=high', snykReady,
+    hasProjectManifest ? 'not configured — snyk CLI or token missing' : 'not applicable — no supported project manifests');
   const sonarReady = onPath('sonar-scanner') && (exists('sonar-project.properties') || exists(path.join(keelHome, 'config', 'sonarqube.yml')));
   run('sonar-scanner', 'sonar-scanner', sonarReady, 'not configured — scanner or project config missing');
 
