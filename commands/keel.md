@@ -22,7 +22,7 @@ Keel is a 10-phase AI-SDLC pipeline. Available commands:
 | `/keel:sec` | 8 | OWASP Top 10 security scan |
 | `/keel:impact` | Any | CodeGraph impact analysis for a class or file |
 | `/keel:health` | Any | Pipeline health sweep — halted/stale stories, memory bounds, coverage trend |
-| `/keel:deploy` | 10 | Staged rollout deployment |
+| `/keel:deploy` | 9–10 | Docs + staged rollout deployment |
 | `/keel:parallel` | 1-10 (full, N stories) | Run independent stories' full pipelines concurrently in separate git worktrees (throughput, not single-story speedup) |
 
 If the request is a multi-phase delivery task ("implement this feature", "take story X to production"),
