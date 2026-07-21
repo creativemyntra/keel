@@ -223,6 +223,33 @@ async function main() {
       good.code === 0 && /PASS recorded/.test(good.out), good.out.slice(0, 100));
   }
 
+  // ---- gate PASS refuses to skip a phase (KEEL-R18, found via live testing
+  // 2026-07-21) -- reproduces exactly what happened against a real project:
+  // phase N's gate is never successfully recorded (refused or just never
+  // called), yet phase N+1's gate is still accepted because the engine only
+  // checked THAT phase's own file, never that the story was actually AT that
+  // phase. Must never regress. --------------------------------------------
+  {
+    const cwd = makeTmpDir('gate-skip-phase');
+    engine(cwd, 'init', 'S-13');
+    writePhaseFile(cwd, 'S-13', 1, 'product-owner', ['intake']);
+    engine(cwd, 'gate', 'S-13', '--phase', '1', '--verdict', 'PASS', '--notes', 'ok');
+    // current_phase is now 2. Skip writing/gating phase 2 entirely, and try
+    // to jump straight to gating phase 3 (a genuinely valid phase-3 file).
+    writePhaseFile(cwd, 'S-13', 3, 'ui-designer', ['designed without BA ever running']);
+    const skip = engine(cwd, 'gate', 'S-13', '--phase', '3', '--verdict', 'PASS', '--notes', 'skip ahead');
+    const m = readManifest(cwd, 'S-13');
+    assert('gate PASS refuses to skip an un-gated phase, even with a valid file for the later phase',
+      skip.code === 1 && /GATE REFUSED/.test(skip.out) && /out of sequence/.test(skip.out) && m.current_phase === 2,
+      `code=${skip.code} current_phase=${m.current_phase} out=${skip.out.slice(0, 150)}`);
+
+    // The correct, in-sequence phase must still succeed.
+    writePhaseFile(cwd, 'S-13', 2, 'business-analyst', ['elaborated']);
+    const inSeq = engine(cwd, 'gate', 'S-13', '--phase', '2', '--verdict', 'PASS', '--notes', 'in sequence');
+    assert('gate PASS still succeeds for the actual current phase',
+      inSeq.code === 0 && /PASS recorded/.test(inSeq.out), inSeq.out.slice(0, 100));
+  }
+
   // ---- prescan: honest inventory even with zero tools available --------
   {
     const cwd = makeTmpDir('prescan');

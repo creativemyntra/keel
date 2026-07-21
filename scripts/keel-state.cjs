@@ -379,6 +379,21 @@ function cmdGate(storyId, args) {
       // behind it. The engine now re-runs the same checks `validate` runs,
       // every time, as a precondition of accepting PASS. This cannot be
       // bypassed by a caller choosing not to run `validate` first.
+      //
+      // SECOND PRECONDITION (KEEL-R18, found via live testing 2026-07-21):
+      // the check above validates the FILE for the requested phase, but did
+      // nothing to stop `gate --phase N` from being called when N is not the
+      // story's actual current_phase -- a caller could skip an entire phase
+      // (its own gate never called, or previously REFUSED) and jump straight
+      // to gating a later one, and the pipeline would still reach "complete"
+      // with a gap in the middle of the audit trail. Reproduced live: phase
+      // 8's gate was refused (bad artifact reference), phase 9's gate was
+      // still accepted immediately after, and `status` reported the story
+      // complete with no trace that phase 8 never actually passed. Refuse
+      // any gate call that isn't for the story's current phase.
+      if (phase !== manifest.current_phase) {
+        die(1, `GATE REFUSED: story is at phase ${manifest.current_phase}, not phase ${phase} — cannot record PASS out of sequence. Gate phase ${manifest.current_phase} first (or run resume if a human has deliberately decided to skip ahead).`);
+      }
       const prefix2 = String(phase).padStart(2, '0') + '-';
       const phaseFile = fs.readdirSync(stateDir(storyId))
         .find((f) => f.startsWith(prefix2) && f.endsWith('.json'));
