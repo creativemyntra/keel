@@ -1,4 +1,4 @@
-﻿# Keel AI-SDLC Framework v3.16.1 - Technical Specifications
+﻿# Keel AI-SDLC Framework v3.16.2 - Technical Specifications
 
 **Document Version:** 2.0  
 **Last Updated:** 2026-07-21  
@@ -355,26 +355,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.16.1
+- Version: v3.16.2
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.16.1`
+- Installation: `npm install -g @amarsingh/keel@3.16.2`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.16.1`
+- Image: `amarsingh/keel:3.16.2`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.16.1`
+- Pull: `docker pull amarsingh/keel:3.16.2`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
 - Version: `v3.16.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.16.1`
+- Usage: `uses: creativemyntra/keel@v3.16.2`
 
 ---
 
@@ -402,7 +402,7 @@ Record in Audit Trail
 - **DAST:** N/A (CLI tool, no web endpoints)
 - **Secrets Scanning:** git-secrets pre-commit hook
 
-### Infrastructure Scripts (v3.16.1)
+### Infrastructure Scripts (v3.16.2)
 
 | Script | Purpose | Hook Stage(s) |
 |--------|---------|---------------|
@@ -474,6 +474,7 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
+| 3.16.2 | 2026-07-21 | PRODUCTION | Brainstorm template: restored Handoff Brief section (user story, rough ACs, data entities, integrations, design risks, complexity estimate); OSS cleanup (removed stale internal ticket refs from template and example) |
 | 3.16.1 | 2026-07-21 | PRODUCTION | Prescan hardening: snyk skips on dirs with no supported project manifest; composer-audit test PATH isolation for host-agnostic CI |
 | 3.16.0 | 2026-07-20 | PRODUCTION | CJIS Data Classification Gate: `scripts/keel-classify-gate.cjs` + `config/cjis-patterns.json`; `hooks/hooks.json` wired (UserPromptSubmit, PreToolUse, PostToolUse); `keel-state.cjs security-status` command; security-engineer, orchestrator, audit-agent, handshake-agent specs updated |
 | 3.15.0 | 2026-07-17 | PRODUCTION | Pipeline restructure: 10 phases â€” tdd-red/tdd-green merged into software-engineer (code+tests+coverage â‰¥ 80%); qa-engineerâ†’6, e2e-engineerâ†’7, security-engineerâ†’8, technical-writerâ†’9, release-managerâ†’10; DEFAULT_MAX_GATES 48â†’40; backward-compat LEGACY_AGENTS for in-flight stories |
