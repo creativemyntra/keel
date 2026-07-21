@@ -1,7 +1,7 @@
-# Keel v3.12.0 — Complete Agent Guide
+# Keel v3.16.1 — Complete Agent Guide
 
-**Framework Version:** 3.12.0  
-**Total Agents:** 13 (8 phase + 2 support + 3 infrastructure)  
+**Framework Version:** 3.16.1  
+**Total Agents:** 15 (10 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
 
@@ -15,19 +15,35 @@
 /keel:implement-feature story="FEAT-123" feature="User payment export"
 ```
 
-This single command invokes the orchestrator, which routes through all 8 phase agents automatically.
+This single command invokes the orchestrator, which routes through all 10 pipeline phases automatically.
 
 ---
 
 ## 📊 AGENT TYPES
 
-### **PHASE AGENTS (8)** — Deliver the feature through 8 sequential phases
-### **SUPPORT AGENTS (2)** — Help organize team and document
-### **COMPLIANCE AGENTS (3)** — Ensure security, audit, state management
+### **PIPELINE PHASE AGENTS (10)** — Deliver the feature through 10 sequential phases
+### **META/SUPPORT AGENTS (2)** — Orchestrator (routing) + Scrum Master (ceremonies)
+### **INFRASTRUCTURE AGENTS (3)** — Handshake gate, state management, audit
 
 ---
 
-# PART 1: PHASE AGENTS (8)
+## 🆕 PIPELINE HISTORY
+
+**v3.15.0** — restructured from 12 to **10 phases**: `tdd-red` and `tdd-green` merged
+into `software-engineer` (phase 5 now writes production code + unit tests; coverage ≥ 80%
+is a hard gate). `ui-designer` (v3.14.0) and `e2e-engineer` (v3.13.0) remain as dedicated
+phases. Phase numbering in [`agents/orchestrator.md`](agents/orchestrator.md) is
+authoritative.
+
+Current 10-phase order: product-owner (1) → business-analyst (2) → ui-designer (3)
+→ solution-architect (4) → software-engineer (5, code + unit tests, coverage ≥ 80%) →
+qa-engineer (6) → e2e-engineer (7) → security-engineer (8) →
+technical-writer (9) → release-manager (10).
+Defect express lane: 1 → 5 → 6 → 8.
+
+---
+
+# PART 1: PHASE AGENTS
 
 These agents work sequentially to take a feature from idea to production.
 
@@ -40,7 +56,7 @@ These agents work sequentially to take a feature from idea to production.
 
 ### What It Does
 - Receives your feature request
-- Decomposes it into 8 sequential phases
+- Decomposes it into 12 sequential phases
 - Routes to the correct specialist agent for each phase
 - Enforces governance gates between phases
 - Produces final delivery summary
@@ -51,14 +67,18 @@ These agents work sequentially to take a feature from idea to production.
 Your Request: "Build user payment export"
          ↓
 [ORCHESTRATOR decides:]
-  1. Need Product Owner for requirements
-  2. Need Business Analyst for specs
-  3. Need Solution Architect for design
-  4. Need Software Engineer for code
-  5. Need QA Engineer for validation
-  6. Need Security Engineer for audit
-  7. Need Technical Writer for docs
-  8. Need Release Manager for go/no-go
+  1.  Product Owner     — requirements + ACs
+  2.  Business Analyst  — functional spec + data flows
+  3.  UI Designer       — design spec + HTML mockup (or no-UI determination)
+  4.  Solution Architect — architecture, API contracts, ADRs
+  5.  Software Engineer — production code (no tests)
+  6.  TDD Red           — write tests (must fail without implementation)
+  7.  TDD Green         — run tests; all pass, coverage ≥ 80%
+  8.  QA Engineer       — full suite gate, AC-to-test mapping
+  9.  E2E Engineer      — Playwright browser tests + screenshots
+  10. Security Engineer — OWASP audit, prescan results
+  11. Technical Writer  — README, CHANGELOG, docs
+  12. Release Manager   — go/no-go, G-6 version stamp
          ↓
 [Routes through all agents]
          ↓
@@ -127,8 +147,8 @@ Scenario: Handle no payments
 
 ### How to Use
 ```bash
-# Invoke directly to refine a story
-/keel:create-prd goal="Allow customers to export payment data"
+# Invoke directly to draft requirements (keel:create-prd was removed 2026-07-20 -- dead-code cleanup, see remediation plan item 4)
+/keel:req --story="FEAT-123" --feature="Allow customers to export payment data"
 
 # Or via orchestrator (automatic)
 /keel:implement-feature story="FEAT-123" feature="Payment export"
@@ -207,8 +227,8 @@ Q: What currencies if user has multi-currency transactions?
 
 ### How to Use
 ```bash
-# Invoke to elaborate a story into specs
-/keel:analyze-story story="FEAT-123"
+# Invoke to elaborate a story into specs (keel:analyze-story was removed 2026-07-20 -- dead-code cleanup, see remediation plan item 4)
+/keel:req --story="FEAT-123"
 
 # Or via orchestrator
 /keel:implement-feature story="FEAT-123" feature="Payment export"
@@ -391,14 +411,9 @@ class PaymentExporter {
 # Invoked automatically by orchestrator
 /keel:implement-feature story="FEAT-123" feature="Payment export"
 
-# Or invoke TDD phases individually
-/keel:tdd-red --story=FEAT-123         # Write failing tests
-/keel:tdd-green --story=FEAT-123       # Implement to pass
-/keel:tdd-refactor --story=FEAT-123    # Clean up code
 ```
 
 ### Key Rules
-- ❌ Never skip TDD Red phase
 - ❌ Never output secrets/credentials/API keys
 - ✅ Run tests after every code change
 - 🚨 Flag CJIS-adjacent data handling
@@ -444,11 +459,12 @@ class PaymentExporter {
 
 ### How to Use
 ```bash
-# Invoked automatically by orchestrator
+# Invoked automatically by orchestrator -- software-engineer writes code AND
+# unit tests in this one phase (3.15.0 merged tdd-red/tdd-green into it).
+# keel:generate-tests was a separate skill removed 2026-07-20 (dead-code
+# cleanup, see remediation plan item 4) -- there is currently no standalone
+# command for just this phase; use the orchestrator.
 /keel:implement-feature story="FEAT-123" feature="Payment export"
-
-# Or invoke directly
-/keel:generate-tests story="FEAT-123" feature="Payment export"
 ```
 
 ### Key Rules
@@ -637,11 +653,11 @@ These agents help organize work and document features.
 
 ### How to Use
 ```bash
-# Plan next sprint
-/keel:sprint-planning
-
-# Or discuss with orchestrator
-/keel:implement-feature story="FEAT-123" feature="..."
+# Scrum Master is a manual/on-demand agent, not a pipeline phase or a skill
+# command (keel:sprint-planning was removed 2026-07-20 -- dead-code cleanup,
+# see remediation plan item 4). Invoke the agent directly by name when you
+# want ceremony/reporting help:
+# "Use the keel:scrum-master agent to plan next sprint from the backlog"
 ```
 
 ### Key Rules
@@ -825,7 +841,7 @@ Phase 1 output → Handshake validates → Audit logs
                 ↓
 Phase 2 output → Handshake validates → Audit logs
                 ↓
-... (through all 8 phases)
+... (through all 10 phases)
 ```
 
 ### Compliance Reports
@@ -860,7 +876,7 @@ AND timestamp >= '2026-01-01';
 **Compliance:** ACID, SOC2, HIPAA, GDPR, PCI-DSS  
 
 ### What It Does
-- Maintains global state across all 8 phases
+- Maintains global state across all 10 phases
 - Snapshots after each phase (immutable)
 - Supports point-in-time recovery
 - Detects conflicts (concurrent writes)
@@ -886,7 +902,7 @@ AND timestamp >= '2026-01-01';
       "completed_at": "2026-07-07T10:15:00Z",
       "state_snapshot": {...}
     },
-    // ... through all 8 phases
+    // ... through all 10 phases
   ],
   
   "current_state": {
@@ -1023,7 +1039,7 @@ Phase 3 receives:
   
         + generates Phase 3 output
 
-... (repeats through all 8 phases)
+... (repeats through all 10 phases)
 ```
 
 ### Memory Continuity
@@ -1077,18 +1093,22 @@ Response: {
 
 ## Simplest Usage
 ```bash
-# One command invokes all 13 agents
+# One command invokes all 15 agents
 /keel:implement-feature story="FEAT-123" feature="User payment export"
 
-# This automatically:
-# 1. Product Owner → defines requirements
-# 2. Business Analyst → writes specs
-# 3. Solution Architect → designs system
-# 4. Software Engineer → implements with TDD
-# 5. QA Engineer → validates tests
-# 6. Security Engineer → audits code
-# 7. Technical Writer → documents
-# 8. Release Manager → approves
+# This automatically runs all 12 pipeline phases:
+# 1.  Product Owner     → requirements + ACs
+# 2.  Business Analyst  → functional spec + data flows
+# 3.  UI Designer       → design spec + HTML mockup
+# 4.  Solution Architect → architecture, API contracts
+# 5.  Software Engineer → production code (no tests)
+# 6.  TDD Red           → write tests (fail without impl)
+# 7.  TDD Green         → run tests; all pass, ≥ 80% coverage
+# 8.  QA Engineer       → full suite gate, AC traceability
+# 9.  E2E Engineer      → Playwright browser tests + screenshots
+# 10. Security Engineer → OWASP audit, prescan results
+# 11. Technical Writer  → README, CHANGELOG, docs
+# 12. Release Manager   → go/no-go, G-6 version stamp
 #
 # While audit, state management, and handshake run continuously
 ```
@@ -1096,15 +1116,13 @@ Response: {
 ## Typical Workflow
 ```
 Day 1: Create story
-  /keel:create-prd goal="Export payment data"
+  /keel:req --story="FEAT-123" --feature="Export payment data"
 
 Day 2-3: Elaborate & design
-  /keel:analyze-story story="FEAT-123"
+  /keel:design --story="FEAT-123"
 
-Day 4-5: Implement with TDD
-  /keel:tdd-red --story=FEAT-123
-  /keel:tdd-green --story=FEAT-123
-  /keel:tdd-refactor --story=FEAT-123
+Day 4-5: Implement (code + unit tests in one phase)
+  /keel:implement-feature story="FEAT-123"
 
 Day 6: Validate & release
   /keel:release-check story="FEAT-123"
@@ -1112,34 +1130,60 @@ Day 6: Validate & release
 
 ## Individual Agent Skills
 ```bash
-/keel:sprint-planning              # Scrum Master
-/keel:create-prd                   # Product Owner
-/keel:analyze-story                # Business Analyst
-/keel:generate-tests               # Software Engineer TDD
+/keel:req                          # Product Owner + Business Analyst
+/keel:design                       # UI Designer + Solution Architect
 /keel:review-code                  # Security Engineer
 /keel:release-check                # Release Manager
 /keel:implement-feature            # ALL AGENTS (orchestrator)
 ```
+(keel:sprint-planning, keel:create-prd, keel:analyze-story, and
+keel:generate-tests were removed 2026-07-20 as dead code with no
+cross-references anywhere else in the plugin -- see remediation plan item 4.
+Scrum Master remains available as a manually-invoked agent, not a skill
+command.)
 
 ---
 
 # 📊 AGENT SUMMARY TABLE
 
-| # | Agent | Type | Purpose | Input | Output |
-|---|-------|------|---------|-------|--------|
-| 1 | **Orchestrator** | Routing | Route through pipeline | Feature request | Delivery summary |
-| 2 | **Product Owner** | Requirements | User stories | Goal | User story + ACs |
-| 3 | **Business Analyst** | Specs | Functional details | Story | Spec + data flows |
-| 4 | **Solution Architect** | Design | Technical design | Spec | API + DB schema |
-| 5 | **Software Engineer** | Code | TDD implementation | Design | Code + tests |
-| 6 | **QA Engineer** | Testing | Validation | Code | QA report |
-| 7 | **Security Engineer** | Security | OWASP audit | Code | Security report |
-| 8 | **Release Manager** | Approval | Go/no-go | Reports | Release verdict |
-| 9 | **Scrum Master** | Ceremonies | Team health | Sprint data | Metrics + health |
-| 10 | **Technical Writer** | Docs | Documentation | Code | API docs, CHANGELOG |
-| 11 | **Audit Agent** | Logging | Compliance trail | All phases | Audit logs |
-| 12 | **State Management** | Memory | Global state | All phases | Snapshots + recovery |
-| 13 | **Handshake Agent** | Validation | Phase transitions | Phase output | Validated context |
+**Pipeline Phase Agents (12)**
+
+| Phase | Agent | Purpose | Key Output |
+|-------|-------|---------|------------|
+| 1 | **Product Owner** | Requirements + ACs | Story brief, AC list |
+| 2 | **Business Analyst** | Functional spec, data flows, edge cases | BA spec, domain rules |
+| 3 | **UI Designer** *(v3.14.0)* | Design spec + HTML mockup (or no-UI determination) | Markdown spec, mockup.html |
+| 4 | **Solution Architect** | Architecture, API contracts, DB schema, ADRs | Design doc, API spec |
+| 5 | **Software Engineer** | Production code only (no tests) | Implemented feature files |
+| 6 | **TDD Red** *(v3.13.0)* | Write failing tests for every AC | Unit + integration test suite |
+| 7 | **TDD Green** *(v3.13.0)* | Run all tests; all pass, coverage ≥ 80% | Coverage report |
+| 8 | **QA Engineer** | AC-to-test mapping, full suite gate | QA report |
+| 9 | **E2E Engineer** *(v3.14.0)* | Playwright browser tests + screenshots | E2E spec, evidence screenshots |
+| 10 | **Security Engineer** | OWASP audit, dependency scan, compliance | Security report (0 HIGH to release) |
+| 11 | **Technical Writer** | README, CHANGELOG, runbooks, memory | Updated docs, conventions.md |
+| 12 | **Release Manager** | Go/no-go, G-6 stamp across 7 locations | Release verdict, version bumps |
+
+**Support Agents (1)**
+
+| Agent | Purpose | Invoked by |
+|-------|---------|------------|
+| **Scrum Master** | Sprint ceremonies, velocity, impediment removal | Human only — never pipeline |
+
+**Infrastructure Agents (3)**
+
+| Agent | Purpose |
+|-------|---------|
+| **Orchestrator** | Routes all work, enforces gates, manages phase flow |
+| **Handshake Agent** | Phase-to-phase validation + context passing |
+| **State Management Agent** | Locked state, atomic writes, audit trail, snapshots |
+
+**Infrastructure Scripts (v3.16.1)**
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/keel-state.cjs` | Deterministic state engine (schema validation, gating, audit, snapshots) |
+| `scripts/keel-dashboard.cjs` | Read-only pipeline status web dashboard (loopback-only) |
+| `scripts/keel-classify-gate.cjs` | CJIS Data Classification Gate — detects CJIS-adjacent data patterns and blocks unclassified stories; wired via `hooks/hooks.json` on `UserPromptSubmit`, `PreToolUse`, and `PostToolUse` stages |
 
 ---
 
@@ -1152,10 +1196,10 @@ Day 6: Validate & release
 
 ---
 
-**Framework:** Keel AI-SDLC Framework v3.12.0  
+**Framework:** Keel AI-SDLC Framework v3.16.1  
 **License:** MIT  
 **Author:** Amar Singh  
 **Repository:** https://github.com/creativemyntra/keel  
 
-✅ **All 13 agents ready to deliver enterprise-grade features in hours, not weeks!**
+✅ **All 15 agents ready to deliver enterprise-grade features in hours, not weeks!**
 

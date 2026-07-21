@@ -25,6 +25,7 @@
  *   node keel-state.cjs revert-check <story-id> --test <filter-or-path> [--runner "vendor/bin/phpunit"]
  *   node keel-state.cjs prescan  <story-id>
  *   node keel-state.cjs memory-check
+ *   node keel-state.cjs security-status [--since <ISO-8601>]
  */
 'use strict';
 
@@ -34,16 +35,19 @@ const crypto = require('crypto');
 
 const AGENTS = [
   'product-owner', 'business-analyst', 'ui-designer', 'solution-architect', 'software-engineer',
-  'tdd-red', 'tdd-green', 'qa-engineer', 'e2e-engineer',
+  'qa-engineer', 'e2e-engineer',
   'security-engineer', 'technical-writer', 'release-manager',
 ];
 const CONFIDENCE = ['high', 'medium', 'low'];
+// Agents removed in v3.15.0 (TDD phases merged into software-engineer); kept for
+// backward-compatible validation of stories initialized before the restructure.
+const LEGACY_AGENTS = [...AGENTS, 'tdd-red', 'tdd-green'];
 const KNOWN_FIELDS = [
   'phase', 'agent', 'story_id', 'confidence', 'findings', 'acceptance_criteria_ids',
   'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp',
 ];
 const MAX_ATTEMPTS = 3;
-const DEFAULT_MAX_GATES = 48;   // pipeline budget: total gate events per story (12 phases × 3 attempts + overhead)
+const DEFAULT_MAX_GATES = 40;   // pipeline budget: total gate events per story (10 phases × 3 attempts + overhead)
 const DEFAULT_MAX_HOURS = 72;   // pipeline budget: wall-clock per story
 const LOCK_STALE_MS = 30000;
 const LOCK_WAIT_MS = 2000;
@@ -185,33 +189,30 @@ function copyDir(src, dest, skip) {
 
 // Pipeline scopes: which phases a story is expected to run.
 //
-// feature (11 phases):
+// feature (10 phases):
 //   1  product-owner      — intake / requirements
 //   2  business-analyst   — functional spec
-//   3  solution-architect — architecture + design
-//   4  software-engineer  — implementation (production code ONLY, no tests)
-//   5  tdd-red            — test case creation (write + verify meaningful failing tests)
-//   6  tdd-green          — full suite execution + coverage gate (≥80% changed lines)
-//   7  qa-engineer        — AC mapping, regression, integration validation
-//   8  e2e-engineer       — Playwright E2E browser tests
-//   9  security-engineer  — OWASP, threat model, dependency audit
-//  10  technical-writer   — docs, changelog, runbook
-//  11  release-manager    — go/no-go, deployment plan
+//   3  ui-designer        — screen flows, mockups, component states
+//   4  solution-architect — architecture + design
+//   5  software-engineer  — implementation + unit tests + coverage gate (≥80%)
+//   6  qa-engineer        — AC mapping, regression, integration validation
+//   7  e2e-engineer       — Playwright E2E browser tests
+//   8  security-engineer  — OWASP, threat model, dependency audit
+//   9  technical-writer   — docs, changelog, runbook
+//  10  release-manager    — go/no-go, deployment plan
 //
-// defect (express lane — phases 1, 4-7, 9):
+// defect (express lane — phases 1, 5, 6, 8):
 //   1  business-analyst   — triage + RCA import
-//   4  software-engineer  — root-cause fix
-//   5  tdd-red            — regression test (proves fix guards root cause)
-//   6  tdd-green          — revert-check + full suite green
-//   7  qa-engineer        — validation
-//   9  security-engineer  — diff-scoped security scan
+//   5  software-engineer  — root-cause fix + regression unit test
+//   6  qa-engineer        — validation
+//   8  security-engineer  — diff-scoped security scan
 //
-// Existing stories initialized under the old 8-phase scheme store their own
+// Existing stories initialized under older schemes store their own
 // expected_phases in their manifest.json — the engine always reads from the
 // manifest, so old stories are unaffected by this constant changing.
 const SCOPES = {
-  feature: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-  defect: [1, 5, 6, 7, 8, 10],
+  feature: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  defect: [1, 5, 6, 8],
 };
 
 function cmdInit(storyId, args) {
@@ -253,8 +254,19 @@ function validatePhaseFile(storyId, fileName) {
   catch (e) { return [`invalid JSON in ${file}: ${e.message}`]; }
 
   // schema checks (mirrors agent-output-schema.json)
-  if (!Number.isInteger(out.phase) || out.phase < 1 || out.phase > 12) errors.push('phase must be integer 1..12');
-  if (!AGENTS.includes(out.agent)) errors.push(`agent must be one of: ${AGENTS.join(', ')}`);
+  // Read the story's manifest to determine the valid phase ceiling — stories initialized
+  // before v3.15.0 may have expected_phases up to 12.
+  let storyMaxPhase = AGENTS.length; // 10 for current pipeline
+  if (fs.existsSync(manifestPath(storyId))) {
+    try {
+      const m = JSON.parse(fs.readFileSync(manifestPath(storyId), 'utf8'));
+      if (Array.isArray(m.expected_phases) && m.expected_phases.length > 0) {
+        storyMaxPhase = Math.max(...m.expected_phases);
+      }
+    } catch (_) { /* use pipeline default */ }
+  }
+  if (!Number.isInteger(out.phase) || out.phase < 1 || out.phase > storyMaxPhase) errors.push(`phase must be integer 1..${storyMaxPhase}`);
+  if (!LEGACY_AGENTS.includes(out.agent)) errors.push(`agent must be one of: ${AGENTS.join(', ')}`);
   if (typeof out.story_id !== 'string' || !out.story_id) errors.push('story_id missing');
   else if (out.story_id !== storyId) errors.push(`story_id "${out.story_id}" does not match directory "${storyId}"`);
   if (!CONFIDENCE.includes(out.confidence)) errors.push('confidence must be high|medium|low');
@@ -358,6 +370,43 @@ function cmdGate(storyId, args) {
     }
 
     if (verdict === 'PASS') {
+      // ENGINE-ENFORCED PRECONDITION (added post-audit, 2026-07-20): a PASS
+      // verdict is a claim that the referenced phase file exists and is
+      // schema/AC/artifact valid. Previously this command trusted the caller
+      // to have run `validate` first and reported honestly — nothing stopped
+      // `gate --verdict PASS` from being called against a missing or broken
+      // phase file, which silently advanced current_phase with no real work
+      // behind it. The engine now re-runs the same checks `validate` runs,
+      // every time, as a precondition of accepting PASS. This cannot be
+      // bypassed by a caller choosing not to run `validate` first.
+      //
+      // SECOND PRECONDITION (KEEL-R18, found via live testing 2026-07-21):
+      // the check above validates the FILE for the requested phase, but did
+      // nothing to stop `gate --phase N` from being called when N is not the
+      // story's actual current_phase -- a caller could skip an entire phase
+      // (its own gate never called, or previously REFUSED) and jump straight
+      // to gating a later one, and the pipeline would still reach "complete"
+      // with a gap in the middle of the audit trail. Reproduced live: phase
+      // 8's gate was refused (bad artifact reference), phase 9's gate was
+      // still accepted immediately after, and `status` reported the story
+      // complete with no trace that phase 8 never actually passed. Refuse
+      // any gate call that isn't for the story's current phase.
+      if (phase !== manifest.current_phase) {
+        die(1, `GATE REFUSED: story is at phase ${manifest.current_phase}, not phase ${phase} — cannot record PASS out of sequence. Gate phase ${manifest.current_phase} first (or run resume if a human has deliberately decided to skip ahead).`);
+      }
+      const prefix2 = String(phase).padStart(2, '0') + '-';
+      const phaseFile = fs.readdirSync(stateDir(storyId))
+        .find((f) => f.startsWith(prefix2) && f.endsWith('.json'));
+      if (!phaseFile) {
+        die(1, `GATE REFUSED: no phase-${prefix2.slice(0, 2)} output file found in ${stateDir(storyId)} — cannot record PASS for work that does not exist. Run the phase agent and write its output file first.`);
+      }
+      const gateErrors = validatePhaseFile(storyId, phaseFile);
+      if (gateErrors.length) {
+        console.error(`GATE REFUSED: ${phaseFile} fails validation — ${gateErrors.length} error(s):`);
+        gateErrors.forEach((e) => console.error(`  - ${e}`));
+        die(1, 'A PASS verdict cannot be recorded against an invalid phase file. Fix the phase output (or call gate --verdict FAIL to log the attempt) and retry.');
+      }
+
       delete manifest.attempts[key];
       if (manifest.attempt_hashes) delete manifest.attempt_hashes[key];
       // advance to the next phase IN SCOPE (defect scope skips 2-3 and 7-8),
@@ -372,20 +421,14 @@ function cmdGate(storyId, args) {
       appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_passed', notes });
       // auto-audit the phase completion — the separate `audit --phase-file`
       // step proved fragile in practice (a fast-model gate skipped it in the
-      // KEEL-102 e2e), so the engine owns it on PASS
-      const prefix2 = String(phase).padStart(2, '0') + '-';
-      const phaseFile = fs.readdirSync(stateDir(storyId))
-        .find((f) => f.startsWith(prefix2) && f.endsWith('.json'));
-      if (phaseFile) {
-        try {
-          const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
-          appendAudit(storyId, {
-            phase: out.phase, agent: out.agent, action: 'phase_completed',
-            outputs: [phaseFile], artifacts: out.artifacts || [], decisions: out.decisions || [],
-            git_commit: null, notes: 'auto-audited on gate PASS',
-          });
-        } catch { /* unparseable phase file would have failed validate; skip */ }
-      }
+      // KEEL-102 e2e), so the engine owns it on PASS. phaseFile is already
+      // known-valid at this point (checked above), so this parse cannot fail.
+      const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+      appendAudit(storyId, {
+        phase: out.phase, agent: out.agent, action: 'phase_completed',
+        outputs: [phaseFile], artifacts: out.artifacts || [], decisions: out.decisions || [],
+        git_commit: null, notes: 'auto-audited on gate PASS',
+      });
       console.log(`PASS recorded: phase ${phase} -> ${label}`);
       return;
     }
@@ -529,13 +572,18 @@ function cmdDescribe(storyId) {
     .sort();
   const completedPhaseNums = files.map((f) => parseInt(f.slice(0, 2), 10));
 
-  // Current in-progress phase name; "complete" when beyond the last defined phase.
-  const inProgress = manifest.current_phase > 12
+  // Remaining phases: same expected_phases fallback chain as cmdStatus line 452.
+  // Must be computed before inProgress so maxPhase is available.
+  const expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
+  const maxPhase = Math.max(...expected);
+
+  // Current in-progress phase name; "complete" when beyond the last phase in scope.
+  // Use maxPhase (not hardcoded 12) so old stories with smaller expected_phases sets
+  // show "complete" correctly rather than pointing at an out-of-scope agent.
+  const inProgress = manifest.current_phase > maxPhase
     ? 'complete'
     : (AGENTS[manifest.current_phase - 1] || 'complete');
 
-  // Remaining phases: same expected_phases fallback chain as cmdStatus line 452.
-  const expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
   const remaining = expected
     .filter((p) => p > manifest.current_phase && !completedPhaseNums.includes(p))
     .map((p) => AGENTS[p - 1])
@@ -544,7 +592,10 @@ function cmdDescribe(storyId) {
   // Read timestamps from each completed phase file for display.
   const completedLines = files.map((f) => {
     const phaseNum = parseInt(f.slice(0, 2), 10);
-    const agentName = AGENTS[phaseNum - 1] || f.slice(3, -5);
+    // Prefer the name embedded in the filename (authoritative — the agent
+    // that ran wrote the file as NN-<agent>.json). Fall back to the AGENTS
+    // array only when the filename pattern is non-standard.
+    const agentName = f.slice(3, -5) || AGENTS[phaseNum - 1] || 'unknown';
     let ts = '';
     try {
       const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), f), 'utf8'));
@@ -574,7 +625,7 @@ function cmdDescribe(storyId) {
   console.log(`${manifest.story_id} · ${manifest.title || '(no title)'}`);
   console.log(SEP);
   console.log(`Scope:          ${manifest.scope || 'feature'}`);
-  console.log(`Current phase:  ${manifest.current_phase} / 11 (${inProgress})`);
+  console.log(`Current phase:  ${manifest.current_phase} / ${maxPhase} (${inProgress})`);
   console.log(`Halted:         ${manifest.halted === true ? 'yes' : 'no'}`);
   console.log(`Idle:           ${idle}`);
   console.log(`Started:        ${manifest.started_at || 'unknown'}`);
@@ -778,15 +829,20 @@ function cmdPrescan(storyId) {
     catch { return false; }
   };
 
-  run('composer-audit', 'composer audit --no-interaction', exists('composer.json'), 'not applicable — no composer.json');
+  run('composer-audit', 'composer audit --no-interaction',
+    exists('composer.json') && onPath('composer'),
+    exists('composer.json') ? 'not applicable — composer not on PATH' : 'not applicable — no composer.json');
   run('phpstan', 'vendor/bin/phpstan analyse --no-progress --error-format=raw',
     exists(path.join('vendor', 'bin', 'phpstan')) || exists(path.join('vendor', 'bin', 'phpstan.bat')),
     'not applicable — phpstan not installed');
   run('npm-audit', 'npm audit --package-lock-only',
     exists('package.json') && (exists('package-lock.json') || exists('npm-shrinkwrap.json')),
     exists('package.json') ? 'no lockfile — generate one or audit manually' : 'not applicable — no package.json');
-  const snykReady = onPath('snyk') && (process.env.SNYK_TOKEN || exists(path.join(keelHome, 'secrets', 'snyk.token')));
-  run('snyk', 'snyk test --severity-threshold=high', snykReady, 'not configured — snyk CLI or token missing');
+  const hasProjectManifest = ['package.json', 'go.mod', 'pom.xml', 'build.gradle',
+    'requirements.txt', 'Pipfile', 'poetry.lock', 'Gemfile', 'composer.json'].some((f) => exists(f));
+  const snykReady = hasProjectManifest && onPath('snyk') && (process.env.SNYK_TOKEN || exists(path.join(keelHome, 'secrets', 'snyk.token')));
+  run('snyk', 'snyk test --severity-threshold=high', snykReady,
+    hasProjectManifest ? 'not configured — snyk CLI or token missing' : 'not applicable — no supported project manifests');
   const sonarReady = onPath('sonar-scanner') && (exists('sonar-project.properties') || exists(path.join(keelHome, 'config', 'sonarqube.yml')));
   run('sonar-scanner', 'sonar-scanner', sonarReady, 'not configured — scanner or project config missing');
 
@@ -1122,12 +1178,26 @@ ${allArtifacts.length ? `<div class="section">
   console.log(`Report written: ${outFile}`);
 }
 
+// Global (not story-scoped) CJIS incident log from keel-classify-gate.cjs.
+// Read-only — this command never writes to ~/.keel/security/incidents.jsonl.
+function cmdSecurityStatus(args) {
+  const os = require('os');
+  const log = path.join(process.env.KEEL_HOME || path.join(os.homedir(), '.keel'), 'security', 'incidents.jsonl');
+  const since = flag(args, '--since');
+  if (!fs.existsSync(log)) return console.log(JSON.stringify({ count: 0, incidents: [] }, null, 2));
+  const incidents = fs.readFileSync(log, 'utf8').trim().split('\n').filter(Boolean)
+    .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+    .filter((e) => e && (!since || e.ts >= since));
+  console.log(JSON.stringify({ count: incidents.length, incidents }, null, 2));
+}
+
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
+if (cmd === 'security-status') { cmdSecurityStatus(process.argv.slice(3)); process.exit(0); }
 if (!storyId) die(64, USAGE);
 if (cmd === 'status' && storyId === '--all') { cmdStatusAll(); process.exit(0); }
 switch (cmd) {

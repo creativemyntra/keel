@@ -1,0 +1,47 @@
+{
+  "phase": 12,
+  "agent": "release-manager",
+  "story_id": "KEEL-104",
+  "confidence": "high",
+  "findings": [
+    "Pipeline integrity: all 11 prior phase outputs exist on disk (01 through 11), every one with confidence=high; handoff-log.md records 13 gate events with final PASS for every phase; manifest current_phase=12, gate_events 13/48, no halted flag, attempts map empty",
+    "Two mid-pipeline FAIL attempts confirmed resolved: phase 7 attempt 1 FAILED for a fabricated suite claim (nonexistent tests/test-keel-state.cjs result) — resubmission removed the fabrication and the gate re-verified 70/70 by execution; phase 8 attempt 1 FAILED on schema (undeclared ac_test_mapping field) — resubmission migrated the mapping into findings and passed; final state of both phases is clean PASS",
+    "QA gate PASS (08-qa-engineer.json + gate re-execution): 70/70 tests in tests/keel-dashboard.test.cjs; line coverage 91.7% on scripts/keel-dashboard.cjs (>= 80% gate); branch 72.46% with uncovered branches confirmed working via live HTTP integration tests (200/404/empty-state/port-override)",
+    "AC traceability PASS: AC-1..AC-7 identical in all 11 phase outputs vs 01-business-analyst.json — zero drift; QA report maps every AC to passing tests (AC-1:3, AC-2:26, AC-3:18, AC-4:5, AC-5:6, AC-6:4, AC-7:8); AC-7 additionally regression-verified by direct status --all execution in phases 8 and 10",
+    "Security gate PASS (10-security-engineer.json): 0 HIGH, 0 MEDIUM, 2 LOW, 3 INFO; npm audit 0 vulnerabilities; loopback-only bind, read-only fs usage, full escHtml coverage all verified in code by the phase-12 gate re-run recorded in handoff-log entry 12",
+    "Docs gate PASS: CHANGELOG.md contains '[3.14.0] - 2026-07-15' entry at line 5 above [3.13.0]; README.md v3.14.0 title, What's New entry, Key Features bullet, Utilities command row, and dedicated 'Pipeline Dashboard' section all verified present and accuracy-checked by the phase-11 gate against live behavior",
+    "Carry-forward action DONE (phase-10 LOW-2): added gitleaks-report.json to .gitignore under a new 'Security scan artifacts' block — the untracked report (2 placeholder YOUR_TOKEN false positives, no live secrets) can no longer be committed",
+    "Carry-forward action DONE (version stamp): package.json version bumped 3.12.0 -> 3.14.0; README footer updated — Version: 3.14.0, Released: 2026-07-15 (matching the CHANGELOG entry date), Tag: v3.14.0 with matching release URL",
+    "Open follow-up (non-blocking, phase-10 LOW-1): add Host-header allowlist (localhost/127.0.0.1) to scripts/keel-dashboard.cjs to close the DNS-rebinding read vector — due within 30 days of the phase-10 report (by 2026-08-14); exposed data is low-sensitivity story metadata only",
+    "Open follow-up (non-blocking): .keel/graph/codegraph.json is stale (2026-07-14, PHP scaffold nodes only, no JS files) — regenerate so impact analysis covers keel-dashboard.cjs and its consumers",
+    "Known pre-existing failure, not a KEEL-104 regression: tests/keel-state-describe-e2e.test.cjs 44/45 (KEEL-103 hardcoded current_phase=8 now stale) — classified pre-existing by phases 7, 8; keel-dashboard.cjs never touches keel-state.cjs",
+    "Jira P0/P1 gate: N/A for this story — KEEL-104 was imported from a human-PO story brief (per 01-business-analyst.json), not from a Jira ticket; no Jira issue exists to carry open bugs",
+    "Human approval gate PENDING: this repo uses a plain-git release flow (prod is the release branch, no PR); commit of the release diff, tag v3.14.0, and merge master -> prod are human-owner actions — the agent made no git commits per constraint"
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5",
+    "AC-6",
+    "AC-7"
+  ],
+  "decisions": [
+    "AC-1..AC-7 carried forward from 01-business-analyst.json unchanged — no drift, no descoping",
+    "VERDICT: GO for release v3.14.0 — all automated gates pass (QA 70/70 + 91.7% line coverage, security 0 HIGH/0 MEDIUM, docs complete, AC traceability intact, both mid-pipeline gate failures remediated and re-verified); release execution (commit, tag v3.14.0, merge to prod) remains with the human owner as required",
+    "README footer 'Released' date set to 2026-07-15 to match the CHANGELOG [3.14.0] entry date rather than today's date — the footer records the versioned artifact state, and CHANGELOG is the source of truth for release dating",
+    "Only the footer Version/Released/Tag lines were restamped; historical v3.12.0 references elsewhere in README (plugin-list example output, GitHub Action pin examples) left untouched — they are usage examples pinned to a published tag, not artifact-state claims, and restamping them is outside this phase's mandate",
+    "Both LOW security findings dispositioned per phase-10 plan: LOW-2 closed in this phase (.gitignore entry), LOW-1 accepted as a tracked 30-day follow-up — neither blocks GO under the 0-HIGH release rule",
+    "next_phase set to null per agent-output-schema.json convention: pipeline complete at phase 12"
+  ],
+  "artifacts": [
+    ".gitignore",
+    "package.json",
+    "README.md",
+    ".keel/state/KEEL-104/12-release-manager.json"
+  ],
+  "next_phase": null,
+  "blockers": [],
+  "timestamp": "2026-07-16T00:00:00.000Z"
+}

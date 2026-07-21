@@ -1,0 +1,40 @@
+{
+  "phase": 3,
+  "agent": "ui-designer",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "KEEL-105 is a backend security-hardening story (DNS-rebinding mitigation). No browser UI surface, no interactive components, no dashboard layout changes.",
+    "AC-1 through AC-4: Host header validation logic and invariant constraints — zero UI impact; validation occurs before dashboard renderer is invoked.",
+    "AC-2 specifies the only user-facing output: 403 Forbidden response with static plain-text body (charset=utf-8), no request data reflected. Content-Type: text/plain. Body: 'Forbidden' or similar constant string per architect decision (OQ-3, phase 4).",
+    "AC-3 (missing Host header): behavior defined by architect in phase 4; response is either 400 or 403, both static plain-text, no request echo — same constraints as AC-2.",
+    "AC-5 and AC-6: regression + new unit/E2E tests — no UI assertion required; test assertions are on HTTP status code and response headers, not rendered content.",
+    "AC-7: README and CHANGELOG updates by technical-writer (phase 11) — documentation changes, outside UI design scope.",
+    "AC-8: version bump by release-manager (phase 12) — release engineering, outside UI design scope.",
+    "Dashboard HTML renderer (scripts/keel-dashboard.cjs, existing) remains unchanged per AC-4 invariant; no CSS, no template, no new components.",
+    "Existing dashboard UI patterns (card-grid layout, typography, color scheme per KEEL-104 v3.14.0) are untouched by this story.",
+    "Security posture: 403 response does not echo Host header or any request data, preventing information leakage on rejection — no XSS vector introduced."
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5",
+    "AC-6",
+    "AC-7",
+    "AC-8"
+  ],
+  "decisions": [
+    "No mockup artifacts required — AC-2's 403 response is static plain-text, not a visual design surface.",
+    "No HTML prototype needed — dashboard renderer is explicitly unchanged per AC-4 invariant.",
+    "403 response body (AC-2) to be specified by architect in phase 4 (open question OQ-3 from BA); UI designer defers exact microcopy to architecture phase.",
+    "Test UI assertions belong in phase 5 (software-engineer) and phase 8 (QA-engineer); this phase confirms no visual design changes.",
+    "All 8 ACs are either no-UI (backend logic + tests) or deferred to owning phases (technical-writer AC-7, release-manager AC-8)."
+  ],
+  "artifacts": [
+    "docs/analysis/KEEL-105-ui-determination.json"
+  ],
+  "next_phase": 4,
+  "blockers": []
+}

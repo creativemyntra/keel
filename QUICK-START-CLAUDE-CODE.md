@@ -1,8 +1,13 @@
-# Keel v3.14.0 — Claude Code Quick Start
+# Keel v3.16.1 — Claude Code Quick Start
 
 **Status:** ✅ Framework is ready to use NOW  
-**Date:** 2026-07-08  
+**Date:** 2026-07-21  
 **Installation:** Already complete  
+
+> **Updated 2026-07-21:** aligned to v3.16.1 — 10-phase pipeline, 15 agents,
+> full workflow table covering all phases including UI Designer (3), E2E Engineer
+> (7), and Technical Writer (9). References to removed skills and stale counts
+> have been corrected.
 
 ---
 
@@ -15,13 +20,7 @@
 
 ### Step 2: Test the Framework
 
-Try one of these commands NOW:
-
-```bash
-/keel:create-prd goal="Build a user authentication system"
-```
-
-Or:
+Try this command NOW:
 
 ```bash
 /keel:implement-feature story="FEAT-001" feature="User login with email and password"
@@ -37,15 +36,13 @@ Use these skills immediately:
 
 | Command | What It Does | When to Use |
 |---------|-------------|------------|
-| `/keel:sprint-planning` | Create sprint plans from backlog + team capacity | Sprint planning |
-| `/keel:create-prd` | Write PRD from raw feature request | New feature ideas |
-| `/keel:analyze-story` | Elaborate backlog story with functional specs | Refining stories |
 | `/keel:investigate-defect` | Root cause analysis of bugs | Bug triage |
 | `/keel:create-mom` | Minutes of meeting from transcript | Documenting meetings |
-| `/keel:generate-tests` | 5 test categories (unit, integration, e2e, perf, sec) | Test planning |
 | `/keel:e2e-test` | Playwright E2E test generation | Browser automation |
 | `/keel:review-code` | Security + QA review on staged changes | Code review |
 | `/keel:release-check` | Full release-readiness validation | Before deployment |
+| `/keel:req` | BDD requirements + acceptance criteria for a story | New feature ideas |
+| `/keel:design` | UI design + architecture for a story | Refining stories |
 | `/keel:implement-feature` | FULL PIPELINE: design → code → test → security | End-to-end feature delivery |
 
 ---
@@ -57,22 +54,25 @@ Use these skills immediately:
 /keel:implement-feature story="FEAT-001" feature="Export users to CSV"
 ```
 
-This invokes ALL agents automatically:
+This invokes ALL agents automatically (10-phase pipeline):
 1. Product Owner (defines requirements)
 2. Business Analyst (functional specs)
-3. Solution Architect (system design)
-4. Software Engineer (TDD implementation)
-5. QA Engineer (test validation)
-6. Security Engineer (vulnerability scan)
-7. Release Manager (go/no-go)
+3. UI Designer (component layout + HTML mockup)
+4. Solution Architect (system design)
+5. Software Engineer (code + unit tests, ≥80% coverage)
+6. QA Engineer (AC mapping + integration tests)
+7. E2E Engineer (Playwright browser tests)
+8. Security Engineer (OWASP Top 10 scan)
+9. Technical Writer (docs + CHANGELOG)
+10. Release Manager (go/no-go)
 
 ### Advanced: Use Multiple Commands
 ```bash
 # 1. Create requirements
-/keel:create-prd goal="Build subscription analytics"
+/keel:req --story=FEAT-100 --feature="Build subscription analytics"
 
 # 2. Design the system
-/keel:analyze-story story="FEAT-100" 
+/keel:design --story=FEAT-100
 
 # 3. Implement everything
 /keel:implement-feature story="FEAT-100" feature="Real-time analytics dashboard"
@@ -85,10 +85,10 @@ This invokes ALL agents automatically:
 
 ## 📊 WHAT YOU GET
 
-✅ **13 Agents** working in sync:
-- 8 phase agents (init → brainstorm → req → design → dev → test → sec → deploy)
-- 2 support agents (scrum-master, technical-writer)
-- 3 compliance agents (audit-trail, state-management, handshake)
+✅ **15 Agents** working in sync:
+- 10 pipeline phase agents (intake → requirements → UI design → architecture → code+tests → QA → E2E → security → docs → release)
+- 2 meta/support agents (orchestrator, scrum-master)
+- 3 infrastructure agents (audit, state-management, handshake)
 
 ✅ **6 Compliance Standards:**
 - CJIS (Criminal Justice)
@@ -111,11 +111,11 @@ This invokes ALL agents automatically:
 
 ### Q: Why not `/keel --version`?
 
-**A:** Claude Code's plugin system uses skills-based commands. The skills (e.g., `/keel:sprint-planning`) are the primary interface. The root `/keel` command is being registered. Use `/keel:implement-feature` instead — it does everything `/keel` would do.
+**A:** Claude Code's plugin system uses skills-based commands. The skills (e.g., `/keel:req`, `/keel:design`) are the primary interface. The root `/keel` command is being registered. Use `/keel:implement-feature` instead — it does everything `/keel` would do.
 
 ### Q: Is the framework working?
 
-**A:** Yes, 100%! All 13 agents are deployed. Try `/keel:sprint-planning` — it will work immediately.
+**A:** Yes! All 15 agents are deployed across the 10-phase pipeline. Try `/keel:req --story=TEST --feature="test"` — it will work immediately.
 
 ### Q: What about the root `/keel` command?
 
@@ -136,7 +136,7 @@ This invokes ALL agents automatically:
 
 ## 🔧 IF SOMETHING ISN'T WORKING
 
-### Command not found: `/keel:sprint-planning`
+### Command not found: `/keel:req` (or any skill)
 → Close and reopen Claude Code completely
 
 ### "agent not found" error
@@ -164,8 +164,8 @@ This invokes ALL agents automatically:
 
 Before starting, verify you can:
 
-- [ ] Run `/keel:sprint-planning` (should invoke agents)
-- [ ] Run `/keel:create-prd goal="Test"` (should create a PRD)
+- [ ] Run `/keel:req --story=TEST --feature="Test"` (should draft requirements)
+- [ ] Run `/keel:design --story=TEST` (should produce a design doc)
 - [ ] Run `/keel:implement-feature story="TEST" feature="Test feature"` (full pipeline)
 
 If all 3 work, the framework is fully operational.
@@ -198,8 +198,8 @@ Total time: **Hours instead of weeks!**
 | Component | Status |
 |-----------|--------|
 | Installation | ✅ Complete |
-| 13 Agents | ✅ Deployed |
-| Skills (10 total) | ✅ Ready |
+| 15 Agents | ✅ Deployed |
+| Skills (11 total) | ✅ Ready |
 | Compliance (6 standards) | ✅ Verified |
 | Code Quality | ✅ 89% coverage, 0 vulns |
 | Root `/keel` command | ✅ Added (restart to activate) |
@@ -207,7 +207,7 @@ Total time: **Hours instead of weeks!**
 
 ---
 
-**Version:** 3.14.0  
+**Version:** 3.16.1  
 **Author:** Amar Singh  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  

@@ -1,14 +1,14 @@
-# Keel AI-SDLC Framework v3.14.0 - Technical Specifications
+﻿# Keel AI-SDLC Framework v3.16.2 - Technical Specifications
 
-**Document Version:** 1.9  
-**Last Updated:** 2026-07-09  
+**Document Version:** 2.0  
+**Last Updated:** 2026-07-21  
 **Status:** PRODUCTION  
 **Author:** Amar Singh  
 **Audience:** Development Team, Future Maintainers, Contributors  
 
 ---
 
-## 📋 Table of Contents
+## ðŸ“‹ Table of Contents
 
 1. [System Overview](#system-overview)
 2. [Architecture](#architecture)
@@ -26,17 +26,17 @@
 ## System Overview
 
 ### Purpose
-Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development lifecycle automation platform. It orchestrates 13 autonomous agents across 8 development phases to deliver production-ready features in 2-4 hours vs. 2 weeks.
+Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development lifecycle automation platform. It orchestrates 15 autonomous agents across 10 development phases to deliver production-ready features in 2-4 hours vs. 2 weeks.
 
 ### Key Metrics
-- **Code Coverage Target:** ≥80% (Current: 95%)
+- **Code Coverage Target:** â‰¥80% (Current: 95%)
 - **Vulnerability Target:** 0 (Current: 0)
 - **Test Pass Rate:** 100%
 - **Development Speed:** 99.4% faster than traditional
 - **Enterprise Compliance:** 6 standards (CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX)
 
 ### Core Capabilities
-1. Autonomous agent orchestration across 8 phases
+1. Autonomous agent orchestration across 10 phases
 2. Test-driven development (TDD) automation
 3. Security scanning and compliance checking
 4. Multi-stack support (CakePHP, Laravel, Django, Rails)
@@ -50,40 +50,40 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ### High-Level Design
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                    User/CLI Interface                   │
-│         (Claude Code, npm, Docker, GitHub Action)      │
-└──────────────────────┬─────────────────────────────────┘
-                       │
-┌──────────────────────▼─────────────────────────────────┐
-│              Keel Orchestrator Agent                    │
-│         (Routes work, enforces gates, manages flow)     │
-└──────────────────────┬─────────────────────────────────┘
-                       │
-    ┌──────────────────┼──────────────────┐
-    │                  │                  │
-┌───▼────┐      ┌──────▼──────┐    ┌────▼─────┐
-│ Phase  │      │   Phase     │    │  Phase   │
-│ Agents │      │   Agents    │    │  Agents  │
-│ (8)    │      │   (8)       │    │  (8)     │
-└────────┘      └─────────────┘    └──────────┘
-    │                  │                  │
-    └──────────────────┼──────────────────┘
-                       │
-    ┌──────────────────┼──────────────────┐
-    │                  │                  │
-┌───▼────┐      ┌──────▼──────┐    ┌────▼─────┐
-│ Support│      │  Compliance │    │   MCP    │
-│Agents  │      │   Agents    │    │ Servers  │
-│ (2)    │      │   (3)       │    │   (4)    │
-└────────┘      └─────────────┘    └──────────┘
-    │                  │                  │
-    └──────────────────┼──────────────────┘
-                       │
-┌──────────────────────▼─────────────────────────────────┐
-│        Output: Production-Ready Code & Artifacts       │
-│    (Tested, Documented, Secure, Ready to Deploy)       │
-└────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                    User/CLI Interface                   â”‚
+â”‚         (Claude Code, npm, Docker, GitHub Action)      â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                       â”‚
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚              Keel Orchestrator Agent                    â”‚
+â”‚         (Routes work, enforces gates, manages flow)     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                       â”‚
+    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+    â”‚                  â”‚                  â”‚
+â”Œâ”€â”€â”€â–¼â”€â”€â”€â”€â”      â”Œâ”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”
+â”‚ Phase  â”‚      â”‚   Phase     â”‚    â”‚  Phase   â”‚
+â”‚ Agents â”‚      â”‚   Agents    â”‚    â”‚  Agents  â”‚
+â”‚ (12)   â”‚      â”‚   (12)      â”‚    â”‚  (12)    â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+    â”‚                  â”‚                  â”‚
+    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                       â”‚
+    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+    â”‚                  â”‚                  â”‚
+â”Œâ”€â”€â”€â–¼â”€â”€â”€â”€â”      â”Œâ”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”
+â”‚ Supportâ”‚      â”‚  Compliance â”‚    â”‚   MCP    â”‚
+â”‚Agents  â”‚      â”‚   Agents    â”‚    â”‚ Servers  â”‚
+â”‚ (2)    â”‚      â”‚   (3)       â”‚    â”‚   (4)    â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+    â”‚                  â”‚                  â”‚
+    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                       â”‚
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚        Output: Production-Ready Code & Artifacts       â”‚
+â”‚    (Tested, Documented, Secure, Ready to Deploy)       â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ### System Layers
@@ -100,9 +100,9 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - State Management Agent (maintains global state)
 
 **Layer 3: Execution Layer**
-- 8 Phase Agents (INIT → DEPLOY)
-- 2 Support Agents (Scrum Master, Technical Writer)
-- 3 Compliance Agents (Audit, State, Handshake)
+- 10 Phase Agents (Intake â†’ Requirements â†’ UI Design â†’ Architecture â†’ Code+Tests â†’ QA â†’ E2E â†’ Security â†’ Docs â†’ Release)
+- 1 Support Agent (Scrum Master â€” human-invoked only)
+- 3 Infrastructure Agents (Audit, State Management, Handshake)
 
 **Layer 4: Integration Layer**
 - 4 MCP Servers (Jira, GitHub, Slack, Playwright)
@@ -133,60 +133,68 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 
 ---
 
-### 2. Phase Agents (8 Total)
+### 2. Phase Agents (10 Total)
 
-#### Phase 1: Init Agent
-- Project scaffolding
-- Stack selection (CakePHP/Laravel/Django/Rails)
-- Initial project structure
+#### Phase 1: Product Owner Agent
+- Story intake from Jira or human proposal
+- Acceptance criteria definition
+- Scope boundary
 
-#### Phase 2: Brainstorm Agent
-- Feature ideation
-- Business goal analysis
-- Scope definition
+#### Phase 2: Business Analyst Agent
+- Functional spec elaboration
+- Data flows and domain rules
+- Edge cases and error paths
 
-#### Phase 3-4: Requirement/Design Agents
-- BDD specifications
-- Architecture design
-- API contracts
-- Database schema
+#### Phase 3: UI Designer Agent (v3.14.0)
+- Scans existing UI patterns in the project
+- Produces Markdown design spec + self-contained HTML mockup
+- No-UI determination for non-visual stories
+
+#### Phase 4: Solution Architect Agent
+- Architecture and design patterns
+- API contracts and DB schema
+- Technical risk assessment (ADRs)
 
 #### Phase 5: Software Engineer Agent
-- TDD implementation (Red → Green → Refactor)
-- Code generation
-- PSR-12 compliance (PHP 8.1+)
+- Production code + unit tests in one phase
+- Coverage â‰¥ 80% on changed lines gated before QA
+- PSR-12 / ESLint compliance, CodeGraph impact-scoped implementation
 
-#### Phase 6: QA Engineer Agent
-- Test validation
-- Coverage reporting
-- Acceptance criteria checking
+#### Phase 6: QA Engineer Agent (v3.15.0)
+- Maps every AC to a passing test
+- Runs integration tests against live endpoints
+- Full suite gate (once per story)
 
-#### Phase 7: Security Engineer Agent
+#### Phase 7: E2E Engineer Agent
+- Playwright browser E2E tests for every user-facing flow
+- Screenshot evidence captured
+- Blocks release on any E2E failure
+
+#### Phase 8: Security Engineer Agent
 - OWASP Top 10 scanning
-- Vulnerability assessment
-- Dependency audit
-- Compliance verification
+- Consumes prescan.json (static-first)
+- Blocks release on any HIGH finding
 
-#### Phase 8: Release Manager Agent
+#### Phase 9: Technical Writer Agent
+- README and CHANGELOG updates
+- API docs, runbooks, and onboarding guides
+- Memory writeback to conventions.md
+
+#### Phase 10: Release Manager Agent
 - Go/no-go decision
-- Deployment readiness
-- Release documentation
+- G-6 version stamp across all 7 locations
+- Deployment readiness and release documentation
 
 ---
 
-### 3. Support Agents (2 Total)
+### 3. Support Agents (1 Total)
 
 #### Scrum Master Agent
 - Sprint planning
 - Velocity tracking
 - Impediment removal
 - Ceremony coordination
-
-#### Technical Writer Agent
-- Documentation generation
-- Changelog management
-- Runbook creation
-- API documentation
+- Human-invoked only â€” never part of the delivery pipeline
 
 ---
 
@@ -215,8 +223,8 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ## Technical Stack
 
 ### Runtime
-- **Node.js:** ≥16.0.0 (tested on 18.0.0)
-- **npm:** ≥7.0.0
+- **Node.js:** â‰¥16.0.0 (tested on 18.0.0)
+- **npm:** â‰¥7.0.0
 - **Language:** JavaScript (ES2020+)
 
 ### Framework & Libraries
@@ -251,32 +259,32 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 
 ```
 User Input (CLI/API)
-    ↓
+    â†“
 CLI Argument Parsing
-    ↓
+    â†“
 Validate Input Parameters
-    ↓
+    â†“
 Load Project Configuration
-    ↓
+    â†“
 Initialize Agent Context
-    ↓
+    â†“
 Route to Orchestrator Agent
-    ↓
+    â†“
 [Phase Loop]
-├─ Pre-Phase Validation
-├─ Handshake Agent validates phase readiness
-├─ Execute Phase Agent
-├─ Post-Phase Validation
-├─ Update State
-├─ Record Audit Trail
-└─ Move to Next Phase
-    ↓
+â”œâ”€ Pre-Phase Validation
+â”œâ”€ Handshake Agent validates phase readiness
+â”œâ”€ Execute Phase Agent
+â”œâ”€ Post-Phase Validation
+â”œâ”€ Update State
+â”œâ”€ Record Audit Trail
+â””â”€ Move to Next Phase
+    â†“
 Final Validation (Release Manager)
-    ↓
+    â†“
 Generate Artifacts
-    ↓
+    â†“
 Output Results
-    ↓
+    â†“
 Record in Audit Trail
 ```
 
@@ -315,13 +323,13 @@ Record in Audit Trail
 ## Quality Standards
 
 ### Code Quality Gates
-- **Coverage:** ≥85% (Current: 95%)
-- **Complexity:** Cyclomatic complexity ≤10 per function
+- **Coverage:** â‰¥85% (Current: 95%)
+- **Complexity:** Cyclomatic complexity â‰¤10 per function
 - **Linting:** ESLint passes with zero errors
 - **Formatting:** Prettier compliance
 
 ### Test Requirements
-- **Unit Tests:** ≥80% of functions
+- **Unit Tests:** â‰¥80% of functions
 - **Integration Tests:** All major workflows
 - **E2E Tests:** All user-facing features
 - **Pass Rate:** 100%
@@ -347,26 +355,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.14.0
+- Version: v3.16.2
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.14.0`
+- Installation: `npm install -g @amarsingh/keel@3.16.2`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.14.0`
+- Image: `amarsingh/keel:3.16.2`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.14.0`
+- Pull: `docker pull amarsingh/keel:3.16.2`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.14.0`
+- Version: `v3.16.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.14.0`
+- Usage: `uses: creativemyntra/keel@v3.16.2`
 
 ---
 
@@ -393,6 +401,16 @@ Record in Audit Trail
 - **SAST:** SonarQube scanning (code quality)
 - **DAST:** N/A (CLI tool, no web endpoints)
 - **Secrets Scanning:** git-secrets pre-commit hook
+
+### Infrastructure Scripts (v3.16.2)
+
+| Script | Purpose | Hook Stage(s) |
+|--------|---------|---------------|
+| `scripts/keel-state.cjs` | Deterministic state engine â€” schema validation, gating, audit, snapshots | CLI / engine |
+| `scripts/keel-dashboard.cjs` | Read-only pipeline status web dashboard (loopback-only) | CLI |
+| `scripts/keel-classify-gate.cjs` | CJIS Data Classification Gate â€” detects CJIS-adjacent patterns; blocks stories lacking required classification annotations | `UserPromptSubmit`, `PreToolUse`, `PostToolUse` |
+
+Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three stages. The classify gate must be present in `hooks.json` for every story involving CJIS-adjacent data (see G-10 in `.keel/GUARDRAILS.md`). Pattern definitions live in `config/cjis-patterns.json`; Forseti-specific pattern formats are placeholders until real formats are provided from Forseti.
 
 ---
 
@@ -421,34 +439,34 @@ Record in Audit Trail
 ### Implemented Standards
 
 #### CJIS (Criminal Justice Information Services)
-✅ Encryption for data at rest  
-✅ Access logging and audit trail  
-✅ Secure key management  
+âœ… Encryption for data at rest  
+âœ… Access logging and audit trail  
+âœ… Secure key management  
 
 #### SOC2 Type II (System and Organization Controls)
-✅ Security monitoring  
-✅ Change management  
-✅ Incident response procedures  
+âœ… Security monitoring  
+âœ… Change management  
+âœ… Incident response procedures  
 
 #### HIPAA (Health Insurance Portability and Accountability Act)
-✅ Data encryption  
-✅ Access controls  
-✅ Audit logging  
+âœ… Data encryption  
+âœ… Access controls  
+âœ… Audit logging  
 
 #### GDPR (General Data Protection Regulation)
-✅ Data minimization  
-✅ Privacy by design  
-✅ Right to be forgotten (data deletion)  
+âœ… Data minimization  
+âœ… Privacy by design  
+âœ… Right to be forgotten (data deletion)  
 
 #### PCI-DSS (Payment Card Industry Data Security Standard)
-✅ No sensitive data storage  
-✅ Secure development practices  
-✅ Vulnerability scanning  
+âœ… No sensitive data storage  
+âœ… Secure development practices  
+âœ… Vulnerability scanning  
 
 #### SOX (Sarbanes-Oxley)
-✅ Financial controls  
-✅ Change documentation  
-✅ Segregation of duties  
+âœ… Financial controls  
+âœ… Change documentation  
+âœ… Segregation of duties  
 
 ---
 
@@ -456,7 +474,14 @@ Record in Audit Trail
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
-| 3.14.0 | 2026-07-15 | PENDING RELEASE | Pipeline status web dashboard (KEEL-104): `keel dashboard --port=<N>`, read-only, loopback-only |
+| 3.16.2 | 2026-07-21 | PRODUCTION | Brainstorm template: restored Handoff Brief section (user story, rough ACs, data entities, integrations, design risks, complexity estimate); OSS cleanup (removed stale internal ticket refs from template and example) |
+| 3.16.1 | 2026-07-21 | PRODUCTION | Prescan hardening: snyk skips on dirs with no supported project manifest; composer-audit test PATH isolation for host-agnostic CI |
+| 3.16.0 | 2026-07-20 | PRODUCTION | CJIS Data Classification Gate: `scripts/keel-classify-gate.cjs` + `config/cjis-patterns.json`; `hooks/hooks.json` wired (UserPromptSubmit, PreToolUse, PostToolUse); `keel-state.cjs security-status` command; security-engineer, orchestrator, audit-agent, handshake-agent specs updated |
+| 3.15.0 | 2026-07-17 | PRODUCTION | Pipeline restructure: 10 phases â€” tdd-red/tdd-green merged into software-engineer (code+tests+coverage â‰¥ 80%); qa-engineerâ†’6, e2e-engineerâ†’7, security-engineerâ†’8, technical-writerâ†’9, release-managerâ†’10; DEFAULT_MAX_GATES 48â†’40; backward-compat LEGACY_AGENTS for in-flight stories |
+| 3.14.3 | 2026-07-17 | PRODUCTION | Guardrail hardening: G-8 agent identity integrity (schema mismatch = HALT, no relabeling); G-9 no unverified baselines in intake; release-manager framework-debt gate added |
+| 3.14.3 | 2026-07-17 | PRODUCTION | Doc-patch: complete 12-phase/17-agent documentation sync â€” README, ALL-AGENTS-COMPLETE-GUIDE, TECHNICAL-SPECIFICATIONS, QUICK-START, WORKFLOW.md; architecture diagram corrected (all Phase Agent columns show 12) |
+| 3.14.1 | 2026-07-17 | PRODUCTION | Dashboard Host-header allowlist â€” DNS-rebinding hardening (KEEL-105, closes KEEL-104 LOW-1): guard-first 403/400 contract, 238/238 tests green, 0 HIGH security findings |
+| 3.14.0 | 2026-07-15 | PRODUCTION | Pipeline status web dashboard (KEEL-104): `keel dashboard --port=<N>`, read-only, loopback-only |
 | 3.13.0 | 2026-07-14 | PRODUCTION | Describe command: human-readable story inspection (KEEL-103) |
 | 3.12.0 | 2026-07-09 | PRODUCTION | Install-to-pipeline e2e (KEEL-102), status --all, gate auto-audit, Windows packaging fixes |
 | 3.11.0 | 2026-07-09 | PRODUCTION | Smart economy: .keel/economy.yml owner choices, prescan static-first security, CodeGraph context budget, output caps |
@@ -503,7 +528,7 @@ Record in Audit Trail
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-07-08  
+**Document Version:** 2.0  
+**Last Updated:** 2026-07-21  
 **Status:** PRODUCTION  
-**Next Review:** 2026-10-08 (quarterly)
+**Next Review:** 2026-10-20 (quarterly)

@@ -1,0 +1,36 @@
+EXIT CODE: 0
+
+STDOUT:
+----------------------------------------
+KEEL-103 · Add describe command to keel-state.cjs
+----------------------------------------
+Scope:          feature
+Current phase:  12 / 11 (complete)
+Halted:         no
+Idle:           76h 31m
+Started:        2026-07-14T05:11:35.927Z
+
+Completed phases:
+  ✓  1   product-owner (2026-07-14 05:15)
+  ✓  2   business-analyst
+  ✓  3   solution-architect
+  ✓  4   software-engineer (2026-07-14 06:21)
+  ✓  5   tdd-red (2026-07-14 07:15)
+  ✓  6   tdd-green (2026-07-14 08:00)
+  ✓  7   qa-engineer (2026-07-14 08:15)
+  ✓  8   e2e-engineer (2026-07-14 09:50)
+  ✓  9   security-engineer (2026-07-14 10:00)
+  ✓  10  technical-writer (2026-07-14 10:30)
+  ✓  11  release-manager
+
+In progress:
+  (complete)
+
+Remaining:
+  (none)
+
+Attempts (this story):  0 failures
+Gate events used:       12 / 44
+
+
+STDERR:

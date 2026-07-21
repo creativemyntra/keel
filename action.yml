@@ -1,5 +1,5 @@
 name: 'Keel AI-SDLC Framework'
-description: 'Complete AI-SDLC pipeline using Claude AI: Brainstorm → Requirements → Design → Code → Test → Security → Deploy'
+description: 'Complete 10-phase AI-SDLC pipeline: Requirements → UI Design → Architecture → Code+Tests → QA → E2E (Playwright) → Security → Docs → Release'
 author: 'Amar Singh'
 
 branding:
@@ -8,7 +8,7 @@ branding:
 
 inputs:
   phase:
-    description: 'Phase to execute (init, brainstorm, req, design, dev, test, sec, deploy)'
+    description: 'Phase to execute (init, brainstorm, req, design, dev, test, e2e-test, sec, release-check, deploy)'
     required: true
     default: 'init'
   story-id:
@@ -92,12 +92,19 @@ runs:
         echo "Running development phase..."
         node "$GITHUB_ACTION_PATH/bin/keel.js" dev --story=${{ inputs.story-id }} --scope=${{ inputs.scope }}
 
-    - name: Run Testing Phase
+    - name: Run QA Phase
       if: inputs.phase == 'test'
       shell: bash
       run: |
-        echo "Running testing phase..."
+        echo "Running QA phase (AC mapping + integration tests)..."
         node "$GITHUB_ACTION_PATH/bin/keel.js" test --story=${{ inputs.story-id }} --scope=${{ inputs.scope }}
+
+    - name: Run E2E Phase
+      if: inputs.phase == 'e2e-test'
+      shell: bash
+      run: |
+        echo "Running E2E phase (Playwright browser tests)..."
+        node "$GITHUB_ACTION_PATH/bin/keel.js" e2e-test --story=${{ inputs.story-id }}
 
     - name: Run Security Phase
       if: inputs.phase == 'sec'
@@ -105,6 +112,13 @@ runs:
       run: |
         echo "Running security phase..."
         node "$GITHUB_ACTION_PATH/bin/keel.js" sec --story=${{ inputs.story-id }} --scope=${{ inputs.scope }}
+
+    - name: Run Release Check Phase
+      if: inputs.phase == 'release-check'
+      shell: bash
+      run: |
+        echo "Running release check phase (go/no-go decision)..."
+        node "$GITHUB_ACTION_PATH/bin/keel.js" release-check --story=${{ inputs.story-id }}
 
     - name: Run Deployment Phase
       if: inputs.phase == 'deploy'

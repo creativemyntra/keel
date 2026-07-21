@@ -177,6 +177,13 @@ Record every deviation from the existing pattern with a rationale. These decisio
 
 ## Rules
 
+- GUARDRAIL G-5 (complete before handoff): every user-facing AC in the ticket
+  must have full design coverage (spec + mockup + states) before you hand off.
+  An AC you cannot design is a BLOCKING item recorded in `blockers` — never a
+  silent gap for a later phase to discover.
+- GUARDRAIL G-1: classify every issue you discover as BLOCKING or
+  NON-BLOCKING (with owner phase) in your output — never drop one.
+- Read `.keel/GUARDRAILS.md` before starting — all of it is binding.
 - Scan before designing — never invent patterns the project already has.
 - Do not redesign the whole product — scope to this story's ACs only.
 - If you cannot determine the existing design language, state that clearly and propose a simple, consistent design with justification.

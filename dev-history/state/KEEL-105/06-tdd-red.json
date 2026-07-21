@@ -1,0 +1,39 @@
+{
+  "phase": 6,
+  "agent": "tdd-red",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "Wrote 78 new tests: 59 unit asserts appended to tests/keel-dashboard.test.cjs (after the frozen 70-assert KEEL-104 baseline, zero baseline lines modified) + 19 e2e-node asserts in new tests/keel-dashboard-host-e2e.test.cjs (real server spawn, http.request explicit-Host, raw-socket HTTP/1.0 per D-7 — no Playwright).",
+    "AC-1: 43 tests — isAllowedHost export + 9-allow/19-reject/5-non-string predicate table (analysis s4 rows), 3 handler 200-path tests, 6 e2e allowed-host/port/case variants. Verified meaningful via mutants B (fail-closed) / A (fail-open) / F (export removed).",
+    "AC-2: 22 tests — 403 status/exact-body/exact-3-headers, zero request echo (host/url/method canaries), readStories-not-invoked (fs.existsSync spy) + body-not-HTML (renderer unreachable), empty-string Host 403, guard-before-routing (bad Host + /nope -> 403 not 404), e2e incl. raw HTTP/1.0 with bad Host. Verified via mutants A/C/D.",
+    "AC-3: 8 tests — missing Host -> 400 'Bad Request' with exact 3 rejection headers (unit, mocked req/res) + e2e via RAW SOCKET HTTP/1.0 request line (D-7: Node's HTTP/1.1 parser pre-rejects Host-less HTTP/1.1 before the handler — confirmed live: mutant-A run shows the 1.0 path reaching the handler). Verified via mutants A/C.",
+    "AC-4: 5 tests — 200-path headers unchanged, valid-Host 404 baseline intact, listen() binds 127.0.0.1 (loopback invariant), zero fs writes on rejection (5-method fs spy). Verified via mutants B/E/A. Remainder (byte-untouched keel-state.cjs/bin/keel.js, EADDRINUSE, escHtml, --port) covered by the frozen baseline + phase-5 git evidence; phase 8 re-verifies.",
+    "Red check executed against SIX mutants generated into os.tmpdir()/keel-105-mutants/ (production source NEVER modified on disk), injected via KEEL_DASHBOARD_MUTANT env hook consulted only by the K105 test sections: A fail-open (36 unit + 9 e2e FAIL), B fail-closed (14 unit + 7 e2e FAIL), C rejection-headers-stripped (8 unit + 3 e2e FAIL), D request-echo (4 unit + 3 e2e FAIL), E bind-without-loopback (1 unit FAIL), F export-removed (1 unit FAIL + TypeError crash = meaningful).",
+    "Every one of the 78 new tests fails under >=1 mutant — no trivially-passing test. The frozen 70-assert baseline stayed green under every mutant (it always requires the real module), proving the mutant hook cannot contaminate the AC-5 baseline.",
+    "Green run this session (commands: node tests/<file>): keel-dashboard.test.cjs 129/129, keel-dashboard-host-e2e.test.cjs 19/19, keel-state-describe.test.cjs 44/44, keel-state-describe-e2e.test.cjs 46/46 — frozen baselines 70/44/46 intact, zero expectation changes.",
+    "Test naming: assert-label prefix 'K105 AC-n <behavior> ...' to disambiguate from the KEEL-104 'AC-n' labels that the shared unit file already uses; one behavior per assert; external deps mocked (http.createServer capture stub, fs spies, res double) — the guard/predicate under test is never mocked.",
+    "E2E design: spawns the real script (node scripts/keel-dashboard.cjs --port <random 21000-41000>, 3 startup attempts) in a tmp project root with one fixture story; kills the child in finally; raw-socket helper parses status line + body with 5s timeout.",
+    "AC-5 full-suite judgment is phase 7 (tdd-green); Playwright KEEL-104-dashboard.spec.ts (10) is phase 9 per phase-5 handoff (browsers cannot spoof Host, D-7 — no new Playwright tests required). AC-7 -> phase 11 technical-writer; AC-8 -> phase 12 release-manager (explicit downstream assignments, G-1 non-blocking with named owners).",
+    "Test plan artifact with complete 78-row AC->test mapping and per-mutant verification table: docs/test-plans/KEEL-105-test-map.md.",
+    "No production code modified this phase (git: scripts/keel-dashboard.cjs diff unchanged from phase-5 state; only tests/ and docs/test-plans/ touched). No bug found while writing tests — implementation matches docs/design/KEEL-105-design.md exactly. No commits made (G-6). No memory writes (G-7).",
+    "Followed conventions.md and prior test-map patterns (KEEL-103/104): zero-dependency assert harness, monkey-patch suppress-pattern for require-time main() retained, no require.main guard added (design debt D-6 stays a recorded follow-up chore)."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6"],
+  "decisions": [
+    "Red-check method: in-memory-equivalent mutant injection (KEEL_DASHBOARD_MUTANT env hook + 6 tmpdir mutants) instead of Option A on-disk stubbing — the frozen AC-5 baseline and phase-5 implementation must stay byte-identical on disk, and the hook doubles as a permanent mutation-testing harness scoped strictly to the K105 sections.",
+    "AC-3 e2e uses a raw-socket HTTP/1.0 request line, NOT http.request or Playwright, per design D-7: Node's HTTP/1.1 parser rejects Host-less HTTP/1.1 with its own 400 before the handler runs, so only the 1.0/raw path exercises the handler's 400 branch.",
+    "Six targeted mutants instead of one blanket stub: header-contract, no-echo, loopback-bind, and export tests all pass under a simple guard-removal stub (the 200 path shares nosniff/no-store), so each failure mode got its own mutant (C/D/E/F) to eliminate every trivially-passing test.",
+    "Unit handler tests capture the real request handler via an http.createServer stub and dispatch fake req/res doubles synchronously — external deps (network, port binding) mocked; the guard, predicate, and rejectRequest behavior under test never mocked.",
+    "New e2e tests placed in a separate file (tests/keel-dashboard-host-e2e.test.cjs) rather than the unit file: they spawn a real server process and must not slow or destabilize the frozen unit baseline; naming mirrors the keel-state-describe/-e2e split convention.",
+    "AC-7 and AC-8 are NOT descoped — they are out-of-scope-for-this-phase with named downstream owners per the approved brief and phase-5 handoff: AC-7 (README security posture + CHANGELOG) owned by phase 11 technical-writer; AC-8 (security patch version proposal, e.g. 3.14.1, with full G-6 stamp checklist) owned by phase 12 release-manager. AC-5 full-suite judgment (incl. Playwright, phase 9) is owned by phase 7 tdd-green onward; this phase executed all four node suites green as evidence, not judgment."
+  ],
+  "artifacts": [
+    "tests/keel-dashboard.test.cjs",
+    "tests/keel-dashboard-host-e2e.test.cjs",
+    "docs/test-plans/KEEL-105-test-map.md"
+  ],
+  "next_phase": 7,
+  "blockers": [],
+  "timestamp": "2026-07-16T00:00:00Z"
+}

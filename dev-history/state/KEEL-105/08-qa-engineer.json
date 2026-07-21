@@ -1,0 +1,37 @@
+{
+  "phase": 8,
+  "agent": "qa-engineer",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "Full suite re-run independently this session (commands: node tests/<file>): tests/keel-dashboard.test.cjs '129 / 129 passed'; tests/keel-dashboard-host-e2e.test.cjs '19 / 19 passed'; tests/keel-state-describe.test.cjs '44 / 44 passed'; tests/keel-state-describe-e2e.test.cjs '46 / 46 passed' — 238/238, zero failures, zero regressions vs phase 7.",
+    "AC-to-test map verified against docs/test-plans/KEEL-105-test-map.md: all mapped tests exist on disk and pass in this session's runs; counts reconcile exactly (70 frozen KEEL-104 baseline + 59 new K105 unit = 129; 19 new K105 e2e = 19). Assertions target observable outcomes (status codes, exact bodies, header values, bind address, fs-spy) — not implementation detail.",
+    "Coverage re-measured this session with c8 (v8 merged across both dashboard suites, --clean=false): scripts/keel-dashboard.cjs 95.41% stmts / 76.54% branch / 100% funcs / 95.41% lines — matches phase-7 claim exactly.",
+    "Changed-line coverage independently recomputed (git diff -U0 HEAD intersected with coverage/coverage-final.json statement map via coverage/changed-line-check.cjs): 58/58 executable changed lines covered = 100.00% (gate >= 80%) — PASS.",
+    "Uncovered lines 177-179, 270-280, 439-446 confirmed pre-existing KEEL-104 paths (unreadable-stateDir catch, malformed-manifest row, EADDRINUSE handler) — legacy debt already recorded by phase 7 (G-1 non-blocking, owner: future test-hardening chore); not created by KEEL-105, does not fail this story.",
+    "Live integration (dashboard started via node scripts/keel-dashboard.cjs, bound 127.0.0.1:7772) — allowed hosts: Host 127.0.0.1:7772 -> 200 text/html + nosniff + no-store, body is dashboard HTML containing KEEL-105 story row; Host localhost (no port) -> 200; Host LOCALHOST:7772 -> 200 (case-insensitive). All PASS.",
+    "Live integration — disallowed hosts: Host evil.com -> 403; evil.com:7772 -> 403 (port does not whitelist); localhost.evil.com:7772 -> 403 (rebinding suffix); empty Host value -> 403; bad Host + /nope -> 403 not 404 (guard before routing). Body exactly 'Forbidden' with Content-Type text/plain; charset=utf-8, X-Content-Type-Options nosniff, Cache-Control no-store; no request data echoed (ADR-004 D-3). All PASS.",
+    "Live integration — missing Host (ADR-004 D-1): raw-socket HTTP/1.0 GET without Host -> 400, body exactly 'Bad Request' with the same 3-header contract (handler branch); raw HTTP/1.1 without Host -> 400 from Node's parser layer — both layers present one consistent 400 contract. PASS.",
+    "Live integration — baseline error path: valid Host + /nope -> 404 'Not found' (KEEL-104 routing intact). PASS.",
+    "AC-4 invariants re-verified live: netstat shows listener on 127.0.0.1:7772 only (loopback bind); git status clean for scripts/keel-state.cjs and bin/keel.js (byte-untouched); zero fs writes to .keel/state during rejection traffic (git status unchanged post-run; unit fs-spy test also green); EADDRINUSE and escHtml covered by frozen baseline tests within the green 129/129 run.",
+    "Deferred to downstream owners (not gaps): AC-5 Playwright portion (tests/KEEL-104-dashboard.spec.ts, 10 tests) -> phase 9 e2e-engineer; AC-7 README security posture + CHANGELOG -> phase 11 technical-writer; AC-8 security-patch version proposal + G-6 stamp checklist -> phase 12 release-manager. Node-suite portion of AC-5 verified green this session.",
+    "NON-BLOCKING (small, G-1): brief/AC-4 wording says CLI '--port=<N>' but the actual (pre-existing, unchanged since KEEL-104) contract is space-separated '--port <N>' (parsePort uses argv.indexOf('--port')); behavior is unchanged so AC-4 is satisfied — owner: phase 11 technical-writer to use the correct flag syntax in README; due with AC-7 docs.",
+    "Housekeeping: coverage/changed-line-check.cjs (uncommitted phase-7 helper) was wiped by this phase's clean coverage re-measure and re-created with equivalent logic; recomputed result identical (100.00%). coverage/coverage-final.json regenerated this session."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6"],
+  "decisions": [
+    "Referenced the verified docs/test-plans/KEEL-105-test-map.md as the AC-map artifact instead of duplicating it into a second QA report — every row was independently re-checked against this session's runner output (G-4).",
+    "Ran integration checks against a live dashboard instance on the default port 7772 using curl plus raw net sockets (raw sockets required for the missing-Host case per ADR-004 D-7: HTTP/1.1 clients cannot omit Host).",
+    "Re-created coverage/changed-line-check.cjs after accidentally deleting the uncommitted phase-7 copy during coverage re-measurement; the recomputation is independent and reproduces the 100.00% changed-line result.",
+    "Classified the '--port=<N>' vs '--port <N>' brief-wording discrepancy as NON-BLOCKING (pre-existing KEEL-104 behavior, unchanged — AC-4's actual requirement) with phase-11 owner, rather than failing the gate.",
+    "AC-5 (Playwright), AC-7, AC-8 carried forward with named downstream owners per phases 5-7 handoffs — out-of-scope-for-this-phase, not descoped (G-5)."
+  ],
+  "artifacts": [
+    "docs/test-plans/KEEL-105-test-map.md",
+    "coverage/coverage-final.json",
+    "coverage/changed-line-check.cjs"
+  ],
+  "next_phase": 9,
+  "blockers": [],
+  "timestamp": "2026-07-17T07:15:00Z"
+}

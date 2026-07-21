@@ -1,0 +1,44 @@
+{
+  "phase": 2,
+  "agent": "business-analyst",
+  "story_id": "KEEL-104",
+  "confidence": "high",
+  "findings": [
+    "Data flow confirmed: CLI (bin/keel.js ROUTES.dashboard) spawns keel-dashboard.cjs; server reads .keel/state/<story>/manifest.json lock-free on each GET /; returns inline HTML.",
+    "Manifest fields used by dashboard (confirmed from real manifests): story_id, title, scope, current_phase, halted, expected_phases, gate_events, max_gates, started_at, updated_at, attempts.",
+    "Phase-name mapping: phase integer N maps to AGENTS[N-1] in keel-state.cjs (lines 36-39); display names follow existing cmdReport PHASE_NAMES map (lines 862-869).",
+    "Status derivation: halted===true → HALTED; completed_phase_files.length >= expected_phases.length → COMPLETE; else → IN PROGRESS. Colours: red #dc2626 / green #16a34a / amber #d97706.",
+    "Idle-time formula: conventions.md 2026-07-14 — Xh Ym when >=60 min, Xm Ys when <60 min, 'unknown' when updated_at absent. Identical to cmdDescribe lines 512-521.",
+    "Sort order: stories sorted by manifest.updated_at descending (most recently active first); absent updated_at sorts last.",
+    "Empty state (AC-6): server starts and serves page reading 'No stories found. Run keel init <story-id> to start.' when .keel/state/ is absent OR contains no story sub-dirs.",
+    "Malformed manifest.json: skip-and-mark as error row (same pattern as cmdStatusAll lines 488-499) — server must not crash on a single bad manifest.",
+    "Port conflict: listen EADDRINUSE error → stderr message + process.exit(1); startup confirmation stdout is exactly 'Dashboard: http://localhost:<port>'.",
+    "AC-7 regression guard: keel-dashboard.cjs is a new file; keel-state.cjs is not modified; status --all JSON output must remain byte-for-byte unchanged.",
+    "New file: scripts/keel-dashboard.cjs (CJS module, consistent with keel-state.cjs). bin/keel.js adds dashboard route using existing run() helper.",
+    "CLI wiring: ctx.port from flags.port || '7772'; bin/keel.js help text gains 'dashboard' row and '--port' option.",
+    "Zero new npm dependencies — http, fs, path built-ins only; HTML generated as inline template string.",
+    "Auto-refresh: meta http-equiv='refresh' content='30' or setInterval location.reload every 30 s — no server-side push.",
+    "Full spec with data flow diagram, edge-case table, AC coverage map: docs/plans/KEEL-104-functional-spec.md"
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5",
+    "AC-6",
+    "AC-7"
+  ],
+  "decisions": [
+    "Phase-name display strings adopted from existing cmdReport PHASE_NAMES map in keel-state.cjs to guarantee consistency across CLI and browser.",
+    "Status derivation logic mirrors cmdReport (lines 851-859) — same three states, same colour values — so dashboard and per-story report are visually consistent.",
+    "Skip-and-mark strategy for malformed manifests adopted from cmdStatusAll (ADR-001 / conventions.md 2026-07-09) — one bad story must never crash the dashboard sweep.",
+    "Idle-time formula adopted verbatim from cmdDescribe (conventions.md 2026-07-14) — no new convention invented.",
+    "New script placed in scripts/ (not bin/) to match the pattern established by keel-state.cjs."
+  ],
+  "artifacts": [
+    "docs/plans/KEEL-104-functional-spec.md"
+  ],
+  "next_phase": 3,
+  "timestamp": "2026-07-14T14:30:00.000Z"
+}

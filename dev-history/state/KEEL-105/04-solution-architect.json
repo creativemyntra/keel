@@ -1,0 +1,49 @@
+{
+  "phase": 4,
+  "agent": "solution-architect",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "Design complete in docs/design/KEEL-105-design.md; durable decision record in .keel/memory/decisions/ADR-004-dashboard-host-allowlist.md. Change surface: scripts/keel-dashboard.cjs only (+ tests/docs); bin/keel.js and scripts/keel-state.cjs untouched (AC-4).",
+    "OQ-1 CLOSED (AC-3): missing Host -> 400 Bad Request. RFC 9112 s3.2 mandates 400 for Host-less requests; Node's HTTP/1.1 parser already 400s them before the handler, so handler-level 400 (reached by HTTP/1.0/raw-socket clients) gives one consistent contract across both layers. 403 would misstate semantics and conflate AC-3 with AC-2 test assertions.",
+    "OQ-2 CLOSED (AC-1): predicate isAllowedHost(host) = typeof host === 'string' && /^(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d{1,5})?$/.test(host.toLowerCase()). Any 1-5-digit port accepted (brief-literal, not bound-port-strict): the rebinding vector is entirely in the host part; port strictness adds zero security and couples the pure predicate to server config. No DNS, no canonicalization (BR-5). Anchored regex satisfies all 22 rows of analysis section 4 fail-closed.",
+    "OQ-3 CLOSED (AC-2): 403 body exactly 'Forbidden'; 400 body exactly 'Bad Request'; both with Content-Type: text/plain; charset=utf-8, X-Content-Type-Options: nosniff (200-path parity per BA recommendation), Cache-Control: no-store. Zero request data echoed in body or headers.",
+    "Placement (AC-2/AC-4): guard is the FIRST statements of the http.createServer callback in startDashboard() — missing-Host branch, then isAllowedHost branch, each returning via a small rejectRequest(res, status, body) helper — before the GET-/ route and the 404 branch. readStories()/generateHTML() structurally unreachable on rejection; 404 reachable only with valid Host; existing 404 branch byte-unchanged.",
+    "UI determination incorporated as recorded decision (docs/analysis/KEEL-105-ui-determination.json): only user-facing surface is the static plain-text rejection; no mockups, no renderer/CSS changes.",
+    "AC-4 invariant checklist verified against current source: listen(port, '127.0.0.1') at keel-dashboard.cjs:392, parsePort at :56, EADDRINUSE handler at :381-390, escHtml at :98 — all untouched; rejection path performs zero fs I/O so zero-fs-writes holds trivially. module.exports gains exactly one key: isAllowedHost.",
+    "Impact analysis: .keel/graph/codegraph.json contains only PHP nodes (ADR-003 consequence) — no Node reverse-dependency exposure. Manual impact set (4 files, within context budget): scripts/keel-dashboard.cjs (source), tests/keel-dashboard.test.cjs (70, extend), node E2E harness for live-server Host tests, bin/keel.js (spawner, verified no change needed — flag surface unchanged).",
+    "Test-validity risk flagged for phases 4-6: Node's HTTP/1.1 parser rejects Host-less requests before the handler, so the AC-3 E2E test MUST use a raw socket or an HTTP/1.0 request line (per analysis section 5); the handler's 400 branch is unit-tested directly with a mocked req. Node http.request auto-sets a loopback Host, so all existing E2E and 10 Playwright tests pass unchanged.",
+    "Regression contract (AC-5): 70 unit + 44 e2e-node + 46 e2e-node (BA-corrected baseline, not the brief's stale 45) + 10 Playwright, all green with zero modifications to existing test expectations; regression tests must assert 200-path headers and HTML for allowed hosts are byte-identical.",
+    "DESIGN DEBT flagged (not fixed this story): scripts/keel-dashboard.cjs:407 calls main() unconditionally at require time; the unit harness suppresses it by monkey-patching before require(). Recommend follow-up chore adding if (require.main === module) main(); — deferred because the 70 existing tests depend on the current pattern and AC-5 freezes them.",
+    "Prior-ADR compliance: extends ADR-003 (no supersession); ADR-001/ADR-002 lock-free read patterns unaffected. Lesson L-1 checked: rejection bodies are constant reason phrases containing no paths; startup message untouched. New standing rule recorded in ADR-004: loopback bind alone is insufficient — any future locally-bound server must validate Host fail-closed before routing.",
+    "Zero new dependencies (regex + built-ins only, no security justification needed); performance target trivially met — rejection path is one anchored regex with no I/O, strictly faster than the 200 path.",
+    "AC-7 handoff spec for technical-writer: README security posture must document the allowlist set, 403 contract, 400-on-missing-Host with RFC 9112 rationale, and no-echo guarantee; CHANGELOG under next patch. AC-8 handoff: release-manager proposes security patch (3.14.1) with full G-6 stamp checklist.",
+    "Guardrails compliance: G-1 (all 3 inherited open questions closed; zero open items remain), G-3 (no secrets), G-4 (no test runs executed or claimed this phase), G-5 (all 8 ACs addressed or explicitly assigned), G-6 (no commit/deploy), G-7 (memory write limited to the architect-owned ADR deliverable in .keel/memory/decisions/)."
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5",
+    "AC-6",
+    "AC-7",
+    "AC-8"
+  ],
+  "decisions": [
+    "D-1: Missing Host header returns 400 Bad Request (static 'Bad Request' body) — RFC 9112 s3.2 conformance and layer-consistency with Node's own parser; 403 reserved for present-but-disallowed Host (closes OQ-1, defines AC-3).",
+    "D-2: Validation is a single pure exported predicate isAllowedHost using one anchored case-insensitive regex over the literal allowlist {localhost, 127.0.0.1, [::1]} with optional 1-5-digit port; any numeric port accepted (brief-literal); no DNS, no canonicalization; fail-closed on every malformed form (closes OQ-2).",
+    "D-3: Guard placed as the first handler statements before all routing including 404; rejections via shared rejectRequest helper sending text/plain charset=utf-8 + nosniff + no-store with constant bodies 'Forbidden'/'Bad Request' and zero request echo; renderer structurally unreachable on rejection (closes OQ-3).",
+    "D-4: Adopted UI determination as recorded decision — static plain-text rejection is the sole UI surface; no renderer, CSS, or mockup changes.",
+    "D-5: Single-file change surface — extend scripts/keel-dashboard.cjs per its existing exported-helper pattern; keel-state.cjs byte-untouched and bin/keel.js unchanged (structural AC-4 guarantee).",
+    "D-6: require-time main() execution recorded as design debt with a recommended follow-up chore (require.main guard) — explicitly NOT changed this story to protect the frozen 70-test AC-5 baseline.",
+    "D-7: AC-3 E2E coverage must use raw socket / HTTP/1.0 (Node parser pre-rejects Host-less HTTP/1.1); disallowed-Host E2E stays in node http.request tests, Playwright suite remains the unchanged-behavior check (BA assignment adopted)."
+  ],
+  "artifacts": [
+    "docs/design/KEEL-105-design.md",
+    ".keel/memory/decisions/ADR-004-dashboard-host-allowlist.md"
+  ],
+  "next_phase": 5,
+  "blockers": [],
+  "timestamp": "2026-07-16T00:00:00Z"
+}

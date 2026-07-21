@@ -1,0 +1,30 @@
+{
+  "ts": "2026-07-14T06:57:25.215Z",
+  "scanners": [
+    {
+      "name": "composer-audit",
+      "status": "skipped",
+      "reason": "not applicable — no composer.json"
+    },
+    {
+      "name": "phpstan",
+      "status": "skipped",
+      "reason": "not applicable — phpstan not installed"
+    },
+    {
+      "name": "npm-audit",
+      "status": "skipped",
+      "reason": "no lockfile — generate one or audit manually"
+    },
+    {
+      "name": "snyk",
+      "status": "skipped",
+      "reason": "not configured — snyk CLI or token missing"
+    },
+    {
+      "name": "sonar-scanner",
+      "status": "skipped",
+      "reason": "not configured — scanner or project config missing"
+    }
+  ]
+}

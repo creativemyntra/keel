@@ -1,0 +1,35 @@
+{
+  "phase": 10,
+  "agent": "security-engineer",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "Scanner inventory (consumed .keel/state/KEEL-105/prescan.json, ts 2026-07-17T07:48:03Z — NOT re-run per static-first directive): npm-audit RAN exit 0 'found 0 vulnerabilities'; composer-audit SKIPPED (not applicable, no composer.json); phpstan SKIPPED (not applicable, not installed/no PHP); snyk SKIPPED (not configured); sonar-scanner SKIPPED (not configured). Zero configured scanners failed — inventory valid, no scanner blocker.",
+    "Diff surface verified via git diff: scripts/keel-dashboard.cjs +58/-0 only (ALLOWED_HOST_RE + isAllowedHost L107-127, rejectRequest L389-396, guard-first block L406-421, module.exports L470). scripts/keel-state.cjs byte-untouched; bin/keel.js untouched (AC-4).",
+    "DNS rebinding (primary threat, KEEL-104 LOW-1): CLOSED. A rebound DNS name can never equal a loopback literal; anchored allowlist runs before routing, so readStories()/generateHTML() are structurally unreachable on rejection (e2e: bad Host + /nope returns 403 not 404).",
+    "Host-bypass matrix reviewed against ALLOWED_HOST_RE — case tricks (toLowerCase is locale-independent; no Unicode char case-folds into the allowlist literals), suffix domain localhost.evil.com, trailing dot, userinfo '@', leading/internal whitespace, unbracketed ::1, expanded IPv6, empty/alpha/multi-colon ports, duplicate Host (Node retains first; joined forms fail the anchor): ALL fail closed. 0 HIGH.",
+    "ReDoS: none — regex is a literal alternation plus bounded (:\\d{1,5})? quantifier, linear time; input length capped by Node's header-size limit.",
+    "Response splitting / reflected XSS / log injection: none — 400/403 status, headers and bodies are compile-time constants with zero request echo (e2e asserts the Host value is absent from body+headers).",
+    "Timing/oracle: none — no secret comparison exists; the 400-vs-403 distinction reveals only data the client itself sent.",
+    "AC-3 / ADR-004 D-1 VERIFIED: missing Host -> 400 'Bad Request' at the handler (keel-dashboard.cjs L411-417), layer-consistent with Node's HTTP/1.1 parser; covered by raw-socket HTTP/1.0 e2e (tests/keel-dashboard-host-e2e.test.cjs L296-317, 19/19 green in phase 8).",
+    "AC-2 / ADR-004 D-3 VERIFIED: both rejections send constant body + 'text/plain; charset=utf-8' + X-Content-Type-Options nosniff + Cache-Control no-store (L389-396); e2e asserts each header exactly (L239-263).",
+    "LOW (pre-existing, NON-BLOCKING per G-1): 404 branch (L433-434) omits nosniff/no-store/charset. Body is the constant 'Not found' so no injection surface; branch is frozen byte-unchanged by AC-4 this story. Owner: release-manager open-item ledger -> follow-up chore alongside the ADR-004 require-time-main() debt; due 2026-08-16.",
+    "INFO: syntax-only port acceptance (e.g. :99999 passes) is deliberate (ADR-004 D-2) and harmless — the client already connected to the real bound port; no DNS resolution/IP canonicalization keeps the predicate's attack surface minimal.",
+    "INFO (tooling): .keel/graph/codegraph.json is stale (generated 2026-07-14, PHP fixture nodes only, no JS nodes) — blast radius performed via repo grep instead: only bin/keel.js (spawns the dashboard) and the test suites reference keel-dashboard.cjs; no other caller of the changed guard code.",
+    "Sensitive data / CJIS: rejection paths emit zero request data and perform zero fs I/O; dashboard serves story metadata only to loopback-literal Hosts on a 127.0.0.1 bind; no PII, credentials, or tokens in responses or logs; CJIS data contact: none.",
+    "VERDICT: PASS — 0 HIGH, 0 MEDIUM, 1 LOW (pre-existing, non-blocking), 2 INFO. Security does not block the release.",
+    "AC-7 (README security posture + CHANGELOG) and AC-8 (version proposal + G-6 stamp) remain owned by phases 11/12 (G-5 carry-forward). Writer note: README must document the allowlist set, the 403 contract, and the 400-on-missing-Host rationale per ADR-004."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6", "AC-7", "AC-8"],
+  "decisions": [
+    "Consumed prescan.json instead of re-running scanners: npm-audit ran clean and every skip is 'not applicable' or 'not configured' — none FAILED, so re-execution would burn tokens without adding assurance (static-first directive).",
+    "Classified the 404-branch header gap LOW/non-blocking rather than fixing it: the branch is pre-existing KEEL-104 code explicitly frozen byte-unchanged by AC-4; changing it here would violate the approved invariant.",
+    "Accepted [::1] in the allowlist despite the IPv4-only bind: unreachable over IPv6 by construction, harmless as a Host literal, and spec-complete per the approved brief (AC-1).",
+    "Ruled the AC-3 400-vs-403 split not an information-disclosure oracle: it distinguishes malformed from refused per RFC 9112 and discloses nothing the client did not send.",
+    "Used repo grep for blast radius after finding codegraph.json stale (no JS nodes); recorded as INFO so the graph tooling gets refreshed rather than silently trusted."
+  ],
+  "artifacts": [],
+  "next_phase": 11,
+  "blockers": [],
+  "timestamp": "2026-07-17T08:15:00Z"
+}

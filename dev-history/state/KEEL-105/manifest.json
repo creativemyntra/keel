@@ -1,0 +1,27 @@
+{
+  "story_id": "KEEL-105",
+  "title": "",
+  "scope": "feature",
+  "expected_phases": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "current_phase": 13,
+  "attempts": {},
+  "gate_events": 15,
+  "max_gates": 48,
+  "max_hours": 72,
+  "started_at": "2026-07-16T07:43:25.600Z",
+  "updated_at": "2026-07-17T10:48:33.290Z",
+  "attempt_hashes": {}
+}

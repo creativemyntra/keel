@@ -1,0 +1,32 @@
+{
+  "phase": 7,
+  "agent": "tdd-green",
+  "story_id": "KEEL-104",
+  "confidence": "high",
+  "findings": [
+    "Full suite: 158 passing, 1 pre-existing failure, 0 errors across 3 test files (runner output: '70 / 70 passed | 44 / 44 passed | 44 / 45 passed')",
+    "keel-dashboard.test.cjs: 70 / 70 passed, 0 failing, 0 errors",
+    "keel-state-describe.test.cjs: 44 / 44 passed — no regressions",
+    "keel-state-describe-e2e.test.cjs: 44 / 45 passed — 1 pre-existing failure (not a regression)",
+    "Pre-existing e2e failure: 'AC-5 regression: KEEL-103 entry has current_phase=8' — hardcoded phase number stale; KEEL-103 has since advanced to phase 12 through normal pipeline execution; keel-dashboard.cjs is not involved; this failure existed before KEEL-104 implementation",
+    "No production code modified to achieve passing tests; implementation (scripts/keel-dashboard.cjs) passes all 70 tests as written",
+    "Coverage scripts/keel-dashboard.cjs: 91.7% line, 72.46% branch, 100% function (c8 measured — target >=80% line) PASS",
+    "Covered: parsePort (all 6 paths), formatIdle (4 paths incl. boundary + negative clamp), idleTime (3 falsy guards), escHtml (5 char classes), badgeHtml (3 statuses via generateHTML), deriveStatus (3 branches), readStories (missing dir, empty dir, 3-story sort, error-row sort, row shape, skip-no-manifest, skip-.lock, skip-.tmp), generateHTML (empty state, non-empty table, XSS escape, meta-refresh, DOCTYPE, title, port footer, error rows), startDashboard listen callback (stdout message via stub), main() entry point (patched listen no-op at load)",
+    "Not covered (~13 lines): HTTP request handler closure body (req.method branch, 200 path, 404 branch — not invoked in unit tests), server.on('error') EADDRINUSE path (would require firing an error event; unit-level stub does not exercise it)",
+    "Coverage target >=80% line on changed file scripts/keel-dashboard.cjs: PASS (91.7% measured by c8)",
+    "All 7 AC-ids covered: AC-1 (3 tests), AC-2 (26 tests), AC-3 (18 tests), AC-4 (5 tests), AC-5 (6 tests), AC-6 (4 tests), AC-7 (8 tests)",
+    "No tests were skipped, ignored, or had assertions relaxed",
+    "No coverage.xml artifact on disk — c8 coverage was measured during test run and reported inline; branch coverage 72.46% is below 80% but line coverage 91.7% meets the >=80% line gate; branch gap is due to uncovered HTTP handler closure (integration-scope paths)"
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6", "AC-7"],
+  "decisions": [
+    "No test fixes were needed — all 70 tests passed on first run without any modifications",
+    "Pre-existing e2e test failure (keel-state-describe-e2e.test.cjs AC-5: current_phase=8) classified as pre-existing staleness, not a regression: test was written when KEEL-103 was at phase 8; story has since advanced to phase 12 through normal pipeline progression; the dashboard implementation (keel-dashboard.cjs) does not touch keel-state.cjs and cannot have caused this failure",
+    "Coverage measured via c8 (confirmed available in this environment): 91.7% line, 72.46% branch, 100% function on scripts/keel-dashboard.cjs",
+    "HTTP handler closure and EADDRINUSE error path are not covered by unit tests; these paths require real HTTP client requests or firing server error events which are integration-level concerns beyond the unit test plan scope; 91.7% line coverage exceeds the 80% gate target"
+  ],
+  "artifacts": [],
+  "next_phase": 8,
+  "blockers": [],
+  "timestamp": "2026-07-14T00:00:00.000Z"
+}

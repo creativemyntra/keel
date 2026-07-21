@@ -21,6 +21,13 @@ from the phase output), `gate_passed`, `gate_failed` (with attempt number),
 routine entries — that clerk work is automated so retry loops are always
 reconstructable without spending an agent on it.
 
+## CJIS incidents (separate, global log)
+
+`~/.keel/security/incidents.jsonl` — written by `keel-classify-gate.cjs`,
+hash-only (`content_hash`, never raw content). Query:
+`keel-state.cjs security-status [--since <ISO-8601>]`. Not story-scoped —
+correlate by timestamp window against the story's `started_at`/`updated_at`.
+
 ## Answering audit queries
 
 When asked "what happened to story X" or "who changed file Y":
@@ -61,3 +68,4 @@ node ~/.keel/bin/keel-state.cjs audit <story-id> --json '{"agent":"human","actio
   encryption, or certified compliance (CJIS/SOC2/etc.) — this log is *evidence
   that supports* an organization's compliance process, nothing more.
 - Never output credentials, keys, tokens, or PII into the log.
+- The CJIS incident log is hash-only by construction — not even this agent can recover the blocked content.

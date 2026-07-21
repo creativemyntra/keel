@@ -1,6 +1,6 @@
 ---
 name: implement-feature
-description: Run the full 11-phase AI-SDLC pipeline from story to tested, E2E-validated, security-reviewed implementation.
+description: Run the full 10-phase AI-SDLC pipeline from story to tested, E2E-validated, security-reviewed implementation.
 ---
 
 # implement-feature
@@ -24,7 +24,7 @@ drift from the governed one.
    - the story ID and the user's feature description / story reference,
    - any constraints the user stated (deadline, scope, stack).
 3. The orchestrator owns everything from there: it initializes
-   `.keel/state/<story-id>/` through the state engine, sequences the 11 phase
+   `.keel/state/<story-id>/` through the state engine, sequences the 10 phase
    agents in order, runs the handshake gate after every phase, and enforces the
    bounded retry loop (3 attempts → halt and escalate):
 
@@ -33,14 +33,12 @@ drift from the governed one.
    2  Business Analyst                  — functional spec
    3  UI Designer                       — screen flows, mockups, component states
    4  Solution Architect                — architecture + design (reads UI design)
-   5  Software Engineer                 — production code (no tests)
-   6  TDD Red                           — test case creation
-   7  TDD Green                         — full suite execution + coverage gate
-   8  QA Engineer                       — AC mapping + integration tests
-   9  E2E Engineer                      — Playwright browser tests
-   10 Security Engineer                 — OWASP + dependency audit
-   11 Technical Writer                  — docs + changelog
-   12 Release Manager                   — go/no-go
+   5  Software Engineer                 — production code + unit tests (coverage ≥ 80%)
+   6  QA Engineer                       — AC mapping + integration tests
+   7  E2E Engineer                      — Playwright browser tests
+   8  Security Engineer                 — OWASP + dependency audit
+   9  Technical Writer                  — docs + changelog
+   10 Release Manager                   — go/no-go
    ```
 
 4. Relay the orchestrator's delivery summary to the user:
@@ -48,7 +46,7 @@ drift from the governed one.
 ```markdown
 ## Feature Implementation: <STORY-ID> — <result>
 
-- Phases completed: <N>/11 (state: .keel/state/<STORY-ID>/)
+- Phases completed: <N>/10 (state: .keel/state/<STORY-ID>/)
 - Unit tests: <N> passing, coverage <X>% on changed files
 - E2E tests: <N> passing (Playwright)
 - Security: <HIGH finding count> HIGH findings

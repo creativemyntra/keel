@@ -1,0 +1,42 @@
+{
+  "phase": 1,
+  "agent": "product-owner",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "Requirement brief (C:\\Users\\Matellio_Amar-Nath\\keel\\.keel\\state\\KEEL-105\\requirement-brief.md) approved by human owner (Amar Singh). Scope: Host-header allowlist for dashboard DNS-rebinding hardening (KEEL-104 LOW-1 finding).",
+    "AC-1: Allowed hosts—localhost, 127.0.0.1, [::1], each with optional :port suffix. Case-insensitive host part per brief line 9.",
+    "AC-2: Disallowed Host values return 403 static plain-text (no request echo). Dashboard renderer never reached per brief line 10.",
+    "AC-3: Missing Host header behavior explicitly defined and documented by architect (no silent accept/reject); recommend 400 or 403, rationale recorded per brief line 11.",
+    "AC-4: Invariant constraints—loopback-only bind, zero-fs-writes, escHtml, EADDRINUSE, keel-state.cjs byte-untouched, CLI --port=<N> unchanged per brief line 12.",
+    "AC-5: Regression suite green—70 unit (keel-dashboard.test.cjs) + 44 e2e-node (keel-state-describe.test.cjs) + 45 e2e-node (keel-state-describe-e2e.test.cjs) + 10 Playwright (KEEL-104-dashboard.spec.ts) per brief line 13.",
+    "AC-6: New unit + E2E tests for allowed hosts, disallowed hosts, port-suffix variants, missing-Host behavior per brief line 14.",
+    "AC-7: README security posture section updated; CHANGELOG updated by technical-writer per brief line 15.",
+    "AC-8: Release-manager proposes version (security patch, e.g. 3.14.1) and applies full G-6 stamp checklist if bumping: package.json, bin/keel.js VERSION, .claude-plugin/plugin.json, .claude-plugin/marketplace.json, README header/footer, CHANGELOG, TECHNICAL-SPECIFICATIONS per brief line 15.",
+    "Origin: KEEL-104 phase-10 security finding LOW-1; scripts/keel-dashboard.cjs DNS-rebinding vector per brief line 5.",
+    "Blocking items: None identified in brief. All scope explicit and approved.",
+    "Non-blocking items: None identified in brief.",
+    "Schema compliance: phase=1, agent=product-owner, story_id=KEEL-105, ≤15 findings (11 listed), 8 acceptance criteria, no file contents inlined, reference paths only.",
+    "Guardrails compliance: G-1 (no open items → no classification needed), G-3 (no secrets), G-4 (transcription of approved brief, no fabrication), G-5 (all 8 ACs from brief captured), G-6 (no commit/deploy), G-7 (no memory edits this phase)."
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5",
+    "AC-6",
+    "AC-7",
+    "AC-8"
+  ],
+  "decisions": [
+    "Transcribe requirement brief verbatim without re-litigation—brief is approved by human owner. All 8 ACs derived from explicit lines in the brief.",
+    "Missing Host behavior (AC-3) deferred to architect phase—brief says 'define and document'; architect will choose 400 or 403 and record rationale.",
+    "Version bump (AC-8) deferred to release-manager phase—brief indicates 'likely patch bump' (3.14.1) but release-manager decides.",
+    "Test scope (AC-6) includes unit + E2E per brief; browser-relevant tests via Playwright where applicable."
+  ],
+  "artifacts": [],
+  "next_phase": 2,
+  "blockers": [],
+  "timestamp": "2026-07-16T00:00:00Z"
+}

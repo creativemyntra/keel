@@ -1,0 +1,36 @@
+{
+  "phase": 11,
+  "agent": "technical-writer",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "AC-7 README DONE: new 'Security posture (ADR-003, ADR-004)' subsection under Pipeline Dashboard (README.md) documents loopback-only 127.0.0.1 bind; Host-header allowlist — loopback literals localhost / 127.0.0.1 / [::1], case-insensitive, optional :port suffix, guard before routing (DNS-rebinding defense); 403 constant-body contract (constant plain-text body, text/plain; charset=utf-8, X-Content-Type-Options nosniff, Cache-Control no-store, zero request echo, zero fs I/O); 400 on missing Host per RFC 9112 (ADR-004 D-1/D-3); strictly read-only GET / only.",
+    "AC-7 CHANGELOG DONE: '[Unreleased] - DASHBOARD HOST-HEADER ALLOWLIST (KEEL-105)' entry inserted above 3.14.0 with Security / Added / Fixed sections. NO version number stamped — heading explicitly defers to release-manager (likely 3.14.1 per brief), preserving phase-12 ownership of AC-8/G-6.",
+    "Port-flag QA item (08-qa-engineer.json, NON-BLOCKING G-1) CLOSED with a tested correction: live runs this phase proved 'node scripts/keel-dashboard.cjs --port 8973' binds 8973 (space form, script) AND 'node bin/keel.js dashboard --port=8971' binds 8971 (equals form, CLI wrapper), while 'node bin/keel.js dashboard --port 8972' SILENTLY falls back to 7772 (parseArgs in bin/keel.js sets flags.port=true for the space form). The flag syntax is per surface, not one form globally.",
+    "DEVIATION (evidence-backed): the phase brief said space-separated '--port <N>' is correct and '--port=<N>' is not — applying that blanket rule to the CLI examples would have published a silently-broken command. README instead leads with the script space form, keeps the wrapper equals form, and adds an explicit 'Flag syntax' callout warning that the wrong form falls back to port 7772. All four invocation examples were executed and verified (200 responses on the expected port; 403 on Host: evil.com re-confirmed during doc validation).",
+    "Stale design-doc labels FIXED for 12-phase numbering: docs/design/KEEL-105-design.md header L3 '**Phase:** 3 (Solution Architect)' -> 4; footer L273 '**Next Phase:** 4 (software-engineer)' -> 5 (software-engineer).",
+    "Memory maintained: .keel/memory/conventions.md +2 dated entries — (1) constant-body rejection contract for guard-path 4xx responses (ADR-004 D-3, generalizes beyond the dashboard), (2) per-surface --port flag syntax with silent-fallback warning. memory-check PASS: conventions 12/150 lines, lessons 1/30 entries.",
+    "No lessons.md entry added: KEEL-105 is a feature-lane security-hardening story (full 12-phase run, no RCA) — the defect-lesson mandate is not triggered.",
+    "Docs expose contract behavior only — no allowlist regex internals, no guard line numbers, no bypass-matrix details (security-internals rule).",
+    "File hygiene: README.md and CHANGELOG.md are CRLF; all edits preserve CRLF byte-consistently (CHANGELOG re-normalized after an initial LF-inserted block). No dashboard processes or bound ports left behind after example testing (netstat verified 7772/8971/8972/8973 free).",
+    "Carry-forward to phase 12 (release-manager): AC-8 version proposal + full G-6 stamp checklist including replacing the CHANGELOG '[Unreleased]' heading with the chosen version/date; security-engineer's pre-existing LOW (404-branch header gap, due 2026-08-16) stays on the open-item ledger unchanged.",
+    "ACs 1-6 unchanged by this phase (docs-only diff: README.md, CHANGELOG.md, docs/design/KEEL-105-design.md, .keel/memory/conventions.md; zero code/test files touched) — code verdicts from phases 7-10 stand."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6", "AC-7", "AC-8"],
+  "decisions": [
+    "Documented --port syntax per surface instead of the briefed blanket space-form rule: empirical tests (four live invocations) showed the CLI wrapper accepts only the equals form; publishing a space-form CLI example would violate the tested-and-working examples rule.",
+    "Used an '[Unreleased]' CHANGELOG heading with an explicit release-manager note rather than pre-stamping 3.14.1 — phase 12 owns the version decision (AC-8, G-6).",
+    "Promoted the constant-body rejection contract straight to conventions.md (not lessons.md): it is a stable how-we-write-code rule born from an approved ADR, not an incident.",
+    "Skipped lessons.md: no defect/RCA in this story; adding a non-mandated lesson would spend the 30-entry budget without incident value.",
+    "Kept the top-of-README feature bullet (L101) and utilities line (L356) using --port=<N>: both show bin/keel.js / slash-command surfaces where the equals form is the working one."
+  ],
+  "artifacts": [
+    "README.md",
+    "CHANGELOG.md",
+    "docs/design/KEEL-105-design.md",
+    ".keel/memory/conventions.md"
+  ],
+  "next_phase": 12,
+  "blockers": [],
+  "timestamp": "2026-07-17T09:05:00Z"
+}

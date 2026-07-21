@@ -57,3 +57,4 @@ Invoke when the user says "investigate bug", "RCA", "defect analysis", "/keel de
 - Never speculate root cause without code evidence.
 - Always include a prevention recommendation.
 - Flag CJIS-adjacent data as sensitive — do not reproduce in output.
+- Before including any excerpt of stack traces/logs/case data in the RCA, check `keel-state.cjs security-status` for a `cjis_violation`/`cjis_suspect` entry from this session — if the gate already blocked it, reference the incident ID instead of reconstructing it from memory.

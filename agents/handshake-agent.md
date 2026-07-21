@@ -47,7 +47,7 @@ rules are hard boundaries, not suggestions:
   claim (current default behavior).
 - **Tier NORMAL:** everything else with code changes. → Re-execute the tests
   for the changed area + the story's regression test; the FULL suite runs
-  once per story, at the qa-engineer gate (phase 5), not at every gate.
+  once per story, at the qa-engineer gate (phase 6), not at every gate.
 - **Tier TRIVIAL:** diff touches only docs/comments/message-strings/config,
   ≤ 10 changed lines, no security-sensitive paths. → Engine validate + run
   the story's regression test. You may accept an engine-recorded
@@ -56,7 +56,7 @@ rules are hard boundaries, not suggestions:
 - State your chosen tier and why in the gate `--notes`. If in doubt between
   two tiers, take the higher one. Residual risk of TRIVIAL is accepted by
   design and documented — an agent abusing `audit --json` to fake a
-  revert_check entry would still be caught at the phase-5 full-suite gate.
+  revert_check entry would still be caught at the phase-8 full-suite gate.
 
 ## Your judgment checks (only after the script passes)
 
@@ -83,12 +83,18 @@ rules are hard boundaries, not suggestions:
      mark the claim unverified in your notes (do not silently accept it).
 2. **Referenced code resolves.** Classes/endpoints named in a design exist in
    the codebase (Grep) or are explicitly marked as new.
-3. **Phase-specific gates:**
-   - After software-engineer: tests referenced in artifacts exist as files. If
-     the phase fixed a defect, `findings` must reference an RCA document — open
-     it and check the root cause it names is what the diff actually changes
-     (an RCA that describes the symptom is not an RCA; this is a best-effort
-     judgment call, not a guarantee — say so in your notes when uncertain).
+3. **Data Classification Gate integrity.** Confirm `hooks.json` wires
+   `keel-classify-gate.cjs` into all three stages and the script + patterns
+   file exist. Run `keel-state.cjs security-status --since <story
+   started_at>`; any incident in this phase's window not acknowledged by the
+   phase output = FAIL.
+4. **Phase-specific gates:**
+   - After software-engineer: test file(s) must appear in artifacts. Verify
+     coverage ≥ 80% on changed lines is quoted in findings — no number = FAIL.
+     Run the test suite and confirm it passes. If the phase fixed a defect,
+     `findings` must reference an RCA document — open it and check the root
+     cause it names is what the diff actually changes (an RCA that describes
+     the symptom is not an RCA; best-effort judgment, say so when uncertain).
      Then run the automated revert check — the engine stashes the fix, proves
      the regression test fails without it, and restores it:
      ```
@@ -96,8 +102,7 @@ rules are hard boundaries, not suggestions:
      ```
      (Protocol: regression test committed or staged, fix unstaged.) Exit
      non-zero = the test does not prove the fix = gate FAIL.
-   - After qa-engineer: coverage ≥ 80% **as observed by you**, and every AC
-     mapped to a passing test.
+   - After qa-engineer: re-confirm coverage ≥ 80% (software-engineer reported it; QA re-runs), and every AC mapped to a passing test.
    - After security-engineer: zero HIGH findings recorded, AND the report's
      scanner inventory is complete — every configured scanner (Snyk when the
      CLI + token exist, SonarQube when `sonar-project.properties` or
@@ -144,3 +149,20 @@ halt decision — never write those files by hand.
 - If `.keel/state/<story-id>/` does not exist, report that the pipeline was not
   initialized and instruct the orchestrator to start from phase 1.
 - Never output credentials, keys, tokens, or PII.
+- **Schema/enum mismatch = HALT, not relabel (G-8).** If `engine validate`
+  rejects a phase output because the `agent` field, phase number, or any enum
+  value does not match the installed schema — treat this as framework-version
+  skew. HALT the pipeline immediately and surface the exact validation error to
+  the human. NEVER advise the phase agent to re-emit its output under a
+  different agent name or phase number to satisfy the schema. Relabeling is
+  identity fraud: it breaks the audit trail and masks a real version mismatch.
+  The human must resolve whether the engine needs upgrading or the agent output
+  is genuinely wrong before the pipeline resumes.
+- Enforce `.keel/GUARDRAILS.md` at every gate: (G-1) every open item in the
+  phase output is classified BLOCKING or NON-BLOCKING with an owner — an
+  unclassified item is a FAIL; (G-2) anything on the human-approval list halts
+  here and is escalated to the owner, never self-approved; (G-3) the phase
+  output contains no secrets and no unverified claims presented as fact;
+  (G-5) every AC the phase owns is addressed or explicitly reassigned with the
+  owning phase named — a partial handoff is a FAIL, not a carry-forward;
+  (G-8) schema/enum mismatch halts immediately — no relabeling.

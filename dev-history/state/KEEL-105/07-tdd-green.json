@@ -1,0 +1,36 @@
+{
+  "phase": 7,
+  "agent": "tdd-green",
+  "story_id": "KEEL-105",
+  "confidence": "high",
+  "findings": [
+    "Full suite executed this session, all four node suites green, zero failures/errors: tests/keel-dashboard.test.cjs -> '129 / 129 passed'; tests/keel-dashboard-host-e2e.test.cjs -> '19 / 19 passed'; tests/keel-state-describe.test.cjs -> '44 / 44 passed'; tests/keel-state-describe-e2e.test.cjs -> '46 / 46 passed' (runner final lines quoted verbatim; commands: node tests/<file>).",
+    "Total 238/238 assertions passing. Frozen baselines intact: 70 KEEL-104 dashboard unit asserts + 44 describe + 46 describe-e2e all still passing — zero regressions from the phase-5 implementation, zero tests skipped/ignored/modified this phase.",
+    "Coverage MEASURED with c8 (v8 coverage merged across both dashboard suites via --clean=false): scripts/keel-dashboard.cjs whole-file 95.41% stmts / 76.54% branch / 100% funcs / 95.41% lines (npx c8 report --include=scripts/keel-dashboard.cjs).",
+    "Changed-line coverage on the phase-5 diff (git diff -U0 HEAD -- scripts/keel-dashboard.cjs: 58 added lines at 107-128, 379-397, 407-422, 470): 58/58 executable changed lines hit = 100.00% (target >=80%) — computed from coverage/coverage-final.json statement map by coverage/changed-line-check.cjs, not estimated.",
+    "Whole-file uncovered lines 177-179, 270-280, 439-446 are all PRE-EXISTING KEEL-104 paths untouched by this story (unreadable-stateDir catch, malformed-manifest error row HTML, EADDRINUSE stderr/exit handler) — reported as legacy debt, not a KEEL-105 failure; none intersect the changed-line set.",
+    "AC-1/AC-2/AC-3/AC-4 proven by the 78 K105 tests within the green runs (allowlist predicate table, 403 no-echo contract, raw-socket HTTP/1.0 missing-Host 400, invariants incl. loopback bind and zero-fs-writes on rejection); AC-6 satisfied: the new unit + e2e tests exist and pass. AC-5 node-suite portion green this session; Playwright KEEL-104-dashboard.spec.ts (10) is phase-9 scope per phase-6 handoff and was NOT run here (reported as not run, no claim made).",
+    "Revert-check not applicable: manifest scope is 'feature' (defect-only requirement).",
+    "No production code, no test assertions, and no test setup modified this phase — the suite was green as delivered by phases 5/6; zero fixes required. No commits made (G-6), no memory writes (G-7).",
+    "Coverage artifacts on disk: coverage/coverage-final.json, coverage/lcov.info, coverage/changed-line-check.cjs (reproducible changed-line computation). npm/npx warnings only; no test noise on stderr affecting results.",
+    "Non-blocking legacy-debt note (G-1): uncovered pre-existing lines 177-179/270-280/439-446 in scripts/keel-dashboard.cjs — owner: future test-hardening chore alongside the recorded D-6 require.main-guard follow-up; not created by and not blocking KEEL-105.",
+    "AC-7 (README security posture + CHANGELOG) remains owned by phase 11 technical-writer; AC-8 (security patch version proposal with G-6 stamp checklist) remains owned by phase 12 release-manager — carried forward per phase-5/6 handoffs, not descoped."
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6"],
+  "decisions": [
+    "Measured changed-line coverage per line (58-line diff intersected with c8 statement map) rather than relying on whole-file % — the gate requirement is >=80% on changed lines specifically; result 100.00%.",
+    "Merged v8 coverage across both dashboard suites (c8 --clean=false then c8 report) so e2e child-process coverage (NODE_V8_COVERAGE inheritance) counts toward the changed-line measurement.",
+    "Did not run Playwright spec (10 tests): explicitly phase-9 scope per 06-tdd-red.json and task instruction; recorded as not-run instead of claimed (G-4).",
+    "Left pre-existing uncovered lines as recorded legacy debt instead of adding tests here — phase 7 does not author new coverage; that is phase-6 territory and the debt predates this story.",
+    "AC-7 and AC-8 are NOT descoped — they are out-of-scope-for-this-phase with named downstream owners per the approved brief and phase-5/6 handoffs: AC-7 (README security posture + CHANGELOG) owned by phase 11 technical-writer; AC-8 (security patch version proposal, e.g. 3.14.1, with full G-6 stamp checklist) owned by phase 12 release-manager."
+  ],
+  "artifacts": [
+    "coverage/coverage-final.json",
+    "coverage/lcov.info",
+    "coverage/changed-line-check.cjs",
+    "docs/test-plans/KEEL-105-test-map.md"
+  ],
+  "next_phase": 8,
+  "blockers": [],
+  "timestamp": "2026-07-17T00:00:00Z"
+}

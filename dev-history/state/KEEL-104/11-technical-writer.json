@@ -1,0 +1,42 @@
+{
+  "phase": 11,
+  "agent": "technical-writer",
+  "story_id": "KEEL-104",
+  "confidence": "high",
+  "findings": [
+    "CHANGELOG.md: new [3.14.0] - 2026-07-15 entry (Added section, KEEL-104) inserted above [3.13.0], matching the existing dense single-bullet format — covers command, default port 7772, flag forms, columns, sort order, error rows, empty state, 30s meta refresh, startup stdout line, EADDRINUSE exit-1 stderr message, security posture (loopback bind, zero writes, HTML escaping, GET-/-only, nosniff/no-store headers), zero new deps, and the AC-7 keel-state.cjs byte-compatibility contract",
+    "README.md: title bumped to v3.14.0; 'What's New' retitled to v3.14.0 with a lead dashboard bullet (describe/v3.13.0 entry preserved below it); one-line Key Features bullet added; '/keel dashboard --port=7772' added to the Utilities command block; new '### Pipeline Dashboard' section added between Utilities and Supported Tech Stacks with usage, columns, refresh, empty state, security posture, and port-in-use behavior",
+    "Every documented behavior verified before writing: read scripts/keel-dashboard.cjs and bin/keel.js in full; executed 'node bin/keel.js --help' (dashboard row + --port=<N> option present — engineer already updated help text, no doc gap there); executed 'node bin/keel.js dashboard --port=7894' → stdout 'Dashboard: http://localhost:7894', GET / returned HTTP 200 with the dashboard HTML (meta refresh 30s confirmed in response body), GET /other returned 404",
+    "Flag-form nuance verified in code and documented exactly: via the CLI the flag must be equals-form '--port=<N>' (bin/keel.js parseArgs treats space-separated values as positionals); running scripts/keel-dashboard.cjs directly requires space-form '--port <N>' (parsePort reads argv[i+1]); invalid/out-of-range values fall back to 7772 — README shows both forms, CHANGELOG states both",
+    "Cross-doc sweep for stale command lists: repo-wide grep for 'dashboard' across *.md found no other doc carrying the CLI command reference (QUICK-START-CLAUDE-CODE.md line 78 hit is an unrelated feature-name example string 'Real-time analytics dashboard'); docs/WORKFLOW.md, INSTALL.md, TECHNICAL-SPECIFICATIONS.md need no update",
+    "Security-internals discipline: docs describe the externally observable posture (loopback-only, read-only, escaped output) without exposing exploit-relevant internals; the phase-10 LOW-1 Host-header finding is deliberately NOT documented in user-facing docs (open hardening item, tracked in 10-security-engineer.json)",
+    "Memory: no defect fixed in this story → no mandatory lessons.md entry; no new project convention introduced by this phase (dashboard reuses the KEEL-103 idle-time convention already recorded in conventions.md); memory-check PASS — conventions.md 9/150 lines, lessons.md 1/30 entries",
+    "Not changed (out of writer scope, flagged for phase 12 release manager): package.json version still 3.12.0 and README footer Version/Tag lines still reference 3.12.0/v3.13.0 — version stamping and tagging are release-manager work; also carrying forward phase-10 LOW-2: add gitleaks-report.json to .gitignore before the release commit",
+    "No production code or tests touched: diff of this phase is README.md, CHANGELOG.md, and this state file only"
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5",
+    "AC-6",
+    "AC-7"
+  ],
+  "decisions": [
+    "AC-1..AC-7 carried forward from 01-business-analyst.json unchanged — no drift, no descoping",
+    "Version 3.14.0 chosen: new backward-compatible feature on top of 3.13.0 → semver-style minor bump, consistent with the repo's existing scheme (3.12.0 → 3.13.0 were both feature minors)",
+    "CHANGELOG entry mirrors the [3.13.0] KEEL-103 format exactly (one dense bullet under Added, behavior-complete, ADR references inline) rather than splitting into multiple bullets",
+    "Documented both --port flag forms (CLI equals-form vs direct-script space-form) because they genuinely differ in the code; documenting only one would produce a wrong example for the other invocation path",
+    "Placed the full usage docs in a dedicated README 'Pipeline Dashboard' section (linked from What's New) instead of inflating the Utilities code block — the command has enough operational behavior (empty state, EADDRINUSE, security posture) to warrant its own section",
+    "README footer version/tag lines and package.json left untouched: they record the released artifact state, which phase 12 owns; the title and What's New describe the codebase, which this release will ship as 3.14.0"
+  ],
+  "artifacts": [
+    "README.md",
+    "CHANGELOG.md",
+    ".keel/state/KEEL-104/11-technical-writer.json"
+  ],
+  "next_phase": 12,
+  "blockers": [],
+  "timestamp": "2026-07-15T14:35:00.000Z"
+}
