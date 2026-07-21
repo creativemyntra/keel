@@ -27,4 +27,4 @@
 
 1. Owner says "push" → cut CHANGELOG entry (next version after 3.11.0) covering `status --all`.
 2. Commit working-tree changes (`scripts/keel-state.cjs`, `scripts/test-keel-state.cjs`, `commands/health.md`, docs, `.keel/` state/memory) — note pre-existing unrelated dirty file `bin/package-plugin.sh` is out of scope for this story.
-3. Follow-up story recommended: record coverage baseline (`.keel/watch/baseline.json` @ 72.03% lines / 61.95% branches) and back-fill legacy engine coverage toward the 80% gate.
+3. ~~Follow-up story recommended: record coverage baseline (`.keel/watch/baseline.json` @ 72.03% lines / 61.95% branches) and back-fill legacy engine coverage toward the 80% gate.~~ **CLOSED 2026-07-21 — WAIVED.** `keel-watch.cjs` handles absent baseline gracefully (if-present logic; file is auto-created on first PHPUnit run in a user project). Keel itself is not a PHP project so the file is never created in the framework repo. No follow-up story needed.
