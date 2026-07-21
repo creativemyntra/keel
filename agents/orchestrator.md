@@ -67,6 +67,41 @@ architecture, E2E, docs, release ceremony).
 - **Phase 8 before phase 9**: technical-writer documents after security is clean.
 - **Phase 9 before phase 10**: release-manager gates on all prior phases complete.
 
+## Multi-story parallelism (throughput, not per-story latency)
+
+Phases 1-5 within ONE story are strictly sequential (each reads the previous
+phase's real output file — this is GUARDRAIL G-3, "no side channels," a
+correctness choice, not an oversight to optimize away). Do not attempt to
+parallelize phases within a single story.
+
+The real, safe levers are:
+
+- **Overlap phase 6 (QA) execution with phase 7 (E2E) test-authoring.**
+  e2e-engineer can start WRITING Playwright specs as soon as phase 5's output
+  exists; it must not EXECUTE them until qa-engineer's phase-6 gate PASSes
+  (running E2E against code QA hasn't validated wastes the run and risks
+  debugging at the wrong layer — the reason phase 6 precedes 7 in the first
+  place). Spawn both agents together; gate e2e-engineer's execution step on
+  qa-engineer's PASS, not its own start.
+- **Overlap phase 8 (security) with phase 9 (docs drafting).** technical-writer
+  can draft API docs/changelog/README updates as soon as phase 7 completes.
+  Its own gate still requires phase 8's PASS before finalizing — nothing ships
+  before security clears, only the drafting work moves earlier.
+- **Background the prescan starting at phase 5**, re-running incrementally
+  rather than once cold at phase 8, so security-engineer inherits an
+  already-warm result.
+- **Multi-story parallelism — the highest-value lever.** Two stories with no
+  overlapping files (check `.keel/graph/codegraph.json` reverse-dependencies
+  before deciding) can run their ENTIRE pipelines concurrently, each in its
+  own git worktree, since all state is already file-scoped per story-id
+  (`.keel/state/<story-id>/` — nothing shared to race on across worktrees).
+  Use `node ~/.keel/bin/keel-worktree.cjs create <story-id> --base=<branch>`
+  to set one up, then spawn that story's own orchestrator run with cwd set to
+  the returned worktree path (Claude Code's Task tool, `run_in_background`).
+  `keel-worktree.cjs list` / `remove <story-id> [--force]` manage the rest of
+  the lifecycle. This is the lever to reach for first — it requires no change
+  to any single phase's logic, only to how many stories you start at once.
+
 ## Governance Gates (cannot be skipped)
 
 - Phase 3 gate: every user-facing AC has design spec + HTML mockup (or "no UI surface" rationale)
