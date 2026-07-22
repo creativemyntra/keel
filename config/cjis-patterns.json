@@ -1,11 +1,14 @@
 {
-  "_comment": "NCIC_ID/LEID/HART_CASE_ID/HART_SUBJECT_ID are placeholders — replace with real formats from Forseti before relying on them. Both severities hard-block (ticket scenario 7: block over convenience).",
+  "_comment": "BLOCKER (Forseti-format-pending): NCIC_ID, LEID, HART_CASE_ID, HART_SUBJECT_ID patterns are TODO placeholders — they match NOTHING in production. Real CJIS compliance requires these formats from Forseti. Until supplied: the gate catches SSN/PHONE/EMAIL/DOB/NAME_NARRATIVE/ADDRESS but is BLIND to NCIC numbers, LEIDs, and HART case/subject IDs. Security-engineer MUST note this limitation in every phase-8 report. Action: file a Forseti request, add real regex formats, and remove this BLOCKER comment.",
   "allowlist": [
     { "description": "Keel project author domain — strip before scanning to allow marketplace display", "pattern": "creativemyntra\\.com" },
     { "description": "matellio.com project domain — strip before scanning", "pattern": "matellio\\.com" },
-    { "description": "GHA uses: directive - CI version pins are not PII", "pattern": "uses:\\s+[\\w./-]+@[\\w.-]+" },
-    { "description": "npm scoped package ref with embedded slash - not PII", "pattern": "@[\\w-]+\\/[\\w.-]+(?:@[\\w.-]+)?" },
-    { "description": "Semver version pin word@vN.N - digit-starting domain is not PII", "pattern": "\\b[\\w-]+@v?[0-9]+\\.[0-9]+[\\w.-]*\\b" }
+    { "description": "GHA uses-directive CI version pins are not PII", "pattern": "uses:\\s+[\\w./-]+@[\\w.-]+" },
+    { "description": "npm scoped package ref with embedded slash is not PII", "pattern": "@[\\w-]+\\/[\\w.-]+(?:@[\\w.-]+)?" },
+    { "description": "Semver version pins (pkg at v1.2.3 or at-latest tag) are not PII — digit-only version string is not a domain", "pattern": "\\b[\\w-]+@v?[0-9]+\\.[0-9]+[\\w.-]*\\b" },
+    { "description": "RFC 2606 reserved documentation domains (example.com/org/net/edu) never contain real PII", "pattern": "\\b[\\w.+-]+@(example\\.com|example\\.org|example\\.net|example\\.edu)\\b" },
+    { "description": ".local TLD is non-routable per RFC 6762 — used for test fixtures and dev infrastructure only", "pattern": "\\b[\\w.+-]+@[\\w.-]+\\.local\\b" },
+    { "description": "npm glob-package deprecated-notice — a maintainer reference that appears in package-lock.json, not CJIS data", "pattern": "\\bi@izs\\.me\\b" }
   ],
   "patterns": [
     { "category": "SSN", "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b", "flags": "g", "severity": "hard" },

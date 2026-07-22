@@ -24,9 +24,14 @@ Keel is a 10-phase AI-SDLC pipeline. Available commands:
 | `/keel:health` | Any | Pipeline health sweep — halted/stale stories, memory bounds, coverage trend |
 | `/keel:deploy` | 9–10 | Docs + staged rollout deployment |
 | `/keel:parallel` | 1-10 (full, N stories) | Run independent stories' full pipelines concurrently in separate git worktrees (throughput, not single-story speedup) |
+| `/keel:preview` | Any | Dry-run: show stack detection result, economy settings, pipeline map with model tiers, CJIS gate status, CodeGraph freshness, and estimated spawn count before committing to a pipeline run |
 
 If the request is a multi-phase delivery task ("implement this feature", "take story X to production"),
 invoke the `keel:orchestrator` agent with the request — it sequences the phase agents
 and enforces governance gates. Otherwise, tell the user which command fits.
+
+**Defect scope:** When the Jira ticket type is Bug/Defect, or the request includes "fix", the orchestrator uses the express lane: phases 1→5→6→8 only (~5 spawns instead of ~14). Pass `--scope defect` to `/keel:implement-feature` or `/keel:from-jira` to force defect mode explicitly.
+
+**Stack support:** CakePHP 4.4/PHP 8.1. This is the only supported stack — other frameworks will be added in a future release.
 
 If asked for the version, read it from `.claude-plugin/plugin.json` in the plugin root.

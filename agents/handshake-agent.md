@@ -103,6 +103,16 @@ rules are hard boundaries, not suggestions:
      (Protocol: regression test committed or staged, fix unstaged.) Exit
      non-zero = the test does not prove the fix = gate FAIL.
    - After qa-engineer: re-confirm coverage ≥ 80% (software-engineer reported it; QA re-runs), and every AC mapped to a passing test.
+   - After e2e-engineer: run `npx playwright test --list 2>&1` from the repo
+     root and capture the listed test count. Compare to the finding count in
+     `07-e2e-engineer.json`; if the list is empty or count < findings, gate
+     FAILS (tests were not written or were deleted). For each screenshot path
+     in the phase output's `artifacts`, verify the file exists AND is non-zero
+     bytes — a zero-byte screenshot means the browser never rendered a real
+     page. Grep the runner output in `findings` for the pass/fail summary line
+     (e.g. "X passed, Y failed"); if Y > 0, gate FAILS. If Playwright is not
+     installed (`npx playwright test --list` errors), mark this check
+     UNVERIFIABLE and require explicit human sign-off before issuing PASS.
    - After security-engineer: zero HIGH findings recorded, AND the report's
      scanner inventory is complete — every configured scanner (Snyk when the
      CLI + token exist, SonarQube when `sonar-project.properties` or

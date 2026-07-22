@@ -14,6 +14,8 @@ real ones, and `status --all` / `keel dashboard` / `/keel:health` in the
 plugin's own repo checkout showed them by default. Moved here 2026-07-20 as an
 immediate fix (see the E2E audit report, finding item 5).
 
+**Schema incompatibility warning:** KEEL-104 artifacts span 12 phases (including `tdd-red`, `tdd-green`, and a `release-manager` at phase 12). These are **invalid against the current `agent-output-schema.json`** which caps at phase 10 and has no `tdd-*` in the agent enum. Do not use these files as templates for new stories — they will fail schema validation. For current 10-phase reference output, see `docs/examples/` (tracked in the fix backlog).
+
 **This is a partial fix.** `marketplace.json`'s plugin entry uses
 `"source": "."` — a directory-source install ships the entire repo tree,
 `dev-history/` included, unless Claude Code's installer applies its own

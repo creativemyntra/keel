@@ -10,4 +10,4 @@ the layered scanner stack — SCA (`composer audit` baseline + Snyk when configu
 and SAST (PHPStan baseline + SonarQube when configured) — and secrets scan of the
 diff. The report must include the scanner inventory (ran / skipped / failed).
 Any HIGH finding blocks release. Findings go to
-`.keel/state/<story-id>/06-security-engineer.json`.
+`.keel/state/<story-id>/08-security-engineer.json`.

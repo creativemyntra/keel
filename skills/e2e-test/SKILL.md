@@ -1,6 +1,6 @@
 ---
 name: e2e-test
-description: Phase 8 of the keel pipeline — write and run Playwright E2E browser tests for every user-facing AC. Also usable standalone to generate or run E2E tests outside the pipeline.
+description: Phase 7 of the keel pipeline — write and run Playwright E2E browser tests for every user-facing AC. Also usable standalone to generate or run E2E tests outside the pipeline.
 ---
 
 # e2e-test
@@ -9,16 +9,16 @@ Write and run Playwright E2E tests for user-facing flows.
 
 ## When to use
 
-- **In-pipeline**: invoked automatically by the orchestrator as phase 8
-  (after QA Engineer phase 7 passes). Produces `08-e2e-engineer.json`.
+- **In-pipeline**: invoked automatically by the orchestrator as phase 7
+  (after QA Engineer phase 6 passes). Produces `07-e2e-engineer.json`.
 - **Standalone**: when the user says "e2e test", "playwright test", or
   "test this flow in the browser" outside a full pipeline run.
 
-## In-pipeline instructions (phase 8)
+## In-pipeline instructions (phase 7)
 
 Invoke the **`keel:e2e-engineer`** agent with:
 - the story ID
-- path to the phase-7 QA report (`07-qa-engineer.json`)
+- path to the phase-6 QA report (`06-qa-engineer.json`)
 
 The agent identifies user-facing ACs, writes Playwright tests, runs them
 against the live app, captures screenshots, and produces `08-e2e-engineer.json`.

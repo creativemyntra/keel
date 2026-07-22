@@ -122,8 +122,23 @@ in `hooks/hooks.json` and the story scope includes CJIS-adjacent data, the
 security-engineer and release-manager phases must both flag this as a HIGH
 finding — the release cannot proceed until the gate is wired.
 
-**Forseti follow-up:** Pattern placeholders in `config/cjis-patterns.json`
-marked `[FORSETI-FORMAT-PENDING]` need real format strings from Forseti before
-they will match anything in practice. Until those formats are supplied, the gate
-provides partial coverage only — security-engineer must note this limitation in
-its phase output.
+**Forseti follow-up:** NCIC_ID, LEID, HART_CASE_ID, and HART_SUBJECT_ID patterns in
+`config/cjis-patterns.json` are `TODO-*-PLACEHOLDER` entries that match nothing in
+production. Real CJIS compliance requires format strings from Forseti. Until supplied,
+the gate catches SSN/PHONE/EMAIL/DOB/NAME_NARRATIVE/ADDRESS but is BLIND to NCIC
+numbers, LEIDs, and HART case/subject IDs. Security-engineer MUST note this gap in
+every phase-8 report. Action: file a Forseti request, add real regex formats, and
+remove the BLOCKER comment from `config/cjis-patterns.json`.
+
+**Screenshot scanning limitation:** Playwright screenshots are image files — the CJIS
+gate performs text-only scanning and cannot inspect image content. E2E test fixtures
+and application state captured in screenshots MUST use fully synthetic, non-CJIS data
+by design (test-time enforcement, not gate-time enforcement). Confirm synthetic test
+data at phase-6 QA review and document in the phase-6 output.
+
+**PostToolUse blocking semantics:** The PostToolUse hook fires AFTER the tool result
+has been returned to the model in the current turn. Exit-2 from a PostToolUse hook is
+alerting and logging control only — the model may have already seen the content that
+triggered the block. For hard prevention (stopping data from reaching the model at all),
+rely on PreToolUse hooks, which fire before the tool runs. Every PostToolUse incident
+warrants immediate human review of what the model received in that turn.

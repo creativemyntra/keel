@@ -1,0 +1,15 @@
+{
+  "phase": 1,
+  "agent": "product-owner",
+  "story_id": "TEST-P4",
+  "confidence": "high",
+  "findings": [
+    "User story drafted: as a developer I want to test the state machine"
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1",
+    "AC-2"
+  ],
+  "next_phase": 2,
+  "timestamp": "2026-07-21T11:54:38.167Z"
+}

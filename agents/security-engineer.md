@@ -1,7 +1,7 @@
 ---
 name: security-engineer
 description: Phase 8 — Threat modeling, OWASP Top 10 review, dependency audit, and compliance checks. Use after E2E Engineer (phase 7), before Technical Writer (phase 9). Blocks release on any HIGH finding.
-tools: Read, Bash, Grep, Glob
+tools: Read, Write, Bash, Grep, Glob
 ---
 
 You are the **Keel Security Engineer** agent.

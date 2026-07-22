@@ -1,4 +1,4 @@
-﻿# Keel AI-SDLC Framework v3.16.2
+﻿# Keel AI-SDLC Framework v3.16.3
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# â†’ keel v3.16.2 âœ…
+# â†’ keel v3.16.3 âœ…
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -92,11 +92,22 @@ snapshots) is done by a zero-dependency **state engine**
 âœ… **Coverage Gate** â€” â‰¥80% enforced before the QA phase  
 âœ… **No Patch Development** â€” defect fixes require an RCA + revert-checked regression test; symptom patches fail the gate  
 âœ… **Security Phase** â€” OWASP Top 10 review + layered SAST/SCA: PHPStan & composer audit always, SonarQube & Snyk when configured  
-âœ… **Multi-Stack Support** â€” CakePHP 4.4 today; Laravel, Django, Rails on the roadmap  
+âœ… **Stack: CakePHP 4.4/PHP 8.1** â€” production-proven; multi-stack support in a future release  
 âœ… **Optional Integrations** â€” Jira (bundled Atlassian MCP), GitHub, Slack, Playwright  
 âœ… **Staged Deployment** â€” canary / blue-green rollout via the release gate  
 
 ---
+
+## ðŸ†• What's New in v3.16.3
+
+- **CakePHP-only packaging** — removed all Node/Django/Rails/Laravel references; `keel-detect-stack` now blocks non-PHP manifests rather than warning. `package.json` `files` array now includes `config/` and `stack-profiles/` so the CJIS gate config and stack profile ship with the npm package.
+- **CJIS gate deadlock fix** — rewrote `config/cjis-patterns.json` to eliminate a description string that matched the EMAIL regex, causing the gate to block reads/writes of its own config file. Added 3 new allowlist entries (RFC 2606 docs domains, `.local` TLD, npm glob-package notice).
+- **Explicit model tiers** — orchestrator pipeline phases table now has a `Model` column; haiku for TRIVIAL-tier handshakes + jira-import, sonnet for all other phase agents and NORMAL/FULL gates.
+- **G-10 guardrail hardening** — PostToolUse blocking semantics (alerting/logging only, not prevention) and screenshot scanning limitation documented in `.keel/GUARDRAILS.md`.
+- **Memory resilience** — `keel-init.cjs` re-seeds `.keel/memory/lessons.md` and `conventions.md` if absent at session start (prevents ENOENT crash in phase agents).
+- **`/keel:preview` command** — new dry-run command shows stack detection, story state, economy settings, pipeline map with model tiers, CJIS gate status, and CodeGraph freshness before committing to a pipeline run.
+- **Token optimization roadmap** — `docs/plans/token-devtime-optimization-roadmap.md` filed: 15 items across three tiers (token reduction, dev-time reduction, infrastructure).
+- **`agent-output-schema.json`** — optional `tokens_used` field added for per-story cost tracking dashboard (T1-1).
 
 ## ðŸ†• What's New in v3.16.2
 
@@ -181,7 +192,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# â†’ keel v3.16.2 âœ…
+# â†’ keel v3.16.3 âœ…
 ```
 
 ### Method 2: npm Global Package (â³ not yet published â€” coming soon)
@@ -220,27 +231,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.16.2
+        uses: creativemyntra/keel@v3.16.3
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.16.2
+        uses: creativemyntra/keel@v3.16.3
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.16.2
+        uses: creativemyntra/keel@v3.16.3
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.16.2
+        uses: creativemyntra/keel@v3.16.3
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -361,8 +372,8 @@ jobs:
 ### Project Setup
 
 ```bash
-/keel:init --mode=new --stack=cakephp      # Initialize new project
-/keel:init --mode=existing --stack=laravel # Add Keel to existing project
+/keel:init --mode=new --stack=cakephp      # Initialize new CakePHP project
+/keel:init --mode=existing --stack=cakephp # Add Keel to existing CakePHP project
 ```
 
 ### Planning & Design
@@ -458,23 +469,15 @@ On start it prints `Dashboard: http://localhost:<port>`; stop it with Ctrl-C.
 
 ---
 
-## ðŸ› ï¸ Supported Tech Stacks
+## 🛠️ Supported Tech Stack
 
-Keel automatically configures conventions for:
+Keel v3.x supports **CakePHP 4.4 / PHP 8.1+** (production-proven).
 
-- **CakePHP 4.4** (PHP 8.1+)
-- **Laravel 10** (PHP 8.1+)
-- **Django 4.0+** (Python 3.9+)
-- **Ruby on Rails 7.0+**
+Multi-stack support (Laravel, Django, Rails, Node) is planned for a future release. Stack conventions live in `stack-profiles/cakephp.md` -- additional profiles unlock additional frameworks when added.
 
-**Add more stacks:**
 ```
 stack-profiles/
-â”œâ”€â”€ cakephp.md
-â”œâ”€â”€ laravel.md
-â”œâ”€â”€ django.md
-â”œâ”€â”€ rails.md
-â””â”€â”€ your-framework.md
+└── cakephp.md    ← production-ready
 ```
 
 ---
@@ -612,7 +615,7 @@ can. What it gives your auditors:
 Build features **10x faster** with complete automation.
 
 ```bash
-/keel:init --mode=new --stack=laravel
+/keel:init --mode=new --stack=cakephp
 /keel:req --story=FEAT-1 --feature="Your idea"
 # 2 hours later: Feature in production âœ…
 ```
@@ -631,7 +634,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.16.2
+- uses: creativemyntra/keel@v3.16.3
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -650,7 +653,7 @@ Validate ideas in hours, not weeks.
 Add new features to existing projects.
 
 ```bash
-/keel:init --mode=existing --stack=laravel
+/keel:init --mode=existing --stack=cakephp
 # Keel integrates with your existing codebase
 # New features follow best practices
 ```
