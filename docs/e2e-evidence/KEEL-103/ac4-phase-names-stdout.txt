@@ -1,0 +1,32 @@
+EXIT CODE: 0
+
+STDOUT:
+----------------------------------------
+KEEL-103 · Dashboard describe command
+----------------------------------------
+Scope:          feature
+Current phase:  12 / 11 (complete)
+Halted:         no
+Idle:           2h 0m
+Started:        2026-07-22T02:13:06.013Z
+
+Completed phases:
+  ✓  1   product-owner (2026-07-22 02:13)
+  ✓  2   business-analyst (2026-07-22 02:13)
+  ✓  3   solution-architect (2026-07-22 02:13)
+  ✓  4   software-engineer (2026-07-22 02:13)
+  ✓  5   tdd-red (2026-07-22 02:13)
+  ✓  6   tdd-green (2026-07-22 02:13)
+  ✓  7   qa-engineer (2026-07-22 02:13)
+
+In progress:
+  (complete)
+
+Remaining:
+  (none)
+
+Attempts (this story):  0 failures
+Gate events used:       7 / 40
+
+
+STDERR:
