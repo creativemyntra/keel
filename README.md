@@ -231,27 +231,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.16.2
+        uses: creativemyntra/keel@v3.16.3
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.16.2
+        uses: creativemyntra/keel@v3.16.3
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.16.2
+        uses: creativemyntra/keel@v3.16.3
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.16.2
+        uses: creativemyntra/keel@v3.16.3
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -372,8 +372,8 @@ jobs:
 ### Project Setup
 
 ```bash
-/keel:init --mode=new --stack=cakephp      # Initialize new project
-/keel:init --mode=existing --stack=laravel # Add Keel to existing project
+/keel:init --mode=new --stack=cakephp      # Initialize new CakePHP project
+/keel:init --mode=existing --stack=cakephp # Add Keel to existing CakePHP project
 ```
 
 ### Planning & Design
@@ -469,23 +469,15 @@ On start it prints `Dashboard: http://localhost:<port>`; stop it with Ctrl-C.
 
 ---
 
-## ðŸ› ï¸ Supported Tech Stacks
+## 🛠️ Supported Tech Stack
 
-Keel automatically configures conventions for:
+Keel v3.x supports **CakePHP 4.4 / PHP 8.1+** (production-proven).
 
-- **CakePHP 4.4** (PHP 8.1+)
-- **Laravel 10** (PHP 8.1+)
-- **Django 4.0+** (Python 3.9+)
-- **Ruby on Rails 7.0+**
+Multi-stack support (Laravel, Django, Rails, Node) is planned for a future release. Stack conventions live in `stack-profiles/cakephp.md` -- additional profiles unlock additional frameworks when added.
 
-**Add more stacks:**
 ```
 stack-profiles/
-â”œâ”€â”€ cakephp.md
-â”œâ”€â”€ laravel.md
-â”œâ”€â”€ django.md
-â”œâ”€â”€ rails.md
-â””â”€â”€ your-framework.md
+└── cakephp.md    ← production-ready
 ```
 
 ---
@@ -623,7 +615,7 @@ can. What it gives your auditors:
 Build features **10x faster** with complete automation.
 
 ```bash
-/keel:init --mode=new --stack=laravel
+/keel:init --mode=new --stack=cakephp
 /keel:req --story=FEAT-1 --feature="Your idea"
 # 2 hours later: Feature in production âœ…
 ```
@@ -642,7 +634,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.16.2
+- uses: creativemyntra/keel@v3.16.3
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -661,7 +653,7 @@ Validate ideas in hours, not weeks.
 Add new features to existing projects.
 
 ```bash
-/keel:init --mode=existing --stack=laravel
+/keel:init --mode=existing --stack=cakephp
 # Keel integrates with your existing codebase
 # New features follow best practices
 ```

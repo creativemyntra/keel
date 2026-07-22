@@ -114,7 +114,7 @@ if (detected && detected.file === 'composer.json') {
 
 // Non-PHP stack detection — Keel supports CakePHP only in this release.
 // Other frameworks (Node, Django, Rails, Laravel) are blocked; do not proceed.
-if (detected && detected.file === 'package.json') {
+if (detected && detected.file === 'package.json' && requestedStack !== 'cakephp') {
   result.blockers.push(
     `package.json detected. Keel v3.x supports CakePHP 4.4/PHP 8.1 only. ` +
     `Node/JS projects are not supported in this release. ` +

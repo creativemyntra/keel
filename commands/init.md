@@ -17,9 +17,9 @@ Initialize Keel in this repository. Arguments: $ARGUMENTS
      passed. Tell the human what was found and ask before proceeding — never
      silently scaffold over an existing project.
    - `version_warnings` non-empty → surface each one now, before scaffolding
-     or design work starts (a CakePHP-5 or Laravel project getting CakePHP-4.4
-     guidance is a real, silent correctness bug downstream in solution-architect
-     and software-engineer, not just a cosmetic mismatch).
+     or design work starts (a CakePHP-5 project getting CakePHP-4.4 guidance is
+     a real, silent correctness bug downstream in solution-architect and
+     software-engineer, not just a cosmetic mismatch).
    - Otherwise, `effective_mode` from the JSON is authoritative — trust it over
      a bare `--mode` flag when they conflict and the human hasn't overridden it.
 2. For new CakePHP projects (`effective_mode: new`, toolchain present): `composer create-project cakephp/app`, matching whatever CakePHP/PHP version the human confirmed (default 4.4/8.1 only if nothing else was specified), then configure PHPUnit and PHPStan (level 5+). Run `vendor/bin/phpunit --coverage-text` once to seed `.keel/watch/baseline.json` — the coverage watcher (`keel-watch.cjs`) tracks coverage drops from this baseline and cannot compute diffs without it. If no tests exist yet, defer this run until after the first test suite is written.

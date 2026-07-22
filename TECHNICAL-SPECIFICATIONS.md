@@ -1,7 +1,7 @@
-﻿# Keel AI-SDLC Framework v3.16.2 - Technical Specifications
+﻿# Keel AI-SDLC Framework v3.16.3 - Technical Specifications
 
 **Document Version:** 2.0  
-**Last Updated:** 2026-07-21  
+**Last Updated:** 2026-07-22  
 **Status:** PRODUCTION  
 **Author:** Amar Singh  
 **Audience:** Development Team, Future Maintainers, Contributors  
@@ -39,7 +39,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 1. Autonomous agent orchestration across 10 phases
 2. Test-driven development (TDD) automation
 3. Security scanning and compliance checking
-4. Multi-stack support (CakePHP, Laravel, Django, Rails)
+4. CakePHP 4.4/PHP 8.1 stack support (multi-stack planned for future release)
 5. Multiple deployment strategies (canary, blue-green, instant)
 6. Complete audit trail and state management
 
@@ -295,7 +295,7 @@ Record in Audit Trail
   "project": {
     "id": "string",
     "name": "string",
-    "stack": "cakephp|laravel|django|rails",
+    "stack": "cakephp",
     "path": "string"
   },
   "story": {
@@ -355,26 +355,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.16.2
+- Version: v3.16.3
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.16.2`
+- Installation: `npm install -g @amarsingh/keel@3.16.3`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.16.2`
+- Image: `amarsingh/keel:3.16.3`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.16.2`
+- Pull: `docker pull amarsingh/keel:3.16.3`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
 - Version: `v3.16.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.16.2`
+- Usage: `uses: creativemyntra/keel@v3.16.3`
 
 ---
 
@@ -402,7 +402,7 @@ Record in Audit Trail
 - **DAST:** N/A (CLI tool, no web endpoints)
 - **Secrets Scanning:** git-secrets pre-commit hook
 
-### Infrastructure Scripts (v3.16.2)
+### Infrastructure Scripts (v3.16.3)
 
 | Script | Purpose | Hook Stage(s) |
 |--------|---------|---------------|
@@ -474,6 +474,7 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
+| 3.16.3 | 2026-07-22 | PRODUCTION | CakePHP-only packaging; CJIS gate deadlock fix; package.json files array fix (config/ + stack-profiles/); /keel:preview command; explicit model tiers in orchestrator; G-10 guardrail hardening; memory resilience in keel-init; token optimization roadmap |
 | 3.16.2 | 2026-07-21 | PRODUCTION | Brainstorm template: restored Handoff Brief section (user story, rough ACs, data entities, integrations, design risks, complexity estimate); OSS cleanup (removed stale internal ticket refs from template and example) |
 | 3.16.1 | 2026-07-21 | PRODUCTION | Prescan hardening: snyk skips on dirs with no supported project manifest; composer-audit test PATH isolation for host-agnostic CI |
 | 3.16.0 | 2026-07-20 | PRODUCTION | CJIS Data Classification Gate: `scripts/keel-classify-gate.cjs` + `config/cjis-patterns.json`; `hooks/hooks.json` wired (UserPromptSubmit, PreToolUse, PostToolUse); `keel-state.cjs security-status` command; security-engineer, orchestrator, audit-agent, handshake-agent specs updated |
@@ -529,6 +530,6 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 ---
 
 **Document Version:** 2.0  
-**Last Updated:** 2026-07-21  
+**Last Updated:** 2026-07-22  
 **Status:** PRODUCTION  
 **Next Review:** 2026-10-20 (quarterly)

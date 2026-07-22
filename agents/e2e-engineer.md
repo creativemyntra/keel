@@ -72,10 +72,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health
 # or the project's equivalent health endpoint
 
 # If not running, start it:
-# PHP/CakePHP: php -S localhost:8080 -t webroot/
-# Node.js: npm run dev
-# Django: python manage.py runserver
-# Rails: rails server
+# CakePHP: php -S localhost:8080 -t webroot/
 ```
 
 Record the base URL in `APP_URL` for the tests. Never hard-code credentials —

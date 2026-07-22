@@ -38,10 +38,10 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ### Key Facts
 
 - **Language:** JavaScript (Node.js)
-- **Current Version:** 3.16.1
+- **Current Version:** 3.16.3
 - **Status:** Production-ready
-- **Release Date:** 2026-07-20
-- **Platforms Supported:** CakePHP, Laravel, Django, Rails
+- **Release Date:** 2026-07-22
+- **Platforms Supported:** CakePHP 4.4/PHP 8.1 (multi-stack in future release)
 - **Distribution Channels:** Claude Code, npm, Docker, GitHub Action
 
 ### Success Metrics
