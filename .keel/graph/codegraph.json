@@ -1,12 +1,16 @@
 {
-  "generated_at": "2026-07-14T05:20:21.690Z",
+  "generated_at": "2026-07-22T06:33:43.184Z",
   "nodes": {
     "App\\Controller\\HealthController": {
       "file": "src/Controller/HealthController.php",
       "kind": "class"
     },
-    "App\\Test\\TestCase\\Controller\\HealthControllerTest": {
-      "file": "tests/TestCase/Controller/HealthControllerTest.php",
+    "FixtureApp\\Controller\\HealthController": {
+      "file": "tests/fixture-app/src/Controller/HealthController.php",
+      "kind": "class"
+    },
+    "FixtureApp\\Tests\\Unit\\HealthControllerTest": {
+      "file": "tests/fixture-app/tests/Unit/HealthControllerTest.php",
       "kind": "class"
     }
   },
@@ -22,14 +26,19 @@
       "type": "references"
     },
     {
-      "from": "App\\Test\\TestCase\\Controller\\HealthControllerTest",
-      "to": "App\\Controller\\HealthController",
+      "from": "FixtureApp\\Tests\\Unit\\HealthControllerTest",
+      "to": "FixtureApp\\Controller\\HealthController",
       "type": "use"
     },
     {
-      "from": "App\\Test\\TestCase\\Controller\\HealthControllerTest",
-      "to": "Cake\\TestSuite\\TestCase",
+      "from": "FixtureApp\\Tests\\Unit\\HealthControllerTest",
+      "to": "PHPUnit\\Framework\\TestCase",
       "type": "extends"
+    },
+    {
+      "from": "FixtureApp\\Tests\\Unit\\HealthControllerTest",
+      "to": "FixtureApp\\Controller\\HealthController",
+      "type": "references"
     }
   ]
 }

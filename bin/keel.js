@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env node
 /**
- * Keel AI-SDLC Framework v3.16.2 -- CLI Dispatcher (ESM)
+ * Keel AI-SDLC Framework v3.16.3 -- CLI Dispatcher (ESM)
  * Author : Amar Singh (creativemyntra)
  * License: MIT
  */
@@ -9,7 +9,7 @@ import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const VERSION   = '3.16.2';
+const VERSION   = '3.16.3';
 const KEEL_DIR  = resolve(__dirname, '..');
 
 function parseArgs(argv) {
@@ -233,7 +233,7 @@ function showHelp() {
     '  --story=<ID>             Story ID (e.g. FEAT-1, HEALTH-1)',
     '  --feature="<text>"       Feature description (req phase)',
     '  --goal="<text>"          Business goal (brainstorm phase)',
-    '  --stack=cakephp          Supported stack for v3.0 (Laravel/Django/Rails in v3.1)',
+    '  --stack=cakephp          CakePHP 4.4/PHP 8.1 -- the only supported stack',
     '  --coverage-target=<N>    Min coverage % (default: 80)',
     '  --rollout=<type>         canary | blue-green | instant (default: canary)',
     '  --port=<N>               Dashboard port (default: 7772)',

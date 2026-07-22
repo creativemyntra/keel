@@ -1,6 +1,6 @@
 {
   "name": "@amarsingh/keel",
-  "version": "3.16.2",
+  "version": "3.16.3",
   "description": "Keel AI-SDLC Framework - Complete AI-powered software development lifecycle automation",
   "type": "module",
   "main": "bin/keel.js",
@@ -16,7 +16,8 @@
     "test:unit": "jest tests/unit --coverage",
     "test:integration": "jest tests/integration",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:e2e": "playwright test"
   },
   "keywords": [
     "ai-sdlc",
@@ -72,6 +73,8 @@
     "skills/",
     "hooks/",
     "scripts/",
+    "config/",
+    "stack-profiles/",
     ".mcp.json",
     "agent-output-schema.json",
     "setup-integrations.sh",

@@ -364,7 +364,7 @@ async function main() {
     const cwd = makeTmpDir('revert');
     const git = (a) => spawnSync('git', a, { cwd, encoding: 'utf8' });
     git(['init', '-q']);
-    git(['config', 'user.email', 'test@keel.local']);
+    git(['config', 'user.email', 'test@example.com']);
     git(['config', 'user.name', 'keel-test']);
     // stub "test runner": exits 0 iff app.txt contains FIXED
     fs.writeFileSync(path.join(cwd, 'check.cjs'),

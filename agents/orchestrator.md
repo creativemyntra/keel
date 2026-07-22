@@ -41,18 +41,18 @@ it exists for ceremonies (standup, retro, velocity) when the human asks.
 
 ## Pipeline Phases
 
-| Phase | Agent | Job | Gate requirement |
-|-------|-------|-----|-----------------|
-| 1 | `keel:product-owner` or `keel:business-analyst` | Requirements intake | ACs confirmed by human |
-| 2 | `keel:business-analyst` | Functional spec, data flows, edge cases | Spec complete |
-| 3 | `keel:ui-designer` | **UI/UX design** — screen flows, mockups, component states for every user-facing AC | Every user-facing AC has design spec + HTML mockup; no-UI ACs documented |
-| 4 | `keel:solution-architect` | Architecture, design, technical risk | Design approved (reads phase-3 UI design) |
-| 5 | `keel:software-engineer` | **Production code + unit tests** — coverage ≥ 80% on changed lines | Lint + static analysis clean; all unit tests pass; coverage gate met |
-| 6 | `keel:qa-engineer` | AC mapping, integration tests, error paths | All ACs mapped to passing tests |
-| 7 | `keel:e2e-engineer` | **Playwright E2E** browser tests for all user-facing flows | All E2E tests pass, screenshots captured |
-| 8 | `keel:security-engineer` | OWASP, threat model, dependency audit | 0 HIGH findings |
-| 9 | `keel:technical-writer` | Docs, changelog, runbook | Docs complete |
-| 10 | `keel:release-manager` | Go/no-go, deployment plan | Human approval |
+| Phase | Agent | Model | Job | Gate requirement |
+|-------|-------|-------|-----|-----------------|
+| 1 | `keel:product-owner` or `keel:business-analyst` | haiku (jira-import) / sonnet (full-pipeline) | Requirements intake | ACs confirmed by human |
+| 2 | `keel:business-analyst` | sonnet | Functional spec, data flows, edge cases | Spec complete |
+| 3 | `keel:ui-designer` | sonnet | **UI/UX design** — screen flows, mockups, component states for every user-facing AC | Every user-facing AC has design spec + HTML mockup; no-UI ACs documented |
+| 4 | `keel:solution-architect` | sonnet | Architecture, design, technical risk | Design approved (reads phase-3 UI design) |
+| 5 | `keel:software-engineer` | sonnet | **Production code + unit tests** — coverage ≥ 80% on changed lines | Lint + static analysis clean; all unit tests pass; coverage gate met |
+| 6 | `keel:qa-engineer` | sonnet | AC mapping, integration tests, error paths | All ACs mapped to passing tests |
+| 7 | `keel:e2e-engineer` | sonnet | **Playwright E2E** browser tests for all user-facing flows | All E2E tests pass, screenshots captured |
+| 8 | `keel:security-engineer` | sonnet | OWASP, threat model, dependency audit | 0 HIGH findings |
+| 9 | `keel:technical-writer` | sonnet | Docs, changelog, runbook | Docs complete |
+| 10 | `keel:release-manager` | sonnet | Go/no-go, deployment plan | Human approval |
 
 **Defect scope phases:** 1 → 5 → 6 → 8 (skips UI design, BA elaboration,
 architecture, E2E, docs, release ceremony).
@@ -155,6 +155,7 @@ node ~/.keel/bin/keel-state.cjs <command> <story-id> [args]
    the engine `gate` command directly (PASS auto-audits). From phase 2 onward, always
    spawn the handshake agent — it chooses a verification depth tier
    (TRIVIAL/NORMAL/FULL) per its spec; never instruct it to tier down.
+   Use haiku for TRIVIAL-tier handshakes when `model_tiering` is enabled; sonnet for NORMAL and FULL tiers.
    Do NOT spawn separate state or audit agents in the phase loop — the engine
    covers that clerk work for free.
 5. Before risky operations (large refactor, deploy), run `snapshot <story-id>`.
@@ -212,7 +213,7 @@ economy:
 | Deterministic signal | Decision |
 |---|---|
 | Story has a Jira key + type Bug | defect lane (`init --scope defect`) |
-| Spawn is transcription-grade (jira intake, TRIVIAL gate) + `model_tiering` | fast model (haiku) if your Task tool supports per-invocation model |
+| Spawn is transcription-grade (jira intake, TRIVIAL gate) + `model_tiering` | haiku (`claude-haiku-4-5-20251001`); all other phase agents and NORMAL/FULL handshake gates use sonnet |
 | `static_first_security` | run `node ~/.keel/bin/keel-state.cjs prescan <story>` via Bash BEFORE phase 10; pass `prescan.json` path to the security agent — it must NOT re-run scanners |
 | Prescan CLEAN + diff tier TRIVIAL + `security_skip_on_clean: true` | no security spawn: record the decision + prescan inventory in the gate notes yourself (`gate --phase 10 --verdict PASS --notes "security satisfied by clean prescan (owner opt-in economy.security_skip_on_clean); diff TRIVIAL"`). Prescan DIRTY or any code-behavior diff → always spawn the agent |
 | CodeGraph exists (`.keel/graph/codegraph.json`) | context slice: instruct architect/engineer to load ONLY the impact set (`build-codegraph.cjs --impact`), capped at `context_budget_files`; grep pre-pass fallback when the graph is missing (non-PHP stacks) |

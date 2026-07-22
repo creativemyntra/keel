@@ -1,4 +1,4 @@
-﻿# Keel AI-SDLC Framework v3.16.2
+﻿# Keel AI-SDLC Framework v3.16.3
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# â†’ keel v3.16.2 âœ…
+# â†’ keel v3.16.3 âœ…
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -92,11 +92,22 @@ snapshots) is done by a zero-dependency **state engine**
 âœ… **Coverage Gate** â€” â‰¥80% enforced before the QA phase  
 âœ… **No Patch Development** â€” defect fixes require an RCA + revert-checked regression test; symptom patches fail the gate  
 âœ… **Security Phase** â€” OWASP Top 10 review + layered SAST/SCA: PHPStan & composer audit always, SonarQube & Snyk when configured  
-âœ… **Multi-Stack Support** â€” CakePHP 4.4 today; Laravel, Django, Rails on the roadmap  
+âœ… **Stack: CakePHP 4.4/PHP 8.1** â€” production-proven; multi-stack support in a future release  
 âœ… **Optional Integrations** â€” Jira (bundled Atlassian MCP), GitHub, Slack, Playwright  
 âœ… **Staged Deployment** â€” canary / blue-green rollout via the release gate  
 
 ---
+
+## ðŸ†• What's New in v3.16.3
+
+- **CakePHP-only packaging** — removed all Node/Django/Rails/Laravel references; `keel-detect-stack` now blocks non-PHP manifests rather than warning. `package.json` `files` array now includes `config/` and `stack-profiles/` so the CJIS gate config and stack profile ship with the npm package.
+- **CJIS gate deadlock fix** — rewrote `config/cjis-patterns.json` to eliminate a description string that matched the EMAIL regex, causing the gate to block reads/writes of its own config file. Added 3 new allowlist entries (RFC 2606 docs domains, `.local` TLD, npm glob-package notice).
+- **Explicit model tiers** — orchestrator pipeline phases table now has a `Model` column; haiku for TRIVIAL-tier handshakes + jira-import, sonnet for all other phase agents and NORMAL/FULL gates.
+- **G-10 guardrail hardening** — PostToolUse blocking semantics (alerting/logging only, not prevention) and screenshot scanning limitation documented in `.keel/GUARDRAILS.md`.
+- **Memory resilience** — `keel-init.cjs` re-seeds `.keel/memory/lessons.md` and `conventions.md` if absent at session start (prevents ENOENT crash in phase agents).
+- **`/keel:preview` command** — new dry-run command shows stack detection, story state, economy settings, pipeline map with model tiers, CJIS gate status, and CodeGraph freshness before committing to a pipeline run.
+- **Token optimization roadmap** — `docs/plans/token-devtime-optimization-roadmap.md` filed: 15 items across three tiers (token reduction, dev-time reduction, infrastructure).
+- **`agent-output-schema.json`** — optional `tokens_used` field added for per-story cost tracking dashboard (T1-1).
 
 ## ðŸ†• What's New in v3.16.2
 
@@ -181,7 +192,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# â†’ keel v3.16.2 âœ…
+# â†’ keel v3.16.3 âœ…
 ```
 
 ### Method 2: npm Global Package (â³ not yet published â€” coming soon)

@@ -22,7 +22,7 @@ Initialize Keel in this repository. Arguments: $ARGUMENTS
      and software-engineer, not just a cosmetic mismatch).
    - Otherwise, `effective_mode` from the JSON is authoritative — trust it over
      a bare `--mode` flag when they conflict and the human hasn't overridden it.
-2. For new CakePHP projects (`effective_mode: new`, toolchain present): `composer create-project cakephp/app`, matching whatever CakePHP/PHP version the human confirmed (default 4.4/8.1 only if nothing else was specified), then configure PHPUnit and PHPStan (level 5+).
+2. For new CakePHP projects (`effective_mode: new`, toolchain present): `composer create-project cakephp/app`, matching whatever CakePHP/PHP version the human confirmed (default 4.4/8.1 only if nothing else was specified), then configure PHPUnit and PHPStan (level 5+). Run `vendor/bin/phpunit --coverage-text` once to seed `.keel/watch/baseline.json` — the coverage watcher (`keel-watch.cjs`) tracks coverage drops from this baseline and cannot compute diffs without it. If no tests exist yet, defer this run until after the first test suite is written.
 3. Create the Keel directories (committed to git) if missing:
    - `.keel/state/` — per-story pipeline state
    - `.keel/memory/decisions/` — ADRs (cross-story memory)

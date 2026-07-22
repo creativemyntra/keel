@@ -2,6 +2,26 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.16.3] - 2026-07-22 - CAKEPHP-ONLY PACKAGING; CJIS GATE DEADLOCK FIX; SHIPPABLE PLUGIN
+
+### Fixed
+- **`config/cjis-patterns.json`** -- rewrote to fix a gate self-scan deadlock: a description string with an at-sign (word@vN.N) matched the EMAIL regex, causing the gate to block reads/writes of its own config file. Added 3 new allowlist entries (RFC 2606 docs domains, `.local` TLD, npm glob-package notice). 8 allowlist entries total.
+- **`scripts/keel-detect-stack.cjs`** -- non-PHP stacks (Node/package.json, Django/manage.py, Rails/Gemfile) now produce `blockers` (hard stop) instead of `version_warnings`. Removed Laravel from the greenfield toolchain check. Updated `--stack` usage comment.
+- **`package.json` `files` array** -- added `"config/"` and `"stack-profiles/"`, which were missing; without them the CJIS gate config and stack profile were excluded from `npm publish`.
+
+### Changed
+- **`agents/orchestrator.md`** -- pipeline phases table gains explicit `Model` column: haiku for jira-import + TRIVIAL-tier handshake gates; sonnet for all other phases and NORMAL/FULL gates.
+- **`commands/keel.md`** -- stack support note updated to CakePHP-only.
+- **`commands/preview.md`** -- NEW: `/keel:preview` dry-run command showing stack detection, story state, economy settings, pipeline map with model tiers, CJIS gate status, and CodeGraph freshness.
+- **`.claude-plugin/marketplace.json`** -- removed "Laravel/Django/Rails on the roadmap" from description.
+- **`action.yml`** -- stack input description updated to CakePHP-only.
+- **`bin/keel.js`** -- removed "(Laravel/Django/Rails in v3.1)" from `--stack` help text.
+- **`scripts/keel-init.cjs`** -- re-seeds `.keel/memory/lessons.md` and `conventions.md` if absent at session start (G-7 resilience).
+- **`.keel/GUARDRAILS.md` G-10** -- PostToolUse blocking semantics and screenshot scanning limitation documented.
+- **`agent-output-schema.json`** -- optional `tokens_used` property added for cost-tracking dashboard (T1-1).
+- **`docs/plans/token-devtime-optimization-roadmap.md`** -- NEW: 15-item optimization roadmap across Tier 1 (token reduction), Tier 2 (dev-time reduction), and Tier 3 (infrastructure).
+
+---
 ## [3.16.2] - 2026-07-21 - BRAINSTORM TEMPLATE: RESTORE HANDOFF BRIEF; OSS CLEANUP
 
 ### Fixed
