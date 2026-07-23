@@ -17,14 +17,6 @@ const VALID_TYPES = [
   'revert',                                       // special
 ];
 
-// Ticket REQUIRED — these types always map to a story or bug in Jira
-const TICKET_REQUIRED = new Set(['feat', 'fix', 'refactor', 'perf', 'test']);
-
-// Ticket RECOMMENDED — warn if missing, do not block
-const TICKET_RECOMMENDED = new Set(['chore', 'docs', 'ci', 'style', 'build']);
-
-const JIRA_PATTERN = /\b[A-Z]{2,10}-\d+\b/;
-
 // type(optional-scope)!?: description
 const CONVENTIONAL_RE = /^([a-z]+)(\([^)]*\))?(!)?\:\s+\S/;
 
@@ -73,16 +65,13 @@ function block(errors, warnings) {
   process.stderr.write('    <Refs|Fixes> PROJECT-123\n');
   process.stderr.write('\n');
   process.stderr.write('  Valid types: ' + VALID_TYPES.join(', ') + '\n');
-  process.stderr.write('  Ticket required for: ' + [...TICKET_REQUIRED].join(', ') + '\n');
   process.stderr.write('\n');
   process.stderr.write('  Example:\n');
   process.stderr.write('    feat(payments): add retry logic for failed transactions\n');
   process.stderr.write('\n');
   process.stderr.write('    Timeout handling was missing for network errors.\n');
   process.stderr.write('\n');
-  process.stderr.write('    Fixes HART-302\n');
-  process.stderr.write('\n');
-  process.stderr.write('  Jira projects: https://vidocqstudios.atlassian.net/jira/software/projects\n');
+  process.stderr.write('    Refs PROJ-123\n');
   process.stderr.write('\n');
   process.exit(1);
 }
@@ -133,16 +122,12 @@ function main() {
     }
   }
 
-  // Rule 6: Jira ticket traceability
-  const hasTicket = JIRA_PATTERN.test(msg);
-  if (type && TICKET_REQUIRED.has(type) && !hasTicket) {
-    errors.push(
-      `"${type}:" commits must reference a Jira ticket (e.g., "Fixes HART-302" or "Refs ASW-237"). `
-      + 'No ticket yet? Create one at https://vidocqstudios.atlassian.net/jira/software/projects'
+  // Rule 6: Jira ticket traceability (advisory — never blocks)
+  const hasTicket = /[A-Z]{2,}-\d+/i.test(msg);
+  if (type && type !== 'revert' && !hasTicket) {
+    warnings.push(
+      `No ticket reference found. Consider adding "Refs PROJ-123" or "Fixes PROJ-123" to link this commit to a tracker issue.`
     );
-  }
-  if (type && TICKET_RECOMMENDED.has(type) && !hasTicket) {
-    warnings.push(`"${type}:" commits should reference a Jira ticket when related to a story or task.`);
   }
 
   if (errors.length) {

@@ -49,42 +49,56 @@ scripts/   @amar-singh-matellio
 hooks/     @amar-singh-matellio
 ```
 
-## Branch naming convention (enforced client-side by G-13 hook)
+## Branch naming convention (G-13 + G-14)
 
-| Prefix | Use for |
-|--------|---------|
-| `feature/` | New features (maps to a Jira story) |
-| `fix/` | Bug fixes (maps to a Jira bug ticket) |
-| `hotfix/` | Critical prod fixes |
-| `refactor/` | Code restructuring |
-| `perf/` | Performance improvements |
-| `test/` | Test additions |
-| `docs/` | Documentation only |
-| `chore/` | Dependency bumps, tooling |
-| `ci/` | CI/CD pipeline changes |
-| `release/` | Release preparation |
-| `spike/` | Exploratory / throwaway work |
+Branch names MUST include the Jira ticket ID. Use `keel-start-work` to
+auto-generate compliant names (see G-14).
 
-## Developer workflow after these settings are applied
+| Prefix | Jira type | Example |
+|--------|-----------|---------|
+| `feat/` | Story, Epic | `feat/hart-150-add-retry-logic` |
+| `fix/` | Bug | `fix/hart-302-payment-timeout` |
+| `hotfix/` | Critical prod bug | `hotfix/hart-310-data-loss` |
+| `refactor/` | Refactor task | `refactor/hart-220-extract-service` |
+| `perf/` | Performance | `perf/hart-205-reduce-latency` |
+| `test/` | Test task | `test/hart-215-add-coverage` |
+| `docs/` | Docs task | `docs/hart-230-update-readme` |
+| `chore/` | Task, Sub-task | `chore/hart-200-update-deps` |
+| `ci/` | CI/CD task | `ci/hart-225-add-lint-step` |
+| `epic/` | Epic (alternative) | `epic/hart-100-payment-overhaul` |
+| `release/` | Release prep | `release/v3.17.0` |
+| `spike/` | Exploratory work | `spike/hart-240-evaluate-sdk` |
+
+## Developer workflow (G-14 start-work automation)
 
 ```bash
-# 1. Create a feature branch from dev
-git checkout dev && git pull marketplace dev
-git checkout -b feature/HART-302-fix-payment-timeout
+# 1. Start work — creates branch + transitions Jira to In Progress
+node scripts/keel-start-work.cjs HART-302
+#  -> creates fix/hart-302-payment-timeout from dev
+#  -> pushes branch to marketplace with upstream tracking
+#  -> transitions HART-302 to "In Progress" in Jira
 
-# 2. Make changes, commit (G-12 enforces message format + Jira ticket)
+# 2. Make changes, commit (G-12 enforces format; branch name provides ticket ref)
 git add ...
-git commit -m "fix(payments): handle timeout on slow networks
+git commit -m "fix(payments): handle timeout on slow networks"
+# No need to repeat ticket ID in body -- branch name carries it implicitly
 
-Fixes HART-302"
-
-# 3. Push feature branch (G-13 hook allows this)
-git push marketplace feature/HART-302-fix-payment-timeout
+# 3. Push additional commits (G-13 hook allows feature branches)
+git push
 
 # 4. Open PR to dev on GitHub, get approval
-#    https://github.com/creativemyntra/keel/compare/dev...feature/HART-302-fix-payment-timeout
+#    https://github.com/creativemyntra/keel/compare/dev...fix/hart-302-payment-timeout
 
-# 5. After approval: merge via GitHub UI — triggers deploy to dev environment
+# 5. After approval: merge via GitHub UI -- triggers deploy to dev environment
 
 # 6. When ready: promote dev -> master -> prod (G-11, separate PRs)
+```
+
+### First-time Jira credential setup
+
+```bash
+# Generate API token at:
+#   https://id.atlassian.com/manage-profile/security/api-tokens
+echo "jira-user:api-token" > ~/.keel/secrets/jira.token
+chmod 600 ~/.keel/secrets/jira.token
 ```

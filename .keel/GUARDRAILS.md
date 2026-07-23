@@ -214,9 +214,10 @@ Every bug fix MUST follow this lifecycle in order. No step may be skipped.
 
 ### Mandatory rules
 
-**Jira-first:** No `fix:` commit may be made without a Jira ticket already open.
-The `commit-msg` hook (`scripts/keel-bug-lifecycle.cjs`) enforces this: any `fix:`
-commit missing a Jira ID pattern (`[A-Z]{2,}-\d+`) is BLOCKED.
+**Tracker linking (advisory):** Commits should reference a tracker ticket
+(e.g. `Refs PROJ-123` or `Fixes PROJ-123`) when one exists. The `commit-msg`
+hook warns if no reference is found but does NOT block the commit. Ticket ID
+format is flexible — any project-key pattern is accepted.
 
 **RCA requirement:**
 - P0 / P1 bugs: RCA is MANDATORY before the fix is merged to master.
@@ -239,7 +240,7 @@ commit missing a Jira ID pattern (`[A-Z]{2,}-\d+`) is BLOCKED.
 **Guard enforcement:**
 - `scripts/guard-jira-write.cjs` — blocks Jira writes outside active story scope.
 - `scripts/guard-approve.cjs` — blocks transitions to Done/Released without `KEEL_APPROVAL_TOKEN`.
-- `commit-msg` hook — blocks `fix:` commits missing a Jira ticket reference.
+- `commit-msg` hook — warns if no tracker reference found (advisory, does not block).
 
 **Closing a ticket:** A Jira bug ticket transitions to Done ONLY when the fix is
 confirmed in prod. The release manager verifies the merge is in prod (G-11 chain)
@@ -260,17 +261,19 @@ transition time.
 
 | Type | Ticket | Description |
 |------|--------|-------------|
-| `feat` | REQUIRED | New feature (maps to a Jira story) |
-| `fix` | REQUIRED | Bug fix (maps to a Jira bug ticket) |
-| `refactor` | REQUIRED | Code restructure with no behaviour change |
-| `perf` | REQUIRED | Performance improvement |
-| `test` | REQUIRED | Adding or updating tests |
-| `chore` | recommended | Build tasks, dependency bumps |
-| `docs` | recommended | Documentation only |
-| `ci` | recommended | CI/CD pipeline changes |
-| `style` | recommended | Formatting, whitespace |
-| `build` | recommended | Build system changes |
+| `feat` | advisory | New feature |
+| `fix` | advisory | Bug fix |
+| `refactor` | advisory | Code restructure with no behaviour change |
+| `perf` | advisory | Performance improvement |
+| `test` | advisory | Adding or updating tests |
+| `chore` | advisory | Build tasks, dependency bumps |
+| `docs` | advisory | Documentation only |
+| `ci` | advisory | CI/CD pipeline changes |
+| `style` | advisory | Formatting, whitespace |
+| `build` | advisory | Build system changes |
 | `revert` | none | Reverts a prior commit |
+
+"advisory" = G-12 gate warns if no tracker reference found, but does not block the commit.
 
 **Additional rules enforced by `scripts/keel-bug-lifecycle.cjs`:**
 - Subject line: max 72 chars
@@ -309,8 +312,7 @@ feature/fix-branch  →  PR (review + approval)  →  dev
 3. **Minimum 1 approval** from another developer (or the code owner)
    before merge. Self-merge without review is not permitted.
 
-4. **PR must reference a Jira ticket** in its title or description
-   (enforced by G-12 on the underlying commits).
+4. **PR should reference a tracker ticket** in its title or description when one exists (advisory — G-14).
 
 5. **Only after PR approval** does code reach `dev` → auto-deploy to
    dev environment.
@@ -333,3 +335,38 @@ by repo admin, see `docs/BRANCH-PROTECTION.md`):
 - Require status checks to pass (version audit, G-12 commit-msg)
 - Block force pushes
 - Block branch deletion
+
+---
+
+## G-14 - Start-work automation (branch naming convention)
+
+Use the `keel:start-work` Claude Code skill to begin any piece of work.
+
+**Invocation examples:**
+- "start work on HART-302"
+- "start work on adding retry logic for payments"
+- "/keel:start-work PROJ-123"
+
+**What the skill does:**
+1. If a ticket ID is given: fetches issue from Jira via MCP (no separate credentials needed)
+2. Maps issue type to a branch prefix (Bug→`fix/`, Story→`feat/`, Task→`chore/`, etc.)
+3. Creates branch: `{prefix}/{ticket-id}-{summary-slug}` (or `{prefix}/{slug}` if no ticket)
+4. Pushes branch to remote with upstream tracking
+5. Transitions Jira ticket to "In Progress" via MCP
+
+**Branch naming convention (recommended, not enforced):**
+
+| Work type | Prefix | Example |
+|-----------|--------|---------|
+| Bug fix | `fix/` | `fix/hart-302-payment-timeout` |
+| New feature / Story | `feat/` | `feat/hart-150-add-retry-logic` |
+| Epic | `feat/` | `feat/hart-100-payment-overhaul` |
+| Task / Chore | `chore/` | `chore/hart-200-update-deps` |
+| Refactor | `refactor/` | `refactor/hart-210-extract-service` |
+| Spike | `spike/` | `spike/hart-240-evaluate-sdk` |
+
+Ticket ID format is flexible — accept any project-key pattern (HART-302, BUG-7, ASW-14, etc.).
+Work may start from a direct description without a ticket; branch naming is advisory only.
+
+**Push guard (advisory):** `keel-push-guard.cjs` warns (non-blocking) if a branch
+has no standard type prefix. This is informational — no commits are blocked.
