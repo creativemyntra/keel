@@ -17,8 +17,6 @@ const VALID_TYPES = [
   'revert',                                       // special
 ];
 
-const JIRA_PATTERN = /\b[A-Z]{2,10}-\d+\b/;
-
 // type(optional-scope)!?: description
 const CONVENTIONAL_RE = /^([a-z]+)(\([^)]*\))?(!)?\:\s+\S/;
 
