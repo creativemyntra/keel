@@ -130,9 +130,21 @@ function phaseFileHash(storyId, phase) {
     .update(fs.readFileSync(path.join(stateDir(storyId), file))).digest('hex');
 }
 
+function sha256line(text) {
+  return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
+}
+
 function appendAudit(storyId, entry) {
   entry.ts = entry.ts || nowIso();
-  fs.appendFileSync(auditPath(storyId), JSON.stringify(entry) + '\n');
+  const p = auditPath(storyId);
+  let lastLine = 'genesis';
+  if (fs.existsSync(p)) {
+    const content = fs.readFileSync(p, 'utf8');
+    const lines = content.trimEnd().split('\n');
+    if (lines.length && lines[lines.length - 1].trim()) lastLine = lines[lines.length - 1];
+  }
+  entry.prev_hash = sha256line(lastLine);
+  fs.appendFileSync(p, JSON.stringify(entry) + '\n');
 }
 
 function flag(args, name) {
@@ -219,6 +231,10 @@ function cmdInit(storyId, args) {
   const dir = stateDir(storyId);
   const scope = flag(args, '--scope') || 'feature';
   if (!SCOPES[scope]) die(64, `unknown --scope "${scope}" (feature|defect)`);
+  const positionalTitle = args.find((a) => !a.startsWith('--'));
+  if (positionalTitle && !flag(args, '--title')) {
+    console.warn(`WARNING: positional title "${positionalTitle}" ignored — use --title "${positionalTitle}"`);
+  }
   fs.mkdirSync(path.join(dir, 'snapshots'), { recursive: true });
   const manifest = {
     story_id: storyId,
@@ -693,15 +709,27 @@ function cmdVerify(storyId) {
   if (fs.existsSync(auditPath(storyId))) {
     const lines = fs.readFileSync(auditPath(storyId), 'utf8').trim().split('\n');
     let prev = '';
+    let prevLineText = 'genesis';
+    let warnedLegacy = false;
     lines.forEach((line, i) => {
       let e;
-      try { e = JSON.parse(line); } catch { problems.push(`line ${i + 1}: invalid JSON`); return; }
+      try { e = JSON.parse(line); } catch { problems.push(`line ${i + 1}: invalid JSON`); prevLineText = line; return; }
       if (!e.ts) problems.push(`line ${i + 1}: missing ts`);
       else if (e.ts < prev) problems.push(`line ${i + 1}: timestamp ${e.ts} earlier than previous ${prev}`);
       else prev = e.ts;
       if (e.action === 'phase_completed' && e.phase > manifest.current_phase) {
         problems.push(`line ${i + 1}: phase ${e.phase} completed but manifest current_phase is ${manifest.current_phase}`);
       }
+      if (e.prev_hash !== undefined) {
+        const expected = sha256line(prevLineText);
+        if (e.prev_hash !== expected) {
+          problems.push(`line ${i + 1}: hash chain broken — expected ${expected.slice(0, 12)}… got ${String(e.prev_hash).slice(0, 12)}…`);
+        }
+      } else if (!warnedLegacy) {
+        console.warn('WARN: audit log predates integrity hashing — chain not verifiable before this entry');
+        warnedLegacy = true;
+      }
+      prevLineText = line;
     });
   } else problems.push('audit-log.jsonl missing');
   if (problems.length) {
@@ -770,14 +798,22 @@ function cmdRevertCheck(storyId, args) {
     die(1, 'FAIL: revert-check needs the fix as UNSTAGED working-tree changes (and the regression test committed or staged via `git add`). A committed fix cannot be stash-reverted — verify manually (checkout the parent commit, run the test, confirm it fails).');
   }
 
-  sh('git stash push --include-untracked --keep-index -m keel-revert-check');
+  let stashCreated = false;
+  try {
+    sh('git stash push --include-untracked --keep-index -m keel-revert-check');
+    stashCreated = true;
+  } catch (e) {
+    die(1, `FAIL: git stash push failed (${e.message.split('\n')[0]}). On Windows, close any processes holding .keel/state/ open and retry. No stash was created.`);
+  }
   let failsWithoutFix;
   try {
     failsWithoutFix = !runTest();
   } finally {
-    try { sh('git stash pop'); }
-    catch (e) {
-      die(1, `FAIL: git stash pop failed (${e.message.split('\n')[0]}) — the fix is in the stash named "keel-revert-check". Recover it manually with: git stash pop`);
+    if (stashCreated) {
+      try { sh('git stash pop'); }
+      catch (e) {
+        console.error(`WARNING: git stash pop failed — recover manually: git stash pop (${e.message.split('\n')[0]})`);
+      }
     }
   }
   const passesWithFix = runTest();
@@ -850,7 +886,15 @@ function cmdPrescan(storyId) {
     JSON.stringify({ ts: nowIso(), scanners }, null, 2) + '\n');
   scanners.forEach((s) => console.log(`${s.name}: ${s.status}${s.exit != null ? ` (exit ${s.exit})` : ''}${s.reason ? ` — ${s.reason}` : ''}`));
   appendAudit(storyId, { agent: 'engine', action: 'prescan', notes: scanners.map((s) => `${s.name}=${s.status}${s.exit != null ? ':' + s.exit : ''}`).join(' ') });
-  const dirty = scanners.filter((s) => s.status === 'ran' && s.exit !== 0);
+  const dirty = scanners.filter((s) => {
+    if (s.status !== 'ran') return false;
+    if (s.name === 'snyk') return s.exit === 1; // snyk: exit 1 = vulns found (DIRTY); exit 2 = auth/network error (not a finding)
+    return s.exit !== 0;
+  });
+  const snykFailed = scanners.filter((s) => s.name === 'snyk' && s.status === 'ran' && s.exit === 2);
+  if (snykFailed.length) {
+    console.warn('PRESCAN WARNING: snyk returned exit 2 (auth/network error) — snyk scan incomplete, not counted as dirty. Check SNYK_TOKEN.');
+  }
   if (dirty.length) {
     die(1, `PRESCAN DIRTY: ${dirty.map((d) => d.name).join(', ')} reported findings — review .keel/state/${storyId}/prescan.json`);
   }

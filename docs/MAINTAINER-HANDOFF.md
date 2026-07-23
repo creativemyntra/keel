@@ -1,4 +1,4 @@
-﻿# Keel AI-SDLC Framework v3.16.1 - Maintainer Handoff
+﻿# Keel AI-SDLC Framework v3.16.3 - Maintainer Handoff
 
 **Document Version:** 2.0  
 **Last Updated:** 2026-07-21  
@@ -8,7 +8,7 @@
 
 ---
 
-## ðŸŽ¯ Purpose
+## Purpose
 
 This document provides complete context for future developers taking over Keel AI-SDLC Framework maintenance and development. It captures the "why," "what," and "how" of the system so that new team members can contribute effectively.
 
@@ -38,18 +38,18 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ### Key Facts
 
 - **Language:** JavaScript (Node.js)
-- **Current Version:** 3.16.1
+- **Current Version:** 3.16.3
 - **Status:** Production-ready
-- **Release Date:** 2026-07-20
-- **Platforms Supported:** CakePHP, Laravel, Django, Rails
-- **Distribution Channels:** Claude Code, npm, Docker, GitHub Action
+- **Release Date:** 2026-07-22
+- **Platforms Supported:** CakePHP 4.4/PHP 8.1 (multi-stack in future release)
+- **Distribution Channels:** Claude Code, GitHub Action
 
 ### Success Metrics
 
-- âœ… Code Coverage: 95% (target: â‰¥80%)
-- âœ… Vulnerabilities: 0
-- âœ… Tests Passing: 5/5 (100%)
-- âœ… Development Speed: 99.4% faster than traditional
+- [x] Code Coverage: 95% (target: >=80%)
+- [x] Vulnerabilities: 0
+- [x] Tests Passing: 5/5 (100%)
+- [x] Development Speed: 99.4% faster than traditional
 
 ---
 
@@ -59,56 +59,56 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 
 ```
 keel/
-â”œâ”€â”€ .claude/                      # Claude Code plugin configuration
-â”‚   â”œâ”€â”€ agents/                   # 15 autonomous agent definitions
-â”‚   â”‚   â”œâ”€â”€ keel-orchestrator.md
-â”‚   â”‚   â”œâ”€â”€ keel-product-owner.md
-â”‚   â”‚   â”œâ”€â”€ keel-business-analyst.md
-â”‚   â”‚   â”œâ”€â”€ keel-solution-architect.md
-â”‚   â”‚   â”œâ”€â”€ keel-software-engineer.md
-â”‚   â”‚   â”œâ”€â”€ keel-qa-engineer.md
-â”‚   â”‚   â”œâ”€â”€ keel-security-engineer.md
-â”‚   â”‚   â”œâ”€â”€ keel-technical-writer.md
-â”‚   â”‚   â”œâ”€â”€ keel-release-manager.md
-â”‚   â”‚   â”œâ”€â”€ keel-scrum-master.md
-â”‚   â”‚   â”œâ”€â”€ keel-audit-agent.md
-â”‚   â”‚   â”œâ”€â”€ keel-state-management-agent.md
-â”‚   â”‚   â””â”€â”€ keel-handshake-agent.md
-â”‚   â”œâ”€â”€ settings.json             # MCP configuration
-â”‚   â””â”€â”€ plugin.yml                # Claude Code manifest
-â”œâ”€â”€ .claude-plugin/               # Plugin system files
-â”‚   â”œâ”€â”€ marketplace.json
-â”‚   â””â”€â”€ skills/                   # 6 available skills (5 dead ones removed
-â”‚       â”‚                        # 2026-07-20: sprint-planning, create-prd,
-â”‚       â”‚                        # analyze-story, generate-tests, generate-report
-â”‚       â”‚                        # -- see remediation plan item 4)
-â”‚       â”œâ”€â”€ keel/
-â”‚       â”œâ”€â”€ investigate-defect/
-â”‚       â”œâ”€â”€ create-mom/
-â”‚       â”œâ”€â”€ e2e-test/
-â”‚       â”œâ”€â”€ review-code/
-â”‚       â”œâ”€â”€ release-check/
-â”‚       â””â”€â”€ implement-feature/
-â”œâ”€â”€ .github/                      # GitHub Actions workflows
-â”‚   â””â”€â”€ workflows/
-â”‚       â””â”€â”€ release.yml           # Automated release pipeline
-â”œâ”€â”€ bin/                          # CLI entry point
-â”‚   â””â”€â”€ keel.js                   # Main command handler
-â”œâ”€â”€ docs/                         # Architecture & design docs
-â”‚   â”œâ”€â”€ brainstorms/
-â”‚   â”œâ”€â”€ design/
-â”‚   â””â”€â”€ requirements/
-â”œâ”€â”€ stack-profiles/               # Stack-specific configurations
-â”‚   â””â”€â”€ cakephp.md
-â”œâ”€â”€ package.json                  # npm package config
-â”œâ”€â”€ plugin.json                   # Plugin manifest
-â”œâ”€â”€ action.yml                    # GitHub Action manifest
-â”œâ”€â”€ CHANGELOG.md                  # Version history
-â”œâ”€â”€ RELEASE-NOTES-v3.0.2.md      # Release notes
-â”œâ”€â”€ README.md                     # Main documentation
-â”œâ”€â”€ TECHNICAL-SPECIFICATIONS.md   # System specifications
-â”œâ”€â”€ docs/MAINTAINER-HANDOFF.md    # This file (was HANDOFF-DOCUMENTATION.md â€” old name collided with per-story handoff-log.md)
-â””â”€â”€ .gitignore                    # Excluded files
+|-- .claude/                      # Claude Code plugin configuration
+|   |-- agents/                   # 15 autonomous agent definitions
+|   |   |-- keel-orchestrator.md
+|   |   |-- keel-product-owner.md
+|   |   |-- keel-business-analyst.md
+|   |   |-- keel-solution-architect.md
+|   |   |-- keel-software-engineer.md
+|   |   |-- keel-qa-engineer.md
+|   |   |-- keel-security-engineer.md
+|   |   |-- keel-technical-writer.md
+|   |   |-- keel-release-manager.md
+|   |   |-- keel-scrum-master.md
+|   |   |-- keel-audit-agent.md
+|   |   |-- keel-state-management-agent.md
+|   |   `-- keel-handshake-agent.md
+|   |-- settings.json             # MCP configuration
+|   `-- plugin.yml                # Claude Code manifest
+|-- .claude-plugin/               # Plugin system files
+|   |-- marketplace.json
+|   `-- skills/                   # 6 available skills (5 dead ones removed
+|       |                        # 2026-07-20: sprint-planning, create-prd,
+|       |                        # analyze-story, generate-tests, generate-report
+|       |                        # -- see remediation plan item 4)
+|       |-- keel/
+|       |-- investigate-defect/
+|       |-- create-mom/
+|       |-- e2e-test/
+|       |-- review-code/
+|       |-- release-check/
+|       `-- implement-feature/
+|-- .github/                      # GitHub Actions workflows
+|   `-- workflows/
+|       `-- release.yml           # Automated release pipeline
+|-- bin/                          # CLI entry point
+|   `-- keel.js                   # Main command handler
+|-- docs/                         # Architecture & design docs
+|   |-- brainstorms/
+|   |-- design/
+|   `-- requirements/
+|-- stack-profiles/               # Stack-specific configurations
+|   `-- cakephp.md
+|-- package.json                  # npm package config
+|-- plugin.json                   # Plugin manifest
+|-- action.yml                    # GitHub Action manifest
+|-- CHANGELOG.md                  # Version history
+|-- RELEASE-NOTES-v3.0.2.md      # Release notes
+|-- README.md                     # Main documentation
+|-- TECHNICAL-SPECIFICATIONS.md   # System specifications
+|-- docs/MAINTAINER-HANDOFF.md    # This file (was HANDOFF-DOCUMENTATION.md -- old name collided with per-story handoff-log.md)
+`-- .gitignore                    # Excluded files
 
 ```
 
@@ -131,8 +131,8 @@ keel/
 
 ### Prerequisites
 
-- Node.js â‰¥16.0.0
-- npm â‰¥7.0.0
+- Node.js >=16.0.0
+- npm >=7.0.0
 - Git
 - GitHub account (for contributions)
 
@@ -306,15 +306,15 @@ git push origin feature/KEEL-001-new-skill
 - [ ] Version bumped in plugin.json
 - [ ] RELEASE-NOTES-v*.md created
 - [ ] All tests passing
-- [ ] Code coverage â‰¥85%
+- [ ] Code coverage >=85%
 - [ ] Security audit clean
 - [ ] Documentation reviewed
 - [ ] `hooks/hooks.json` registers `keel-classify-gate.cjs` on `UserPromptSubmit`, `PreToolUse`, `PostToolUse` (v3.16.0+)
-- [ ] `config/cjis-patterns.json` patterns reviewed â€” Forseti-format placeholders still pending real format strings from Forseti
+- [ ] `config/cjis-patterns.json` patterns reviewed -- Forseti-format placeholders still pending real format strings from Forseti
 
 ### CJIS Gate Notes (v3.16.0)
 
-`scripts/keel-classify-gate.cjs` is the CJIS Data Classification Gate introduced in v3.16.0. It must be wired in `hooks/hooks.json` for any story touching CJIS-adjacent data â€” absence is a HIGH finding (see G-10 in `.keel/GUARDRAILS.md`).
+`scripts/keel-classify-gate.cjs` is the CJIS Data Classification Gate introduced in v3.16.0. It must be wired in `hooks/hooks.json` for any story touching CJIS-adjacent data -- absence is a HIGH finding (see G-10 in `.keel/GUARDRAILS.md`).
 
 **Forseti follow-up:** Pattern entries in `config/cjis-patterns.json` marked `[FORSETI-FORMAT-PENDING]` are placeholder strings. Until real format strings are supplied from Forseti, the gate detects only the patterns that are fully defined. New maintainers should chase this with the Forseti integration owner before relying on the gate for full CJIS coverage.
 
@@ -367,19 +367,7 @@ git push origin v3.1.0
 # Publish
 ```
 
-#### 8. Publish to Distribution Channels
-```bash
-# npm
-npm publish --access public
-
-# Docker
-docker build -t amarsingh/keel:3.1.0 .
-docker push amarsingh/keel:3.1.0
-
-# GitHub Marketplace: Auto-discovered after release
-```
-
-#### 9. Merge Back to Develop
+#### 8. Merge Back to Develop
 ```bash
 git checkout develop
 git pull origin develop
@@ -397,7 +385,7 @@ git push origin develop
 npm run test:unit
 
 # Test files: tests/unit/*.test.js
-# Coverage target: â‰¥85%
+# Coverage target: >=85%
 # Frameworks: Jest
 ```
 
@@ -531,7 +519,7 @@ npm install
 **Solution:**
 ```bash
 # Check Node version
-node --version  # Should be â‰¥16.0.0
+node --version  # Should be >=16.0.0
 
 # Clear cache
 npm cache clean --force
@@ -576,7 +564,6 @@ npm run lint .github/workflows/*.yml
 - **Issue Tracker:** https://github.com/creativemyntra/keel/issues
 - **Discussions:** https://github.com/creativemyntra/keel/discussions
 - **GitHub Marketplace:** https://github.com/marketplace/actions/keel-ai-sdlc
-- **npm Package:** https://www.npmjs.com/package/@amarsingh/keel
 
 ### Documentation Files
 
@@ -644,18 +631,18 @@ npm run lint .github/workflows/*.yml
 
 1. Keep documentation updated with code changes
 2. Review all PRs before merging to master
-3. Maintain test coverage â‰¥85%
+3. Maintain test coverage >=85%
 4. Update CHANGELOG before releases
 5. Follow the release process exactly
 
 ### Success Criteria
 
 This handoff is successful when:
-- âœ… New developers can set up environment in <30 minutes
-- âœ… New developers can contribute a feature in <2 hours
-- âœ… All tests pass consistently
-- âœ… Code quality metrics maintained
-- âœ… Documentation stays current
+- [x] New developers can set up environment in <30 minutes
+- [x] New developers can contribute a feature in <2 hours
+- [x] All tests pass consistently
+- [x] Code quality metrics maintained
+- [x] Documentation stays current
 
 ---
 

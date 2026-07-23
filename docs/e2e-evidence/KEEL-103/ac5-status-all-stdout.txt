@@ -1,0 +1,25 @@
+EXIT CODE: 0
+
+STDOUT:
+[
+  {
+    "story_id": "KEEL-101",
+    "scope": "feature",
+    "current_phase": 1,
+    "halted": false
+  },
+  {
+    "story_id": "KEEL-102",
+    "scope": "feature",
+    "current_phase": 1,
+    "halted": false
+  },
+  {
+    "story_id": "KEEL-103",
+    "scope": "feature",
+    "current_phase": 12,
+    "halted": false
+  }
+]
+
+STDERR:

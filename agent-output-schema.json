@@ -24,7 +24,9 @@
         "e2e-engineer",
         "security-engineer",
         "technical-writer",
-        "release-manager"
+        "release-manager",
+        "tdd-red",
+        "tdd-green"
       ]
     },
     "story_id": {
@@ -69,6 +71,16 @@
     "timestamp": {
       "type": "string",
       "format": "date-time"
+    },
+    "tokens_used": {
+      "type": "object",
+      "description": "Optional token usage self-reported by the agent (for cost-tracking dashboard T1-1)",
+      "properties": {
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "model": { "type": "string" }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

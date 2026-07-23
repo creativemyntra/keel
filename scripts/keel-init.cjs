@@ -132,6 +132,21 @@ snyk:
     console.log(`Keel: initialized ${KEEL_HOME} (config + secrets + engine installed to ~/.keel/bin)`);
     console.log('Keel: run /keel:setup to configure integrations (Jira, GitHub, Playwright, Slack, SonarQube, Snyk) — or skip it, defaults work out of the box');
   }
+  // Re-seed .keel/memory files every session if absent (agents read them at startup — ENOENT = crash per G-7).
+  try {
+    const memDir = path.join(process.cwd(), '.keel', 'memory');
+    if (fs.existsSync(memDir)) {
+      const ts = new Date().toISOString().slice(0, 10);
+      const ensureMemFile = (file, header) => {
+        if (!fs.existsSync(file)) {
+          fs.writeFileSync(file, `${header}\n\nRecovered ${ts} by keel-init (previous entries lost — check git history).\n`);
+          console.error(`Keel: WARNING: ${path.basename(file)} was missing and has been re-seeded. Recover history from git.`);
+        }
+      };
+      ensureMemFile(path.join(memDir, 'lessons.md'), '# Keel Lessons (incident-derived)');
+      ensureMemFile(path.join(memDir, 'conventions.md'), '# Project Conventions');
+    }
+  } catch { /* never break session start */ }
 } catch (e) {
   // never break session start
   console.error(`keel-init warning: ${e.message}`);

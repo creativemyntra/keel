@@ -1,0 +1,6 @@
+command: node bin/keel.js dashboard --port=7891
+--- stdout ---
+Dashboard: http://localhost:7891
+
+--- stderr ---
+

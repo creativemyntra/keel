@@ -19,7 +19,7 @@ Invoke when the user says "investigate bug", "RCA", "defect analysis", "/keel de
 4. Produce an RCA report:
 
 ```markdown
-## Defect RCA: <DEFECT-ID> — <Title>
+## Defect RCA: <DEFECT-ID> -- <Title>
 
 **Severity:** P0/P1/P2/P3
 **Environment:** Production / Staging
@@ -33,8 +33,8 @@ Invoke when the user says "investigate bug", "RCA", "defect analysis", "/keel de
 <The actual technical cause>
 
 ### 5-Whys Analysis
-1. Why did X happen? → Because Y
-2. Why Y? → Because Z
+1. Why did X happen? -> Because Y
+2. Why Y? -> Because Z
 ...
 
 ### Impact
@@ -56,5 +56,5 @@ Invoke when the user says "investigate bug", "RCA", "defect analysis", "/keel de
 ## Rules
 - Never speculate root cause without code evidence.
 - Always include a prevention recommendation.
-- Flag CJIS-adjacent data as sensitive — do not reproduce in output.
-- Before including any excerpt of stack traces/logs/case data in the RCA, check `keel-state.cjs security-status` for a `cjis_violation`/`cjis_suspect` entry from this session — if the gate already blocked it, reference the incident ID instead of reconstructing it from memory.
+- Flag CJIS-adjacent data as sensitive -- do not reproduce in output.
+- Before including any excerpt of stack traces/logs/case data in the RCA, check `keel-state.cjs security-status` for a `cjis_violation`/`cjis_suspect` entry from this session -- if the gate already blocked it, reference the incident ID instead of reconstructing it from memory.

@@ -1,0 +1,1 @@
+{"phase":1,"agent":"product-owner","story_id":"TEST-AUDIT-1","confidence":"high","findings":["AC-1"],"acceptance_criteria_ids":["AC-1"],"next_phase":2,"timestamp":"2026-07-21T00:00:00Z","injected_field":"pwned"}

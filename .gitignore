@@ -1,4 +1,4 @@
-# Dependencies
+﻿# Dependencies
 /vendor/
 composer.lock
 node_modules/
@@ -62,3 +62,4 @@ Thumbs.db
 # Test/browser scratch output
 .playwright-mcp/
 test-results/
+playwright-report/
