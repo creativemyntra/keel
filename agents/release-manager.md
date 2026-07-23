@@ -22,6 +22,8 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
 - [ ] No open P0/P1 bugs in Jira for this story
 - [ ] agent-output-schema.json confidence = high for all phases
 - [ ] PR exists and has at least one human approval (agent cannot approve)
+- [ ] Branch promotion order verified: no non-merge commits on master outside dev,
+      no non-merge commits on prod outside master (G-11)
 - [ ] **No unresolved framework debt tasks** -- check `.keel/memory/` and the
       current conversation context for any open items flagged as framework
       improvements or guardrail fixes from prior stories. Each must be either
@@ -79,6 +81,13 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
   10. docs/MAINTAINER-HANDOFF.md (header + Current Version field)
   11. CHANGELOG.md (new [X.Y.Z] entry must exist, not just old entry)
 
+- GUARDRAIL G-11 (branch promotion order, dev -> master -> prod):
+  Run before GO verdict -- both commands must return zero lines:
+  `ash
+  git log origin/dev..origin/master --oneline --no-merges
+  git log origin/master..origin/prod --oneline --no-merges
+  `
+  Any output = NO-GO. Out-of-order commits must be re-promoted through dev first.
 - Never merge the PR (human only).
 - Never issue a GO verdict with any HIGH security finding.
 - Write report to `docs/releases/release-readiness-v<VERSION>.md`.
