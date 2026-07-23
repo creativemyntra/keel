@@ -53,6 +53,12 @@ function block(reason) { process.stderr.write(`CJIS GATE BLOCK: ${reason}\n`); p
 function loadPatterns() {
   const parsed = JSON.parse(fs.readFileSync(PATTERNS_FILE, 'utf8')); // throws -> fail-closed
   if (!Array.isArray(parsed.patterns) || !parsed.patterns.length) throw new Error('no patterns');
+  const blocked = parsed.blocked_categories || [];
+  if (blocked.length) {
+    const msg = `CJIS COVERAGE GAP: no patterns for ${blocked.join(', ')} -- these identifiers are NOT screened.`;
+    process.stderr.write(msg + '\n');
+    if (process.env.KEEL_CJIS_STRICT) { process.exit(2); }
+  }
   return {
     patterns: parsed.patterns.map((p) => ({ ...p, re: new RegExp(p.pattern, p.flags || 'gi') })),
     allowlist: (parsed.allowlist || []).map((a) => ({ ...a, re: new RegExp(a.pattern, 'gi') })),

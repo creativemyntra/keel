@@ -144,6 +144,7 @@ function appendAudit(storyId, entry) {
     if (lines.length && lines[lines.length - 1].trim()) lastLine = lines[lines.length - 1];
   }
   entry.prev_hash = sha256line(lastLine);
+  entry.self_hash = sha256line(JSON.stringify(entry));
   fs.appendFileSync(p, JSON.stringify(entry) + '\n');
 }
 
@@ -729,6 +730,12 @@ function cmdVerify(storyId) {
         console.warn('WARN: audit log predates integrity hashing — chain not verifiable before this entry');
         warnedLegacy = true;
       }
+      if (e.self_hash !== undefined) {
+        const { self_hash, ...rest } = e;
+        if (sha256line(JSON.stringify(rest)) !== self_hash) {
+          problems.push(`line ${i + 1}: self_hash mismatch — entry content altered`);
+        }
+      }
       prevLineText = line;
     });
   } else problems.push('audit-log.jsonl missing');
@@ -891,9 +898,10 @@ function cmdPrescan(storyId) {
     if (s.name === 'snyk') return s.exit === 1; // snyk: exit 1 = vulns found (DIRTY); exit 2 = auth/network error (not a finding)
     return s.exit !== 0;
   });
-  const snykFailed = scanners.filter((s) => s.name === 'snyk' && s.status === 'ran' && s.exit === 2);
-  if (snykFailed.length) {
-    console.warn('PRESCAN WARNING: snyk returned exit 2 (auth/network error) — snyk scan incomplete, not counted as dirty. Check SNYK_TOKEN.');
+  const snykBroken = scanners.filter((s) => s.name === 'snyk' && s.status === 'ran' && s.exit >= 2);
+  if (snykBroken.length) {
+    die(2, `PRESCAN FAILED: snyk exit ${snykBroken[0].exit} (auth/network) -- scan did not run. `
+         + `Fix SNYK_TOKEN or remove snyk from PATH to skip. Not counted as findings.`);
   }
   if (dirty.length) {
     die(1, `PRESCAN DIRTY: ${dirty.map((d) => d.name).join(', ')} reported findings — review .keel/state/${storyId}/prescan.json`);

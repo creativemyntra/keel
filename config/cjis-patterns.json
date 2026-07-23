@@ -1,14 +1,15 @@
 {
-  "_comment": "BLOCKER (Forseti-format-pending): NCIC_ID, LEID, HART_CASE_ID, HART_SUBJECT_ID patterns are TODO placeholders — they match NOTHING in production. Real CJIS compliance requires these formats from Forseti. Until supplied: the gate catches SSN/PHONE/EMAIL/DOB/NAME_NARRATIVE/ADDRESS but is BLIND to NCIC numbers, LEIDs, and HART case/subject IDs. Security-engineer MUST note this limitation in every phase-8 report. Action: file a Forseti request, add real regex formats, and remove this BLOCKER comment.",
+  "_comment": "COVERAGE GAP (Forseti-format-pending): NCIC_ID, LEID, HART_CASE_ID, HART_SUBJECT_ID patterns are absent -- real CJIS compliance requires these formats from Forseti. Until supplied the gate catches SSN/PHONE/EMAIL/DOB/NAME_NARRATIVE/ADDRESS but is blind to NCIC numbers, LEIDs, and HART case/subject IDs. Declared in blocked_categories so the gate emits a machine-readable warning on every run. Action: file a Forseti request, add real regex formats, remove the category from blocked_categories.",
+  "blocked_categories": ["NCIC_ID", "LEID", "HART_CASE_ID", "HART_SUBJECT_ID"],
   "allowlist": [
-    { "description": "Keel project author domain — strip before scanning to allow marketplace display", "pattern": "creativemyntra\\.com" },
-    { "description": "matellio.com project domain — strip before scanning", "pattern": "matellio\\.com" },
+    { "description": "Keel project author domain -- strip before scanning to allow marketplace display", "pattern": "creativemyntra\\.com" },
+    { "description": "matellio.com project domain -- strip before scanning", "pattern": "matellio\\.com" },
     { "description": "GHA uses-directive CI version pins are not PII", "pattern": "uses:\\s+[\\w./-]+@[\\w.-]+" },
     { "description": "npm scoped package ref with embedded slash is not PII", "pattern": "@[\\w-]+\\/[\\w.-]+(?:@[\\w.-]+)?" },
-    { "description": "Semver version pins (pkg at v1.2.3 or at-latest tag) are not PII — digit-only version string is not a domain", "pattern": "\\b[\\w-]+@v?[0-9]+\\.[0-9]+[\\w.-]*\\b" },
-    { "description": "RFC 2606 reserved documentation domains (example.com/org/net/edu) never contain real PII", "pattern": "\\b[\\w.+-]+@(example\\.com|example\\.org|example\\.net|example\\.edu)\\b" },
-    { "description": ".local TLD is non-routable per RFC 6762 — used for test fixtures and dev infrastructure only", "pattern": "\\b[\\w.+-]+@[\\w.-]+\\.local\\b" },
-    { "description": "npm glob-package deprecated-notice — a maintainer reference that appears in package-lock.json, not CJIS data", "pattern": "\\bi@izs\\.me\\b" }
+    { "description": "Semver version pins are not PII -- digit-only version string is not a domain", "pattern": "\\b[\\w-]+@v?[0-9]+\\.[0-9]+[\\w.-]*\\b" },
+    { "description": "RFC 2606 reserved documentation domains never contain real PII", "pattern": "\\b[\\w.+-]+@(example\\.com|example\\.org|example\\.net|example\\.edu)\\b" },
+    { "description": ".local TLD is non-routable per RFC 6762 -- test fixtures and dev infrastructure only", "pattern": "\\b[\\w.+-]+@[\\w.-]+\\.local\\b" },
+    { "description": "npm glob-package deprecated-notice -- maintainer ref in package-lock.json not CJIS data", "pattern": "\\bi@izs\\.me\\b" }
   ],
   "patterns": [
     { "category": "SSN", "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b", "flags": "g", "severity": "hard" },
@@ -16,10 +17,6 @@
     { "category": "EMAIL", "pattern": "\\b[\\w.+-]+@[\\w-]+\\.[a-zA-Z][\\w.-]*\\b", "flags": "gi", "severity": "soft" },
     { "category": "DOB", "pattern": "\\b(dob|date of birth|born)\\b[^\\n]{0,20}\\b\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}\\b", "flags": "gi", "severity": "hard" },
     { "category": "NAME_NARRATIVE", "pattern": "\\b[A-Z][a-z]+ [A-Z][a-z]+ (was arrested|was booked|was detained|was charged)\\b", "flags": "g", "severity": "hard" },
-    { "category": "ADDRESS", "pattern": "\\b\\d{1,5} [A-Za-z0-9. ]+ (St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Ln|Lane|Dr|Drive)\\b", "flags": "gi", "severity": "soft" },
-    { "category": "NCIC_ID", "pattern": "\\bTODO-NCIC-FORMAT-PLACEHOLDER\\b", "flags": "g", "severity": "hard" },
-    { "category": "LEID", "pattern": "\\bTODO-LEID-FORMAT-PLACEHOLDER\\b", "flags": "g", "severity": "hard" },
-    { "category": "HART_CASE_ID", "pattern": "\\bTODO-HART-CASE-ID-FORMAT-PLACEHOLDER\\b", "flags": "g", "severity": "hard" },
-    { "category": "HART_SUBJECT_ID", "pattern": "\\bTODO-HART-SUBJECT-ID-FORMAT-PLACEHOLDER\\b", "flags": "g", "severity": "hard" }
+    { "category": "ADDRESS", "pattern": "\\b\\d{1,5} [A-Za-z0-9. ]+ (St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Ln|Lane|Dr|Drive)\\b", "flags": "gi", "severity": "soft" }
   ]
 }
