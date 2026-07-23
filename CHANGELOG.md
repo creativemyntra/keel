@@ -1,8 +1,16 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
-## [3.16.3] - 2026-07-22 - CAKEPHP-ONLY PACKAGING; CJIS GATE DEADLOCK FIX; SHIPPABLE PLUGIN
+## [3.16.4] - 2026-07-23 - BOM FIX: MARKETPLACE JSON PARSE ERROR
+
+### Fixed
+- **.claude-plugin/marketplace.json** -- stripped UTF-8 BOM (EF BB BF) that caused a JSON parse error when Claude Code fetched the marketplace from git. The BOM was an unrecognized token, breaking the plugin Components section and the Update now button.
+
+### Changed
+- **gents/release-manager.md G-6** -- expanded version-stamp guardrail to list all 9 version-bearing files and added mandatory pre-release consistency check (grep for mismatched versions blocks GO verdict).
+
+---## [3.16.3] - 2026-07-22 - CAKEPHP-ONLY PACKAGING; CJIS GATE DEADLOCK FIX; SHIPPABLE PLUGIN
 
 ### Fixed
 - **`config/cjis-patterns.json`** -- rewrote to fix a gate self-scan deadlock: a description string with an at-sign (word@vN.N) matched the EMAIL regex, causing the gate to block reads/writes of its own config file. Added 3 new allowlist entries (RFC 2606 docs domains, `.local` TLD, npm glob-package notice). 8 allowlist entries total.
