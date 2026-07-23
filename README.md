@@ -1,4 +1,4 @@
-﻿# Keel AI-SDLC Framework v3.16.4
+﻿# Keel AI-SDLC Framework v3.16.5
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# -> keel v3.16.4 [x]
+# -> keel v3.16.5 [x]
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -97,6 +97,14 @@ snapshots) is done by a zero-dependency **state engine**
 [x] **Staged Deployment** -- canary / blue-green rollout via the release gate  
 
 ---
+## What's New in v3.16.5
+
+- **`keel:start-work` skill** — Claude Code skill that fetches a Jira ticket via Atlassian Rovo MCP, creates a typed branch (`fix/hart-302-slug`), pushes it to remote, and transitions the Jira ticket to "In Progress". No separate Jira token needed. Works in description-only mode when no ticket exists.
+- **`keel:finish-work` skill** — Claude Code skill that creates an industry-standard PR to `dev` via the GitHub REST API, then transitions the Jira ticket to "In Review". Token stored in `~/.keel/secrets/github.token`. Handles 422 (PR already exists) gracefully.
+- **G-13 next-step reminder** — After every successful feature branch push, the push guard prints: `"Ask Claude Code: finish work on BRANCH"` with a direct GitHub compare URL, closing the loop between push and PR creation.
+- **G-12 advisory ticket traceability** — Ticket reference in commits is now advisory-only (warns, never blocks). Flexible ticket pattern (`/[A-Z]{2,}-\d+/i`) replaces the hardcoded format — any project-key style works.
+- **BRANCH-PROTECTION.md rewrite** — Complete developer workflow documentation: ASCII workflow diagram, G-11 promotion chain, branch naming table (advisory), guardrail reference table, and skills quick-reference.
+
 ## What's New in v3.16.4
 
 - **CakePHP-only packaging** -- removed all Node/Django/Rails/Laravel references; `keel-detect-stack` now blocks non-PHP manifests rather than warning. `package.json` `files` array now includes `config/` and `stack-profiles/` so the CJIS gate config and stack profile ship with the npm package.
@@ -190,7 +198,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# -> keel v3.16.4
+# -> keel v3.16.5
 ```
 
 ### Method 2: npm Global Package (not yet published -- coming soon)
@@ -229,27 +237,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.16.4
+        uses: creativemyntra/keel@v3.16.5
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.16.4
+        uses: creativemyntra/keel@v3.16.5
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.16.4
+        uses: creativemyntra/keel@v3.16.5
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.16.4
+        uses: creativemyntra/keel@v3.16.5
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -630,7 +638,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.16.4
+- uses: creativemyntra/keel@v3.16.5
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -796,10 +804,10 @@ Then:
 
 ---
 
-**Version:** 3.16.4  
+**Version:** 3.16.5  
 **Released:** 2026-07-21  
 **Status:** PRODUCTION READY  
 **Agents:** 15 (10 pipeline phase + 2 meta/support (scrum-master, product-owner-standalone-use) + 3 infrastructure (handshake, audit, state-management))
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.16.4 (https://github.com/creativemyntra/keel/releases/tag/v3.16.4)
+**Tag:** v3.16.5 (https://github.com/creativemyntra/keel/releases/tag/v3.16.5)

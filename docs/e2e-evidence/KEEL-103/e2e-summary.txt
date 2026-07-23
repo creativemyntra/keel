@@ -1,6 +1,6 @@
 KEEL-103 E2E subprocess test run (self-contained fixtures)
 Node: v26.1.0   Engine: C:\Projects\keel\scripts\keel-state.cjs
-E2E_ROOT: C:\Users\MATELL~1\AppData\Local\Temp\keel-e2e-Dq3mMv
+E2E_ROOT: C:\Users\MATELL~1\AppData\Local\Temp\keel-e2e-3BUgl2
 
 Result: 42 / 42 passed
 

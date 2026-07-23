@@ -12,7 +12,7 @@
       "displayName": "Keel AI-SDLC",
       "source": ".",
       "description": "Complete AI-SDLC pipeline for Claude Code and Claude Desktop. 15 specialized agents across a 10-phase pipeline (dedicated UI design, code+unit-tests in one phase, QA, Playwright E2E, and security phases) with a deterministic state engine, execution-verified gates, bounded retries with human resume, cross-story memory, proactive watchers, and a read-only pipeline status dashboard. Stack: CakePHP 4.4 / PHP 8.1. INSTALL NOTE: This marketplace entry uses source=. which ships the full development repo including dev-history/ artifacts. For a clean production install use the npm package instead.",
-      "version": "3.16.4",
+      "version": "3.16.5",
       "tags": [
         "sdlc",
         "agile",

@@ -2,6 +2,20 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.16.5] - 2026-07-23 - DEVELOPER AUTOMATION: keel:start-work + keel:finish-work MCP SKILLS; ADVISORY TICKET TRACEABILITY
+
+### Added
+- **`skills/start-work/SKILL.md`** — `keel:start-work` Claude Code skill: fetches Jira ticket via Atlassian Rovo MCP (no separate token), creates branch with type-derived prefix + ticket slug, pushes to remote, transitions Jira to "In Progress". Works in description-only mode when no ticket exists.
+- **`skills/finish-work/SKILL.md`** — `keel:finish-work` Claude Code skill: reads commits ahead of dev, fetches Jira context via MCP, creates industry-standard PR to dev via GitHub REST API (`~/.keel/secrets/github.token`), transitions Jira to "In Review". Handles 422 (PR already exists) gracefully.
+
+### Changed
+- **G-12 (`scripts/keel-bug-lifecycle.cjs`)** — Ticket traceability downgraded from blocking to advisory-only across all commit types. Flexible ticket ID pattern (`/[A-Z]{2,}-\d+/i`) replaces hardcoded project-key format. Removed dead `JIRA_PATTERN` constant.
+- **G-13 (`scripts/keel-push-guard.cjs`)** — Added `feat/` and `epic/` to `ALLOWED_PREFIXES`. After a successful feature branch push, prints a next-step reminder: "Ask Claude Code: finish work on BRANCH" with a direct GitHub compare URL.
+- **`.keel/GUARDRAILS.md`** — G-12 table updated to advisory; G-13 rule 4 PR ticket reference changed to advisory (G-14); G-14 completely rewritten to document MCP-skill invocation, flexible branch naming convention, and push-guard advisory behaviour.
+- **`docs/BRANCH-PROTECTION.md`** — Full rewrite: removed deleted `keel-start-work.cjs` CLI references and Jira token credential setup (MCP handles auth); replaced manual PR steps with complete 6-step MCP-skill workflow diagram; updated branch naming to advisory; added guardrail and skills reference tables.
+
+---
+
 ## [3.16.4] - 2026-07-23 - BOM FIX: MARKETPLACE JSON PARSE ERROR
 
 ### Fixed
@@ -569,5 +583,5 @@ MIT - See [LICENSE](LICENSE) for details
 ---
 
 Last Updated: 2026-07-23
-Version: 3.16.4
+Version: 3.16.5
 Status: Production Ready
