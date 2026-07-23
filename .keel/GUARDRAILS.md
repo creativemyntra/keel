@@ -1,4 +1,4 @@
-﻿# Keel Pipeline Guardrails
+# Keel Pipeline Guardrails
 
 Binding rules for every agent and every gate in this repository. Added
 2026-07-16 at the human owner's direction after the v3.14.0 run. These rules
@@ -83,7 +83,13 @@ out-of-scope-for-this-phase with the owning phase named:
   9. TECHNICAL-SPECIFICATIONS.md (header + new history table row)
   10. docs/MAINTAINER-HANDOFF.md (header + Current Version field)
   11. CHANGELOG.md (new [X.Y.Z] entry must exist)
-  Verification command (run before releasing, zero output = clean):
+  Automated verification (enforced by git pre-commit + pre-push hook):
+  node scripts/keel-version-audit.cjs
+  Exit 0 = PASS, exit 1 = BLOCK. Must pass before any commit or push.
+  Historical exemptions (CHANGELOG headers, version table rows, introduced-in notes)
+  are handled automatically by the script.
+
+  Manual verification command (run before releasing, zero output = clean):
   grep -rn "OLD_VERSION" package.json bin/keel.js .claude-plugin/ README.md
     INSTALL.md QUICK-START-CLAUDE-CODE.md ALL-AGENTS-COMPLETE-GUIDE.md
     TECHNICAL-SPECIFICATIONS.md docs/MAINTAINER-HANDOFF.md CHANGELOG.md

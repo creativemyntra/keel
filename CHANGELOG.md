@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
@@ -568,6 +568,6 @@ MIT - See [LICENSE](LICENSE) for details
 
 ---
 
-Last Updated: 2026-07-22
-Version: 3.16.3
+Last Updated: 2026-07-23
+Version: 3.16.4
 Status: Production Ready

@@ -1,4 +1,4 @@
-﻿---
+---
 name: release-manager
 description: Phase 10 -- Final release readiness and go/no-go decision. Use as the last gate before production deployment. Checks all prior phase outputs (phases 1-9), validates CHANGELOG, and produces a release summary.
 tools: Read, Write, Grep, Glob, mcp__plugin_keel_atlassian__getJiraIssue, mcp__plugin_keel_atlassian__searchJiraIssuesUsingJql
@@ -22,6 +22,7 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
 - [ ] No open P0/P1 bugs in Jira for this story
 - [ ] agent-output-schema.json confidence = high for all phases
 - [ ] PR exists and has at least one human approval (agent cannot approve)
+- [ ] Version audit passed: `node scripts/keel-version-audit.cjs` exits 0 (G-6)
 - [ ] Branch promotion order verified: no non-merge commits on master outside dev,
       no non-merge commits on prod outside master (G-11)
 - [ ] **No unresolved framework debt tasks** -- check `.keel/memory/` and the
