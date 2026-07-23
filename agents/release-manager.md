@@ -1,4 +1,4 @@
----
+﻿---
 name: release-manager
 description: Phase 10 -- Final release readiness and go/no-go decision. Use as the last gate before production deployment. Checks all prior phase outputs (phases 1-9), validates CHANGELOG, and produces a release summary.
 tools: Read, Write, Grep, Glob, mcp__plugin_keel_atlassian__getJiraIssue, mcp__plugin_keel_atlassian__searchJiraIssuesUsingJql
@@ -54,9 +54,31 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
   BLOCKING or NON-BLOCKING with owner and due date. Any open BLOCKING item ->
   NO-GO. NON-BLOCKING carry-forwards ship only if the human GO explicitly
   covers that exact list -- present it, never assume approval.
-- GUARDRAIL G-6 (version stamp, all or none): package.json, bin/keel.js
-  VERSION constant, .claude-plugin/plugin.json, .claude-plugin/marketplace.json,
-  README header/footer, CHANGELOG entry, TECHNICAL-SPECIFICATIONS version table.
+- GUARDRAIL G-6 (version stamp, all or none): Every release MUST stamp ALL
+  11 version-bearing files before GO. Run this check and include output in the
+  release report -- any line returned means version stamp is incomplete, NO-GO:
+
+  `ash
+  grep -rn "OLD_VERSION" package.json bin/keel.js \
+    .claude-plugin/plugin.json .claude-plugin/marketplace.json \
+    README.md INSTALL.md QUICK-START-CLAUDE-CODE.md \
+    ALL-AGENTS-COMPLETE-GUIDE.md TECHNICAL-SPECIFICATIONS.md \
+    docs/MAINTAINER-HANDOFF.md CHANGELOG.md
+  `
+
+  The 11 canonical version-bearing files:
+  1. package.json
+  2. bin/keel.js (VERSION constant + header comment)
+  3. .claude-plugin/plugin.json
+  4. .claude-plugin/marketplace.json
+  5. README.md (header, footer, Quick Start badge, uses: refs)
+  6. INSTALL.md (uses: references)
+  7. QUICK-START-CLAUDE-CODE.md (header + version line)
+  8. ALL-AGENTS-COMPLETE-GUIDE.md (header + version refs)
+  9. TECHNICAL-SPECIFICATIONS.md (header + new history table row)
+  10. docs/MAINTAINER-HANDOFF.md (header + Current Version field)
+  11. CHANGELOG.md (new [X.Y.Z] entry must exist, not just old entry)
+
 - Never merge the PR (human only).
 - Never issue a GO verdict with any HIGH security finding.
 - Write report to `docs/releases/release-readiness-v<VERSION>.md`.

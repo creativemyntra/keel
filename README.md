@@ -1,4 +1,4 @@
-﻿# Keel AI-SDLC Framework v3.16.3
+﻿# Keel AI-SDLC Framework v3.16.4
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# -> keel v3.16.3 [x]
+# -> keel v3.16.4 [x]
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -97,7 +97,7 @@ snapshots) is done by a zero-dependency **state engine**
 [x] **Staged Deployment** -- canary / blue-green rollout via the release gate  
 
 ---
-## What's New in v3.16.3
+## What's New in v3.16.4
 
 - **CakePHP-only packaging** -- removed all Node/Django/Rails/Laravel references; `keel-detect-stack` now blocks non-PHP manifests rather than warning. `package.json` `files` array now includes `config/` and `stack-profiles/` so the CJIS gate config and stack profile ship with the npm package.
 - **CJIS gate deadlock fix** -- rewrote `config/cjis-patterns.json` to eliminate a description string that matched the EMAIL regex, causing the gate to block reads/writes of its own config file. Added 3 new allowlist entries (RFC 2606 docs domains, `.local` TLD, npm glob-package notice).
@@ -190,7 +190,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# -> keel v3.16.3
+# -> keel v3.16.4
 ```
 
 ### Method 2: npm Global Package (not yet published -- coming soon)
@@ -229,27 +229,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.16.3
+        uses: creativemyntra/keel@v3.16.4
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.16.3
+        uses: creativemyntra/keel@v3.16.4
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.16.3
+        uses: creativemyntra/keel@v3.16.4
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.16.3
+        uses: creativemyntra/keel@v3.16.4
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -630,7 +630,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.16.3
+- uses: creativemyntra/keel@v3.16.4
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -796,10 +796,10 @@ Then:
 
 ---
 
-**Version:** 3.16.3  
+**Version:** 3.16.4  
 **Released:** 2026-07-21  
 **Status:** PRODUCTION READY  
 **Agents:** 15 (10 pipeline phase + 2 meta/support (scrum-master, product-owner-standalone-use) + 3 infrastructure (handshake, audit, state-management))
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.16.3 (https://github.com/creativemyntra/keel/releases/tag/v3.16.3)
+**Tag:** v3.16.4 (https://github.com/creativemyntra/keel/releases/tag/v3.16.4)
