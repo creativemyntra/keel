@@ -1,4 +1,4 @@
-# Keel Pipeline Guardrails
+﻿# Keel Pipeline Guardrails
 
 Binding rules for every agent and every gate in this repository. Added
 2026-07-16 at the human owner's direction after the v3.14.0 run. These rules
@@ -71,9 +71,22 @@ out-of-scope-for-this-phase with the owning phase named:
 
 - Agents NEVER run git commit/push/tag/merge or any deploy action. The human
   owner executes releases, on their explicit instruction only.
-- Version stamping checklist (all or none): `package.json`, `bin/keel.js`
-  VERSION constant, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
-  README header/footer, CHANGELOG entry, TECHNICAL-SPECIFICATIONS version table.
+- Version stamping checklist (all or none -- missing any = BLOCK release):
+  1. package.json
+  2. bin/keel.js (VERSION constant + header comment)
+  3. .claude-plugin/plugin.json
+  4. .claude-plugin/marketplace.json
+  5. README.md (header, footer, Quick Start badge, uses: refs)
+  6. INSTALL.md (uses: references)
+  7. QUICK-START-CLAUDE-CODE.md (header + version line)
+  8. ALL-AGENTS-COMPLETE-GUIDE.md (header + version refs)
+  9. TECHNICAL-SPECIFICATIONS.md (header + new history table row)
+  10. docs/MAINTAINER-HANDOFF.md (header + Current Version field)
+  11. CHANGELOG.md (new [X.Y.Z] entry must exist)
+  Verification command (run before releasing, zero output = clean):
+  grep -rn "OLD_VERSION" package.json bin/keel.js .claude-plugin/ README.md
+    INSTALL.md QUICK-START-CLAUDE-CODE.md ALL-AGENTS-COMPLETE-GUIDE.md
+    TECHNICAL-SPECIFICATIONS.md docs/MAINTAINER-HANDOFF.md CHANGELOG.md
 - Release requires: all gates passed, open-item ledger presented (G-1),
   explicit human GO (G-2).
 
