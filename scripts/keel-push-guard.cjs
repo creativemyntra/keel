@@ -17,11 +17,11 @@ const PROTECTED = new Set([
   'refs/heads/prod',
 ]);
 
-// Branch naming convention for feature work
+// Branch naming convention for feature work (G-13 / G-14)
 const ALLOWED_PREFIXES = [
-  'feature/', 'fix/', 'hotfix/', 'refactor/', 'perf/',
+  'feat/', 'feature/', 'fix/', 'hotfix/', 'refactor/', 'perf/',
   'test/', 'docs/', 'chore/', 'ci/', 'style/', 'build/',
-  'release/', 'spike/',
+  'release/', 'spike/', 'epic/',
 ];
 
 function shortRef(ref) {
@@ -53,7 +53,24 @@ async function main() {
     }
   }
 
-  if (!blocked.length) process.exit(0);
+  if (!blocked.length) {
+    // Advisory: warn if any pushed branch has no type-prefix (G-14 convention)
+    for (const line of lines) {
+      const parts = line.trim().split(/\s+/);
+      const remoteRef = parts[2];
+      if (!remoteRef || remoteRef === '(delete)') continue;
+      const branchName = shortRef(remoteRef);
+      const hasPrefix = ALLOWED_PREFIXES.some((p) => branchName.startsWith(p));
+      if (!hasPrefix) {
+        process.stderr.write('\n');
+        process.stderr.write('G-14 WARN: branch "' + branchName + '" has no standard type prefix.\n');
+        process.stderr.write('  Recommended: use keel:start-work skill or prefix the branch:\n');
+        process.stderr.write('  feat/, fix/, chore/, docs/, refactor/, perf/, test/, etc.\n');
+        process.stderr.write('\n');
+      }
+    }
+    process.exit(0);
+  }
 
   const branch = shortRef(blocked[0].remoteRef);
 
