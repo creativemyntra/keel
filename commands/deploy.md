@@ -10,5 +10,5 @@ Deploy: $ARGUMENTS
    CHANGELOG updated.
 2. On GO: execute the project's deployment procedure (CI pipeline or documented
    runbook) with the requested rollout strategy. Default: canary.
-3. NEVER merge PRs, close issues, or push directly to protected branches — humans do that.
+3. NEVER merge PRs, close issues, or push directly to protected branches -- humans do that.
    Present the exact commands/PR for a human to approve.

@@ -1,0 +1,32 @@
+{
+  "ts": "2026-07-21T11:39:22.699Z",
+  "scanners": [
+    {
+      "name": "composer-audit",
+      "status": "skipped",
+      "reason": "not applicable — no composer.json"
+    },
+    {
+      "name": "phpstan",
+      "status": "skipped",
+      "reason": "not applicable — phpstan not installed"
+    },
+    {
+      "name": "npm-audit",
+      "status": "ran",
+      "exit": 0,
+      "tail": "found 0 vulnerabilities"
+    },
+    {
+      "name": "snyk",
+      "status": "ran",
+      "exit": 2,
+      "tail": "Status:  401 Unauthorized  | Docs:    https://docs.snyk.io/scan-with-snyk/error-catalog#snyk-0005  | Tip:     Try snyk doctor: `snyk <command> -d 2>&1 | snyk doctor --stdin`  |                                                                           | ID:      urn:snyk:interaction:1fdc985a-4393-4f13-8ac7-173eff8a505a"
+    },
+    {
+      "name": "sonar-scanner",
+      "status": "skipped",
+      "reason": "not configured — scanner or project config missing"
+    }
+  ]
+}

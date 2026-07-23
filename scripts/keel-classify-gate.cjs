@@ -7,8 +7,10 @@
  * internal error blocks, never passes through silently.
  * Limits: heuristic name/address matching, not true NER. HART-specific NCIC/LEID/Case/Subject
  * ID formats are placeholders in config/cjis-patterns.json until Forseti supplies real formats.
- * Screenshots (Playwright) aren't scanned — text only. PostToolUse block behavior re: whether
- * the model still sees the raw tool output needs verifying against current hook docs.
+ * Screenshots (Playwright) aren't scanned — text only. PostToolUse fires AFTER the tool result
+ * is returned to the model in the current turn — exit-2 here is alerting/logging control only,
+ * not prevention. For hard prevention use PreToolUse. PostToolUse incidents warrant immediate
+ * human review of what the model received in that turn.
  * Exit 0 = CLEAR. Exit 2 = BLOCK (stderr = reason). Usage: --stage=prompt|pre|post, hook JSON on stdin.
  */
 'use strict';
@@ -76,7 +78,7 @@ function extractText(stage, hook) {
 // base64/hex re-scan for encoded PII (test scenario 4) — heuristic, not full entropy analysis.
 function decodedVariants(text) {
   const out = [text];
-  for (const tok of text.match(/[A-Za-z0-9+/]{20,}={0,2}/g) || []) {
+  for (const tok of text.match(/[A-Za-z0-9+/]{8,}={0,2}/g) || []) {
     try { const d = Buffer.from(tok, 'base64').toString('utf8'); if (/[\x20-\x7e]/.test(d)) out.push(d); } catch {}
   }
   for (const tok of text.match(/\b[0-9a-fA-F]{20,}\b/g) || []) {

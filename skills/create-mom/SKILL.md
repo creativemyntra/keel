@@ -20,19 +20,19 @@ Invoke when the user says "create MoM", "minutes of meeting", "/mom", or pastes 
 # Minutes of Meeting
 
 **Date:** YYYY-MM-DD
-**Time:** HH:MM – HH:MM (TZ)
+**Time:** HH:MM - HH:MM (TZ)
 **Location / Call Link:** 
-**Attendees:** Name (Role), …
+**Attendees:** Name (Role), ...
 **Facilitator:** 
 **Objective:** 
 
 ---
 
 ## Key Discussion Points
-1. …
+1. ...
 
 ## Decisions Taken
-- …
+- ...
 
 ## Action Items
 
@@ -41,11 +41,11 @@ Invoke when the user says "create MoM", "minutes of meeting", "/mom", or pastes 
 | A1 | | | | Open |
 
 ## Risks / Blockers Raised
-- …
+- ...
 
 ## Next Steps
 - Next meeting: YYYY-MM-DD
-- …
+- ...
 ```
 
 3. Save to `docs/meetings/MOM-<YYYY-MM-DD>-<topic>.md`.
@@ -53,4 +53,4 @@ Invoke when the user says "create MoM", "minutes of meeting", "/mom", or pastes 
 ## Rules
 - Action items must have an owner and due date.
 - Do not attribute statements to individuals unless the transcript clearly attributes them.
-- Mark unresolved items as "Open" — never assume resolution.
+- Mark unresolved items as "Open" -- never assume resolution.

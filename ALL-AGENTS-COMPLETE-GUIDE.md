@@ -1,13 +1,13 @@
-# Keel v3.16.1 — Complete Agent Guide
+﻿# Keel v3.16.3 -- Complete Agent Guide
 
-**Framework Version:** 3.16.1  
+**Framework Version:** 3.16.3  
 **Total Agents:** 15 (10 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
 
 ---
 
-## 🎯 QUICK REFERENCE
+## QUICK REFERENCE
 
 **Start here:** Use `/keel:implement-feature` to invoke all agents automatically.
 
@@ -19,27 +19,27 @@ This single command invokes the orchestrator, which routes through all 10 pipeli
 
 ---
 
-## 📊 AGENT TYPES
+## AGENT TYPES
 
-### **PIPELINE PHASE AGENTS (10)** — Deliver the feature through 10 sequential phases
-### **META/SUPPORT AGENTS (2)** — Orchestrator (routing) + Scrum Master (ceremonies)
-### **INFRASTRUCTURE AGENTS (3)** — Handshake gate, state management, audit
+### **PIPELINE PHASE AGENTS (10)** -- Deliver the feature through 10 sequential phases
+### **META/SUPPORT AGENTS (2)** -- Orchestrator (routing) + Scrum Master (ceremonies)
+### **INFRASTRUCTURE AGENTS (3)** -- Handshake gate, state management, audit
 
 ---
 
-## 🆕 PIPELINE HISTORY
+## PIPELINE HISTORY
 
-**v3.15.0** — restructured from 12 to **10 phases**: `tdd-red` and `tdd-green` merged
-into `software-engineer` (phase 5 now writes production code + unit tests; coverage ≥ 80%
+**v3.15.0** -- restructured from 12 to **10 phases**: `tdd-red` and `tdd-green` merged
+into `software-engineer` (phase 5 now writes production code + unit tests; coverage >= 80%
 is a hard gate). `ui-designer` (v3.14.0) and `e2e-engineer` (v3.13.0) remain as dedicated
 phases. Phase numbering in [`agents/orchestrator.md`](agents/orchestrator.md) is
 authoritative.
 
-Current 10-phase order: product-owner (1) → business-analyst (2) → ui-designer (3)
-→ solution-architect (4) → software-engineer (5, code + unit tests, coverage ≥ 80%) →
-qa-engineer (6) → e2e-engineer (7) → security-engineer (8) →
-technical-writer (9) → release-manager (10).
-Defect express lane: 1 → 5 → 6 → 8.
+Current 10-phase order: product-owner (1) -> business-analyst (2) -> ui-designer (3)
+-> solution-architect (4) -> software-engineer (5, code + unit tests, coverage >= 80%) ->
+qa-engineer (6) -> e2e-engineer (7) -> security-engineer (8) ->
+technical-writer (9) -> release-manager (10).
+Defect express lane: 1 -> 5 -> 6 -> 8.
 
 ---
 
@@ -49,7 +49,7 @@ These agents work sequentially to take a feature from idea to production.
 
 ---
 
-## 1️⃣ **ORCHESTRATOR AGENT**
+## 1. **ORCHESTRATOR AGENT**
 **Type:** Phase coordination / Routing  
 **When to use:** ALWAYS start here for any feature delivery  
 **Invoked by:** `/keel:implement-feature` automatically  
@@ -65,31 +65,31 @@ These agents work sequentially to take a feature from idea to production.
 
 ```
 Your Request: "Build user payment export"
-         ↓
+         v
 [ORCHESTRATOR decides:]
-  1.  Product Owner     — requirements + ACs
-  2.  Business Analyst  — functional spec + data flows
-  3.  UI Designer       — design spec + HTML mockup (or no-UI determination)
-  4.  Solution Architect — architecture, API contracts, ADRs
-  5.  Software Engineer — production code (no tests)
-  6.  TDD Red           — write tests (must fail without implementation)
-  7.  TDD Green         — run tests; all pass, coverage ≥ 80%
-  8.  QA Engineer       — full suite gate, AC-to-test mapping
-  9.  E2E Engineer      — Playwright browser tests + screenshots
-  10. Security Engineer — OWASP audit, prescan results
-  11. Technical Writer  — README, CHANGELOG, docs
-  12. Release Manager   — go/no-go, G-6 version stamp
-         ↓
+  1.  Product Owner     -- requirements + ACs
+  2.  Business Analyst  -- functional spec + data flows
+  3.  UI Designer       -- design spec + HTML mockup (or no-UI determination)
+  4.  Solution Architect -- architecture, API contracts, ADRs
+  5.  Software Engineer -- production code (no tests)
+  6.  TDD Red           -- write tests (must fail without implementation)
+  7.  TDD Green         -- run tests; all pass, coverage >= 80%
+  8.  QA Engineer       -- full suite gate, AC-to-test mapping
+  9.  E2E Engineer      -- Playwright browser tests + screenshots
+  10. Security Engineer -- OWASP audit, prescan results
+  11. Technical Writer  -- README, CHANGELOG, docs
+  12. Release Manager   -- go/no-go, G-6 version stamp
+         v
 [Routes through all agents]
-         ↓
+         v
 Final Delivery Summary
 ```
 
 ### Governance Gates (Cannot Skip)
-- ❌ **TDD Red gate:** Tests must FAIL before implementation
-- ❌ **Coverage gate:** ≥ 80% before security review
-- ❌ **Security gate:** Zero HIGH findings before release
-- ❌ **Release gate:** Manager must approve before deploy
+- NO: **TDD Red gate:** Tests must FAIL before implementation
+- NO: **Coverage gate:** >= 80% before security review
+- NO: **Security gate:** Zero HIGH findings before release
+- NO: **Release gate:** Manager must approve before deploy
 
 ### How to Use
 ```bash
@@ -101,14 +101,14 @@ Final Delivery Summary
 
 ---
 
-## 2️⃣ **PRODUCT OWNER AGENT**
+## 2. **PRODUCT OWNER AGENT**
 **Type:** Requirements & acceptance criteria  
 **When to use:** Creating/refining user stories, writing acceptance criteria  
 **Invoked by:** Orchestrator (Phase 1)  
 
 ### What It Does
 - Translates business needs into clear requirements
-- Writes user stories in "As a… I want… So that…" format
+- Writes user stories in "As a... I want... So that..." format
 - Creates BDD Gherkin acceptance criteria (Given/When/Then)
 - Prioritizes work (P0/P1/P2/P3)
 - Defines scope (explicit in-scope and out-of-scope)
@@ -116,7 +116,7 @@ Final Delivery Summary
 
 ### Output Format
 ```markdown
-# Story: FEAT-123 — User Payment Export
+# Story: FEAT-123 -- User Payment Export
 
 **Priority:** P1 (important, not blocking)
 **Business Value:** Customers can retrieve payment history for accounting
@@ -161,7 +161,7 @@ Scenario: Handle no payments
 
 ---
 
-## 3️⃣ **BUSINESS ANALYST AGENT**
+## 3. **BUSINESS ANALYST AGENT**
 **Type:** Functional specs & data flows  
 **When to use:** After Product Owner, before architect  
 **Invoked by:** Orchestrator (Phase 2)  
@@ -169,17 +169,17 @@ Scenario: Handle no payments
 ### What It Does
 - Bridges business requirements and technical implementation
 - Writes detailed functional specifications
-- Defines data flows (input → processing → output)
+- Defines data flows (input -> processing -> output)
 - Lists explicit business rules to enforce
 - Documents edge cases (empty state, limits, concurrency, invalid input)
 - Raises open questions needing clarification
 
 ### Output Deliverables
-1. **Functional Spec** — step-by-step system behavior
-2. **Data Flow Diagram** — ASCII or table format showing transformations
-3. **Business Rules** — constraints code must enforce
-4. **Edge Cases** — what happens when things go wrong
-5. **Open Questions** — ambiguities to clarify
+1. **Functional Spec** -- step-by-step system behavior
+2. **Data Flow Diagram** -- ASCII or table format showing transformations
+3. **Business Rules** -- constraints code must enforce
+4. **Edge Cases** -- what happens when things go wrong
+5. **Open Questions** -- ambiguities to clarify
 
 ### Example Output
 ```markdown
@@ -196,11 +196,11 @@ Scenario: Handle no payments
 ## Data Flow
 
 User Input: [Click Button]
-  ↓
+  v
 Query: SELECT * FROM transactions WHERE user_id = X
-  ↓
+  v
 Transform: Convert rows to CSV format
-  ↓
+  v
 Output: HTTP response with CSV file
 
 ## Business Rules
@@ -213,10 +213,10 @@ Output: HTTP response with CSV file
 
 ## Edge Cases
 
-- User has zero transactions → Show "No data to export"
-- File size > 100MB → Chunk into multiple files
-- Export in progress → Show spinner, prevent duplicate clicks
-- Database down → Show "Export temporarily unavailable"
+- User has zero transactions -> Show "No data to export"
+- File size > 100MB -> Chunk into multiple files
+- Export in progress -> Show spinner, prevent duplicate clicks
+- Database down -> Show "Export temporarily unavailable"
 
 ## Open Questions
 
@@ -241,7 +241,7 @@ Q: What currencies if user has multi-currency transactions?
 
 ---
 
-## 4️⃣ **SOLUTION ARCHITECT AGENT**
+## 4. **SOLUTION ARCHITECT AGENT**
 **Type:** Architecture, design, technical decisions  
 **When to use:** After Business Analyst, before development  
 **Invoked by:** Orchestrator (Phase 3)  
@@ -255,11 +255,11 @@ Q: What currencies if user has multi-currency transactions?
 - Identifies technical risks with mitigations
 
 ### Output Deliverables
-1. **ADR (Architecture Decision Record)** — context, options, decision, consequences
-2. **API Contract** — endpoint, method, auth, schemas, error codes
-3. **DB Schema** — tables, columns, indexes, foreign keys
-4. **Component Diagram** — how services interact
-5. **Technical Risks** — performance, security, scalability
+1. **ADR (Architecture Decision Record)** -- context, options, decision, consequences
+2. **API Contract** -- endpoint, method, auth, schemas, error codes
+3. **DB Schema** -- tables, columns, indexes, foreign keys
+4. **Component Diagram** -- how services interact
+5. **Technical Risks** -- performance, security, scalability
 
 ### Example Output
 ```markdown
@@ -270,9 +270,9 @@ Q: What currencies if user has multi-currency transactions?
 **Context:** Need to export payment history as CSV. Payments stored in PostgreSQL.
 
 **Options:**
-1. Synchronous export (query → generate → send) - simple but slow for large datasets
-2. Asynchronous export (queue job → email file) - scalable but more complex
-3. Streaming export (query → stream to response) - scalable and responsive
+1. Synchronous export (query -> generate -> send) - simple but slow for large datasets
+2. Asynchronous export (queue job -> email file) - scalable but more complex
+3. Streaming export (query -> stream to response) - scalable and responsive
 
 **Decision:** Option 2 (Async with email)
 - Reason: User expects email link, not immediate download
@@ -341,7 +341,7 @@ CREATE INDEX idx_user_id_status ON payment_exports(user_id, status);
 
 ---
 
-## 5️⃣ **SOFTWARE ENGINEER AGENT**
+## 5. **SOFTWARE ENGINEER AGENT**
 **Type:** Code implementation (TDD)  
 **When to use:** After architect approves design  
 **Invoked by:** Orchestrator (Phase 4)  
@@ -367,7 +367,7 @@ public function testExportGeneratesCsv() {
     $this->assertStringContainsString('Amount', $csv);
 }
 
-// Run tests — MUST FAIL before implementation
+// Run tests -- MUST FAIL before implementation
 ```
 
 **GREEN PHASE:** Write minimum code to pass
@@ -389,22 +389,22 @@ class PaymentExporter {
     }
 }
 
-// Run tests — ALL PASS
+// Run tests -- ALL PASS
 ```
 
 **REFACTOR PHASE:** Clean up
 ```php
 // Extract to helper, improve naming, remove duplication
-// Run tests after EACH refactor step — must stay GREEN
+// Run tests after EACH refactor step -- must stay GREEN
 ```
 
 ### Code Standards
-- ✅ `declare(strict_types=1)` in every file
-- ✅ PSR-12 formatting
-- ✅ PHPStan level 5+ clean
-- ✅ Comments explain WHY, not WHAT
-- ✅ No functions > 30 lines
-- ✅ No hardcoded strings (use constants/config)
+- [x] `declare(strict_types=1)` in every file
+- [x] PSR-12 formatting
+- [x] PHPStan level 5+ clean
+- [x] Comments explain WHY, not WHAT
+- [x] No functions > 30 lines
+- [x] No hardcoded strings (use constants/config)
 
 ### How to Use
 ```bash
@@ -414,13 +414,13 @@ class PaymentExporter {
 ```
 
 ### Key Rules
-- ❌ Never output secrets/credentials/API keys
-- ✅ Run tests after every code change
-- 🚨 Flag CJIS-adjacent data handling
+- NO: Never output secrets/credentials/API keys
+- [x] Run tests after every code change
+- WARNING: Flag CJIS-adjacent data handling
 
 ---
 
-## 6️⃣ **QA ENGINEER AGENT**
+## 6. **QA ENGINEER AGENT**
 **Type:** Test validation & coverage  
 **When to use:** After Software Engineer  
 **Invoked by:** Orchestrator (Phase 5)  
@@ -434,11 +434,11 @@ class PaymentExporter {
 - Confirms coverage >= 80%
 
 ### QA Validation Checklist
-1. ✅ Run full test suite: `vendor/bin/phpunit --coverage-text`
-2. ✅ Map Gherkin scenarios to tests
-3. ✅ Check coverage >= 80%
-4. ✅ Test HTTP endpoints manually
-5. ✅ Test error paths (failures, edge cases)
+1. [x] Run full test suite: `vendor/bin/phpunit --coverage-text`
+2. [x] Map Gherkin scenarios to tests
+3. [x] Check coverage >= 80%
+4. [x] Test HTTP endpoints manually
+5. [x] Test error paths (failures, edge cases)
 
 ### Output Report
 ```markdown
@@ -446,15 +446,15 @@ class PaymentExporter {
 
 | Scenario | Test | Status |
 |----------|------|--------|
-| Export successful | testExportGeneratesCsv | ✅ PASS |
-| No payments | testExportWithNoPayments | ✅ PASS |
-| Large export | testExportLargeDataset | ✅ PASS |
-| Error handling | testExportDatabaseFailure | ✅ PASS |
+| Export successful | testExportGeneratesCsv | [x] PASS |
+| No payments | testExportWithNoPayments | [x] PASS |
+| Large export | testExportLargeDataset | [x] PASS |
+| Error handling | testExportDatabaseFailure | [x] PASS |
 
-**Coverage:** 89% (target: ≥ 80%) ✅
-**Tests:** 12 passing / 0 failing ✅
+**Coverage:** 89% (target: >= 80%) [x]
+**Tests:** 12 passing / 0 failing [x]
 
-**Verdict: PASS** ✅
+**Verdict: PASS** [x]
 ```
 
 ### How to Use
@@ -468,14 +468,14 @@ class PaymentExporter {
 ```
 
 ### Key Rules
-- ❌ FAIL if any test is red
-- ❌ FAIL if coverage < 80%
-- ❌ FAIL if missing test for acceptance criterion
-- ✅ Document test → scenario mapping
+- NO: FAIL if any test is red
+- NO: FAIL if coverage < 80%
+- NO: FAIL if missing test for acceptance criterion
+- [x] Document test -> scenario mapping
 
 ---
 
-## 7️⃣ **SECURITY ENGINEER AGENT**
+## 7. **SECURITY ENGINEER AGENT**
 **Type:** Security audit & compliance  
 **When to use:** After QA passes  
 **Invoked by:** Orchestrator (Phase 6)  
@@ -492,16 +492,16 @@ class PaymentExporter {
 ### Security Checks
 
 #### 1. OWASP Top 10
-- ❌ **SQL Injection** — all queries parameterized?
-- ❌ **Auth Bypass** — endpoints enforce auth?
-- ❌ **XSS** — all user input sanitized?
-- ❌ **IDOR** — user isolation enforced?
-- ❌ **Security Misconfiguration** — headers correct?
-- ❌ **Sensitive Data** — no hardcoded secrets?
-- ❌ **Access Control** — roles/permissions correct?
-- ❌ **CSRF** — tokens validated?
-- ❌ **Deserialization** — safe deserialization?
-- ❌ **Logging** — sensitive data not logged?
+- NO: **SQL Injection** -- all queries parameterized?
+- NO: **Auth Bypass** -- endpoints enforce auth?
+- NO: **XSS** -- all user input sanitized?
+- NO: **IDOR** -- user isolation enforced?
+- NO: **Security Misconfiguration** -- headers correct?
+- NO: **Sensitive Data** -- no hardcoded secrets?
+- NO: **Access Control** -- roles/permissions correct?
+- NO: **CSRF** -- tokens validated?
+- NO: **Deserialization** -- safe deserialization?
+- NO: **Logging** -- sensitive data not logged?
 
 #### 2. Dependency Audit
 ```bash
@@ -510,19 +510,19 @@ composer audit  # Check for known CVEs
 
 #### 3. Sensitive Data Check
 ```
-❌ No API keys in config files
-❌ No passwords in error messages
-❌ No PII in logs
-❌ No tokens in responses
+NO: No API keys in config files
+NO: No passwords in error messages
+NO: No PII in logs
+NO: No tokens in responses
 ```
 
 ### Severity Levels
 | Level | Definition | Action |
 |-------|-----------|--------|
-| 🔴 **HIGH** | Data breach, auth bypass, injection | **BLOCK release immediately** |
-| 🟠 **MEDIUM** | Info disclosure, weak validation | Fix before next sprint |
-| 🟡 **LOW** | Best practice deviation | Fix within 30 days |
-| ⚪ **INFO** | Observation, no risk | Log and monitor |
+| HIGH **HIGH** | Data breach, auth bypass, injection | **BLOCK release immediately** |
+| MEDIUM **MEDIUM** | Info disclosure, weak validation | Fix before next sprint |
+| LOW **LOW** | Best practice deviation | Fix within 30 days |
+| INFO **INFO** | Observation, no risk | Log and monitor |
 
 ### Example Report
 ```markdown
@@ -530,11 +530,11 @@ composer audit  # Check for known CVEs
 
 | Severity | File | Finding | Recommendation |
 |----------|------|---------|----------------|
-| 🔴 HIGH | PaymentExporter.php:45 | SQL injection risk | Use parameterized queries |
-| 🟠 MEDIUM | PaymentController.php:12 | User isolation not verified | Check user_id matches request |
-| 🟡 LOW | config/payment.php | Hardcoded timeout | Move to env var |
+| HIGH HIGH | PaymentExporter.php:45 | SQL injection risk | Use parameterized queries |
+| MEDIUM MEDIUM | PaymentController.php:12 | User isolation not verified | Check user_id matches request |
+| LOW LOW | config/payment.php | Hardcoded timeout | Move to env var |
 
-**Verdict: FAIL** ❌
+**Verdict: FAIL** NO:
 Cannot release with HIGH findings.
 ```
 
@@ -548,15 +548,15 @@ Cannot release with HIGH findings.
 ```
 
 ### Key Rules
-- 🚨 **ANY HIGH finding = release blocker**
-- ✅ Never output actual credential values
-- ✅ Flag presence only ("credentials found")
-- 🔒 Encrypt sensitive data at rest
-- 🔐 Use TLS 1.3+ for transit
+- WARNING: **ANY HIGH finding = release blocker**
+- [x] Never output actual credential values
+- [x] Flag presence only ("credentials found")
+- Encrypt sensitive data at rest
+- Use TLS 1.3+ for transit
 
 ---
 
-## 8️⃣ **RELEASE MANAGER AGENT**
+## 8. **RELEASE MANAGER AGENT**
 **Type:** Final approval & deployment  
 **When to use:** Last gate before production  
 **Invoked by:** Orchestrator (Phase 7)  
@@ -581,24 +581,24 @@ Cannot release with HIGH findings.
 ```
 
 ### Release Verdict Options
-- ✅ **GO** — Ready for production
-- ⏳ **PENDING** — Waiting for human approval
-- ❌ **NO-GO** — Critical blockers found
+- [x] **GO** -- Ready for production
+- PENDING **PENDING** -- Waiting for human approval
+- NO: **NO-GO** -- Critical blockers found
 
 ### Example Report
 ```markdown
-## Release Readiness: v3.0.2 — FEAT-123
+## Release Readiness: v3.0.2 -- FEAT-123
 
 | Gate | Status | Notes |
 |------|--------|-------|
-| QA | ✅ PASS | 12/12 green, 89% coverage |
-| Security | ✅ PASS | 0 HIGH, 1 MEDIUM (acceptable) |
-| CHANGELOG | ✅ PASS | Entry present |
-| Docs | ✅ PASS | README updated |
-| Jira | ✅ PASS | No open P0/P1 |
-| PR | ⏳ PENDING | Awaiting human approval |
+| QA | [x] PASS | 12/12 green, 89% coverage |
+| Security | [x] PASS | 0 HIGH, 1 MEDIUM (acceptable) |
+| CHANGELOG | [x] PASS | Entry present |
+| Docs | [x] PASS | README updated |
+| Jira | [x] PASS | No open P0/P1 |
+| PR | PENDING PENDING | Awaiting human approval |
 
-**VERDICT: PENDING HUMAN APPROVAL** ⏳
+**VERDICT: PENDING HUMAN APPROVAL** PENDING
 (All technical gates passed, waiting for PM sign-off)
 ```
 
@@ -612,10 +612,10 @@ Cannot release with HIGH findings.
 ```
 
 ### Key Rules
-- ❌ Never merge PR (humans only)
-- ❌ Never approve with HIGH security findings
-- ✅ Document all gate status
-- ✅ Require human approval before release
+- NO: Never merge PR (humans only)
+- NO: Never approve with HIGH security findings
+- [x] Document all gate status
+- [x] Require human approval before release
 
 ---
 
@@ -625,7 +625,7 @@ These agents help organize work and document features.
 
 ---
 
-## 🎯 **SCRUM MASTER AGENT**
+## **SCRUM MASTER AGENT**
 **Type:** Team coordination & metrics  
 **When to use:** Sprint planning, standups, retrospectives  
 **Used by:** Team leads for ceremony management  
@@ -639,11 +639,11 @@ These agents help organize work and document features.
 - Escalates velocity drops
 
 ### Ceremonies Supported
-- 📋 **Sprint Planning** — capacity check, story selection, goal
-- 🗣️ **Daily Standup** — yesterday/today/blockers
-- 📽️ **Sprint Review** — demo-ready items, acceptance
-- 🔍 **Retrospective** — what worked, what to improve, actions
-- 📚 **Backlog Grooming** — readiness, estimation, dependencies
+- **Sprint Planning** -- capacity check, story selection, goal
+- **Daily Standup** -- yesterday/today/blockers
+- **Sprint Review** -- demo-ready items, acceptance
+- **Retrospective** -- what worked, what to improve, actions
+- **Backlog Grooming** -- readiness, estimation, dependencies
 
 ### Metrics Tracked
 - **Velocity:** Story points completed vs committed
@@ -661,13 +661,13 @@ These agents help organize work and document features.
 ```
 
 ### Key Rules
-- 🚨 Surface blockers immediately
-- 📈 If velocity drops > 20% two sprints, escalate
-- 📝 Document sprint summary
+- WARNING: Surface blockers immediately
+-  If velocity drops > 20% two sprints, escalate
+-  Document sprint summary
 
 ---
 
-## ✍️ **TECHNICAL WRITER AGENT**
+## **TECHNICAL WRITER AGENT**
 **Type:** Documentation  
 **When to use:** After implementation, before release  
 **Invoked by:** Orchestrator (between dev and release)  
@@ -756,9 +756,9 @@ You'll receive an email with a download link.
 ```
 
 ### Key Rules
-- ❌ Don't document security internals
-- ✅ All code examples tested and working
-- 📁 Write to `docs/<type>/<STORY-ID>-<name>.md`
+- NO: Don't document security internals
+- [x] All code examples tested and working
+-  Write to `docs/<type>/<STORY-ID>-<name>.md`
 
 ---
 
@@ -768,7 +768,7 @@ These agents ensure security, audit trail, and state management.
 
 ---
 
-## 🔐 **AUDIT TRAIL AGENT**
+## **AUDIT TRAIL AGENT**
 **Type:** Immutable logging & compliance  
 **When to use:** Runs continuously, logs every phase  
 **Compliance:** CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX  
@@ -822,40 +822,40 @@ These agents ensure security, audit trail, and state management.
 ```
 
 ### Storage Strategy
-- **HOT** (0-30 days) — PostgreSQL + Redis cache
-- **WARM** (30-90 days) — PostgreSQL + daily snapshots
-- **COLD** (90+ days) — S3 archive + indexed metadata
-- **IMMUTABLE** — All entries append-only
+- **HOT** (0-30 days) -- PostgreSQL + Redis cache
+- **WARM** (30-90 days) -- PostgreSQL + daily snapshots
+- **COLD** (90+ days) -- S3 archive + indexed metadata
+- **IMMUTABLE** -- All entries append-only
 
 ### Security
-- ✅ AES-256 encryption at rest
-- ✅ TLS 1.3+ in transit
-- ✅ RBAC (role-based access control)
-- ✅ 7-year retention (SOC2 requirement)
-- ✅ Legal hold (freeze for investigation)
+- [x] AES-256 encryption at rest
+- [x] TLS 1.3+ in transit
+- [x] RBAC (role-based access control)
+- [x] 7-year retention (SOC2 requirement)
+- [x] Legal hold (freeze for investigation)
 
 ### How It's Used
 ```
 Automatically after every phase:
-Phase 1 output → Handshake validates → Audit logs
-                ↓
-Phase 2 output → Handshake validates → Audit logs
-                ↓
+Phase 1 output -> Handshake validates -> Audit logs
+                v
+Phase 2 output -> Handshake validates -> Audit logs
+                v
 ... (through all 10 phases)
 ```
 
 ### Compliance Reports
 Generate reports for:
-- ✅ CJIS (law enforcement data)
-- ✅ SOC2 (change management)
-- ✅ HIPAA (healthcare data)
-- ✅ GDPR (data privacy)
-- ✅ PCI-DSS (payment security)
-- ✅ SOX (financial controls)
+- [x] CJIS (law enforcement data)
+- [x] SOC2 (change management)
+- [x] HIPAA (healthcare data)
+- [x] GDPR (data privacy)
+- [x] PCI-DSS (payment security)
+- [x] SOX (financial controls)
 
 ### How to Use
 ```bash
-# Audit runs automatically — no invocation needed
+# Audit runs automatically -- no invocation needed
 # Access logs via query interface:
 
 SELECT * FROM audit_logs 
@@ -870,7 +870,7 @@ AND timestamp >= '2026-01-01';
 
 ---
 
-## 🧠 **STATE MANAGEMENT AGENT**
+## **STATE MANAGEMENT AGENT**
 **Type:** Global state with ACID guarantees  
 **When to use:** Runs continuously across all phases  
 **Compliance:** ACID, SOC2, HIPAA, GDPR, PCI-DSS  
@@ -926,25 +926,25 @@ AND timestamp >= '2026-01-01';
 ```
 
 ### Storage Strategy
-- **HOT** — Redis (< 1ms access)
-- **DURABLE** — PostgreSQL (ACID, history)
-- **COLD** — S3 (snapshots, archive)
+- **HOT** -- Redis (< 1ms access)
+- **DURABLE** -- PostgreSQL (ACID, history)
+- **COLD** -- S3 (snapshots, archive)
 
 ### Conflict Detection
 - **OCC** (Optimistic Concurrency Control)
-- **Version Vectors** — Track concurrent writes
-- **Last-Write-Wins** — Deterministic merge
-- **Alerts** — Notify on simultaneous updates
+- **Version Vectors** -- Track concurrent writes
+- **Last-Write-Wins** -- Deterministic merge
+- **Alerts** -- Notify on simultaneous updates
 
 ### Recovery Features
-- **Heartbeat** — Health checks every 30s
-- **Automatic Healing** — Repair inconsistent state
-- **Rollback** — Go back to last known good
-- **Audit Trail** — Log all recoveries
+- **Heartbeat** -- Health checks every 30s
+- **Automatic Healing** -- Repair inconsistent state
+- **Rollback** -- Go back to last known good
+- **Audit Trail** -- Log all recoveries
 
 ### How to Use
 ```bash
-# Runs automatically — no invocation needed
+# Runs automatically -- no invocation needed
 # Query state programmatically:
 
 GET /api/state/FEAT-123
@@ -961,14 +961,14 @@ Response: {restored to that phase}
 ```
 
 ### ACID Guarantees
-- **Atomicity** — All-or-nothing updates
-- **Consistency** — State always valid
-- **Isolation** — Concurrent reads/writes don't interfere
-- **Durability** — Survives failures
+- **Atomicity** -- All-or-nothing updates
+- **Consistency** -- State always valid
+- **Isolation** -- Concurrent reads/writes don't interfere
+- **Durability** -- Survives failures
 
 ---
 
-## 🤝 **HANDSHAKE AGENT**
+## **HANDSHAKE AGENT**
 **Type:** Phase-to-phase validation & context passing  
 **When to use:** Between every phase transition  
 **Compliance:** SOC2, CJIS, GDPR (data integrity)  
@@ -987,30 +987,30 @@ Before transitioning from one phase to next:
 
 **1. Completeness Check**
 ```
-❌ All expected fields present?
-❌ Output files created?
-❌ Artifacts documented?
+NO: All expected fields present?
+NO: Output files created?
+NO: Artifacts documented?
 ```
 
 **2. Quality Check**
 ```
-❌ Non-empty output?
-❌ Well-formed JSON/code/docs?
-❌ Confidence score >= 0.70?
+NO: Non-empty output?
+NO: Well-formed JSON/code/docs?
+NO: Confidence score >= 0.70?
 ```
 
 **3. Acceptance Criteria**
 ```
-❌ Each AC has passing test?
-❌ Code coverage >= 80%?
-❌ Security scan passed?
+NO: Each AC has passing test?
+NO: Code coverage >= 80%?
+NO: Security scan passed?
 ```
 
 **4. Metadata**
 ```
-❌ Timestamps valid?
-❌ Agent version correct?
-❌ Trace ID consistent?
+NO: Timestamps valid?
+NO: Agent version correct?
+NO: Trace ID consistent?
 ```
 
 ### What Gets Passed Between Phases
@@ -1020,7 +1020,7 @@ Phase 1 Output:
   - Acceptance criteria
   - Priority & effort
 
-        ↓ (Handshake validates)
+        v (Handshake validates)
 
 Phase 2 receives:
   - Story definition
@@ -1029,7 +1029,7 @@ Phase 2 receives:
   
         + generates Phase 2 output
 
-        ↓ (Handshake validates)
+        v (Handshake validates)
 
 Phase 3 receives:
   - Story definition
@@ -1044,11 +1044,11 @@ Phase 3 receives:
 
 ### Memory Continuity
 Handshake maintains:
-- **Story ID** — Same story through all phases
-- **Trace ID** — Tracks one request through entire pipeline
-- **Approval Chain** — Who approved what, when
-- **Version History** — What changed, why
-- **Reasoning Chain** — Decisions made + justification
+- **Story ID** -- Same story through all phases
+- **Trace ID** -- Tracks one request through entire pipeline
+- **Approval Chain** -- Who approved what, when
+- **Version History** -- What changed, why
+- **Reasoning Chain** -- Decisions made + justification
 
 ### Error Handling
 | Error | Response |
@@ -1081,15 +1081,15 @@ Response: {
 ```
 
 ### Key Guarantees
-- ✅ No context lost between phases
-- ✅ All outputs validated before passing
-- ✅ Quality gates enforced automatically
-- ✅ Complete audit trail of all handoffs
-- ✅ Ability to debug any phase transition
+- [x] No context lost between phases
+- [x] All outputs validated before passing
+- [x] Quality gates enforced automatically
+- [x] Complete audit trail of all handoffs
+- [x] Ability to debug any phase transition
 
 ---
 
-# 🎯 QUICK START
+# QUICK START
 
 ## Simplest Usage
 ```bash
@@ -1097,19 +1097,19 @@ Response: {
 /keel:implement-feature story="FEAT-123" feature="User payment export"
 
 # This automatically runs all 12 pipeline phases:
-# 1.  Product Owner     → requirements + ACs
-# 2.  Business Analyst  → functional spec + data flows
-# 3.  UI Designer       → design spec + HTML mockup
-# 4.  Solution Architect → architecture, API contracts
-# 5.  Software Engineer → production code (no tests)
-# 6.  TDD Red           → write tests (fail without impl)
-# 7.  TDD Green         → run tests; all pass, ≥ 80% coverage
-# 8.  QA Engineer       → full suite gate, AC traceability
-# 9.  E2E Engineer      → Playwright browser tests + screenshots
-# 10. Security Engineer → OWASP audit, prescan results
-# 11. Technical Writer  → README, CHANGELOG, docs
-# 12. Release Manager   → go/no-go, G-6 version stamp
-#
+# 1.  Product Owner     -> requirements + ACs
+# 2.  Business Analyst  -> functional spec + data flows
+# 3.  UI Designer       -> design spec + HTML mockup
+# 4.  Solution Architect -> architecture, API contracts
+# 5.  Software Engineer -> production code (no tests)
+# 6.  TDD Red           -> write tests (fail without impl)
+# 7.  TDD Green         -> run tests; all pass, >= 80% coverage
+# 8.  QA Engineer       -> full suite gate, AC traceability
+# 9.  E2E Engineer      -> Playwright browser tests + screenshots
+# 10. Security Engineer -> OWASP audit, prescan results
+# 11. Technical Writer  -> README, CHANGELOG, docs
+# 12. Release Manager   -> go/no-go, G-6 version stamp
+
 # While audit, state management, and handshake run continuously
 ```
 
@@ -1144,7 +1144,7 @@ command.)
 
 ---
 
-# 📊 AGENT SUMMARY TABLE
+# AGENT SUMMARY TABLE
 
 **Pipeline Phase Agents (12)**
 
@@ -1156,7 +1156,7 @@ command.)
 | 4 | **Solution Architect** | Architecture, API contracts, DB schema, ADRs | Design doc, API spec |
 | 5 | **Software Engineer** | Production code only (no tests) | Implemented feature files |
 | 6 | **TDD Red** *(v3.13.0)* | Write failing tests for every AC | Unit + integration test suite |
-| 7 | **TDD Green** *(v3.13.0)* | Run all tests; all pass, coverage ≥ 80% | Coverage report |
+| 7 | **TDD Green** *(v3.13.0)* | Run all tests; all pass, coverage >= 80% | Coverage report |
 | 8 | **QA Engineer** | AC-to-test mapping, full suite gate | QA report |
 | 9 | **E2E Engineer** *(v3.14.0)* | Playwright browser tests + screenshots | E2E spec, evidence screenshots |
 | 10 | **Security Engineer** | OWASP audit, dependency scan, compliance | Security report (0 HIGH to release) |
@@ -1167,7 +1167,7 @@ command.)
 
 | Agent | Purpose | Invoked by |
 |-------|---------|------------|
-| **Scrum Master** | Sprint ceremonies, velocity, impediment removal | Human only — never pipeline |
+| **Scrum Master** | Sprint ceremonies, velocity, impediment removal | Human only -- never pipeline |
 
 **Infrastructure Agents (3)**
 
@@ -1177,29 +1177,29 @@ command.)
 | **Handshake Agent** | Phase-to-phase validation + context passing |
 | **State Management Agent** | Locked state, atomic writes, audit trail, snapshots |
 
-**Infrastructure Scripts (v3.16.1)**
+**Infrastructure Scripts (v3.16.3)**
 
 | Script | Purpose |
 |--------|---------|
 | `scripts/keel-state.cjs` | Deterministic state engine (schema validation, gating, audit, snapshots) |
 | `scripts/keel-dashboard.cjs` | Read-only pipeline status web dashboard (loopback-only) |
-| `scripts/keel-classify-gate.cjs` | CJIS Data Classification Gate — detects CJIS-adjacent data patterns and blocks unclassified stories; wired via `hooks/hooks.json` on `UserPromptSubmit`, `PreToolUse`, and `PostToolUse` stages |
+| `scripts/keel-classify-gate.cjs` | CJIS Data Classification Gate -- detects CJIS-adjacent data patterns and blocks unclassified stories; wired via `hooks/hooks.json` on `UserPromptSubmit`, `PreToolUse`, and `PostToolUse` stages |
 
 ---
 
-## 🚀 Next Steps
+## Next Steps
 
 1. **Start here:** `/keel:implement-feature story="FEAT-001" feature="Your feature"`
 2. **Watch it work:** Framework invokes all agents automatically
-3. **Review outputs:** See requirements → design → code → tests → security → release
+3. **Review outputs:** See requirements -> design -> code -> tests -> security -> release
 4. **In production:** Use for every feature delivery
 
 ---
 
-**Framework:** Keel AI-SDLC Framework v3.16.1  
+**Framework:** Keel AI-SDLC Framework v3.16.3  
 **License:** MIT  
 **Author:** Amar Singh  
 **Repository:** https://github.com/creativemyntra/keel  
 
-✅ **All 15 agents ready to deliver enterprise-grade features in hours, not weeks!**
+[x] **All 15 agents ready to deliver enterprise-grade features in hours, not weeks!**
 

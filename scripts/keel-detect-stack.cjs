@@ -10,7 +10,7 @@
  *         nonzero exit tells init.md's instructions to stop before the
  *         composer create-project step instead of failing deep inside it.
  *
- * Usage: node keel-detect-stack.cjs [--stack=cakephp|laravel|django|rails] [--mode=new|existing]
+ * Usage: node keel-detect-stack.cjs [--stack=cakephp] [--mode=new|existing]
  */
 'use strict';
 
@@ -112,12 +112,34 @@ if (detected && detected.file === 'composer.json') {
   }
 }
 
+// Non-PHP stack detection — Keel supports CakePHP only in this release.
+// Other frameworks (Node, Django, Rails, Laravel) are blocked; do not proceed.
+if (detected && detected.file === 'package.json' && requestedStack !== 'cakephp') {
+  result.blockers.push(
+    `package.json detected. Keel v3.x supports CakePHP 4.4/PHP 8.1 only. ` +
+    `Node/JS projects are not supported in this release. ` +
+    `If this is a PHP project that also has a frontend package.json, pass --stack=cakephp to override detection.`
+  );
+}
+if (detected && detected.file === 'manage.py') {
+  result.blockers.push(
+    `manage.py detected (Django). Keel v3.x supports CakePHP 4.4/PHP 8.1 only. ` +
+    `Django projects are not supported in this release.`
+  );
+}
+if (detected && detected.file === 'Gemfile') {
+  result.blockers.push(
+    `Gemfile detected (Rails). Keel v3.x supports CakePHP 4.4/PHP 8.1 only. ` +
+    `Rails projects are not supported in this release.`
+  );
+}
+
 // 3. Greenfield PHP toolchain check -- this is the check that was completely
 // missing before: init.md would run straight into `composer create-project`
 // with no upfront verification, failing deep in the scaffold step with a
 // confusing error instead of a clear, actionable one.
 const wantsPhpGreenfield = result.effective_mode === 'new' &&
-  (requestedStack === 'cakephp' || requestedStack === 'laravel' || !requestedStack);
+  (requestedStack === 'cakephp' || !requestedStack);
 
 if (wantsPhpGreenfield && (!result.php_on_path || !result.composer_on_path)) {
   const missing = [];

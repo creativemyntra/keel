@@ -10,7 +10,7 @@ Set up and run parallel pipelines for: $ARGUMENTS
    reverse-dependencies for file overlap between the stories' expected scope.
    If you cannot rule out overlap (no CodeGraph, or an ambiguous case), tell
    the human and either run those two sequentially or ask them to confirm the
-   files don't overlap. Never guess this — a false "independent" call causes a
+   files don't overlap. Never guess this -- a false "independent" call causes a
    real merge conflict later, not a graceful failure now.
 2. For each confirmed-independent story: `node ~/.keel/bin/keel-worktree.cjs create <story-id> --base=<--base or the default branch>`.
 3. Spawn one `keel:orchestrator` run per story (Claude Code Task tool,

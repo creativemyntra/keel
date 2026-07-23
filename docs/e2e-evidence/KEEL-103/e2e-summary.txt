@@ -1,0 +1,48 @@
+KEEL-103 E2E subprocess test run (self-contained fixtures)
+Node: v26.1.0   Engine: C:\Projects\keel\scripts\keel-state.cjs
+E2E_ROOT: C:\Users\MATELL~1\AppData\Local\Temp\keel-e2e-Dq3mMv
+
+Result: 42 / 42 passed
+
+PASS  AC-1 live describe: exit code is 0
+PASS  AC-1 live describe: stdout contains story ID KEEL-103
+PASS  AC-1 live describe: stdout contains separator line
+PASS  AC-1 live describe: stdout contains label "Scope:"
+PASS  AC-1 live describe: stdout contains label "Current phase:"
+PASS  AC-1 live describe: stdout contains label "Halted:"
+PASS  AC-1 live describe: stdout contains label "Idle:"
+PASS  AC-1 live describe: stdout contains label "Started:"
+PASS  AC-1 live describe: stdout contains "Completed phases:" section
+PASS  AC-1 live describe: stdout contains "Gate events used:" line
+PASS  AC-1 live describe: stderr is empty on success
+PASS  AC-2 missing story: exit code is 1
+PASS  AC-2 missing story: stderr contains "FAIL: no manifest for story"
+PASS  AC-2 missing story: stderr contains the requested story ID
+PASS  AC-2 missing story: stderr is a clean FAIL message (no stack trace)
+PASS  AC-2 missing story: stdout is empty
+PASS  AC-3 idle format: Idle line shows either "Xh Ym" or "Xm Ys"
+PASS  AC-3 idle format: 2h-old story shows "Xh Ym"
+PASS  AC-3 fixture sub-hour: "Xm Ys" format used for 3m30s idle
+PASS  AC-3 fixture sub-hour: "Xh Ym" NOT used for 3m30s idle
+PASS  AC-3 fixture 62-min boundary: output contains "1h 2m"
+PASS  AC-4 phase names: completed phase shows agent name "product-owner"
+PASS  AC-4 phase names: completed phase shows agent name "business-analyst"
+PASS  AC-4 phase names: completed phase shows agent name "solution-architect"
+PASS  AC-4 phase names: completed phase shows agent name "software-engineer"
+PASS  AC-4 phase names: completed phase shows agent name "tdd-red"
+PASS  AC-4 phase names: completed phase shows agent name "tdd-green"
+PASS  AC-4 phase names: completed phase shows agent name "qa-engineer"
+PASS  AC-4 phase names: in-progress shows "complete" for finished story
+PASS  AC-4 phase names: release-manager NOT in remaining (out-of-scope)
+PASS  AC-5 regression: status --all exits 0
+PASS  AC-5 regression: status --all output is valid JSON
+PASS  AC-5 regression: status --all returns a JSON array
+PASS  AC-5 regression: status --all returns >= 3 stories (KEEL-101/102/103)
+PASS  AC-5 regression: story KEEL-101 has exactly {story_id,scope,current_phase,halted}
+PASS  AC-5 regression: story KEEL-102 has exactly {story_id,scope,current_phase,halted}
+PASS  AC-5 regression: story KEEL-103 has exactly {story_id,scope,current_phase,halted}
+PASS  AC-5 regression: KEEL-103 entry has scope=feature
+PASS  AC-5 regression: KEEL-103 entry current_phase matches fixture manifest
+PASS  AC-5 regression: KEEL-103 entry has halted=false
+PASS  AC-5 regression: entries are sorted alphabetically by story_id
+PASS  AC-5 regression: stderr is empty on successful status --all
