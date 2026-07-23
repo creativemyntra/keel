@@ -7,3 +7,23 @@ economy:
   security_skip_on_clean: false  # OWNER OPT-IN: clean prescan + TRIVIAL diff replaces the security spawn
   context_budget_files: 6        # max source files any agent loads (CodeGraph-selected)
   output_caps: true              # report length caps enforced
+
+# Per-agent token-weight caps (output tokens; input tokens are capped by context_budget_files).
+# total_pipeline_budget is the sum-ceiling across one full pipeline run.
+# weight-budget.test.cjs asserts: each agent <= default_cap AND sum(agents) <= total_pipeline_budget.
+token_weights:
+  default_cap: 50000
+  total_pipeline_budget: 420000
+  agents:
+    product-owner: 30000
+    business-analyst: 40000
+    ui-designer: 40000
+    solution-architect: 50000
+    software-engineer: 50000
+    qa-engineer: 40000
+    e2e-engineer: 35000
+    security-engineer: 40000
+    technical-writer: 30000
+    release-manager: 30000
+    handshake-agent: 10000
+    orchestrator: 20000

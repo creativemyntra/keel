@@ -14,6 +14,7 @@
     },
     "agent": {
       "type": "string",
+      "description": "tdd-red and tdd-green are DEPRECATED (legacy <=v3.12); accepted for validating old state files only, not for new stories.",
       "enum": [
         "product-owner",
         "business-analyst",
