@@ -15,7 +15,7 @@ or has a story with approved requirements and design.
 ## Instructions
 
 This skill has exactly one job: hand the story to the pipeline's single entry
-point. Do NOT run phases yourself — a second pipeline definition here would
+point. Do NOT run phases yourself -- a second pipeline definition here would
 drift from the governed one.
 
 1. Determine the story ID (e.g. `FEAT-12`, `HART-287`). If the user gave none,
@@ -26,25 +26,25 @@ drift from the governed one.
 3. The orchestrator owns everything from there: it initializes
    `.keel/state/<story-id>/` through the state engine, sequences the 10 phase
    agents in order, runs the handshake gate after every phase, and enforces the
-   bounded retry loop (3 attempts → halt and escalate):
+   bounded retry loop (3 attempts -> halt and escalate):
 
    ```
-   1  Product Owner / Business Analyst  — requirements intake
-   2  Business Analyst                  — functional spec
-   3  UI Designer                       — screen flows, mockups, component states
-   4  Solution Architect                — architecture + design (reads UI design)
-   5  Software Engineer                 — production code + unit tests (coverage ≥ 80%)
-   6  QA Engineer                       — AC mapping + integration tests
-   7  E2E Engineer                      — Playwright browser tests
-   8  Security Engineer                 — OWASP + dependency audit
-   9  Technical Writer                  — docs + changelog
-   10 Release Manager                   — go/no-go
+   1  Product Owner / Business Analyst  -- requirements intake
+   2  Business Analyst                  -- functional spec
+   3  UI Designer                       -- screen flows, mockups, component states
+   4  Solution Architect                -- architecture + design (reads UI design)
+   5  Software Engineer                 -- production code + unit tests (coverage >= 80%)
+   6  QA Engineer                       -- AC mapping + integration tests
+   7  E2E Engineer                      -- Playwright browser tests
+   8  Security Engineer                 -- OWASP + dependency audit
+   9  Technical Writer                  -- docs + changelog
+   10 Release Manager                   -- go/no-go
    ```
 
 4. Relay the orchestrator's delivery summary to the user:
 
 ```markdown
-## Feature Implementation: <STORY-ID> — <result>
+## Feature Implementation: <STORY-ID> -- <result>
 
 - Phases completed: <N>/10 (state: .keel/state/<STORY-ID>/)
 - Unit tests: <N> passing, coverage <X>% on changed files
@@ -56,12 +56,12 @@ Files changed: <from the release-manager phase output's artifacts>
 ```
 
 If the pipeline HALTED, present every recorded failure reason from the
-handshake report — the human decides what happens next.
+handshake report -- the human decides what happens next.
 
 ## Rules
 
-- Never bypass the orchestrator to "just implement it" — the governance gates
-  (development before tests, tests before E2E, coverage ≥ 80%, zero HIGH
+- Never bypass the orchestrator to "just implement it" -- the governance gates
+  (development before tests, tests before E2E, coverage >= 80%, zero HIGH
   security findings, release approval) only exist inside the pipeline.
 - Never touch files under `.keel/state/` directly; the state engine owns them.
 - All governance rules from CLAUDE.md apply throughout.

@@ -327,6 +327,7 @@ ${rows}
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="refresh" content="30">
   <title>Keel Pipeline Dashboard</title>
+  <link rel="icon" href="data:,">
   <style>
     @keyframes pulse {
       0%, 100% { opacity: 1; }

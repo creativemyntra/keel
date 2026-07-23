@@ -1,0 +1,24 @@
+{
+  "story_id": "TEST-AUDIT-1",
+  "title": "Audit fixture test",
+  "scope": "feature",
+  "expected_phases": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "current_phase": 1,
+  "attempts": {},
+  "gate_events": 0,
+  "max_gates": 40,
+  "max_hours": 72,
+  "started_at": "2026-07-21T11:13:29.225Z",
+  "updated_at": "2026-07-21T11:13:29.229Z"
+}

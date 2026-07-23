@@ -1,0 +1,19 @@
+﻿# dev artifacts — excluded from npm publish (package.json "files" is the canonical whitelist;
+# this file is defence-in-depth in case "files" is ever removed or expanded carelessly)
+dev-history/
+audit/
+playwright-report/
+tests/
+docs/e2e-evidence/
+docs/reports/
+docs/plans/
+docs/audit/
+docs/defects/
+docs/demo/
+docs/analysis/
+docs/superpowers/
+docs/test-plans/
+RELEASE-NOTES-v*.md
+playwright.config.ts
+.keel/
+node_modules/

@@ -1,0 +1,11 @@
+{"phase":0,"agent":"orchestrator","action":"pipeline_initialized","notes":"","ts":"2026-07-21T11:53:30.274Z"}
+{"phase":1,"agent":"handshake","action":"gate_passed","notes":"Audit lifecycle test","ts":"2026-07-21T11:54:46.179Z"}
+{"phase":1,"agent":"product-owner","action":"phase_completed","outputs":["01-product-owner.json"],"artifacts":[],"decisions":[],"git_commit":null,"notes":"auto-audited on gate PASS","ts":"2026-07-21T11:54:46.182Z"}
+{"phase":2,"agent":"handshake","action":"gate_failed","attempt":1,"notes":"Intentional failure for test","ts":"2026-07-21T11:54:57.909Z"}
+{"phase":2,"agent":"handshake","action":"gate_failed","attempt":2,"notes":"second fail","ts":"2026-07-21T11:55:04.006Z"}
+{"phase":2,"agent":"handshake","action":"pipeline_halted","attempt":3,"notes":"phase 2 failed 3 times","notified":false,"ts":"2026-07-21T11:55:04.456Z"}
+{"agent":"state-management","action":"snapshot_created","notes":"2026-07-21T11-55-13-343Z","ts":"2026-07-21T11:55:13.405Z"}
+{"phase":2,"agent":"human","action":"pipeline_resumed","notes":"Human override: skip phase 2, proceed","ts":"2026-07-21T11:55:32.061Z"}
+{"agent":"state-management","action":"snapshot_created","notes":"2026-07-21T11-55-45-121Z","ts":"2026-07-21T11:55:45.141Z"}
+{"agent":"state-management","action":"snapshot_restored","notes":"2026-07-21T11-55-13-343Z","ts":"2026-07-21T11:55:45.156Z"}
+{"phase":1,"agent":"product-owner","action":"phase_completed","outputs":["01-product-owner.json"],"artifacts":[],"decisions":[],"git_commit":null,"notes":"","ts":"2026-07-21T11:55:54.883Z"}

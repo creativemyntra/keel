@@ -1,0 +1,6 @@
+EXIT CODE: 1
+
+STDOUT:
+
+STDERR:
+FAIL: no manifest for story KEEL-DOES-NOT-EXIST — pipeline not initialized (run: init KEEL-DOES-NOT-EXIST)

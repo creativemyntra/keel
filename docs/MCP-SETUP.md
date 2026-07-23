@@ -89,6 +89,10 @@ binaries download on first use.
 
 Used by: the `e2e-test` skill and the QA phase of the pipeline.
 
+**Version pinning:** `.mcp.json` ships Playwright MCP using the latest tag. Pin to a specific version (e.g. version 0.0.78) once your E2E suite is validated — latest can introduce breaking behavior changes on updates. To pin: edit the args array in `.mcp.json` and commit the change. Re-run the full E2E suite after each intentional upgrade.
+
+**CJIS note:** Playwright screenshots are JPEG/PNG binary files — the CJIS classification gate scans text only and does NOT inspect screenshot content. All E2E test fixtures and captured application state MUST use fully synthetic, non-CJIS data by design (enforced at test-design time, not by the gate). See G-10 and the screenshot policy amendment in `.keel/GUARDRAILS.md`.
+
 ## 4. Slack notifications
 
 **Default:** disabled.

@@ -33,7 +33,7 @@ inputs:
     required: false
     default: 'canary'
   stack:
-    description: 'Stack (cakephp, laravel, django, rails) - default: cakephp'
+    description: 'Stack (cakephp) — CakePHP 4.4/PHP 8.1 is the only supported stack in this release'
     required: false
     default: 'cakephp'
   claude-api-key:
