@@ -367,19 +367,7 @@ git push origin v3.1.0
 # Publish
 ```
 
-#### 8. Publish to Distribution Channels
-```bash
-# npm
-npm publish --access public
-
-# Docker
-docker build -t amarsingh/keel:3.1.0 .
-docker push amarsingh/keel:3.1.0
-
-# GitHub Marketplace: Auto-discovered after release
-```
-
-#### 9. Merge Back to Develop
+#### 8. Merge Back to Develop
 ```bash
 git checkout develop
 git pull origin develop
@@ -576,7 +564,6 @@ npm run lint .github/workflows/*.yml
 - **Issue Tracker:** https://github.com/creativemyntra/keel/issues
 - **Discussions:** https://github.com/creativemyntra/keel/discussions
 - **GitHub Marketplace:** https://github.com/marketplace/actions/keel-ai-sdlc
-- **npm Package:** https://www.npmjs.com/package/@amarsingh/keel
 
 ### Documentation Files
 
