@@ -141,13 +141,14 @@ in `hooks/hooks.json` and the story scope includes CJIS-adjacent data, the
 security-engineer and release-manager phases must both flag this as a HIGH
 finding -- the release cannot proceed until the gate is wired.
 
-**Forseti follow-up:** NCIC_ID, LEID, HART_CASE_ID, and HART_SUBJECT_ID patterns in
-`config/cjis-patterns.json` are `TODO-*-PLACEHOLDER` entries that match nothing in
-production. Real CJIS compliance requires format strings from Forseti. Until supplied,
+**Forseti follow-up:** NCIC_ID, LEID, HART_CASE_ID, and HART_SUBJECT_ID are declared
+in `config/cjis-patterns.json` under `blocked_categories` — they have no active regex
+patterns yet. Real CJIS compliance requires format strings from Forseti. Until supplied,
 the gate catches SSN/PHONE/EMAIL/DOB/NAME_NARRATIVE/ADDRESS but is BLIND to NCIC
-numbers, LEIDs, and HART case/subject IDs. Security-engineer MUST note this gap in
-every phase-8 report. Action: file a Forseti request, add real regex formats, and
-remove the BLOCKER comment from `config/cjis-patterns.json`.
+numbers, LEIDs, and HART case/subject IDs. The gate emits a `CJIS COVERAGE GAP` warning
+on every run; set `KEEL_CJIS_STRICT=1` to hard-fail instead. Security-engineer MUST note
+this gap in every phase-8 report. Action: file a Forseti request, add real regex formats,
+remove the category from `blocked_categories`.
 
 **Screenshot scanning limitation:** Playwright screenshots are image files -- the CJIS
 gate performs text-only scanning and cannot inspect image content. E2E test fixtures
@@ -193,3 +194,57 @@ If either command returns output: **NO-GO**. The out-of-order commits must be
 brought into the chain (cherry-pick to dev, then re-promote) before release.
 
 **Applies to:** every story, every hotfix, every docs-only change.
+
+---
+
+## G-12 - Bug development lifecycle (Jira-first, RCA-local, fix-linked)
+
+Every bug fix MUST follow this lifecycle in order. No step may be skipped.
+
+### Lifecycle stages
+
+```
+1. REPORTED   → Jira ticket created (P0/P1/P2/P3) BEFORE any code changes
+2. INVESTIGATE → /keel:investigate-defect run locally; RCA in docs/defects/ (gitignored)
+3. FIX        → fix branch off dev; commit message includes Jira ticket ID
+4. REVIEW     → PR opened; PR description links Jira ticket ("Fixes HART-xxx")
+5. MERGED     → merged dev→master→prod via G-11 promotion chain
+6. CLOSED     → Jira ticket transitioned to Done only after prod merge (G-2 + guard-approve)
+```
+
+### Mandatory rules
+
+**Jira-first:** No `fix:` commit may be made without a Jira ticket already open.
+The `commit-msg` hook (`scripts/keel-bug-lifecycle.cjs`) enforces this: any `fix:`
+commit missing a Jira ID pattern (`[A-Z]{2,}-\d+`) is BLOCKED.
+
+**RCA requirement:**
+- P0 / P1 bugs: RCA is MANDATORY before the fix is merged to master.
+- P2 / P3 bugs: RCA is recommended, not blocking.
+- RCA file lives in `docs/defects/<TICKET>-rca.md` — this path is gitignored.
+- Upload RCA to Confluence (`Engineering > Defects > <TICKET>`) and paste the
+  Confluence URL into the Jira ticket before closing.
+
+**Artifact routing:**
+
+| Artifact | Goes to | Never goes to |
+|----------|---------|---------------|
+| Bug report | Jira ticket | git commit message only |
+| RCA document | Confluence (linked from Jira) | git (`docs/defects/` is gitignored) |
+| CJIS incidents (`.keel/security/incidents.jsonl`) | Jira security ticket | git (`.keel/security/` is gitignored) |
+| Prescan findings (`.keel/state/*/prescan.json`) | Jira security ticket if HIGH/CRITICAL | git (gitignored) |
+| Fix code + tests | git (PR → dev→master→prod) | Jira comments |
+| Audit summary | `.keel/state/*/audit-log.jsonl` (git) | — |
+
+**Guard enforcement:**
+- `scripts/guard-jira-write.cjs` — blocks Jira writes outside active story scope.
+- `scripts/guard-approve.cjs` — blocks transitions to Done/Released without `KEEL_APPROVAL_TOKEN`.
+- `commit-msg` hook — blocks `fix:` commits missing a Jira ticket reference.
+
+**Closing a ticket:** A Jira bug ticket transitions to Done ONLY when the fix is
+confirmed in prod. The release manager verifies the merge is in prod (G-11 chain)
+before approving the transition. guard-approve.cjs enforces the approval token at
+transition time.
+
+**Install hooks:** New clones must run `node scripts/install-hooks.cjs` to activate
+the G-12 commit-msg gate locally. CI enforces the same check server-side.

@@ -22,6 +22,11 @@ exit $?
 node "$(git rev-parse --show-toplevel)/scripts/keel-version-audit.cjs"
 exit $?
 `,
+  'commit-msg': `#!/bin/sh
+# Keel G-12 bug lifecycle gate — fix: commits must reference a Jira ticket.
+node "$(git rev-parse --show-toplevel)/scripts/keel-bug-lifecycle.cjs" "$1"
+exit $?
+`,
 };
 
 for (const [name, content] of Object.entries(HOOKS)) {
@@ -30,4 +35,4 @@ for (const [name, content] of Object.entries(HOOKS)) {
   console.log(`Installed: .git/hooks/${name}`);
 }
 
-console.log('\nKeel git hooks installed. Version audit runs on every commit and push.');
+console.log('\nKeel git hooks installed. Version audit + bug lifecycle gates active.');

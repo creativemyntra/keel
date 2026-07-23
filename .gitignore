@@ -17,6 +17,13 @@ gitleaks-report.json
 # Generate locally; store in Jira/Confluence, not in this repo.
 docs/defects/
 
+# CJIS incident log — contains incident IDs + category hashes, never commit
+.keel/security/
+
+# Prescan raw output — may contain CVE names/vulnerability details
+# Findings summary is captured in audit-log.jsonl (committed); raw output stays local
+.keel/**/prescan.json
+
 # IDE & Editor
 .vscode/
 .idea/
