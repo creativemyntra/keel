@@ -5,7 +5,7 @@
   "type": "module",
   "main": "bin/keel.js",
   "bin": {
-    "keel": "./bin/keel.js"
+    "keel": "bin/keel.js"
   },
   "scripts": {
     "start": "node ./bin/keel.js",
@@ -38,7 +38,7 @@
   "homepage": "https://github.com/creativemyntra/keel",
   "repository": {
     "type": "git",
-    "url": "https://github.com/creativemyntra/keel.git"
+    "url": "git+https://github.com/creativemyntra/keel.git"
   },
   "bugs": {
     "url": "https://github.com/creativemyntra/keel/issues"
