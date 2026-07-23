@@ -13,6 +13,10 @@ yarn.lock
 # Security scan artifacts (never commit — may contain finding context)
 gitleaks-report.json
 
+# Defect RCAs — security-sensitive, developer-local only
+# Generate locally; store in Jira/Confluence, not in this repo.
+docs/defects/
+
 # IDE & Editor
 .vscode/
 .idea/
