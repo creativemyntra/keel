@@ -246,5 +246,37 @@ confirmed in prod. The release manager verifies the merge is in prod (G-11 chain
 before approving the transition. guard-approve.cjs enforces the approval token at
 transition time.
 
+### Commit message format (enforced for every commit)
+
+```
+<type>(<scope>): <subject>        ← max 72 chars, imperative mood, no trailing period
+
+<body — explain WHY, not WHAT>
+
+<Fixes|Refs> PROJECT-123          ← Jira ticket ID
+```
+
+**Valid types:**
+
+| Type | Ticket | Description |
+|------|--------|-------------|
+| `feat` | REQUIRED | New feature (maps to a Jira story) |
+| `fix` | REQUIRED | Bug fix (maps to a Jira bug ticket) |
+| `refactor` | REQUIRED | Code restructure with no behaviour change |
+| `perf` | REQUIRED | Performance improvement |
+| `test` | REQUIRED | Adding or updating tests |
+| `chore` | recommended | Build tasks, dependency bumps |
+| `docs` | recommended | Documentation only |
+| `ci` | recommended | CI/CD pipeline changes |
+| `style` | recommended | Formatting, whitespace |
+| `build` | recommended | Build system changes |
+| `revert` | none | Reverts a prior commit |
+
+**Additional rules enforced by `scripts/keel-bug-lifecycle.cjs`:**
+- Subject line: max 72 chars
+- Subject: imperative mood (blocked if starts with added/removed/updated/fixed/changed/...)
+- Subject: no trailing period
+- Merge commits and revert auto-messages are exempt
+
 **Install hooks:** New clones must run `node scripts/install-hooks.cjs` to activate
 the G-12 commit-msg gate locally. CI enforces the same check server-side.
