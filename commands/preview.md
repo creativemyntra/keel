@@ -1,5 +1,5 @@
 ---
-description: Dry-run preview — show what a pipeline run will do before committing to it.
+description: Dry-run preview -- show what a pipeline run will do before committing to it.
 argument-hint: [--story=ID] [--stack=cakephp] [--scope=feature|defect]
 ---
 
@@ -15,7 +15,7 @@ Run: `node ~/.keel/bin/keel-detect-stack.cjs` (pass any --stack or --mode flags 
 
 Show: `effective_mode`, `detected_manifest`, `version_warnings` (all), `blockers` (all).
 
-If `blockers` is non-empty: mark the preview as **NOT READY TO RUN** and stop — show the blockers
+If `blockers` is non-empty: mark the preview as **NOT READY TO RUN** and stop -- show the blockers
 and the `install_hint` (if present) but do not display the remaining sections.
 
 ## 2. Story State
@@ -42,17 +42,17 @@ Read `.keel/economy.yml` (show defaults if absent). Display all five knobs and t
 ## 4. Pipeline Map with Model Tiers
 
 Show the phases that WILL run given `--scope` (default: feature = all 10 phases; defect = phases 1, 5, 6, 8).
-Mark skipped phases with `—`. Add handshake gate rows between active phase pairs.
+Mark skipped phases with `--`. Add handshake gate rows between active phase pairs.
 
 | Phase | Agent | Model | Status |
 |-------|-------|-------|--------|
 | 1 | product-owner / business-analyst | haiku (jira-import) / sonnet (full-pipeline) | active |
-| 1→2 gate | handshake | haiku (TRIVIAL) / sonnet (NORMAL/FULL) | active |
-| 2 | business-analyst | sonnet | active / — (defect) |
+| 1->2 gate | handshake | haiku (TRIVIAL) / sonnet (NORMAL/FULL) | active |
+| 2 | business-analyst | sonnet | active / -- (defect) |
 | ... | ... | ... | ... |
-| 10 | release-manager | sonnet | active / — (defect) |
+| 10 | release-manager | sonnet | active / -- (defect) |
 
-**Estimated agent spawns:** (active phases × 1) + (active phases − 1 handshake gates) + 1 prescan = N total.
+**Estimated agent spawns:** (active phases x 1) + (active phases - 1 handshake gates) + 1 prescan = N total.
 
 ## 5. CJIS Gate Status
 
@@ -60,29 +60,29 @@ Check `hooks/hooks.json` for `keel-classify-gate.cjs` wiring:
 
 | Hook stage | Wired? |
 |-----------|--------|
-| `UserPromptSubmit` | ✓ / ✗ |
-| `PreToolUse` (matcher includes Task/Write/Edit/Bash) | ✓ / ✗ |
-| `PostToolUse` (matcher includes Bash/Read/Grep/mcp__) | ✓ / ✗ |
-| `config/cjis-patterns.json` present | ✓ / ✗ |
+| `UserPromptSubmit` | [x] / [ ] |
+| `PreToolUse` (matcher includes Task/Write/Edit/Bash) | [x] / [ ] |
+| `PostToolUse` (matcher includes Bash/Read/Grep/mcp__) | [x] / [ ] |
+| `config/cjis-patterns.json` present | [x] / [ ] |
 
-Overall verdict: **FULLY WIRED** (all ✓) / **PARTIAL** / **NOT WIRED**.
+Overall verdict: **FULLY WIRED** (all [x]) / **PARTIAL** / **NOT WIRED**.
 
-Note: PostToolUse blocking is alerting/logging only — the model may have seen content in
+Note: PostToolUse blocking is alerting/logging only -- the model may have seen content in
 the current turn before the block fires. For hard prevention, PreToolUse is the control.
 
 ## 6. CodeGraph Freshness
 
-Read `.keel/graph/codegraph.json` → `generated_at`. Compare with last commit date
+Read `.keel/graph/codegraph.json` -> `generated_at`. Compare with last commit date
 (`git log -1 --format=%cI`).
 
-- `generated_at` is after the last commit → **Fresh** ✓
-- Last commit is newer → **Stale** ⚠ (show how many commits behind; impact analyses may miss recent changes)
-- File missing → **Not built** ✗ (agents will fall back to full-tree grep — higher token cost)
+- `generated_at` is after the last commit -> **Fresh** [x]
+- Last commit is newer -> **Stale** (show how many commits behind; impact analyses may miss recent changes)
+- File missing -> **Not built** (agents will fall back to full-tree grep -- higher token cost)
 
 ## 7. Next Steps
 
 Use AskUserQuestion with these options:
-- "Run the pipeline now" — invoke `/keel:implement-feature` or `/keel:from-jira` as appropriate
-- "Fix the blockers first" — shown only if blockers were found in step 1
-- "Review economy options" — summarize the five economy knobs with opt-in recommendations
-- "Cancel" — do nothing
+- "Run the pipeline now" -- invoke `/keel:implement-feature` or `/keel:from-jira` as appropriate
+- "Fix the blockers first" -- shown only if blockers were found in step 1
+- "Review economy options" -- summarize the five economy knobs with opt-in recommendations
+- "Cancel" -- do nothing

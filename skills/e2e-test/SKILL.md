@@ -1,6 +1,6 @@
 ---
 name: e2e-test
-description: Phase 7 of the keel pipeline — write and run Playwright E2E browser tests for every user-facing AC. Also usable standalone to generate or run E2E tests outside the pipeline.
+description: Phase 7 of the keel pipeline -- write and run Playwright E2E browser tests for every user-facing AC. Also usable standalone to generate or run E2E tests outside the pipeline.
 ---
 
 # e2e-test
@@ -25,7 +25,7 @@ against the live app, captures screenshots, and produces `08-e2e-engineer.json`.
 
 ## Standalone instructions
 
-1. Identify the user flow (e.g., "login → create subscription → see confirmation").
+1. Identify the user flow (e.g., "login -> create subscription -> see confirmation").
 2. Ensure the app is running at `$APP_URL` (default `http://localhost:8080`).
 3. Write the Playwright test:
 
@@ -64,10 +64,10 @@ test.describe('<Feature>', () => {
 
 ## Rules
 
-- Use `data-testid` attributes — not CSS classes or text that can change.
-- Never hard-code credentials — use `process.env`.
+- Use `data-testid` attributes -- not CSS classes or text that can change.
+- Never hard-code credentials -- use `process.env`.
 - Each test must be independent (no shared mutable state between tests).
-- Check `browser_console_messages` after each test — JS errors are failures.
+- Check `browser_console_messages` after each test -- JS errors are failures.
 - Take a screenshot of the final state of each test.
 - Maximum 30s timeout per action.
-- Never fabricate results — if the app is not running, say so and stop.
+- Never fabricate results -- if the app is not running, say so and stop.

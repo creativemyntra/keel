@@ -39,10 +39,10 @@ Invoke when the user says "review code", "code review", "/keel review", or has s
 
 3. Output:
 ```
-## Code Review: <branch> → main
+## Code Review: <branch> -> main
 
 ### Summary
-PASS / FAIL — <N> issues found
+PASS / FAIL -- <N> issues found
 
 ### Findings
 | Severity | File | Line | Issue | Recommendation |
@@ -56,4 +56,4 @@ APPROVE / REQUEST CHANGES
 - Flag HIGH severity issues as blockers.
 - Never approve if any HIGH severity finding exists.
 - Write findings to `docs/reviews/<STORY-ID>-review.md`.
-- If the diff touches CJIS-adjacent data handling, confirm the Data Classification Gate is wired into `hooks.json` before approving — an unwired gate is a HIGH finding, not a note.
+- If the diff touches CJIS-adjacent data handling, confirm the Data Classification Gate is wired into `hooks.json` before approving -- an unwired gate is a HIGH finding, not a note.

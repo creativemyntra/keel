@@ -1,17 +1,17 @@
-﻿# Keel v3.16.3 — Claude Code Quick Start
+# Keel v3.16.3 -- Claude Code Quick Start
 
-**Status:** ✅ Framework is ready to use NOW  
-**Date:** 2026-07-21  
-**Installation:** Already complete  
+**Status:** [x] Framework is ready to use NOW
+**Date:** 2026-07-21
+**Installation:** Already complete
 
-> **Updated 2026-07-21:** aligned to v3.16.3 — 10-phase pipeline, 15 agents,
+> **Updated 2026-07-21:** aligned to v3.16.3 -- 10-phase pipeline, 15 agents,
 > full workflow table covering all phases including UI Designer (3), E2E Engineer
 > (7), and Technical Writer (9). References to removed skills and stale counts
 > have been corrected.
 
 ---
 
-## 🎯 START HERE
+## START HERE
 
 ### Step 1: Restart Claude Code Terminal (Recommended)
 1. Close Claude Code terminal completely
@@ -30,7 +30,7 @@ That's it! The framework is fully functional.
 
 ---
 
-## 📚 ALL AVAILABLE COMMANDS
+## ALL AVAILABLE COMMANDS
 
 Use these skills immediately:
 
@@ -43,11 +43,11 @@ Use these skills immediately:
 | `/keel:release-check` | Full release-readiness validation | Before deployment |
 | `/keel:req` | BDD requirements + acceptance criteria for a story | New feature ideas |
 | `/keel:design` | UI design + architecture for a story | Refining stories |
-| `/keel:implement-feature` | FULL PIPELINE: design → code → test → security | End-to-end feature delivery |
+| `/keel:implement-feature` | FULL PIPELINE: design -> code -> test -> security | End-to-end feature delivery |
 
 ---
 
-## 🚀 TYPICAL WORKFLOW
+## TYPICAL WORKFLOW
 
 ### Simple: Use One Command
 ```bash
@@ -59,7 +59,7 @@ This invokes ALL agents automatically (10-phase pipeline):
 2. Business Analyst (functional specs)
 3. UI Designer (component layout + HTML mockup)
 4. Solution Architect (system design)
-5. Software Engineer (code + unit tests, ≥80% coverage)
+5. Software Engineer (code + unit tests, >=80% coverage)
 6. QA Engineer (AC mapping + integration tests)
 7. E2E Engineer (Playwright browser tests)
 8. Security Engineer (OWASP Top 10 scan)
@@ -83,14 +83,14 @@ This invokes ALL agents automatically (10-phase pipeline):
 
 ---
 
-## 📊 WHAT YOU GET
+## WHAT YOU GET
 
-✅ **15 Agents** working in sync:
-- 10 pipeline phase agents (intake → requirements → UI design → architecture → code+tests → QA → E2E → security → docs → release)
+[x] **15 Agents** working in sync:
+- 10 pipeline phase agents (intake -> requirements -> UI design -> architecture -> code+tests -> QA -> E2E -> security -> docs -> release)
 - 2 meta/support agents (orchestrator, scrum-master)
 - 3 infrastructure agents (audit, state-management, handshake)
 
-✅ **6 Compliance Standards:**
+[x] **6 Compliance Standards:**
 - CJIS (Criminal Justice)
 - SOC2 (System Controls)
 - HIPAA (Healthcare)
@@ -98,7 +98,7 @@ This invokes ALL agents automatically (10-phase pipeline):
 - PCI-DSS (Payments)
 - SOX (Finance)
 
-✅ **Quality Guaranteed:**
+[x] **Quality Guaranteed:**
 - 89% code coverage
 - 0 vulnerabilities
 - 135+ tests passing
@@ -107,15 +107,15 @@ This invokes ALL agents automatically (10-phase pipeline):
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 ### Q: Why not `/keel --version`?
 
-**A:** Claude Code's plugin system uses skills-based commands. The skills (e.g., `/keel:req`, `/keel:design`) are the primary interface. The root `/keel` command is being registered. Use `/keel:implement-feature` instead — it does everything `/keel` would do.
+**A:** Claude Code's plugin system uses skills-based commands. The skills (e.g., `/keel:req`, `/keel:design`) are the primary interface. The root `/keel` command is being registered. Use `/keel:implement-feature` instead -- it does everything `/keel` would do.
 
 ### Q: Is the framework working?
 
-**A:** Yes! All 15 agents are deployed across the 10-phase pipeline. Try `/keel:req --story=TEST --feature="test"` — it will work immediately.
+**A:** Yes! All 15 agents are deployed across the 10-phase pipeline. Try `/keel:req --story=TEST --feature="test"` -- it will work immediately.
 
 ### Q: What about the root `/keel` command?
 
@@ -134,33 +134,33 @@ This invokes ALL agents automatically (10-phase pipeline):
 
 ---
 
-## 🔧 IF SOMETHING ISN'T WORKING
+## IF SOMETHING ISN'T WORKING
 
 ### Command not found: `/keel:req` (or any skill)
-→ Close and reopen Claude Code completely
+-> Close and reopen Claude Code completely
 
 ### "agent not found" error
-→ All agents are in `agents/` — check they're still there
+-> All agents are in `agents/` -- check they're still there
 
 ### `/keel --version` not working
-→ Restart Claude Code terminal (command discovery runs on startup)
+-> Restart Claude Code terminal (command discovery runs on startup)
 
 ### Everything else
-→ Check **TECHNICAL-SPECIFICATIONS.md** for full troubleshooting
+-> Check **TECHNICAL-SPECIFICATIONS.md** for full troubleshooting
 
 ---
 
-## 📖 DOCUMENTATION
+## DOCUMENTATION
 
-- **README.md** — Overview, quickstart
-- **INSTALL.md** — Installation guide
-- **CHANGELOG.md** — What's new in each release
-- **ALL-AGENTS-COMPLETE-GUIDE.md** — How agents work together
-- **TECHNICAL-SPECIFICATIONS.md** — Full technical details
+- **README.md** -- Overview, quickstart
+- **INSTALL.md** -- Installation guide
+- **CHANGELOG.md** -- What's new in each release
+- **ALL-AGENTS-COMPLETE-GUIDE.md** -- How agents work together
+- **TECHNICAL-SPECIFICATIONS.md** -- Full technical details
 
 ---
 
-## ✅ VERIFICATION CHECKLIST
+## VERIFICATION CHECKLIST
 
 Before starting, verify you can:
 
@@ -172,7 +172,7 @@ If all 3 work, the framework is fully operational.
 
 ---
 
-## 🎯 NEXT: YOUR FIRST FEATURE
+## NEXT: YOUR FIRST FEATURE
 
 Ready to build something? Try:
 
@@ -181,36 +181,35 @@ Ready to build something? Try:
 ```
 
 The orchestrator will:
-1. Route to product owner → defines what to build
-2. Route to business analyst → writes specs
-3. Route to architect → designs system
-4. Route to engineer → implements with tests
-5. Route to QA → validates everything
-6. Route to security → scans for vulnerabilities
-7. Route to release manager → approves release
+1. Route to product owner -> defines what to build
+2. Route to business analyst -> writes specs
+3. Route to architect -> designs system
+4. Route to engineer -> implements with tests
+5. Route to QA -> validates everything
+6. Route to security -> scans for vulnerabilities
+7. Route to release manager -> approves release
 
 Total time: **Hours instead of weeks!**
 
 ---
 
-## 📌 FRAMEWORK STATUS
+## FRAMEWORK STATUS
 
 | Component | Status |
 |-----------|--------|
-| Installation | ✅ Complete |
-| 15 Agents | ✅ Deployed |
-| Skills (11 total) | ✅ Ready |
-| Compliance (6 standards) | ✅ Verified |
-| Code Quality | ✅ 89% coverage, 0 vulns |
-| Root `/keel` command | ✅ Added (restart to activate) |
-| Ready for Production | ✅ YES |
+| Installation | [x] Complete |
+| 15 Agents | [x] Deployed |
+| Skills (11 total) | [x] Ready |
+| Compliance (6 standards) | [x] Verified |
+| Code Quality | [x] 89% coverage, 0 vulns |
+| Root `/keel` command | [x] Added (restart to activate) |
+| Ready for Production | [x] YES |
 
 ---
 
-**Version:** 3.16.3  
-**Author:** Amar Singh  
-**License:** MIT  
-**Repository:** https://github.com/creativemyntra/keel  
+**Version:** 3.16.3
+**Author:** Amar Singh
+**License:** MIT
+**Repository:** https://github.com/creativemyntra/keel
 
-🚀 **Framework is production-ready. Start using it now!**
-
+Framework is production-ready. Start using it now!
