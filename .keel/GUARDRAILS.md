@@ -155,3 +155,35 @@ alerting and logging control only -- the model may have already seen the content
 triggered the block. For hard prevention (stopping data from reaching the model at all),
 rely on PreToolUse hooks, which fire before the tool runs. Every PostToolUse incident
 warrants immediate human review of what the model received in that turn.
+
+
+---
+
+## G-11 - Branch promotion order (dev -> master -> prod, no skipping)
+
+All code changes MUST flow through the promotion chain in order:
+
+`
+dev  ->  master  ->  prod
+`
+
+**Rules:**
+- Direct pushes to master or prod are forbidden. Every change reaches
+  master via a PR from dev, and prod via a PR from master.
+- No level may be skipped. A hotfix goes to dev first, then master, then prod.
+- Cherry-picks that bypass the chain are forbidden.
+
+**Release manager verification (run before GO verdict):**
+
+`ash
+# Non-merge commits on master not in dev -- must be empty
+git log origin/dev..origin/master --oneline --no-merges
+
+# Non-merge commits on prod not in master -- must be empty
+git log origin/master..origin/prod --oneline --no-merges
+`
+
+If either command returns output: **NO-GO**. The out-of-order commits must be
+brought into the chain (cherry-pick to dev, then re-promote) before release.
+
+**Applies to:** every story, every hotfix, every docs-only change.
