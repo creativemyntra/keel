@@ -280,3 +280,56 @@ transition time.
 
 **Install hooks:** New clones must run `node scripts/install-hooks.cjs` to activate
 the G-12 commit-msg gate locally. CI enforces the same check server-side.
+
+---
+
+## G-13 - No direct push to protected branches (PR-first policy)
+
+Direct pushes to `dev`, `master`, or `prod` are **forbidden**. Every code change
+reaches a protected branch only through a reviewed and approved Pull Request.
+
+### Flow for every code change
+
+```
+feature/fix-branch  →  PR (review + approval)  →  dev
+                                                      ↓
+                                          PR (G-11) → master
+                                                      ↓
+                                          PR (G-11) → prod
+```
+
+### Rules
+
+1. **Push to a feature branch** using the naming convention:
+   `feature/`, `fix/`, `hotfix/`, `refactor/`, `perf/`, `test/`,
+   `docs/`, `chore/`, `ci/`, `style/`, `build/`, `release/`, `spike/`
+
+2. **Open a PR** from the feature branch targeting `dev`.
+
+3. **Minimum 1 approval** from another developer (or the code owner)
+   before merge. Self-merge without review is not permitted.
+
+4. **PR must reference a Jira ticket** in its title or description
+   (enforced by G-12 on the underlying commits).
+
+5. **Only after PR approval** does code reach `dev` → auto-deploy to
+   dev environment.
+
+6. **G-11 then governs** promotion: `dev` → `master` → `prod`, each
+   as a separate PR.
+
+### Enforcement
+
+**Client-side** (pre-push hook — `scripts/keel-push-guard.cjs`):
+Blocks direct pushes to `dev`, `master`, `prod` with an actionable
+error and the exact commands to push to a feature branch instead.
+Run `node scripts/install-hooks.cjs` after every clone.
+
+**Server-side** (GitHub branch protection — must be configured once
+by repo admin, see `docs/BRANCH-PROTECTION.md`):
+- Require pull request before merging
+- Require at least 1 approving review
+- Dismiss stale reviews on new commits
+- Require status checks to pass (version audit, G-12 commit-msg)
+- Block force pushes
+- Block branch deletion
