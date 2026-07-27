@@ -219,7 +219,23 @@ economy:
                                  # replaces the security spawn entirely
   context_budget_files: 6        # max source files any agent loads
   output_caps: true              # report length caps enforced
+  confirm_before_spawn: false    # OWNER OPT-IN: show token estimate + require human OK before each spawn
+  token_summary: true            # print cumulative token table in final delivery summary
 ```
+
+**Pre-spawn token estimate (always emit, even when `confirm_before_spawn: false`):**
+
+Before every phase agent or handshake spawn, emit one line:
+```
+[token-estimate: phase N / <agent> / <model> / ~<cap>k output + ~<context>k input ≈ <total>k]
+```
+Derive values from `economy.token_weights.<agent>` (output cap) and `context_budget_files × avg-file-size` (~10k per file = `context_budget_files × 10k` input estimate). Round to nearest 5k.
+
+If `confirm_before_spawn: true`: after emitting the estimate, pause and output:
+```
+Proceed with this spawn? (reply OK to continue, or describe a change)
+```
+Do not spawn until human replies OK. If human requests a change (different model, skip phase, etc.) apply it and re-emit the estimate before spawning.
 
 **Decision table (signal -> decision):**
 
@@ -254,6 +270,20 @@ growth across 16+ agent invocations. Discipline:
   for it.
 - Your final delivery summary is built from the ledger + `status <story-id>`
   output, not from re-reading phase files.
+- When `token_summary: true` (default): append a token-usage table to the final
+  delivery summary, one row per spawned agent drawn from your ledger estimates:
+
+  ```
+  Phase | Agent             | Model  | Est. input | Est. output | Est. total
+  ------+-------------------+--------+------------+-------------+-----------
+  1     | business-analyst  | haiku  |       ~20k |         ~8k |      ~28k
+  5     | software-engineer | sonnet |       ~60k |        ~50k |     ~110k
+  ...
+  TOTAL |                   |        |      ~XXXk |        ~XXXk|     ~XXXk
+  ```
+
+  Estimates come from your pre-spawn `[token-estimate:]` lines — do not re-derive.
+  Mark actual vs estimated with `(est.)` if no real usage was returned by the engine.
 
 ## Pipeline budget (engine-enforced, not yours to manage)
 
