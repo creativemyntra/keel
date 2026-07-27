@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T12:57:23.066Z",
+  "generated_at": "2026-07-27T13:31:22.004Z",
   "source": "coverage/coverage-final.json",
   "gate": {
     "statements": 80,
@@ -8,19 +8,19 @@
   },
   "coverage": {
     "statements": {
-      "pct": 95.4,
-      "covered": 458,
-      "total": 480
+      "pct": 94.4,
+      "covered": 102,
+      "total": 108
     },
     "functions": {
-      "pct": 100,
-      "covered": 12,
-      "total": 12
+      "pct": 94.4,
+      "covered": 17,
+      "total": 18
     },
     "branches": {
-      "pct": 76.5,
-      "covered": 62,
-      "total": 81
+      "pct": 95.4,
+      "covered": 83,
+      "total": 87
     }
   }
 }
