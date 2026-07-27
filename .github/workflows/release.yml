@@ -65,6 +65,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Rebuild CodeGraph
+        run: node scripts/build-codegraph.cjs
+
       - name: Package .plugin bundle
         run: bash bin/package-plugin.sh ${{ needs.prepare.outputs.version }}
 

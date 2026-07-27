@@ -49,7 +49,18 @@ const KNOWN_FIELDS = [
 const MAX_ATTEMPTS = 3;
 const DEFAULT_MAX_GATES = 40;   // pipeline budget: total gate events per story (10 phases × 3 attempts + overhead)
 const DEFAULT_MAX_HOURS = 72;   // pipeline budget: wall-clock per story
-const LOCK_STALE_MS = 30000;
+// MED-03: lock stale timeout is configurable via .keel/economy.yml
+// (state_engine.lock_stale_seconds). Default 30s covers most CI runners; set
+// higher (e.g. 120s) for slow Windows NFS mounts or Docker volumes.
+function loadEconomyLockMs() {
+  try {
+    const src = fs.readFileSync(path.join('.keel', 'economy.yml'), 'utf8');
+    const m = src.match(/lock_stale_seconds\s*:\s*(\d+)/);
+    if (m) return parseInt(m[1], 10) * 1000;
+  } catch { /* economy.yml absent — use default */ }
+  return 30000;
+}
+const LOCK_STALE_MS = loadEconomyLockMs();
 const LOCK_WAIT_MS = 2000;
 
 const stateDir = (storyId) => path.join('.keel', 'state', storyId);
@@ -59,6 +70,24 @@ const handoffPath = (storyId) => path.join(stateDir(storyId), 'handoff-log.md');
 
 function die(code, msg) { console.error(msg); process.exit(code); }
 function nowIso() { return new Date().toISOString(); }
+// LOW-02: produce a resume command that matches however this script was invoked —
+// developers running from the repo checkout get "node scripts/keel-state.cjs",
+// the installed copy at ~/.keel/bin/ gets "node ~/.keel/bin/keel-state.cjs".
+function selfInvocation() {
+  const p = process.argv[1] || '';
+  if (p.includes(path.join('.keel', 'bin'))) return 'node ~/.keel/bin/keel-state.cjs';
+  if (p.includes('scripts')) return 'node scripts/keel-state.cjs';
+  return 'node keel-state.cjs';
+}
+
+// CRIT-02: reject story IDs that could escape .keel/state/ via path traversal.
+// Anything outside [A-Za-z0-9_-] (dots, slashes, backslashes, spaces) is
+// rejected before any path.join call that includes the story ID.
+function validateStoryId(storyId) {
+  if (!storyId || !/^[A-Za-z0-9_-]+$/.test(storyId)) {
+    die(64, `Invalid story_id: "${storyId}" — must be alphanumeric with dashes or underscores only`);
+  }
+}
 
 function readJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
@@ -171,8 +200,13 @@ function notifyHalt(storyId, phase, attempt, reasons) {
         return resolve(false);
       }
       const url = new URL(fs.readFileSync(hookFile, 'utf8').trim());
+      // HIGH-02: reject webhook URLs that do not point to hooks.slack.com to
+      // prevent a tampered secrets file from exfiltrating halt notifications.
+      if (!url.hostname.endsWith('hooks.slack.com')) {
+        throw new Error(`Webhook URL hostname "${url.hostname}" is not hooks.slack.com — update ~/.keel/secrets/slack.webhook`);
+      }
       const body = JSON.stringify({
-        text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): node ~/.keel/bin/keel-state.cjs resume ${storyId} --phase ${phase} --notes "..."`,
+        text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): ${selfInvocation()} resume ${storyId} --phase ${phase} --notes "..."`,
       });
       const req = require('https').request(url, {
         method: 'POST',
@@ -257,6 +291,9 @@ function cmdInit(storyId, args) {
     if (e.code === 'EEXIST') die(1, `FAIL: story ${storyId} already initialized at ${dir}`);
     throw e;
   }
+  // CRIT-01: initialize handoff-log.md eagerly so it is never created implicitly
+  // on first append (which would make the first halt harder to diagnose).
+  fs.writeFileSync(handoffPath(storyId), '');
   appendAudit(storyId, { phase: 0, agent: 'orchestrator', action: 'pipeline_initialized', notes: manifest.title });
   console.log(`OK: initialized ${dir} (budget: ${manifest.max_gates} gate events / ${manifest.max_hours}h)`);
 }
@@ -284,6 +321,13 @@ function validatePhaseFile(storyId, fileName) {
   }
   if (!Number.isInteger(out.phase) || out.phase < 1 || out.phase > storyMaxPhase) errors.push(`phase must be integer 1..${storyMaxPhase}`);
   if (!LEGACY_AGENTS.includes(out.agent)) errors.push(`agent must be one of: ${AGENTS.join(', ')}`);
+  // LOW-03: warn (not error) when a pre-v3.15.0 legacy agent name is used —
+  // these are kept for backward-compatible validation of old stories but should
+  // not appear in new work.
+  else if (!AGENTS.includes(out.agent)) {
+    console.warn(`DEPRECATION: agent "${out.agent}" was removed in v3.15.0 (TDD phases merged into software-engineer). ` +
+      `This file validates for backward compatibility only — new phase output should use "software-engineer".`);
+  }
   if (typeof out.story_id !== 'string' || !out.story_id) errors.push('story_id missing');
   else if (out.story_id !== storyId) errors.push(`story_id "${out.story_id}" does not match directory "${storyId}"`);
   if (!CONFIDENCE.includes(out.confidence)) errors.push('confidence must be high|medium|low');
@@ -306,9 +350,28 @@ function validatePhaseFile(storyId, fileName) {
     if (m[2] !== out.agent) errors.push(`filename agent "${m[2]}" != content agent "${out.agent}"`);
   }
 
-  // grounding: every artifact path must exist on disk
+  // grounding: every artifact path must exist on disk and pass safety checks
+  // MED-02: also reject symlinks (could redirect to sensitive paths), warn on
+  // oversized files (> 50 MB in a state directory is almost certainly a mistake),
+  // and block executable extensions that should never be pipeline artifacts.
+  const BLOCKED_EXTENSIONS = new Set(['.exe', '.bat', '.cmd', '.sh', '.dll', '.bin', '.ps1']);
   (out.artifacts || []).forEach((a) => {
-    if (typeof a !== 'string' || !fs.existsSync(a)) errors.push(`artifact does not exist on disk: ${a}`);
+    if (typeof a !== 'string' || !a) { errors.push('artifact entry must be a non-empty string'); return; }
+    if (!fs.existsSync(a)) { errors.push(`artifact does not exist on disk: ${a}`); return; }
+    try {
+      const stat = fs.lstatSync(a);
+      if (stat.isSymbolicLink()) {
+        errors.push(`artifact is a symlink — symlinks are not allowed as pipeline artifacts: ${a}`);
+        return;
+      }
+      if (stat.size > 50 * 1024 * 1024) {
+        errors.push(`artifact exceeds 50 MB (${(stat.size / 1024 / 1024).toFixed(1)} MB) — large binaries do not belong in pipeline state: ${a}`);
+      }
+      const ext = path.extname(a).toLowerCase();
+      if (BLOCKED_EXTENSIONS.has(ext)) {
+        errors.push(`artifact has a blocked extension "${ext}" — executables and scripts are not valid pipeline artifacts: ${a}`);
+      }
+    } catch (e) { errors.push(`artifact stat failed: ${a}: ${e.message}`); }
   });
 
   // AC continuity vs phase 1 (anti-drift). Phase 1 may be written by the
@@ -349,12 +412,14 @@ function haltPipeline(storyId, manifest, phase, attempt, reason, extraAudit) {
   fs.appendFileSync(handoffPath(storyId), `- ${nowIso()} | phase ${phase} | HALT | ${reason}\n`);
   const reasons = fs.readFileSync(handoffPath(storyId), 'utf8').split('\n')
     .filter((l) => l.includes(`phase ${phase} | FAIL`)).slice(-MAX_ATTEMPTS).join('\n') || reason;
-  notifyHalt(storyId, phase, attempt, reasons).then((sent) => {
-    appendAudit(storyId, Object.assign(
-      { phase, agent: 'handshake', action: 'pipeline_halted', attempt, notes: reason, notified: sent }, extraAudit));
-    console.error(`HALT: ${reason} — pipeline halted, escalate to a human. History in ${handoffPath(storyId)}`);
-    process.exit(2);
-  });
+  // CRIT-03: write audit log synchronously HERE — before the async Slack call —
+  // so both logs are always consistent even if the process is killed afterward.
+  // notified is set to null for now; the Slack result is advisory only.
+  appendAudit(storyId, Object.assign(
+    { phase, agent: 'handshake', action: 'pipeline_halted', attempt, notes: reason, notified: null }, extraAudit));
+  console.error(`HALT: ${reason} — pipeline halted, escalate to a human. History in ${handoffPath(storyId)}`);
+  console.error(`Resume (human decision required): ${selfInvocation()} resume ${storyId} --phase ${phase} --notes "<rationale>"`);
+  notifyHalt(storyId, phase, attempt, reasons).then(() => process.exit(2));
 }
 
 function cmdGate(storyId, args) {
@@ -373,14 +438,16 @@ function cmdGate(storyId, args) {
     }
 
     // pipeline-level budget (independent of the per-phase attempt cap)
-    manifest.gate_events = (manifest.gate_events || 0) + 1;
+    // HIGH-03: check >= maxGates BEFORE incrementing so the limit is exact.
+    // Checking > after incrementing allowed one extra gate beyond the budget.
     const maxGates = manifest.max_gates || DEFAULT_MAX_GATES;
     const maxHours = manifest.max_hours || DEFAULT_MAX_HOURS;
     const hoursElapsed = (Date.now() - Date.parse(manifest.started_at)) / 3600000;
-    if (manifest.gate_events > maxGates) {
+    if ((manifest.gate_events || 0) >= maxGates) {
       return haltPipeline(storyId, manifest, phase, manifest.attempts[key] || 0,
-        `pipeline budget exceeded: ${manifest.gate_events} gate events > max ${maxGates}`, { budget: 'gates' });
+        `pipeline budget exceeded: ${manifest.gate_events || 0} gate events >= max ${maxGates}`, { budget: 'gates' });
     }
+    manifest.gate_events = (manifest.gate_events || 0) + 1;
     if (hoursElapsed > maxHours) {
       return haltPipeline(storyId, manifest, phase, manifest.attempts[key] || 0,
         `pipeline budget exceeded: ${hoursElapsed.toFixed(1)}h wall-clock > max ${maxHours}h`, { budget: 'hours' });
@@ -701,6 +768,24 @@ function cmdRestore(storyId, ts) {
     else fs.copyFileSync(s, d);
   }
   appendAudit(storyId, { agent: 'state-management', action: 'snapshot_restored', notes: ts });
+  // MED-01: warn when the restored manifest's current_phase disagrees with the
+  // latest phase_completed entry in the append-only audit-log. This is not an
+  // error (restore intentionally rewinds state, never history) but it will
+  // confuse anyone reading the audit who expects them to agree.
+  try {
+    const restoredManifest = JSON.parse(fs.readFileSync(manifestPath(storyId), 'utf8'));
+    const auditLines = fs.readFileSync(auditPath(storyId), 'utf8').trim().split('\n').filter(Boolean);
+    const lastCompleted = auditLines.map((l) => { try { return JSON.parse(l); } catch { return null; } })
+      .filter((e) => e && e.action === 'phase_completed').pop();
+    if (lastCompleted && lastCompleted.phase > restoredManifest.current_phase) {
+      console.warn(
+        `WARN: restored manifest current_phase=${restoredManifest.current_phase} but audit-log shows ` +
+        `phase ${lastCompleted.phase} was completed. This is expected after a restore (state rewound, ` +
+        `history preserved) but may confuse readers of the audit trail. Document the reason with: ` +
+        `node keel-state.cjs audit ${storyId} --json '{"action":"restore_rationale","notes":"<reason>"}'`
+      );
+    }
+  } catch { /* manifest or audit-log unreadable — skip the cross-check */ }
   console.log(`OK: restored snapshot ${ts} (current state snapshotted first)`);
 }
 
@@ -898,10 +983,18 @@ function cmdPrescan(storyId) {
     if (s.name === 'snyk') return s.exit === 1; // snyk: exit 1 = vulns found (DIRTY); exit 2 = auth/network error (not a finding)
     return s.exit !== 0;
   });
+  // HIGH-04: exit codes have distinct semantics — do not conflate them:
+  //   exit 0  CLEAN    — all runnable scanners passed, proceed.
+  //   exit 1  DIRTY    — a scanner found real vulnerabilities/issues; human review required.
+  //   exit 2  INFRA    — scanner infrastructure broken (auth, network, missing token);
+  //                      the scan did NOT run. This is NOT a finding — it means we cannot
+  //                      prove the project is clean. Treat as a blocker in strict CI; use
+  //                      --force-proceed-on-infra-fail (future flag) to override.
   const snykBroken = scanners.filter((s) => s.name === 'snyk' && s.status === 'ran' && s.exit >= 2);
   if (snykBroken.length) {
-    die(2, `PRESCAN FAILED: snyk exit ${snykBroken[0].exit} (auth/network) -- scan did not run. `
-         + `Fix SNYK_TOKEN or remove snyk from PATH to skip. Not counted as findings.`);
+    die(2, `PRESCAN INFRA: snyk exited ${snykBroken[0].exit} (auth/network error) — scan did not run. `
+         + `Fix SNYK_TOKEN or remove snyk from PATH to skip. This is NOT a security finding; `
+         + `it means the project could not be scanned. Review prescan.json for details.`);
   }
   if (dirty.length) {
     die(1, `PRESCAN DIRTY: ${dirty.map((d) => d.name).join(', ')} reported findings — review .keel/state/${storyId}/prescan.json`);
@@ -1252,6 +1345,7 @@ if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
 if (cmd === 'security-status') { cmdSecurityStatus(process.argv.slice(3)); process.exit(0); }
 if (!storyId) die(64, USAGE);
 if (cmd === 'status' && storyId === '--all') { cmdStatusAll(); process.exit(0); }
+validateStoryId(storyId); // CRIT-02: enforce safe story_id before any path.join
 switch (cmd) {
   case 'init': cmdInit(storyId, rest); break;
   case 'validate': cmdValidate(storyId, rest[0] || die(64, 'validate needs <NN-agent.json>')); break;
