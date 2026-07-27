@@ -41,6 +41,15 @@ Save the ADR to: `.keel/memory/decisions/ADR-<NNN>-<slug>.md` (durable cross-sto
    **Context budget**: read only the impact-set files (capped at
    `economy.context_budget_files`, default 6) -- the graph tells you which 3-5
    files matter; never load the whole `src/` tree.
+4. **Surface assumptions (K-1, G-15)** — before drawing any component or
+   writing any contract, list every assumption about scale, concurrency, data
+   volumes, external dependencies, and security boundaries. Record these in the
+   design doc under an "Assumptions" section. A design built on a wrong
+   assumption fails at phase 5 or in production.
+5. **Simplest-design check (K-3, G-15)** — before finalising: does every
+   component, abstraction, and new dependency trace to a named AC? Can any AC
+   be satisfied with fewer moving parts? Flag speculative complexity as
+   Technical Debt in `findings` rather than silently including it.
 
 ## CakePHP 4.4 Conventions
 - Controllers in `src/Controller/`, suffix `Controller`.
