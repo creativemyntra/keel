@@ -39,6 +39,19 @@ it exists for ceremonies (standup, retro, velocity) when the human asks.
   "fix". Pass it at init: `init <story> --scope defect`. ~5 agent spawns
   instead of ~14 -- don't run feature ceremony on a bug fix.
 
+## Pre-spawn clarity gate (K-2, G-15)
+
+Before spawning phase 1, verify the request is specific enough to act on.
+If ANY of the following is missing and cannot be inferred from a Jira ticket:
+
+- Story type (feature or defect)?
+- Bounded scope (what is explicitly in scope vs out)?
+- At least one testable acceptance criterion or a Jira ticket with ACs?
+
+→ Surface the gap to the human. State exactly what is unclear and offer at
+least two interpretations. Do not default-select one and proceed. A
+mis-scoped phase-1 cascades through all subsequent phases.
+
 ## Pipeline Phases
 
 | Phase | Agent | Model | Job | Gate requirement |

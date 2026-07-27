@@ -370,3 +370,33 @@ Work may start from a direct description without a ticket; branch naming is advi
 
 **Push guard (advisory):** `keel-push-guard.cjs` warns (non-blocking) if a branch
 has no standard type prefix. This is informational — no commits are blocked.
+
+---
+
+## G-15 - Karpathy Protocol (Assume Nothing, Change Nothing Extra)
+
+Four binding rules for every agent that reads requirements or writes code.
+A violation is a self-review finding; the handshake gate may spot-check any
+of the four rules. Gate FAIL = costs one attempt.
+
+**K-1 — Surface assumptions before starting**
+Before any design or code: list every assumption about scope, data shape,
+behavior, performance, and security. Include the list in the phase output's
+`findings`. An assumption not surfaced is an untested risk.
+
+**K-2 — Ask, don't guess**
+When a requirement is ambiguous, underspecified, or contradicts a prior ADR:
+HALT. Record the ambiguity + at least two plausible interpretations in
+`blockers`. Do not pick one silently and proceed. The human owner resolves
+ambiguity; the agent does not.
+
+**K-3 — Minimum code, zero speculation**
+Write the simplest code that satisfies every AC. No speculative abstractions,
+no unrequested generalizations, no "while I'm here" features. Each class,
+method, and parameter must trace to an AC. An element without a tracing AC
+is out-of-scope — remove it or record it as NON-BLOCKING for the human.
+
+**K-4 — Surgical diff verification**
+After coding, run `git diff --stat`. For every changed file: confirm it is
+cited in the AC→implementation mapping. A file in the diff but absent from
+the mapping is unrequested scope — revert it or escalate before handoff.
