@@ -60,7 +60,10 @@ Thumbs.db
 # Project-specific
 # NOTE: .keel/state/ and .keel/memory/ are deliberately COMMITTED — git history
 # is the pipeline's audit trail. Never add them here.
-.keel/watch/
+# .keel/watch/baseline.json is deliberately COMMITTED — shared coverage baseline
+# for trend tracking across the team. All other watch/ artifacts stay local.
+.keel/watch/*
+!.keel/watch/baseline.json
 
 # Generated files (should be committed for framework, but not for user projects)
 # Keep these in keel:
