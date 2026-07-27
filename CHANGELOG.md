@@ -13,6 +13,14 @@ All notable changes to Keel AI-SDLC Framework are documented here.
   - **K-3** Minimum code, zero speculation — every element traces to a named AC
   - **K-4** Surgical diff verification — `git diff --stat` post-code; any unmapped file = scope creep, revert or escalate
 - **Pre-spawn clarity gate** (`agents/orchestrator.md`) — K-2 gate before phase 1 spawn: story type, bounded scope, and at least one testable AC required or pipeline halts for human clarification.
+- **Token economy observability** (`economy.yml`, `agents/orchestrator.md`, `commands/tokens.md`) — three features shipped together:
+  - Pre-spawn `[token-estimate:]` line before every agent spawn (always on)
+  - `confirm_before_spawn: true` (default) — orchestrator halts and shows estimate before spawning, waits for human OK
+  - `token_summary: true` (default) — cumulative token table with cache savings column appended to final delivery output
+- **Prompt cache breakpoints** (`economy.yml`, `agents/orchestrator.md`) — `prompt_caching: true` (default); 3 canonical `cache_control: {type: "ephemeral"}` breakpoints (BP-1 system prompt, BP-2 tool definitions, BP-3 static context); `[cache-estimate:]` line emitted alongside token estimate; ~90% savings on BP-1+BP-2 prefix per spawn (~100–150k tokens saved per full pipeline).
+- **`/keel:tokens` command** (`commands/tokens.md`) — live token ledger + cache savings column; `/keel:tokens confirm on|off` and `/keel:tokens cache on|off` mid-session toggles.
+- **Economy wizard in `/keel:init`** (`commands/init.md`) — step 3 seeds all economy settings and asks: keep defaults / tune interactively / skip.
+- **Economy wizard in `/keel:setup`** (`commands/setup.md`) — new step 7 "Token Economy" (`/keel:setup economy`); steps renumbered 1-7, status table = step 8.
 
 ### Changed
 - **`agents/software-engineer.md`** — Phase 0 reordered: K-1 (surface assumptions, step 3) + K-2 (ambiguity halt, step 4) now precede plan-writing (step 5). Self-audit gains K-4 scope-creep diff check (step 7).
