@@ -221,21 +221,38 @@ economy:
   output_caps: true              # report length caps enforced
   confirm_before_spawn: false    # OWNER OPT-IN: show token estimate + require human OK before each spawn
   token_summary: true            # print cumulative token table in final delivery summary
+  prompt_caching: true           # emit cache_control breakpoints at 3 canonical boundaries
+  cache_ttl_minutes: 5           # Claude ephemeral cache TTL; run phases back-to-back to keep warm
 ```
 
-**Pre-spawn token estimate (always emit, even when `confirm_before_spawn: false`):**
+**Prompt cache breakpoints (when `prompt_caching: true`):**
 
-Before every phase agent or handshake spawn, emit one line:
-```
-[token-estimate: phase N / <agent> / <model> / ~<cap>k output + ~<context>k input ≈ <total>k]
-```
-Derive values from `economy.token_weights.<agent>` (output cap) and `context_budget_files × avg-file-size` (~10k per file = `context_budget_files × 10k` input estimate). Round to nearest 5k.
+Claude's ephemeral cache saves ~90% of cached input-token cost and ~40% latency on cache hits. TTL = 5 min — consecutive phase spawns stay warm; idle gaps re-read cold.
 
-If `confirm_before_spawn: true`: after emitting the estimate, pause and output:
+Place `cache_control: {type: "ephemeral"}` at exactly **3 breakpoints** in every agent call:
+
+| Breakpoint | After what | What gets cached |
+|---|---|---|
+| BP-1 | System prompt end | Agent persona, guardrails, output schema — identical across all spawns of the same agent type |
+| BP-2 | Tool definitions end | Tool list — stable within a pipeline run |
+| BP-3 | Static context end | Prior phase output files passed as context — stable until the next phase changes them |
+
+Everything after BP-3 (the dynamic per-call instruction) is NOT cached — it changes every spawn.
+
+Emit the cache estimate alongside the token estimate:
+```
+[token-estimate: phase N / <agent> / <model> / ~<input>k input + ~<output>k output ≈ ~<total>k]
+[cache-estimate: BP-1+BP-2 ~<sys>k cached → ~<saved>k tokens saved (~90%); BP-3 ~<ctx>k cached on repeat calls]
+```
+`sys` = system prompt + tools token count (estimate: haiku ~8k, sonnet ~12k).
+`saved` = `sys × 0.9` (cache hit saves 90% of that prefix cost).
+`ctx` = prior phase file sizes passed as static context.
+
+If `confirm_before_spawn: true`: after emitting both lines, pause and output:
 ```
 Proceed with this spawn? (reply OK to continue, or describe a change)
 ```
-Do not spawn until human replies OK. If human requests a change (different model, skip phase, etc.) apply it and re-emit the estimate before spawning.
+Do not spawn until human replies OK. If human requests a change (different model, skip phase, etc.) apply it and re-emit before spawning.
 
 **Decision table (signal -> decision):**
 
@@ -274,15 +291,16 @@ growth across 16+ agent invocations. Discipline:
   delivery summary, one row per spawned agent drawn from your ledger estimates:
 
   ```
-  Phase | Agent             | Model  | Est. input | Est. output | Est. total
-  ------+-------------------+--------+------------+-------------+-----------
-  1     | business-analyst  | haiku  |       ~20k |         ~8k |      ~28k
-  5     | software-engineer | sonnet |       ~60k |        ~50k |     ~110k
+  Phase | Agent             | Model  | Est. input | Est. output | Cache saved | Est. net
+  ------+-------------------+--------+------------+-------------+-------------+---------
+  1     | business-analyst  | haiku  |       ~20k |         ~8k |         ~7k |     ~21k
+  5     | software-engineer | sonnet |       ~60k |        ~50k |        ~11k |     ~99k
   ...
-  TOTAL |                   |        |      ~XXXk |        ~XXXk|     ~XXXk
+  TOTAL |                   |        |      ~XXXk |        ~XXXk |       ~XXXk |    ~XXXk
   ```
 
-  Estimates come from your pre-spawn `[token-estimate:]` lines — do not re-derive.
+  Estimates come from your pre-spawn `[token-estimate:]` and `[cache-estimate:]` lines — do not re-derive.
+  "Cache saved" = BP-1+BP-2 savings (~90% of system+tools prefix) on first call; repeat calls also save BP-3 (static context).
   Mark actual vs estimated with `(est.)` if no real usage was returned by the engine.
 
 ## Pipeline budget (engine-enforced, not yours to manage)
