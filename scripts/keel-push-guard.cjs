@@ -4,12 +4,28 @@
  * Blocks direct pushes to protected branches (dev, master, prod).
  * Developers must push to a feature branch and open a PR.
  *
+ * On every allowed feature-branch push, also runs keel-preflight.cjs to:
+ *   - Rebuild CodeGraph (.keel/graph/codegraph.json)
+ *   - Update coverage baseline (.keel/watch/baseline.json)
+ * This keeps both artefacts current so health sweeps are never stale.
+ *
  * Git passes refs on stdin, one per line:
  *   <local-ref> <local-sha1> <remote-ref> <remote-sha1>
  *
  * Exit 0 = allowed. Exit 1 = blocked.
  */
 'use strict';
+
+const path = require('path');
+const { spawnSync } = require('child_process');
+
+const PREFLIGHT = path.join(__dirname, 'keel-preflight.cjs');
+
+function runPreflight() {
+  process.stderr.write('\nPreflight:\n');
+  const r = spawnSync(process.execPath, [PREFLIGHT], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  process.stderr.write(r.stderr || r.stdout || '');
+}
 
 const PROTECTED = new Set([
   'refs/heads/dev',
@@ -77,6 +93,7 @@ async function main() {
         process.stderr.write('\n');
       }
     }
+    runPreflight();
     process.exit(0);
   }
 
