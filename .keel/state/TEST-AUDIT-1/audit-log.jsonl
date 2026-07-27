@@ -1,4 +1,0 @@
-{"phase":0,"agent":"orchestrator","action":"pipeline_initialized","notes":"Audit fixture test","ts":"2026-07-21T11:13:29.234Z"}
-{"agent":"engine","action":"prescan","notes":"composer-audit=skipped phpstan=skipped npm-audit=ran:0 snyk=ran:2 sonar-scanner=skipped","ts":"2026-07-21T11:39:22.729Z"}
-{"agent":"engine","action":"prescan","notes":"composer-audit=skipped phpstan=skipped npm-audit=ran:1 snyk=ran:2 sonar-scanner=skipped","ts":"2026-07-27T12:16:45.572Z","prev_hash":"29ffd464aec828f520b0b2dbf996a51e3a9ad3914f2bf894f3fe0f05554a34a4","self_hash":"194f2be97ade1a643f54253abe6764ac5fdd452f1192d15437e686f7011f66b9"}
-{"agent":"engine","action":"prescan","notes":"composer-audit=skipped phpstan=skipped npm-audit=ran:1 snyk=ran:2 sonar-scanner=skipped","ts":"2026-07-27T12:17:15.236Z","prev_hash":"42cf9140a6bf1fe5d021c228b2a723d41627693dc07877e9ec856f416c2793c8","self_hash":"e5ed9bf9a05f70aa129e59817a742e35b90fbad741260e5a8c4a70536d527fd0"}
