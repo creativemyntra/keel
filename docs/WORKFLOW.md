@@ -1,6 +1,6 @@
 # Keel -- Complete Workflow, Cost Model, and Token Economy
 
-**As of v3.16.4.** Numbers marked *measured* come from the first full pipeline
+**As of v3.16.5.** Numbers marked *measured* come from the first full pipeline
 live test (KEEL-101, 2026-07-09 -- see
 [docs/audit/2026-07-09-e2e-pipeline-live-test.md](audit/2026-07-09-e2e-pipeline-live-test.md)).
 Nothing here is estimated where a measurement exists.

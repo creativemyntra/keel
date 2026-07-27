@@ -25,6 +25,7 @@ const ROOT = path.resolve(__dirname, '..');
 const SKIP_DIRS = new Set([
   'node_modules', 'dev-history', '.git', '.keel/state',
   'audit', 'coverage', 'dist',
+  'docs/defects',  // RCA docs describe past incidents — always contain old version numbers
 ]);
 
 // Individual files to skip (e.g. this script itself — contains example strings)
@@ -44,6 +45,7 @@ const SCAN_EXTS = new Set([
 const HISTORICAL_LINE_PATTERNS = [
   /^-*##\s+\[\d+\.\d+\.\d+\]/, // CHANGELOG section headers (with optional --- prefix)
   /^\|\s+\d+\.\d+\.\d+\s+\|/,  // TECHNICAL-SPECIFICATIONS version table rows
+  /^#+\s+What.?s New in v\d+\.\d+\.\d+/, // README "What's New in vX.Y.Z" historical sections
   /\(v\d+\.\d+\.\d+\)/,        // "(v3.16.3)" — "introduced in" notations
   /done in v\d+\.\d+\.\d+/i,   // "done in v3.16.3" roadmap notes
   /added.*in.*v\d+\.\d+\.\d+/i,
@@ -57,11 +59,11 @@ const HISTORICAL_LINE_PATTERNS = [
 
 function readCurrentVersion() {
   const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
-  return pkg.version; // e.g. "3.16.4"
+  return pkg.version; // e.g. "3.16.5"
 }
 
 function semverPrev(ver) {
-  // Derive the immediate previous patch: 3.16.4 -> 3.16.3
+  // Derive the immediate previous patch: e.g. 3.16.5 -> 3.16.4
   const [maj, min, pat] = ver.split('.').map(Number);
   if (pat > 0) return `${maj}.${min}.${pat - 1}`;
   if (min > 0) return `${maj}.${min - 1}.0`;

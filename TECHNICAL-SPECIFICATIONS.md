@@ -1,4 +1,4 @@
-﻿# Keel AI-SDLC Framework v3.16.4 - Technical Specifications
+﻿# Keel AI-SDLC Framework v3.16.5 - Technical Specifications
 
 **Document Version:** 2.0  
 **Last Updated:** 2026-07-22  
@@ -355,26 +355,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.16.4
+- Version: v3.16.5
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.16.4`
+- Installation: `npm install -g @amarsingh/keel@3.16.5`
 - Status: READY (pending publish)
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.16.4`
+- Image: `amarsingh/keel:3.16.5`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.16.4`
+- Pull: `docker pull amarsingh/keel:3.16.5`
 - Status: READY (pending push)
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.16.4`
+- Version: `v3.16.5`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.16.4`
+- Usage: `uses: creativemyntra/keel@v3.16.5`
 
 ---
 
@@ -402,7 +402,7 @@ Record in Audit Trail
 - **DAST:** N/A (CLI tool, no web endpoints)
 - **Secrets Scanning:** git-secrets pre-commit hook
 
-### Infrastructure Scripts (v3.16.4)
+### Infrastructure Scripts (v3.16.5)
 
 | Script | Purpose | Hook Stage(s) |
 |--------|---------|---------------|
@@ -474,6 +474,7 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
+| 3.16.5 | 2026-07-23 | PRODUCTION | G-12 ticket traceability advisory-only; G-13 next-step reminder after feature push; G-14 keel:start-work + keel:finish-work MCP skills; BRANCH-PROTECTION.md rewrite |
 | 3.16.4 | 2026-07-23 | PRODUCTION | BOM fix: stripped UTF-8 BOM from .claude-plugin/marketplace.json; expanded G-6 version-stamp guardrail in release-manager to cover all 9 version-bearing files |
 | 3.16.3 | 2026-07-22 | PRODUCTION | CakePHP-only packaging; CJIS gate deadlock fix; package.json files array fix (config/ + stack-profiles/); /keel:preview command; explicit model tiers in orchestrator; G-10 guardrail hardening; memory resilience in keel-init; token optimization roadmap |
 | 3.16.2 | 2026-07-21 | PRODUCTION | Brainstorm template: restored Handoff Brief section (user story, rough ACs, data entities, integrations, design risks, complexity estimate); OSS cleanup (removed stale internal ticket refs from template and example) |

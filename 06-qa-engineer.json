@@ -1,0 +1,40 @@
+{
+  "phase": 6,
+  "agent": "qa-engineer",
+  "story_id": "G-12-G-13-G-14",
+  "confidence": "high",
+  "findings": [
+    "Full suite re-run: weight-budget.test.cjs 1/1 PASS, keel-dashboard.test.cjs 129/129 PASS, keel-state-describe.test.cjs 44/44 PASS, keel-dashboard-host-e2e.test.cjs 19/19 PASS, keel-state-describe-e2e.test.cjs 42/42 PASS — 235 tests total, 0 failing",
+    "AC-1 (no-ticket commit warns, exit 0): PASS — exit 0, stderr contains 'G-12 WARN: No ticket reference found'",
+    "AC-2 (ticket present, no warn, exit 0): PASS — exit 0, no ticket warning in output",
+    "AC-3 (bad format blocks, exit 1): PASS — exit 1, 'G-12 COMMIT BLOCKED' with ERROR about conventional format",
+    "AC-4 (unknown type blocks, exit 1): PASS — exit 1, 'ERROR: Unknown type \"hotfix\"'",
+    "AC-5 (subject too long blocks, exit 1): PASS — exit 1, 'ERROR: Subject line is 98 chars (max 72)'",
+    "AC-6 (past tense blocks, exit 1): PASS — exit 1, 'ERROR: Subject starts with past tense \"added\"'",
+    "AC-7 (flexible ticket format BUG-7 accepted, exit 0): PASS — exit 0, no ticket warning",
+    "AC-8 (merge commit exempt, exit 0): PASS — exit 0, no output",
+    "AC-9 (direct push to dev blocks, exit 1): PASS — exit 1, 'G-13 BLOCK: direct push to \"dev\" is not allowed'",
+    "AC-10 (push to feat/ passes, exit 0): PASS — exit 0, no output",
+    "AC-11 (push to epic/ passes, exit 0): PASS — exit 0, no output; epic/ confirmed in ALLOWED_PREFIXES",
+    "AC-12 (no-prefix branch advisory warn, exit 0): PASS — exit 0, stderr contains 'G-14 WARN: branch \"my-random-branch\" has no standard type prefix'",
+    "AC-13 (feat/ without ticket ID passes, exit 0): PASS — exit 0, no output; push-guard no longer checks for ticket ID in branch name",
+    "SKILL.md review: all 8 criteria PASS — frontmatter name+description present, getJiraIssue MCP flow documented, description-only flow present, branch prefix mapping table present, advisory-only language (no mandatory ticket), no credentials section (MCP handles auth)",
+    "OBSERVATION (non-blocking): keel-bug-lifecycle.cjs line 20 declares JIRA_PATTERN = /\\b[A-Z]{2,10}-\\d+\\b/ but this constant is never referenced. The operative ticket check (line 128) uses the new inline /[A-Z]{2,}-\\d+/i pattern. The dead constant is harmless but should be removed in a follow-up cleanup to avoid confusion."
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1", "AC-2", "AC-3", "AC-4", "AC-5",
+    "AC-6", "AC-7", "AC-8", "AC-9", "AC-10",
+    "AC-11", "AC-12", "AC-13"
+  ],
+  "decisions": [
+    "JIRA_PATTERN dead constant flagged as advisory observation, not a blocker — it does not affect runtime behaviour"
+  ],
+  "artifacts": [
+    "C:\\Projects\\keel\\scripts\\keel-bug-lifecycle.cjs",
+    "C:\\Projects\\keel\\scripts\\keel-push-guard.cjs",
+    "C:\\Projects\\keel\\skills\\start-work\\SKILL.md",
+    "C:\\Projects\\keel\\06-qa-engineer.json"
+  ],
+  "next_phase": 7,
+  "blockers": []
+}

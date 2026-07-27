@@ -54,7 +54,6 @@ async function main() {
   }
 
   if (!blocked.length) {
-    // Advisory: warn if any pushed branch has no type-prefix (G-14 convention)
     for (const line of lines) {
       const parts = line.trim().split(/\s+/);
       const remoteRef = parts[2];
@@ -66,6 +65,15 @@ async function main() {
         process.stderr.write('G-14 WARN: branch "' + branchName + '" has no standard type prefix.\n');
         process.stderr.write('  Recommended: use keel:start-work skill or prefix the branch:\n');
         process.stderr.write('  feat/, fix/, chore/, docs/, refactor/, perf/, test/, etc.\n');
+        process.stderr.write('\n');
+      } else {
+        // G-14: next-step reminder after a successful feature branch push
+        process.stderr.write('\n');
+        process.stderr.write('  Branch pushed: ' + branchName + '\n');
+        process.stderr.write('\n');
+        process.stderr.write('  Next step -- create PR to dev:\n');
+        process.stderr.write('    Ask Claude Code: "finish work on ' + branchName + '"\n');
+        process.stderr.write('    Or open: https://github.com/creativemyntra/keel/compare/dev...' + branchName + '\n');
         process.stderr.write('\n');
       }
     }

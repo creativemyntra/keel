@@ -1,10 +1,10 @@
-﻿# Keel v3.16.4 -- Claude Code Quick Start
+﻿# Keel v3.16.5 -- Claude Code Quick Start
 
 **Status:** [x] Framework is ready to use NOW
 **Date:** 2026-07-21
 **Installation:** Already complete
 
-> **Updated 2026-07-21:** aligned to v3.16.4 -- 10-phase pipeline, 15 agents,
+> **Updated 2026-07-21:** aligned to v3.16.5 -- 10-phase pipeline, 15 agents,
 > full workflow table covering all phases including UI Designer (3), E2E Engineer
 > (7), and Technical Writer (9). References to removed skills and stale counts
 > have been corrected.
@@ -207,7 +207,7 @@ Total time: **Hours instead of weeks!**
 
 ---
 
-**Version:** 3.16.4
+**Version:** 3.16.5
 **Author:** Amar Singh
 **License:** MIT
 **Repository:** https://github.com/creativemyntra/keel
