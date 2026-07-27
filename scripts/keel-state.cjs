@@ -49,7 +49,18 @@ const KNOWN_FIELDS = [
 const MAX_ATTEMPTS = 3;
 const DEFAULT_MAX_GATES = 40;   // pipeline budget: total gate events per story (10 phases × 3 attempts + overhead)
 const DEFAULT_MAX_HOURS = 72;   // pipeline budget: wall-clock per story
-const LOCK_STALE_MS = 30000;
+// MED-03: lock stale timeout is configurable via .keel/economy.yml
+// (state_engine.lock_stale_seconds). Default 30s covers most CI runners; set
+// higher (e.g. 120s) for slow Windows NFS mounts or Docker volumes.
+function loadEconomyLockMs() {
+  try {
+    const src = fs.readFileSync(path.join('.keel', 'economy.yml'), 'utf8');
+    const m = src.match(/lock_stale_seconds\s*:\s*(\d+)/);
+    if (m) return parseInt(m[1], 10) * 1000;
+  } catch { /* economy.yml absent — use default */ }
+  return 30000;
+}
+const LOCK_STALE_MS = loadEconomyLockMs();
 const LOCK_WAIT_MS = 2000;
 
 const stateDir = (storyId) => path.join('.keel', 'state', storyId);
@@ -59,6 +70,15 @@ const handoffPath = (storyId) => path.join(stateDir(storyId), 'handoff-log.md');
 
 function die(code, msg) { console.error(msg); process.exit(code); }
 function nowIso() { return new Date().toISOString(); }
+// LOW-02: produce a resume command that matches however this script was invoked —
+// developers running from the repo checkout get "node scripts/keel-state.cjs",
+// the installed copy at ~/.keel/bin/ gets "node ~/.keel/bin/keel-state.cjs".
+function selfInvocation() {
+  const p = process.argv[1] || '';
+  if (p.includes(path.join('.keel', 'bin'))) return 'node ~/.keel/bin/keel-state.cjs';
+  if (p.includes('scripts')) return 'node scripts/keel-state.cjs';
+  return 'node keel-state.cjs';
+}
 
 // CRIT-02: reject story IDs that could escape .keel/state/ via path traversal.
 // Anything outside [A-Za-z0-9_-] (dots, slashes, backslashes, spaces) is
@@ -186,7 +206,7 @@ function notifyHalt(storyId, phase, attempt, reasons) {
         throw new Error(`Webhook URL hostname "${url.hostname}" is not hooks.slack.com — update ~/.keel/secrets/slack.webhook`);
       }
       const body = JSON.stringify({
-        text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): node ~/.keel/bin/keel-state.cjs resume ${storyId} --phase ${phase} --notes "..."`,
+        text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): ${selfInvocation()} resume ${storyId} --phase ${phase} --notes "..."`,
       });
       const req = require('https').request(url, {
         method: 'POST',
@@ -301,6 +321,13 @@ function validatePhaseFile(storyId, fileName) {
   }
   if (!Number.isInteger(out.phase) || out.phase < 1 || out.phase > storyMaxPhase) errors.push(`phase must be integer 1..${storyMaxPhase}`);
   if (!LEGACY_AGENTS.includes(out.agent)) errors.push(`agent must be one of: ${AGENTS.join(', ')}`);
+  // LOW-03: warn (not error) when a pre-v3.15.0 legacy agent name is used —
+  // these are kept for backward-compatible validation of old stories but should
+  // not appear in new work.
+  else if (!AGENTS.includes(out.agent)) {
+    console.warn(`DEPRECATION: agent "${out.agent}" was removed in v3.15.0 (TDD phases merged into software-engineer). ` +
+      `This file validates for backward compatibility only — new phase output should use "software-engineer".`);
+  }
   if (typeof out.story_id !== 'string' || !out.story_id) errors.push('story_id missing');
   else if (out.story_id !== storyId) errors.push(`story_id "${out.story_id}" does not match directory "${storyId}"`);
   if (!CONFIDENCE.includes(out.confidence)) errors.push('confidence must be high|medium|low');
@@ -323,9 +350,28 @@ function validatePhaseFile(storyId, fileName) {
     if (m[2] !== out.agent) errors.push(`filename agent "${m[2]}" != content agent "${out.agent}"`);
   }
 
-  // grounding: every artifact path must exist on disk
+  // grounding: every artifact path must exist on disk and pass safety checks
+  // MED-02: also reject symlinks (could redirect to sensitive paths), warn on
+  // oversized files (> 50 MB in a state directory is almost certainly a mistake),
+  // and block executable extensions that should never be pipeline artifacts.
+  const BLOCKED_EXTENSIONS = new Set(['.exe', '.bat', '.cmd', '.sh', '.dll', '.bin', '.ps1']);
   (out.artifacts || []).forEach((a) => {
-    if (typeof a !== 'string' || !fs.existsSync(a)) errors.push(`artifact does not exist on disk: ${a}`);
+    if (typeof a !== 'string' || !a) { errors.push('artifact entry must be a non-empty string'); return; }
+    if (!fs.existsSync(a)) { errors.push(`artifact does not exist on disk: ${a}`); return; }
+    try {
+      const stat = fs.lstatSync(a);
+      if (stat.isSymbolicLink()) {
+        errors.push(`artifact is a symlink — symlinks are not allowed as pipeline artifacts: ${a}`);
+        return;
+      }
+      if (stat.size > 50 * 1024 * 1024) {
+        errors.push(`artifact exceeds 50 MB (${(stat.size / 1024 / 1024).toFixed(1)} MB) — large binaries do not belong in pipeline state: ${a}`);
+      }
+      const ext = path.extname(a).toLowerCase();
+      if (BLOCKED_EXTENSIONS.has(ext)) {
+        errors.push(`artifact has a blocked extension "${ext}" — executables and scripts are not valid pipeline artifacts: ${a}`);
+      }
+    } catch (e) { errors.push(`artifact stat failed: ${a}: ${e.message}`); }
   });
 
   // AC continuity vs phase 1 (anti-drift). Phase 1 may be written by the
@@ -372,6 +418,7 @@ function haltPipeline(storyId, manifest, phase, attempt, reason, extraAudit) {
   appendAudit(storyId, Object.assign(
     { phase, agent: 'handshake', action: 'pipeline_halted', attempt, notes: reason, notified: null }, extraAudit));
   console.error(`HALT: ${reason} — pipeline halted, escalate to a human. History in ${handoffPath(storyId)}`);
+  console.error(`Resume (human decision required): ${selfInvocation()} resume ${storyId} --phase ${phase} --notes "<rationale>"`);
   notifyHalt(storyId, phase, attempt, reasons).then(() => process.exit(2));
 }
 
@@ -721,6 +768,24 @@ function cmdRestore(storyId, ts) {
     else fs.copyFileSync(s, d);
   }
   appendAudit(storyId, { agent: 'state-management', action: 'snapshot_restored', notes: ts });
+  // MED-01: warn when the restored manifest's current_phase disagrees with the
+  // latest phase_completed entry in the append-only audit-log. This is not an
+  // error (restore intentionally rewinds state, never history) but it will
+  // confuse anyone reading the audit who expects them to agree.
+  try {
+    const restoredManifest = JSON.parse(fs.readFileSync(manifestPath(storyId), 'utf8'));
+    const auditLines = fs.readFileSync(auditPath(storyId), 'utf8').trim().split('\n').filter(Boolean);
+    const lastCompleted = auditLines.map((l) => { try { return JSON.parse(l); } catch { return null; } })
+      .filter((e) => e && e.action === 'phase_completed').pop();
+    if (lastCompleted && lastCompleted.phase > restoredManifest.current_phase) {
+      console.warn(
+        `WARN: restored manifest current_phase=${restoredManifest.current_phase} but audit-log shows ` +
+        `phase ${lastCompleted.phase} was completed. This is expected after a restore (state rewound, ` +
+        `history preserved) but may confuse readers of the audit trail. Document the reason with: ` +
+        `node keel-state.cjs audit ${storyId} --json '{"action":"restore_rationale","notes":"<reason>"}'`
+      );
+    }
+  } catch { /* manifest or audit-log unreadable — skip the cross-check */ }
   console.log(`OK: restored snapshot ${ts} (current state snapshotted first)`);
 }
 
