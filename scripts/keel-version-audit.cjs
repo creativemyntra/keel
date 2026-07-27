@@ -59,11 +59,11 @@ const HISTORICAL_LINE_PATTERNS = [
 
 function readCurrentVersion() {
   const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
-  return pkg.version; // e.g. "3.16.6"
+  return pkg.version; // e.g. "3.16.7"
 }
 
 function semverPrev(ver) {
-  // Derive the immediate previous patch: e.g. 3.16.6 -> 3.16.4
+  // Derive the immediate previous patch: e.g. 3.16.7 -> 3.16.4
   const [maj, min, pat] = ver.split('.').map(Number);
   if (pat > 0) return `${maj}.${min}.${pat - 1}`;
   if (min > 0) return `${maj}.${min - 1}.0`;

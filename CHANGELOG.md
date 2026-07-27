@@ -2,6 +2,28 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.16.7] - 2026-07-27 - FORENSIC ENGINE AUDIT: 14 SECURITY AND CORRECTNESS FIXES
+
+### Security
+- **CRIT-01** (`keel-state.cjs`) — Handoff-log initialized eagerly in `cmdInit()` so it exists before any phase writes; eliminates divergence between handoff-log and audit-log on abnormal exits.
+- **CRIT-02** (`keel-state.cjs`) — `validateStoryId()` added at CLI entry point: rejects any `story_id` not matching `^[A-Za-z0-9_-]+$` (exit 64), closing path-traversal vector via `path.join()`.
+- **CRIT-03** (`keel-state.cjs`) — `appendAudit()` called synchronously before `notifyHalt()` in `haltPipeline()`; audit record is guaranteed even if the Slack webhook call fails or times out.
+- **HIGH-02** (`keel-state.cjs`) — Slack webhook hostname validated against `hooks.slack.com` before HTTPS request; rejects SSRF via attacker-controlled webhook URLs.
+- **HIGH-03** (`keel-state.cjs`) — Gate budget check (`>= maxGates`) now runs before incrementing `gate_events`; fixes off-by-one that allowed one extra gate call beyond the configured limit.
+
+### Fixed
+- **HIGH-01** (`.keel/state/TEST-AUDIT-1/README.md`) — Regression fixture `injected_field: "pwned"` documented; resolves unexplained schema-violation entry in `TEST-AUDIT-1` state directory.
+- **HIGH-04** (`keel-state.cjs`) — Prescan exit codes clarified: `0` = clean, `1` = internal error, `2` = violations found; eliminates ambiguity that caused silent false-negatives.
+- **MED-01** (`keel-state.cjs`) — Artifact validation hardened: rejects symlinks, files > 50 MB, and blocked extensions (`.exe`, `.bat`, `.cmd`, `.sh`, `.dll`, `.bin`, `.ps1`).
+- **MED-02** (`keel-state.cjs`) — Restore cross-check compares snapshot manifest fields against current manifest before applying; prevents silent divergence on partial restores.
+- **MED-03** (`keel-state.cjs` + `.keel/economy.yml`) — Lock stale timeout made configurable via `state_engine.lock_stale_seconds` in `economy.yml` (default 30s); was hardcoded at 30 000 ms.
+- **MED-04** (`skills/implement-feature/SKILL.md`) — Skill doc rewritten to be scope-aware: feature stories run 10 phases, defect stories run 4 (PO→SE→QA→Security). Eliminates "always 10 phases" false claim.
+- **LOW-01** (`keel-classify-gate.cjs`) — CJIS coverage-gap warning expanded to multi-line actionable message with `KEEL_CJIS_STRICT=1` guidance and Forseti filing instruction.
+- **LOW-02** (`keel-state.cjs`) — `selfInvocation()` detects call path and emits correct resume command (`~/.keel/bin/` vs `scripts/`) rather than hardcoded guess.
+- **LOW-03** (`keel-state.cjs`) — Legacy agent names now emit a `DEPRECATION` warning on `console.warn` instead of silently proceeding.
+
+---
+
 ## [3.16.6] - 2026-07-27 - KARPATHY PROTOCOL G-15; TOKEN ECONOMY OBSERVABILITY; PROMPT CACHE
 
 ### Added
@@ -619,5 +641,5 @@ MIT - See [LICENSE](LICENSE) for details
 ---
 
 Last Updated: 2026-07-27
-Version: 3.16.6
+Version: 3.16.7
 Status: Production Ready
