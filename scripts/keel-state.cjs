@@ -60,6 +60,15 @@ const handoffPath = (storyId) => path.join(stateDir(storyId), 'handoff-log.md');
 function die(code, msg) { console.error(msg); process.exit(code); }
 function nowIso() { return new Date().toISOString(); }
 
+// CRIT-02: reject story IDs that could escape .keel/state/ via path traversal.
+// Anything outside [A-Za-z0-9_-] (dots, slashes, backslashes, spaces) is
+// rejected before any path.join call that includes the story ID.
+function validateStoryId(storyId) {
+  if (!storyId || !/^[A-Za-z0-9_-]+$/.test(storyId)) {
+    die(64, `Invalid story_id: "${storyId}" — must be alphanumeric with dashes or underscores only`);
+  }
+}
+
 function readJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
   catch (e) { die(1, `FAIL: cannot read/parse ${file}: ${e.message}`); }
@@ -171,6 +180,11 @@ function notifyHalt(storyId, phase, attempt, reasons) {
         return resolve(false);
       }
       const url = new URL(fs.readFileSync(hookFile, 'utf8').trim());
+      // HIGH-02: reject webhook URLs that do not point to hooks.slack.com to
+      // prevent a tampered secrets file from exfiltrating halt notifications.
+      if (!url.hostname.endsWith('hooks.slack.com')) {
+        throw new Error(`Webhook URL hostname "${url.hostname}" is not hooks.slack.com — update ~/.keel/secrets/slack.webhook`);
+      }
       const body = JSON.stringify({
         text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): node ~/.keel/bin/keel-state.cjs resume ${storyId} --phase ${phase} --notes "..."`,
       });
@@ -257,6 +271,9 @@ function cmdInit(storyId, args) {
     if (e.code === 'EEXIST') die(1, `FAIL: story ${storyId} already initialized at ${dir}`);
     throw e;
   }
+  // CRIT-01: initialize handoff-log.md eagerly so it is never created implicitly
+  // on first append (which would make the first halt harder to diagnose).
+  fs.writeFileSync(handoffPath(storyId), '');
   appendAudit(storyId, { phase: 0, agent: 'orchestrator', action: 'pipeline_initialized', notes: manifest.title });
   console.log(`OK: initialized ${dir} (budget: ${manifest.max_gates} gate events / ${manifest.max_hours}h)`);
 }
@@ -349,12 +366,13 @@ function haltPipeline(storyId, manifest, phase, attempt, reason, extraAudit) {
   fs.appendFileSync(handoffPath(storyId), `- ${nowIso()} | phase ${phase} | HALT | ${reason}\n`);
   const reasons = fs.readFileSync(handoffPath(storyId), 'utf8').split('\n')
     .filter((l) => l.includes(`phase ${phase} | FAIL`)).slice(-MAX_ATTEMPTS).join('\n') || reason;
-  notifyHalt(storyId, phase, attempt, reasons).then((sent) => {
-    appendAudit(storyId, Object.assign(
-      { phase, agent: 'handshake', action: 'pipeline_halted', attempt, notes: reason, notified: sent }, extraAudit));
-    console.error(`HALT: ${reason} — pipeline halted, escalate to a human. History in ${handoffPath(storyId)}`);
-    process.exit(2);
-  });
+  // CRIT-03: write audit log synchronously HERE — before the async Slack call —
+  // so both logs are always consistent even if the process is killed afterward.
+  // notified is set to null for now; the Slack result is advisory only.
+  appendAudit(storyId, Object.assign(
+    { phase, agent: 'handshake', action: 'pipeline_halted', attempt, notes: reason, notified: null }, extraAudit));
+  console.error(`HALT: ${reason} — pipeline halted, escalate to a human. History in ${handoffPath(storyId)}`);
+  notifyHalt(storyId, phase, attempt, reasons).then(() => process.exit(2));
 }
 
 function cmdGate(storyId, args) {
@@ -373,14 +391,16 @@ function cmdGate(storyId, args) {
     }
 
     // pipeline-level budget (independent of the per-phase attempt cap)
-    manifest.gate_events = (manifest.gate_events || 0) + 1;
+    // HIGH-03: check >= maxGates BEFORE incrementing so the limit is exact.
+    // Checking > after incrementing allowed one extra gate beyond the budget.
     const maxGates = manifest.max_gates || DEFAULT_MAX_GATES;
     const maxHours = manifest.max_hours || DEFAULT_MAX_HOURS;
     const hoursElapsed = (Date.now() - Date.parse(manifest.started_at)) / 3600000;
-    if (manifest.gate_events > maxGates) {
+    if ((manifest.gate_events || 0) >= maxGates) {
       return haltPipeline(storyId, manifest, phase, manifest.attempts[key] || 0,
-        `pipeline budget exceeded: ${manifest.gate_events} gate events > max ${maxGates}`, { budget: 'gates' });
+        `pipeline budget exceeded: ${manifest.gate_events || 0} gate events >= max ${maxGates}`, { budget: 'gates' });
     }
+    manifest.gate_events = (manifest.gate_events || 0) + 1;
     if (hoursElapsed > maxHours) {
       return haltPipeline(storyId, manifest, phase, manifest.attempts[key] || 0,
         `pipeline budget exceeded: ${hoursElapsed.toFixed(1)}h wall-clock > max ${maxHours}h`, { budget: 'hours' });
@@ -898,10 +918,18 @@ function cmdPrescan(storyId) {
     if (s.name === 'snyk') return s.exit === 1; // snyk: exit 1 = vulns found (DIRTY); exit 2 = auth/network error (not a finding)
     return s.exit !== 0;
   });
+  // HIGH-04: exit codes have distinct semantics — do not conflate them:
+  //   exit 0  CLEAN    — all runnable scanners passed, proceed.
+  //   exit 1  DIRTY    — a scanner found real vulnerabilities/issues; human review required.
+  //   exit 2  INFRA    — scanner infrastructure broken (auth, network, missing token);
+  //                      the scan did NOT run. This is NOT a finding — it means we cannot
+  //                      prove the project is clean. Treat as a blocker in strict CI; use
+  //                      --force-proceed-on-infra-fail (future flag) to override.
   const snykBroken = scanners.filter((s) => s.name === 'snyk' && s.status === 'ran' && s.exit >= 2);
   if (snykBroken.length) {
-    die(2, `PRESCAN FAILED: snyk exit ${snykBroken[0].exit} (auth/network) -- scan did not run. `
-         + `Fix SNYK_TOKEN or remove snyk from PATH to skip. Not counted as findings.`);
+    die(2, `PRESCAN INFRA: snyk exited ${snykBroken[0].exit} (auth/network error) — scan did not run. `
+         + `Fix SNYK_TOKEN or remove snyk from PATH to skip. This is NOT a security finding; `
+         + `it means the project could not be scanned. Review prescan.json for details.`);
   }
   if (dirty.length) {
     die(1, `PRESCAN DIRTY: ${dirty.map((d) => d.name).join(', ')} reported findings — review .keel/state/${storyId}/prescan.json`);
@@ -1252,6 +1280,7 @@ if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
 if (cmd === 'security-status') { cmdSecurityStatus(process.argv.slice(3)); process.exit(0); }
 if (!storyId) die(64, USAGE);
 if (cmd === 'status' && storyId === '--all') { cmdStatusAll(); process.exit(0); }
+validateStoryId(storyId); // CRIT-02: enforce safe story_id before any path.join
 switch (cmd) {
   case 'init': cmdInit(storyId, rest); break;
   case 'validate': cmdValidate(storyId, rest[0] || die(64, 'validate needs <NN-agent.json>')); break;
