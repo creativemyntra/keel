@@ -2,7 +2,26 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
-## [3.16.5] - 2026-07-27 - DEVELOPER AUTOMATION: keel:start-work + keel:finish-work MCP SKILLS; KARPATHY PROTOCOL G-15; ADVISORY TICKET TRACEABILITY
+## [3.16.6] - 2026-07-27 - KARPATHY PROTOCOL G-15; TOKEN ECONOMY OBSERVABILITY; PROMPT CACHE
+
+### Added
+- **G-15 Karpathy Protocol** (`GUARDRAILS.md`) — Four binding rules enforceable at every handshake gate: K-1 surface assumptions, K-2 ask-don't-guess (HALT on ambiguity), K-3 minimum code zero speculation, K-4 surgical diff verification.
+- **Pre-spawn clarity gate** (`agents/orchestrator.md`) — K-2 gate before phase 1: story type, bounded scope, and at least one testable AC required.
+- **Token economy observability** — `confirm_before_spawn: true` (default): orchestrator halts + shows `[token-estimate:]` before every spawn, waits for human OK. `token_summary: true` (default): cumulative token table with cache savings appended to final delivery output.
+- **Prompt cache breakpoints** — `prompt_caching: true` (default): 3 canonical `cache_control: {type: "ephemeral"}` breakpoints (BP-1 system prompt, BP-2 tools, BP-3 static context). `[cache-estimate:]` line emitted per spawn. ~90% savings on BP-1+BP-2 prefix (~100–150k tokens saved per full pipeline).
+- **`/keel:tokens` command** (`commands/tokens.md`) — live token ledger + cache savings column; `/keel:tokens confirm on|off` and `/keel:tokens cache on|off` mid-session toggles.
+- **Economy wizard in `/keel:init`** (`commands/init.md`) — step 3 seeds all economy settings; AskUserQuestion: keep defaults / tune / skip.
+- **Economy wizard in `/keel:setup`** (`commands/setup.md`) — new step 7 "Token Economy" (`/keel:setup economy`); steps renumbered 1-7.
+
+### Changed
+- **`agents/software-engineer.md`** — Phase 0 reordered: K-1 (step 3) + K-2 (step 4) before plan-writing (step 5); K-4 scope-creep diff check added as self-audit step 7.
+- **`agents/solution-architect.md`** — "Before designing" gains K-1 (assumptions, step 4) + K-3 (simplest-design check, step 5).
+- **`agents/business-analyst.md`** — K-2 ask-don't-assume rule added to Rules section.
+- **`.keel/economy.yml`** — four new settings: `confirm_before_spawn: true`, `token_summary: true`, `prompt_caching: true`, `cache_ttl_minutes: 5`.
+
+---
+
+## [3.16.5] - 2026-07-23 - DEVELOPER AUTOMATION: keel:start-work + keel:finish-work MCP SKILLS; ADVISORY TICKET TRACEABILITY
 
 ### Added
 - **`skills/start-work/SKILL.md`** — `keel:start-work` Claude Code skill: fetches Jira ticket via Atlassian Rovo MCP (no separate token), creates branch with type-derived prefix + ticket slug, pushes to remote, transitions Jira to "In Progress". Works in description-only mode when no ticket exists.
@@ -599,6 +618,6 @@ MIT - See [LICENSE](LICENSE) for details
 
 ---
 
-Last Updated: 2026-07-23
-Version: 3.16.5
+Last Updated: 2026-07-27
+Version: 3.16.6
 Status: Production Ready

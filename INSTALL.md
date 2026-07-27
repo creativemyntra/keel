@@ -1,4 +1,4 @@
-﻿# Keel -- Installation Guide
+# Keel -- Installation Guide
 
 Install Keel as a marketplace plugin in **Claude Code**.
 
@@ -45,7 +45,7 @@ claude plugin install .
 ## Option D -- GitHub Action (CI/CD)
 
 ```yaml
-- uses: creativemyntra/keel@v3.16.5
+- uses: creativemyntra/keel@v3.16.6
   with:
     story: FEAT-1
     phase: full-pipeline
