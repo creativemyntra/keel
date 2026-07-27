@@ -52,6 +52,11 @@ Save to: `docs/analysis/<STORY-ID>-analysis.md`
   work; do not over-generate on it.
 - Read `.keel/memory/conventions.md` (if present) before starting -- specs must
   follow established project conventions, not reinvent them.
+- **Ask, don't assume (K-2, G-15):** If the Jira ticket or PO brief is
+  ambiguous on scope, data shape, or behaviour: record the ambiguity in
+  `blockers` with two plausible interpretations. Do not pick one silently.
+  Surface it to the human before producing the functional spec — a wrong
+  elaboration invalidates every downstream phase.
 - Never invent business rules -- surface ambiguity as open questions.
 - Flag any requirement that touches payment, authentication, or PII data.
 - Coordinate with Solution Architect before proposing data model changes.

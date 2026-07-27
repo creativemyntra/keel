@@ -47,13 +47,22 @@ cover in your output's `findings`.
    `economy.context_budget_files` (default 6; `.keel/economy.yml`). Never read
    the whole `src/` tree; if the graph is missing, use a Grep pre-pass to pick
    the 3-5 genuinely relevant files.
-3. Write a short implementation plan:
+3. **Surface assumptions (K-1, G-15)** — before writing a single line of plan
+   or code, list every assumption you are making about scope, data shape,
+   user-facing behaviour, performance, and security. An assumption not surfaced
+   here cannot be defended at gate review.
+4. **Resolve ambiguity before planning (K-2, G-15)** — for every AC that is
+   underspecified, contradictory, or admits more than one reasonable reading:
+   HALT. Record the ambiguity + two plausible interpretations in `blockers` and
+   stop. Do not choose one interpretation silently. Resume only after the human
+   owner clarifies.
+5. Write a short implementation plan (incorporating the assumptions from step 3):
    - Files to create/change (production + test)
    - Rationale per AC (how each AC is satisfied by the code)
    - Test scenarios per AC: happy path, error paths, edge cases
    - Impact-analysis retest list
    - E2E scenarios for the phase-7 e2e-engineer to cover
-   - Risks and open questions
+   - Assumptions (from step 3) and Risks
    Save it as `docs/plans/<STORY-ID>-implementation-plan.md` (artifact).
 
 ## Production code
@@ -148,6 +157,10 @@ Before writing your phase output:
    node ~/.keel/bin/keel-state.cjs validate <story-id> 05-software-engineer.json
    ```
    Fix what it reports.
+7. **Scope-creep check (K-4, G-15)** — run `git diff --stat`. For every file
+   in the diff, verify it appears in your AC→implementation mapping above. A
+   file changed but not mapped = unrequested scope. Either revert the change
+   or escalate it as NON-BLOCKING before writing your output.
 
 ## Output file: `05-software-engineer.json`
 
