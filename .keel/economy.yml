@@ -7,6 +7,10 @@ economy:
   security_skip_on_clean: false  # OWNER OPT-IN: clean prescan + TRIVIAL diff replaces the security spawn
   context_budget_files: 6        # max source files any agent loads (CodeGraph-selected)
   output_caps: true              # report length caps enforced
+  confirm_before_spawn: true     # show token estimate + require human OK before each phase agent spawn (set false to skip)
+  token_summary: true            # print cumulative token-usage table in final delivery summary
+  prompt_caching: true           # emit cache_control breakpoints at system-prompt + tools + static-context boundaries
+  cache_ttl_minutes: 5           # Claude ephemeral cache TTL; run phases back-to-back to keep cache warm
 
 # Per-agent token-weight caps (output tokens; input tokens are capped by context_budget_files).
 # total_pipeline_budget is the sum-ceiling across one full pipeline run.
