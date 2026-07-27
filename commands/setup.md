@@ -15,9 +15,9 @@ Every integration offers exactly three paths:
 
 ## Routing
 
-- No argument -> full wizard: run steps 1-6 in order, then print the status table.
-- `jira` | `github` | `playwright` | `slack` | `sonarqube` | `snyk` -> run only that integration's step.
-- `status` -> print the status table (step 7) and stop. No questions.
+- No argument -> full wizard: run steps 1-7 in order, then print the status table.
+- `jira` | `github` | `playwright` | `slack` | `sonarqube` | `snyk` | `economy` -> run only that step.
+- `status` -> print the status table (step 8) and stop. No questions.
 
 ## Preflight (always, before any question)
 
@@ -110,7 +110,20 @@ baseline; Snyk adds its vulnerability database and license checks on top.
   "skipped (not configured)" and relies on the composer/npm audit baseline.
 - **Skip** -> write `~/.keel/config/snyk.yml` with `enabled: false`.
 
-## 7. Status table + audit trail (always finish with this)
+## 7. Token Economy (default: confirm + cache on)
+
+Controls how the orchestrator manages token spend and Claude prompt caching
+across pipeline phases. These settings live in `.keel/economy.yml`.
+
+- **Configure now** -> ask three AskUserQuestion calls (one per setting):
+  1. `confirm_before_spawn` — "Before each agent spawn, show a token estimate and wait for your OK? (Recommended: on)" Options: On (recommended) / Off
+  2. `token_summary` — "Print a cumulative token-usage table at the end of each pipeline run?" Options: On (recommended) / Off
+  3. `prompt_caching` — "Use Claude prompt cache breakpoints to save ~90% on repeated system+tools tokens?" Options: On (recommended) / Off
+  After answers: update `.keel/economy.yml` and confirm: "Updated. Use `/keel:tokens` to toggle any of these mid-session."
+- **Use default** -> `confirm_before_spawn: true`, `token_summary: true`, `prompt_caching: true`, `cache_ttl_minutes: 5`. No file changes if already at defaults.
+- **Skip** -> leave `.keel/economy.yml` unchanged; print current values.
+
+## 8. Status table + audit trail (always finish with this)
 
 Print a table: integration | state (configured / default / skipped / not set up) | how to change it
 (`/keel:setup <name>`).
@@ -131,7 +144,7 @@ Write it as UTF-8 **without BOM**: on Windows PowerShell 5.1, `Out-File`/`Add-Co
 
 - One AskUserQuestion call per integration (options: Configure now / Use default / Skip), then
   follow-up questions only for the path chosen. Number the steps in the question header
-  (`1/6 Jira` ... `6/6 Snyk`) so the user always knows how much wizard is left.
+  (`1/7 Jira` ... `7/7 Token Economy`) so the user always knows how much wizard is left.
 - Preflight results must shape the options you present: if `gh` is missing, the GitHub
   "Use default" description must say the fallback is plain git; if Node < 18, the Playwright
   default must warn that the bundled MCP server cannot start; if an integration is already
