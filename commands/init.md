@@ -29,10 +29,23 @@ Initialize Keel in this repository. Arguments: $ARGUMENTS
    - `.keel/memory/conventions.md` -- project conventions (seed with an empty dated header)
    - `.keel/memory/lessons.md` -- cross-story lessons learned (seed with an empty dated header; agents read this at startup -- ENOENT here is a crash, not a soft failure)
    - `.keel/economy.yml` -- token-economy choices (committed, team-shared); seed
-     with the conservative defaults from the orchestrator's Economy decisions
-     section (`model_tiering: true`, `static_first_security: true`,
-     `security_skip_on_clean: false`, `context_budget_files: 6`,
-     `output_caps: true`) and tell the user which knobs are opt-in
+     with the defaults below and then **ask the user** (AskUserQuestion, one call,
+     three options) whether to keep defaults, tune interactively, or skip:
+     ```yaml
+     economy:
+       model_tiering: true
+       static_first_security: true
+       security_skip_on_clean: false
+       context_budget_files: 6
+       output_caps: true
+       confirm_before_spawn: true     # show estimate + require OK before each agent spawn
+       token_summary: true            # print cumulative token table after pipeline completes
+       prompt_caching: true           # cache_control breakpoints at BP-1/BP-2/BP-3
+       cache_ttl_minutes: 5           # run phases back-to-back to keep cache warm
+     ```
+     Options: "Keep these defaults (recommended)" / "Tune interactively -- walk me through each setting" / "Skip -- I'll edit economy.yml later".
+     If "Tune interactively": ask one AskUserQuestion per setting for `confirm_before_spawn`, `token_summary`, and `prompt_caching` (the three user-visible ones); leave the infrastructure settings at defaults.
+     Tell the user: "Use `/keel:tokens` to view live token usage and toggle confirm/cache mid-session; use `/keel:setup` to re-run this wizard."
 4. Build the initial CodeGraph: `node ~/.keel/bin/build-codegraph.cjs .`
    (skip gracefully if the project has no src/ yet).
 5. Verify `agent-output-schema.json` is reachable -- check `$CLAUDE_PLUGIN_ROOT/agent-output-schema.json` first, then `~/.keel/config/agent-output-schema.json` (staged on every session start by keel-init.cjs). If neither exists, STOP and tell the developer -- phase agents cannot validate their output without it.

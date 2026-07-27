@@ -2,13 +2,22 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
-## [3.16.5] - 2026-07-23 - DEVELOPER AUTOMATION: keel:start-work + keel:finish-work MCP SKILLS; ADVISORY TICKET TRACEABILITY
+## [3.16.5] - 2026-07-27 - DEVELOPER AUTOMATION: keel:start-work + keel:finish-work MCP SKILLS; KARPATHY PROTOCOL G-15; ADVISORY TICKET TRACEABILITY
 
 ### Added
 - **`skills/start-work/SKILL.md`** — `keel:start-work` Claude Code skill: fetches Jira ticket via Atlassian Rovo MCP (no separate token), creates branch with type-derived prefix + ticket slug, pushes to remote, transitions Jira to "In Progress". Works in description-only mode when no ticket exists.
 - **`skills/finish-work/SKILL.md`** — `keel:finish-work` Claude Code skill: reads commits ahead of dev, fetches Jira context via MCP, creates industry-standard PR to dev via GitHub REST API (`~/.keel/secrets/github.token`), transitions Jira to "In Review". Handles 422 (PR already exists) gracefully.
+- **G-15 Karpathy Protocol** (`GUARDRAILS.md`) — Four binding rules enforceable at every handshake gate:
+  - **K-1** Surface assumptions before starting (list in phase `findings`)
+  - **K-2** Ask, don't guess — HALT + record two interpretations on any ambiguity; never pick silently
+  - **K-3** Minimum code, zero speculation — every element traces to a named AC
+  - **K-4** Surgical diff verification — `git diff --stat` post-code; any unmapped file = scope creep, revert or escalate
+- **Pre-spawn clarity gate** (`agents/orchestrator.md`) — K-2 gate before phase 1 spawn: story type, bounded scope, and at least one testable AC required or pipeline halts for human clarification.
 
 ### Changed
+- **`agents/software-engineer.md`** — Phase 0 reordered: K-1 (surface assumptions, step 3) + K-2 (ambiguity halt, step 4) now precede plan-writing (step 5). Self-audit gains K-4 scope-creep diff check (step 7).
+- **`agents/solution-architect.md`** — "Before designing" gains K-1 (assumptions section in design doc, step 4) + K-3 (simplest-design check, step 5).
+- **`agents/business-analyst.md`** — Rules section gains K-2 ask-don't-assume rule before "Never invent business rules".
 - **G-12 (`scripts/keel-bug-lifecycle.cjs`)** — Ticket traceability downgraded from blocking to advisory-only across all commit types. Flexible ticket ID pattern (`/[A-Z]{2,}-\d+/i`) replaces hardcoded project-key format. Removed dead `JIRA_PATTERN` constant.
 - **G-13 (`scripts/keel-push-guard.cjs`)** — Added `feat/` and `epic/` to `ALLOWED_PREFIXES`. After a successful feature branch push, prints a next-step reminder: "Ask Claude Code: finish work on BRANCH" with a direct GitHub compare URL.
 - **`.keel/GUARDRAILS.md`** — G-12 table updated to advisory; G-13 rule 4 PR ticket reference changed to advisory (G-14); G-14 completely rewritten to document MCP-skill invocation, flexible branch naming convention, and push-guard advisory behaviour.
