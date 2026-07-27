@@ -12,7 +12,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - run: npm test
+
+      - name: Rebuild CodeGraph
+        run: node scripts/build-codegraph.cjs
+
+      - name: Commit updated CodeGraph (push events only)
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .keel/graph/codegraph.json
+          if git diff --cached --quiet; then
+            echo "CodeGraph unchanged — nothing to commit"
+          else
+            git commit -m "chore(codegraph): regenerate [skip ci]"
+            git push
+          fi

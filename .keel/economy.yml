@@ -12,6 +12,13 @@ economy:
   prompt_caching: true           # emit cache_control breakpoints at system-prompt + tools + static-context boundaries
   cache_ttl_minutes: 5           # Claude ephemeral cache TTL; run phases back-to-back to keep cache warm
 
+# State-engine tuning (MED-03: was hardcoded — now owner-configurable).
+# lock_stale_seconds: how long a .lock directory must exist before it is
+# considered stale (crashed process) and forcibly removed. Increase on slow
+# NFS/Docker mounts where rename() latency exceeds 30s.
+state_engine:
+  lock_stale_seconds: 30
+
 # Per-agent token-weight caps (output tokens; input tokens are capped by context_budget_files).
 # total_pipeline_budget is the sum-ceiling across one full pipeline run.
 # weight-budget.test.cjs asserts: each agent <= default_cap AND sum(agents) <= total_pipeline_budget.
