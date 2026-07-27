@@ -53,11 +53,22 @@ function block(reason) { process.stderr.write(`CJIS GATE BLOCK: ${reason}\n`); p
 function loadPatterns() {
   const parsed = JSON.parse(fs.readFileSync(PATTERNS_FILE, 'utf8')); // throws -> fail-closed
   if (!Array.isArray(parsed.patterns) || !parsed.patterns.length) throw new Error('no patterns');
+  // LOW-01: make the coverage-gap warning actionable — name the env var that
+  // hardens it to a block, and explain the risk clearly so developers don't
+  // dismiss it as noise after seeing it dozens of times.
   const blocked = parsed.blocked_categories || [];
   if (blocked.length) {
-    const msg = `CJIS COVERAGE GAP: no patterns for ${blocked.join(', ')} -- these identifiers are NOT screened.`;
+    const msg = [
+      `CJIS COVERAGE GAP: patterns are MISSING for: ${blocked.join(', ')}.`,
+      `  These identifier types will NOT be detected if they appear in prompts or tool output.`,
+      `  If your story touches any of these identifiers, set KEEL_CJIS_STRICT=1 to block on`,
+      `  this gap rather than continue. File a Forseti request to add the missing patterns.`,
+    ].join('\n');
     process.stderr.write(msg + '\n');
-    if (process.env.KEEL_CJIS_STRICT) { process.exit(2); }
+    if (process.env.KEEL_CJIS_STRICT) {
+      process.stderr.write('CJIS GATE BLOCK: KEEL_CJIS_STRICT=1 is set — halting on coverage gap.\n');
+      process.exit(2);
+    }
   }
   return {
     patterns: parsed.patterns.map((p) => ({ ...p, re: new RegExp(p.pattern, p.flags || 'gi') })),
