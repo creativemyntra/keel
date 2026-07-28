@@ -278,6 +278,7 @@ function cmdInit(storyId, args) {
     expected_phases: SCOPES[scope],
     current_phase: 1,
     attempts: {},
+    phase_modes: {},
     gate_events: 0,
     max_gates: parseInt(flag(args, '--max-gates') || '', 10) || DEFAULT_MAX_GATES,
     max_hours: parseFloat(flag(args, '--max-hours') || '') || DEFAULT_MAX_HOURS,
@@ -493,6 +494,8 @@ function cmdGate(storyId, args) {
 
       delete manifest.attempts[key];
       if (manifest.attempt_hashes) delete manifest.attempt_hashes[key];
+      // Clear any author/draft mode marker — execute/finalize has now run and gated.
+      if (manifest.phase_modes) delete manifest.phase_modes[String(phase)];
       // advance to the next phase IN SCOPE (defect scope skips 2-3 and 7-8),
       // not blindly +1 — e2e run KEEL-101 caught the old behavior
       const expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
@@ -586,6 +589,7 @@ function cmdStatus(storyId) {
     current_phase: manifest.current_phase,
     halted: manifest.halted === true,
     attempts: manifest.attempts,
+    phase_modes: manifest.phase_modes || {},
     completed_phase_files: files,
     sequencing_gaps: gaps,
     started_at: manifest.started_at,
@@ -1336,9 +1340,49 @@ function cmdSecurityStatus(args) {
   console.log(JSON.stringify({ count: incidents.length, incidents }, null, 2));
 }
 
+// KEEL-R14 author/draft mode tracking — records that an author or draft-mode
+// invocation has run so the orchestrator can recover after context compaction.
+// The marker is cleared automatically when gate PASS advances the phase.
+// Usage: phase-mode set <story> --phase N --mode author|draft|execute|finalize|none
+//        phase-mode get <story> --phase N [--json]
+function cmdPhaseMode(args) {
+  const sub = args[0];
+  const storyId = args[1];
+  if (!sub || !storyId) die(1, 'usage: keel-state.cjs phase-mode <set|get> <story-id> --phase <N> [--mode <mode>]');
+  validateStoryId(storyId);
+  const manifest = readManifest(storyId);
+  if (!manifest.phase_modes) manifest.phase_modes = {};
+  const phaseStr = flag(args, '--phase');
+  if (!phaseStr) die(1, '--phase N is required');
+  const phase = parseInt(phaseStr, 10);
+  if (!phase || isNaN(phase)) die(1, `--phase must be a positive integer, got: ${phaseStr}`);
+  if (sub === 'get') {
+    const val = manifest.phase_modes[String(phase)] || 'none';
+    if (args.includes('--json')) process.stdout.write(JSON.stringify({ phase, mode: val }) + '\n');
+    else process.stdout.write(val + '\n');
+    return;
+  }
+  if (sub === 'set') {
+    const mode = flag(args, '--mode');
+    if (!mode) die(1, '--mode <author|draft|execute|finalize|none> is required');
+    const valid = ['author', 'draft', 'execute', 'finalize', 'none'];
+    if (!valid.includes(mode)) die(1, `--mode must be one of: ${valid.join(', ')}`);
+    if (mode === 'none') {
+      delete manifest.phase_modes[String(phase)];
+    } else {
+      manifest.phase_modes[String(phase)] = mode;
+    }
+    writeManifest(storyId, manifest);
+    appendAudit(storyId, { phase, agent: 'orchestrator', action: 'phase_mode_set', mode });
+    process.stdout.write(`OK: phase ${phase} mode set to ${mode}\n`);
+    return;
+  }
+  die(1, `unknown phase-mode subcommand: ${sub} (expected set or get)`);
+}
+
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
@@ -1360,5 +1404,6 @@ switch (cmd) {
   case 'resume': cmdResume(storyId, rest); break;
   case 'revert-check': cmdRevertCheck(storyId, rest); break;
   case 'prescan': cmdPrescan(storyId); break;
+  case 'phase-mode': cmdPhaseMode([storyId, ...rest]); break;
   default: die(64, `unknown command: ${cmd}`);
 }

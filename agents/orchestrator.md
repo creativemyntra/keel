@@ -90,24 +90,29 @@ parallelize phases within a single story.
 The real, safe levers are:
 
 - **Overlap phase 6 (QA) execution with phase 7 (E2E) test-authoring (KEEL-R14).**
-  As soon as phase 5's output exists, spawn `keel:e2e-engineer --mode=author`
-  alongside `keel:qa-engineer` -- it writes Playwright specs but does not run
-  them or write `07-e2e-engineer.json` (running E2E against code QA hasn't
-  validated wastes the run and risks debugging at the wrong layer -- the reason
-  phase 6 precedes 7 in the first place). Only once qa-engineer's phase-6 gate
-  PASSes, re-invoke as `keel:e2e-engineer --mode=execute` to run the tests and
-  write the real phase-7 output. Never let the author-mode spawn write the
-  phase-7 output file itself -- that is the handshake gate's signal that phase
-  6 was actually validated first.
-- **Overlap phase 8 (security) with phase 9 (docs drafting) (KEEL-R14).** As
-  soon as phase 7 completes, spawn `keel:technical-writer --mode=draft` to
-  write API docs/changelog/README updates into their real target paths. Its
-  gate still requires phase 8's PASS before finalizing -- once security PASSes,
-  re-invoke as `keel:technical-writer --mode=finalize` to reconcile the draft
-  against phase 8's actual findings (redacting anything security flagged) and
-  write the real phase-9 output. Never let the draft-mode spawn write
-  `09-technical-writer.json` -- nothing is documented as final before security
-  clears.
+  Before spawning e2e-engineer, check current mode: `node ~/.keel/bin/keel-state.cjs
+  phase-mode get <story> --phase 7 --json`. If `mode` is `"author"`, skip the
+  author spawn (it already ran) and go directly to execute. If `"none"`, proceed:
+  spawn `keel:e2e-engineer --mode=author` alongside `keel:qa-engineer` -- it writes
+  Playwright specs but does not run them or write `07-e2e-engineer.json`. After
+  the author-mode invocation completes, record it: `node ~/.keel/bin/keel-state.cjs
+  phase-mode set <story> --phase 7 --mode author`. Only once qa-engineer's
+  phase-6 gate PASSes, re-invoke as `keel:e2e-engineer --mode=execute` to run
+  the tests and write the real phase-7 output. Gate PASS clears the mode marker
+  automatically. Never let the author-mode spawn write the phase-7 output file
+  itself -- that is the handshake gate's signal that phase 6 was actually validated.
+- **Overlap phase 8 (security) with phase 9 (docs drafting) (KEEL-R14).** Before
+  spawning technical-writer, check current mode: `node ~/.keel/bin/keel-state.cjs
+  phase-mode get <story> --phase 9 --json`. If `mode` is `"draft"`, skip the draft
+  spawn and go directly to finalize. If `"none"`, proceed: spawn
+  `keel:technical-writer --mode=draft` to write API docs/changelog/README updates
+  into their real target paths. After draft-mode completes, record it:
+  `node ~/.keel/bin/keel-state.cjs phase-mode set <story> --phase 9 --mode draft`.
+  Once security PASSes, re-invoke as `keel:technical-writer --mode=finalize` to
+  reconcile the draft against phase 8's actual findings and write the real phase-9
+  output. Gate PASS clears the mode marker automatically. Never let the draft-mode
+  spawn write `09-technical-writer.json` -- nothing is documented as final before
+  security clears.
 - **Background the prescan starting at phase 5**, re-running incrementally
   rather than once cold at phase 8, so security-engineer inherits an
   already-warm result.
