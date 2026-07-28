@@ -118,6 +118,15 @@ rules are hard boundaries, not suggestions:
      CLI + token exist, SonarQube when `sonar-project.properties` or
      `~/.keel/config/sonarqube.yml` enables it) shows `ran` with output to
      prove it. Configured-but-skipped or FAILED scanner = gate FAIL.
+     Additionally, for **defect-scope** stories: run
+     `node ~/.keel/bin/keel-state.cjs status <story-id> --json` and confirm
+     `"scope": "defect"`. If scope is defect, check whether `05-software-engineer.json`
+     references an RCA. If it does, `.keel/memory/lessons.md` MUST contain a new
+     entry for this story -- the same obligation that lives at the phase-9
+     technical-writer gate for feature stories, moved here because technical-writer
+     is skipped for defect scope. Missing lessons entry = gate FAIL.
+     Also run `node ~/.keel/bin/keel-state.cjs memory-check`; over-cap memory
+     is a FAIL (prune, then re-gate).
    - After technical-writer: if the story fixed a defect (the engineer's phase
      output references an RCA), `.keel/memory/lessons.md` must contain a new
      entry for this story -- a defect whose lesson isn't recorded will recur.
