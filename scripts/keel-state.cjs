@@ -206,7 +206,7 @@ function notifyHalt(storyId, phase, attempt, reasons) {
         throw new Error(`Webhook URL hostname "${url.hostname}" is not hooks.slack.com — update ~/.keel/secrets/slack.webhook`);
       }
       const body = JSON.stringify({
-        text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): ${selfInvocation()} resume ${storyId} --phase ${phase} --notes "..."`,
+        text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): node ~/.keel/bin/keel-state.cjs resume ${storyId} --phase ${phase} --notes "..."`,
       });
       const req = require('https').request(url, {
         method: 'POST',
@@ -278,6 +278,7 @@ function cmdInit(storyId, args) {
     expected_phases: SCOPES[scope],
     current_phase: 1,
     attempts: {},
+    phase_modes: {},
     gate_events: 0,
     max_gates: parseInt(flag(args, '--max-gates') || '', 10) || DEFAULT_MAX_GATES,
     max_hours: parseFloat(flag(args, '--max-hours') || '') || DEFAULT_MAX_HOURS,
@@ -493,6 +494,8 @@ function cmdGate(storyId, args) {
 
       delete manifest.attempts[key];
       if (manifest.attempt_hashes) delete manifest.attempt_hashes[key];
+      // Clear any author/draft mode marker — execute/finalize has now run and gated.
+      if (manifest.phase_modes) delete manifest.phase_modes[String(phase)];
       // advance to the next phase IN SCOPE (defect scope skips 2-3 and 7-8),
       // not blindly +1 — e2e run KEEL-101 caught the old behavior
       const expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
@@ -586,6 +589,7 @@ function cmdStatus(storyId) {
     current_phase: manifest.current_phase,
     halted: manifest.halted === true,
     attempts: manifest.attempts,
+    phase_modes: manifest.phase_modes || {},
     completed_phase_files: files,
     sequencing_gaps: gaps,
     started_at: manifest.started_at,
@@ -837,6 +841,16 @@ function cmdResume(storyId, args) {
   const notes = (flag(args, '--notes') || '').trim();
   if (!Number.isInteger(phase) || !notes) {
     die(64, 'usage: resume <story-id> --phase N --notes "human rationale" — notes are REQUIRED; resume records a human decision, agents must never resume on their own initiative');
+  }
+  // HIGH-2: require the preceding phase output file to exist before resuming.
+  // Prevents a confusing "input file not found" failure at the next gate when
+  // the pipeline was resumed into the middle without predecessor outputs.
+  if (phase > 1) {
+    const prevPad = String(phase - 1).padStart(2, '0');
+    let prevExists = false;
+    try { prevExists = fs.readdirSync(stateDir(storyId)).some((f) => f.startsWith(prevPad + '-') && f.endsWith('.json')); }
+    catch { /* stateDir unreadable — withLock below will surface the real error */ }
+    if (!prevExists) die(1, `resume --phase ${phase} refused: no phase-${phase - 1} output file in .keel/state/${storyId}/ — the preceding phase must have a gated output before resuming here. Run 'status ${storyId}' to see the full pipeline state.`);
   }
   withLock(storyId, () => {
     const manifest = readManifest(storyId);
@@ -1336,9 +1350,107 @@ function cmdSecurityStatus(args) {
   console.log(JSON.stringify({ count: incidents.length, incidents }, null, 2));
 }
 
+// KEEL-R14 author/draft mode tracking — records that an author or draft-mode
+// invocation has run so the orchestrator can recover after context compaction.
+// The marker is cleared automatically when gate PASS advances the phase.
+// Usage: phase-mode set <story> --phase N --mode author|draft|execute|finalize|none
+//        phase-mode get <story> --phase N [--json]
+function cmdPhaseMode(args) {
+  const sub = args[0];
+  const storyId = args[1];
+  if (!sub || !storyId) die(1, 'usage: keel-state.cjs phase-mode <set|get> <story-id> --phase <N> [--mode <mode>]');
+  validateStoryId(storyId);
+  const manifest = readManifest(storyId);
+  if (!manifest.phase_modes) manifest.phase_modes = {};
+  const phaseStr = flag(args, '--phase');
+  if (!phaseStr) die(1, '--phase N is required');
+  const phase = parseInt(phaseStr, 10);
+  if (!phase || isNaN(phase)) die(1, `--phase must be a positive integer, got: ${phaseStr}`);
+  if (sub === 'get') {
+    const val = manifest.phase_modes[String(phase)] || 'none';
+    if (args.includes('--json')) process.stdout.write(JSON.stringify({ phase, mode: val }) + '\n');
+    else process.stdout.write(val + '\n');
+    return;
+  }
+  if (sub === 'set') {
+    const mode = flag(args, '--mode');
+    if (!mode) die(1, '--mode <author|draft|execute|finalize|none> is required');
+    const valid = ['author', 'draft', 'execute', 'finalize', 'none'];
+    if (!valid.includes(mode)) die(1, `--mode must be one of: ${valid.join(', ')}`);
+    if (mode === 'none') {
+      delete manifest.phase_modes[String(phase)];
+    } else {
+      manifest.phase_modes[String(phase)] = mode;
+    }
+    writeManifest(storyId, manifest);
+    appendAudit(storyId, { phase, agent: 'orchestrator', action: 'phase_mode_set', mode });
+    process.stdout.write(`OK: phase ${phase} mode set to ${mode}\n`);
+    return;
+  }
+  die(1, `unknown phase-mode subcommand: ${sub} (expected set or get)`);
+}
+
+// ------------------------------------------------------------------- token ledger
+// Persistent store for per-spawn token estimates so the orchestrator can produce
+// a final summary even after context compaction wipes the conversation history.
+// File: .keel/state/<story>/token-ledger.jsonl  (one JSON object per line)
+// Commands:
+//   token-ledger append <story> --phase N --agent <name> --model <id>
+//                               --input <k> --output <k> [--cached <k>]
+//   token-ledger summary <story> [--json]
+
+function tokenLedgerPath(storyId) { return path.join(stateDir(storyId), 'token-ledger.jsonl'); }
+
+function cmdTokenLedger(args) {
+  const sub = args[0];
+  const storyId = args[1];
+  if (!sub || !storyId) die(64, 'usage: token-ledger <append|summary> <story-id> [options]');
+  validateStoryId(storyId);
+
+  if (sub === 'append') {
+    const phase = parseInt(flag(args, '--phase') || '0', 10);
+    const agent = flag(args, '--agent') || '';
+    const model = flag(args, '--model') || 'sonnet';
+    const inputK = parseFloat(flag(args, '--input') || '0');
+    const outputK = parseFloat(flag(args, '--output') || '0');
+    const cachedK = parseFloat(flag(args, '--cached') || '0');
+    if (!phase || !agent) die(64, 'token-ledger append requires --phase, --agent');
+    const entry = JSON.stringify({ ts: nowIso(), phase, agent, model, input_k: inputK, output_k: outputK, cached_k: cachedK, net_k: inputK + outputK - cachedK });
+    const lPath = tokenLedgerPath(storyId);
+    fs.mkdirSync(path.dirname(lPath), { recursive: true });
+    fs.appendFileSync(lPath, entry + '\n');
+    console.log(`OK: token-ledger entry appended — phase ${phase} / ${agent} / ${model}`);
+    return;
+  }
+
+  if (sub === 'summary') {
+    const lPath = tokenLedgerPath(storyId);
+    let entries = [];
+    try { entries = fs.readFileSync(lPath, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)); }
+    catch { /* no ledger yet */ }
+    if (!entries.length) { console.log(`token-ledger: no entries for story ${storyId} — orchestrator may not have run or did not append entries`); return; }
+    if (args.includes('--json')) { console.log(JSON.stringify(entries, null, 2)); return; }
+    const totIn = entries.reduce((s, e) => s + e.input_k, 0);
+    const totOut = entries.reduce((s, e) => s + e.output_k, 0);
+    const totCached = entries.reduce((s, e) => s + e.cached_k, 0);
+    const totNet = entries.reduce((s, e) => s + e.net_k, 0);
+    const hdr = 'Phase | Agent                | Model      | Est.in  | Est.out | Cached  | Net';
+    const sep = '------+---------------------+-----------+--------+--------+--------+--------';
+    const shortModel = (m) => (m || '').replace(/^claude-/, '').replace(/-\d{8,}$/, '').slice(0, 10);
+    const rows = entries.map((e) =>
+      `${String(e.phase).padEnd(5)} | ${e.agent.padEnd(20)} | ${shortModel(e.model).padEnd(10)} | ${String(e.input_k + 'k').padStart(7)} | ${String(e.output_k + 'k').padStart(7)} | ${String(e.cached_k + 'k').padStart(7)} | ${String(e.net_k.toFixed(1) + 'k').padStart(7)}`
+    );
+    const tot = `TOTAL |                      |            | ${String(totIn.toFixed(1) + 'k').padStart(7)} | ${String(totOut.toFixed(1) + 'k').padStart(7)} | ${String(totCached.toFixed(1) + 'k').padStart(7)} | ${String(totNet.toFixed(1) + 'k').padStart(7)}`;
+    console.log(['', `=== Keel Token Ledger — ${storyId} ===`, '', hdr, sep, ...rows, sep, tot, ''].join('\n'));
+    return;
+  }
+
+  die(64, `unknown token-ledger subcommand: ${sub} (expected append or summary)`);
+}
+
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
@@ -1360,5 +1472,7 @@ switch (cmd) {
   case 'resume': cmdResume(storyId, rest); break;
   case 'revert-check': cmdRevertCheck(storyId, rest); break;
   case 'prescan': cmdPrescan(storyId); break;
+  case 'phase-mode': cmdPhaseMode([storyId, ...rest]); break;
+  case 'token-ledger': cmdTokenLedger([storyId, ...rest]); break;
   default: die(64, `unknown command: ${cmd}`);
 }

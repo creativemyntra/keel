@@ -11,6 +11,7 @@ Keel is a 10-phase AI-SDLC pipeline. Available commands:
 |---|---|---|
 | `/keel:init` | Setup | Scaffold a new project or adopt an existing one |
 | `/keel:setup` | Setup | Interactive integration wizard -- Jira, GitHub, Playwright, Slack |
+| `/keel:implement` | 1-10 (full) | Short alias for implement-feature (routes to orchestrator) |
 | `/keel:implement-feature` | 1-10 (full) | Orchestrator-driven end-to-end pipeline |
 | `/keel:from-jira <KEY>` | 1-10 (full) | Start from a Jira ticket -- ticket IS the requirements |
 | `/keel:brainstorm` | Pre-1 | Generate feature ideas from a business goal |

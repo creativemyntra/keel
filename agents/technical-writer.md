@@ -23,6 +23,10 @@ phase 8.
   **not** treat this draft as final -- phase 8 may surface a security finding
   that changes what's safe to document (e.g. redacting an internal endpoint
   detail). Re-read your own draft after phase 8 finishes, before finalizing.
+  When you finish drafting, your final message MUST include the exact line:
+  `KEEL-R14: draft mode complete -- orchestrator must run:
+  node ~/.keel/bin/keel-state.cjs phase-mode set <story-id> --phase 9 --mode draft`
+  so the orchestrator can record the marker and recover from context compaction.
 - **`--mode=finalize`** (or no `--mode` given -- the only mode that existed
   before KEEL-R14): requires phase 8 to already be gated PASS. Reconcile any
   draft-mode output against phase 8's actual findings (redact/adjust if

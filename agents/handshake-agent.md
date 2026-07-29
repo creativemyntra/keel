@@ -72,8 +72,10 @@ rules are hard boundaries, not suggestions:
      not a deadlock: record gate FAIL with the reason "coverage unverifiable --
      install pcov or xdebug, or a human may waive". A human waiver arrives as
      an explicit instruction; record it verbatim in the gate `--notes`
-     (`"coverage waived by human: <their words>"`). Never waive on your own
-     initiative, and never PASS silently without the number.
+     using the format: `"coverage waived by <name> on <YYYY-MM-DD>: <their exact words>"`.
+     Never abbreviate or paraphrase the waiver — the exact wording is the
+     audit trail. Never waive on your own initiative, and never PASS
+     silently without the number.
      **Metric applicability**: line coverage is meaningless for diffs that
      change only strings/config/docs (a text-assertion test reads sources as
      data -- honest measurement would report ~0%). For such diffs, state that
@@ -102,6 +104,15 @@ rules are hard boundaries, not suggestions:
      ```
      (Protocol: regression test committed or staged, fix unstaged.) Exit
      non-zero = the test does not prove the fix = gate FAIL.
+     For **defect-scope** stories: additionally verify scope containment —
+     read the diff and flag any of the following that go beyond what the RCA
+     identifies as necessary: new API endpoints, new DB columns, new
+     non-test dependencies, or new UI flows. Any such addition that is NOT
+     listed in the RCA as a required prerequisite to the fix is a scope-creep
+     indicator. Surface it to the human and require explicit acknowledgment
+     before issuing PASS — unacknowledged scope growth may warrant converting
+     the story from defect to feature scope (which triggers the full 10-phase
+     pipeline, not the express lane).
    - After qa-engineer: re-confirm coverage >= 80% (software-engineer reported it; QA re-runs), and every AC mapped to a passing test.
    - After e2e-engineer: run `npx playwright test --list 2>&1` from the repo
      root and capture the listed test count. Compare to the finding count in
@@ -109,7 +120,10 @@ rules are hard boundaries, not suggestions:
      FAILS (tests were not written or were deleted). For each screenshot path
      in the phase output's `artifacts`, verify the file exists AND is non-zero
      bytes -- a zero-byte screenshot means the browser never rendered a real
-     page. Grep the runner output in `findings` for the pass/fail summary line
+     page. Also verify each screenshot file's modification time is newer than
+     the story's `started_at` (from `status <story-id> --json`) -- a screenshot
+     older than the pipeline start is stale evidence from a prior run.
+     Grep the runner output in `findings` for the pass/fail summary line
      (e.g. "X passed, Y failed"); if Y > 0, gate FAILS. If Playwright is not
      installed (`npx playwright test --list` errors), mark this check
      UNVERIFIABLE and require explicit human sign-off before issuing PASS.
@@ -118,6 +132,15 @@ rules are hard boundaries, not suggestions:
      CLI + token exist, SonarQube when `sonar-project.properties` or
      `~/.keel/config/sonarqube.yml` enables it) shows `ran` with output to
      prove it. Configured-but-skipped or FAILED scanner = gate FAIL.
+     Additionally, for **defect-scope** stories: run
+     `node ~/.keel/bin/keel-state.cjs status <story-id> --json` and confirm
+     `"scope": "defect"`. If scope is defect, check whether `05-software-engineer.json`
+     references an RCA. If it does, `.keel/memory/lessons.md` MUST contain a new
+     entry for this story -- the same obligation that lives at the phase-9
+     technical-writer gate for feature stories, moved here because technical-writer
+     is skipped for defect scope. Missing lessons entry = gate FAIL.
+     Also run `node ~/.keel/bin/keel-state.cjs memory-check`; over-cap memory
+     is a FAIL (prune, then re-gate).
    - After technical-writer: if the story fixed a defect (the engineer's phase
      output references an RCA), `.keel/memory/lessons.md` must contain a new
      entry for this story -- a defect whose lesson isn't recorded will recur.
