@@ -198,6 +198,7 @@ async function main() {
   // PostToolUse exit-2 tells the model the tool produced an error, overriding any
   // injected instruction. No allowlist: injection patterns must never be whitelisted.
   const injFile = resolveInjectionFile();
+  if (!injFile) block('injection-patterns.json not found in PLUGIN_ROOT/config/ or KEEL_HOME/config/ (fail-closed) — run SessionStart hook or set CLAUDE_PLUGIN_ROOT');
   if (injFile) {
     try {
       const injParsed = JSON.parse(fs.readFileSync(injFile, 'utf8'));

@@ -9,9 +9,11 @@
   },
   "scripts": {
     "start": "node ./bin/keel.js",
-    "test": "npm run test:engine && npm run test:phase-drift",
+    "test": "npm run test:engine && npm run test:phase-drift && npm run test:gate && npm run test:watch",
     "test:engine": "node scripts/test-keel-state.cjs",
     "test:phase-drift": "node scripts/test-phase-drift.cjs",
+    "test:gate": "node scripts/test-classify-gate.cjs",
+    "test:watch": "node scripts/test-keel-watch.cjs",
     "test:legacy": "npm run test:unit && npm run test:integration",
     "test:unit": "jest tests/unit --coverage",
     "test:integration": "jest tests/integration",

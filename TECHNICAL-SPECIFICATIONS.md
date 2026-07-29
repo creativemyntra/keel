@@ -32,7 +32,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - **Code Coverage Target:** >=80% (Current: 95%)
 - **Vulnerability Target:** 0 (Current: 0)
 - **Test Pass Rate:** 100%
-- **Development Speed:** 99.4% faster than traditional
+- **Development Speed:** 99.4% faster than traditional (target — see docs/audit/)
 - **Enterprise Compliance:** 6 standards (CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX)
 
 ### Core Capabilities
@@ -65,7 +65,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 +---v----+      +------v------+    +----v-----+
 | Phase  |      |   Phase     |    |  Phase   |
 | Agents |      |   Agents    |    |  Agents  |
-| (12)   |      |   (12)      |    |  (12)    |
+| (10)   |      |   (10)      |    |  (10)    |
 +--------+      +-------------+    +----------+
     |                  |                  |
     +------------------+------------------+
@@ -182,7 +182,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 
 #### Phase 10: Release Manager Agent
 - Go/no-go decision
-- G-6 version stamp across all 7 locations
+- G-6 version stamp across all 11 locations
 - Deployment readiness and release documentation
 
 ---
@@ -223,7 +223,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ## Technical Stack
 
 ### Runtime
-- **Node.js:** >=16.0.0 (tested on 18.0.0)
+- **Node.js:** >=18.0.0 (18 required for Playwright E2E; engine runs on 16+)
 - **npm:** >=7.0.0
 - **Language:** JavaScript (ES2020+)
 
@@ -323,7 +323,7 @@ Record in Audit Trail
 ## Quality Standards
 
 ### Code Quality Gates
-- **Coverage:** >=85% (Current: 95%)
+- **Coverage:** >=80% (Current: 95%)
 - **Complexity:** Cyclomatic complexity <=10 per function
 - **Linting:** ESLint passes with zero errors
 - **Formatting:** Prettier compliance
@@ -362,13 +362,13 @@ Record in Audit Trail
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
 - Installation: `npm install -g @amarsingh/keel@3.16.8`
-- Status: READY (pending publish)
+- Status: coming soon — not yet published
 
 #### 3. Docker Container
 - Image: `amarsingh/keel:3.16.8`
 - Registry: Docker Hub
 - Pull: `docker pull amarsingh/keel:3.16.8`
-- Status: READY (pending push)
+- Status: coming soon — not yet published
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
@@ -428,7 +428,7 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 - **CPU:** Single core sufficient
 
 ### Scalability
-- **Concurrent Agents:** Up to 8 (one per phase)
+- **Concurrent Agents:** Up to 10 (one per phase)
 - **Project Size:** No limit (tested on 50K+ LOC)
 - **Output Size:** No limit (streaming writes)
 
@@ -436,37 +436,21 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 
 ## Compliance Standards
 
-### Implemented Standards
+### Compliance Evidence Trail
 
-#### CJIS (Criminal Justice Information Services)
-[x] Encryption for data at rest  
-[x] Access logging and audit trail  
-[x] Secure key management  
+The Keel audit trail generates evidence that supports a compliance evaluation
+process. It does not constitute certification under any of the standards below.
+For certification, engage a qualified assessor with this audit trail as supporting
+documentation.
 
-#### SOC2 Type II (System and Organization Controls)
-[x] Security monitoring  
-[x] Change management  
-[x] Incident response procedures  
-
-#### HIPAA (Health Insurance Portability and Accountability Act)
-[x] Data encryption  
-[x] Access controls  
-[x] Audit logging  
-
-#### GDPR (General Data Protection Regulation)
-[x] Data minimization  
-[x] Privacy by design  
-[x] Right to be forgotten (data deletion)  
-
-#### PCI-DSS (Payment Card Industry Data Security Standard)
-[x] No sensitive data storage  
-[x] Secure development practices  
-[x] Vulnerability scanning  
-
-#### SOX (Sarbanes-Oxley)
-[x] Financial controls  
-[x] Change documentation  
-[x] Segregation of duties  
+| Standard | Relevant Evidence Generated |
+|----------|----------------------------|
+| CJIS | Append-only audit log (`.keel/state/*/audit-log.jsonl`); CJIS data classification gate (`keel-classify-gate.cjs`); incident log (`~/.keel/security/incidents.jsonl`) |
+| SOC2 | Change audit trail; gate enforcement log; security officer webhook (optional) |
+| HIPAA | Data classification scanning; access logging; no PII in model context enforced by gate |
+| GDPR | Data minimization: only content hashes logged, never raw PII; classification gate blocks transmission |
+| PCI-DSS | Dependency vulnerability scanning (Snyk SCA); OWASP Top 10 scan (phase 8 security-engineer) |
+| SOX | Append-only, tamper-evident audit trail; phase gate enforcement; deployment audit in release-manager |
 
 ---
 
@@ -485,7 +469,6 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 | 3.16.0 | 2026-07-20 | PRODUCTION | CJIS Data Classification Gate: `scripts/keel-classify-gate.cjs` + `config/cjis-patterns.json`; `hooks/hooks.json` wired (UserPromptSubmit, PreToolUse, PostToolUse); `keel-state.cjs security-status` command; security-engineer, orchestrator, audit-agent, handshake-agent specs updated |
 | 3.15.0 | 2026-07-17 | PRODUCTION | Pipeline restructure: 10 phases -- tdd-red/tdd-green merged into software-engineer (code+tests+coverage >= 80%); qa-engineer->6, e2e-engineer->7, security-engineer->8, technical-writer->9, release-manager->10; DEFAULT_MAX_GATES 48->40; backward-compat LEGACY_AGENTS for in-flight stories |
 | 3.14.3 | 2026-07-17 | PRODUCTION | Guardrail hardening: G-8 agent identity integrity (schema mismatch = HALT, no relabeling); G-9 no unverified baselines in intake; release-manager framework-debt gate added |
-| 3.14.3 | 2026-07-17 | PRODUCTION | Doc-patch: complete 12-phase/17-agent documentation sync -- README, ALL-AGENTS-COMPLETE-GUIDE, TECHNICAL-SPECIFICATIONS, QUICK-START, WORKFLOW.md; architecture diagram corrected (all Phase Agent columns show 12) |
 | 3.14.1 | 2026-07-17 | PRODUCTION | Dashboard Host-header allowlist -- DNS-rebinding hardening (KEEL-105, closes KEEL-104 LOW-1): guard-first 403/400 contract, 238/238 tests green, 0 HIGH security findings |
 | 3.14.0 | 2026-07-15 | PRODUCTION | Pipeline status web dashboard (KEEL-104): `keel dashboard --port=<N>`, read-only, loopback-only |
 | 3.13.0 | 2026-07-14 | PRODUCTION | Describe command: human-readable story inspection (KEEL-103) |

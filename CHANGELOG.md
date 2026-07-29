@@ -73,12 +73,6 @@ All notable changes to Keel AI-SDLC Framework are documented here.
 ### Added
 - **`skills/start-work/SKILL.md`** — `keel:start-work` Claude Code skill: fetches Jira ticket via Atlassian Rovo MCP (no separate token), creates branch with type-derived prefix + ticket slug, pushes to remote, transitions Jira to "In Progress". Works in description-only mode when no ticket exists.
 - **`skills/finish-work/SKILL.md`** — `keel:finish-work` Claude Code skill: reads commits ahead of dev, fetches Jira context via MCP, creates industry-standard PR to dev via GitHub REST API (`~/.keel/secrets/github.token`), transitions Jira to "In Review". Handles 422 (PR already exists) gracefully.
-- **G-15 Karpathy Protocol** (`GUARDRAILS.md`) — Four binding rules enforceable at every handshake gate:
-  - **K-1** Surface assumptions before starting (list in phase `findings`)
-  - **K-2** Ask, don't guess — HALT + record two interpretations on any ambiguity; never pick silently
-  - **K-3** Minimum code, zero speculation — every element traces to a named AC
-  - **K-4** Surgical diff verification — `git diff --stat` post-code; any unmapped file = scope creep, revert or escalate
-- **Pre-spawn clarity gate** (`agents/orchestrator.md`) — K-2 gate before phase 1 spawn: story type, bounded scope, and at least one testable AC required or pipeline halts for human clarification.
 - **Token economy observability** (`economy.yml`, `agents/orchestrator.md`, `commands/tokens.md`) — three features shipped together:
   - Pre-spawn `[token-estimate:]` line before every agent spawn (always on)
   - `confirm_before_spawn: true` (default) — orchestrator halts and shows estimate before spawning, waits for human OK
@@ -665,6 +659,6 @@ MIT - See [LICENSE](LICENSE) for details
 
 ---
 
-Last Updated: 2026-07-27
+Last Updated: 2026-07-29
 Version: 3.16.8
 Status: Production Ready

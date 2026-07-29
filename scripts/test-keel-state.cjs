@@ -389,6 +389,37 @@ async function main() {
       bad.code === 1 && /does not prove/.test(bad.out), `code=${bad.code} ${bad.out.slice(0, 160)}`);
   }
 
+  // ---- phase-mode set / get / auto-clear on gate PASS (CRIT-3 KEEL-R14) ----
+  {
+    const cwd = makeTmpDir('phasemode');
+    // Use phase 1 (the current phase after init) for all sub-tests so the gate
+    // sequencing check (phase must equal current_phase on PASS) passes cleanly.
+    engine(cwd, 'init', 'S-PM1');
+
+    const setR = engine(cwd, 'phase-mode', 'set', 'S-PM1', '--phase', '1', '--mode', 'author');
+    assert('phase-mode set: exits 0', setR.code === 0, setR.out.slice(0, 120));
+
+    const getR = engine(cwd, 'phase-mode', 'get', 'S-PM1', '--phase', '1');
+    assert('phase-mode get: returns set value', /author/.test(getR.out), getR.out.slice(0, 120));
+
+    const m = readManifest(cwd, 'S-PM1');
+    assert('phase-mode stored in manifest.phase_modes', m.phase_modes && m.phase_modes['1'] === 'author', JSON.stringify(m.phase_modes));
+
+    // gate PASS on the current phase auto-clears the marker (CRIT-3 keel-state.cjs:498)
+    writePhaseFile(cwd, 'S-PM1', 1, 'product-owner', ['intake done']);
+    engine(cwd, 'gate', 'S-PM1', '--phase', '1', '--verdict', 'PASS');
+    const m2 = readManifest(cwd, 'S-PM1');
+    assert('gate PASS auto-clears phase_modes[1]', !m2.phase_modes || !m2.phase_modes['1'], JSON.stringify(m2.phase_modes));
+
+    // gate FAIL on the current phase leaves marker intact
+    engine(cwd, 'init', 'S-PM2');
+    engine(cwd, 'phase-mode', 'set', 'S-PM2', '--phase', '1', '--mode', 'draft');
+    writePhaseFile(cwd, 'S-PM2', 1, 'product-owner', ['initial attempt']);
+    engine(cwd, 'gate', 'S-PM2', '--phase', '1', '--verdict', 'FAIL', '--notes', 'needs revision');
+    const m3 = readManifest(cwd, 'S-PM2');
+    assert('gate FAIL preserves phase_modes[1]', m3.phase_modes && m3.phase_modes['1'] === 'draft', JSON.stringify(m3.phase_modes));
+  }
+
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed`);
   process.exit(failed.length ? 1 : 0);
