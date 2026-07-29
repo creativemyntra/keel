@@ -61,7 +61,7 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
   11 version-bearing files before GO. Run this check and include output in the
   release report -- any line returned means version stamp is incomplete, NO-GO:
 
-  `ash
+  ```bash
   grep -rn "OLD_VERSION" package.json bin/keel.js \
     .claude-plugin/plugin.json .claude-plugin/marketplace.json \
     README.md INSTALL.md QUICK-START-CLAUDE-CODE.md \
@@ -84,10 +84,10 @@ Own the final go/no-go decision. Verify all pipeline gates have passed before au
 
 - GUARDRAIL G-11 (branch promotion order, dev -> master -> prod):
   Run before GO verdict -- both commands must return zero lines:
-  `ash
-  git log origin/dev..origin/master --oneline --no-merges
-  git log origin/master..origin/prod --oneline --no-merges
-  `
+  ```bash
+  git log marketplace/dev..marketplace/master --oneline --no-merges
+  git log marketplace/master..marketplace/prod --oneline --no-merges
+  ```
   Any output = NO-GO. Out-of-order commits must be re-promoted through dev first.
 - Never merge the PR (human only).
 - Never issue a GO verdict with any HIGH security finding.

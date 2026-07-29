@@ -2,6 +2,31 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.16.8] - 2026-07-29 - AI-SDLC FRAMEWORK HARDENING: CJIS INDEPENDENCE, INJECTION GUARD, KEEL-R14 TRACKING, LESSONS GOVERNANCE
+
+### Security
+- **CRIT-4** (`config/cjis-patterns.json`, `config/cjis-project-patterns.json`, `scripts/keel-classify-gate.cjs`) — Gate made project-independent: NCIC_ID (ORI 9-char format) and LEID (SID/FBN/ORI keyword patterns) added as universal hard-block patterns. HART-specific identifiers moved to project overlay with placeholder patterns. Overlay merge removes covered categories from the blocked_categories warning; fail-closed on overlay parse error.
+- **CRIT-1** (`config/injection-patterns.json`, `scripts/keel-classify-gate.cjs`) — Prompt injection guard added (OWASP LLM01): 6 regex patterns covering ignore/override directives, act-as roleplay, new-instructions headers, `<system>` tags, `###OVERRIDE` headers, `[system]` brackets. Always-blocking at ALL stages including PostToolUse — exit-2 overrides any injected instruction the model may have already seen.
+- **CRIT-3** (`scripts/keel-state.cjs`) — KEEL-R14 zombie state prevention: `phase_modes` manifest field + `phase-mode` engine command (`set`/`get`) tracks author/draft mode completion. Gate PASS auto-clears the marker. Orchestrator and agents updated to record and read markers for safe context-compaction recovery.
+- **CRIT-2** (`agents/security-engineer.md`, `agents/handshake-agent.md`) — Defect-scope lessons.md writeback enforced: security-engineer (last content phase for defects) now has explicit obligation to write a lessons entry when RCA is present; phase-8 handshake gate verifies the entry exists and runs memory-check.
+
+### Fixed
+- **W-2** (`scripts/keel-watch.cjs`) — Coverage drop detection repaired: baseline.coverage was read as a scalar but new preflight format writes a nested object (`{ statements: { pct: N } }`). Added `baselineCoveragePct()` helper normalizing both formats; green-run writes now emit the new nested format.
+- **HIGH-1** (`agents/orchestrator.md`) — Phase-1 self-gate compensating controls documented: jira-entry mode requires verbatim AC match against the Jira ticket; full-pipeline mode requires explicit human approval before phase 2.
+- **HIGH-2** (`scripts/keel-state.cjs`) — `resume --phase N` now rejects if no phase N-1 output file exists in the story state directory.
+- **HIGH-3/LOW-1** (`.keel/GUARDRAILS.md`, `agents/release-manager.md`) — G-11 code block opening fixed (backtick+backspace+ash corruption → ```bash); remote names corrected (`origin/` → `marketplace/`).
+- **HIGH-4** (`agents/handshake-agent.md`) — Defect scope-creep detection: new endpoints, DB columns, non-test dependencies, or UI flows beyond the RCA require human acknowledgment before PASS.
+- **HIGH-5** (`commands/parallel.md`) — Halt escalation: when `describe` returns `halted: true` for a worktree story, polling stops and halt surfaces to human immediately.
+- **MED-2** (`agents/handshake-agent.md`) — Coverage waiver format made explicit: must include name, date, and verbatim human words.
+- **MED-3** (`agents/handshake-agent.md`, `agents/e2e-engineer.md`) — Screenshots must use story-scoped paths; handshake checks mtime > story started_at to reject stale evidence.
+- **MED-4** (`commands/setup.md`) — Secrets never echoed: explicit rule added that any received secret is acknowledged only, never printed.
+- **MED-5** (`agents/e2e-engineer.md`) — Execute-mode verifies author-mode spec files exist before running tests.
+- **LOW-3** (`scripts/test-halt-message-paths.cjs`, `scripts/keel-state.cjs`) — KEEL-101 AC-2: Slack halt text now hardcodes installed path; test updated to verify invariant suffix.
+
+### Documentation
+- **MED-1/LOW-2** (`.keel/GUARDRAILS.md`) — G-3 cross-story isolation and output caps documented as known mechanical limitations in new "Known Limitations" section.
+
+---
 ## [3.16.7] - 2026-07-27 - FORENSIC ENGINE AUDIT: 14 SECURITY AND CORRECTNESS FIXES
 
 ### Security
@@ -641,5 +666,5 @@ MIT - See [LICENSE](LICENSE) for details
 ---
 
 Last Updated: 2026-07-27
-Version: 3.16.7
+Version: 3.16.8
 Status: Production Ready

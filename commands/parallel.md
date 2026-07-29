@@ -18,6 +18,7 @@ Set up and run parallel pipelines for: $ARGUMENTS
    step 2's output. Each runs its full 10-phase pipeline exactly as
    `/keel:implement-feature` would, independently.
 4. Poll and report status per story via `node ~/.keel/bin/keel-state.cjs describe <story-id>` (run from each worktree, or pass `--cwd` if the engine supports it) rather than assuming completion.
+   **Halt escalation:** if `describe` returns `halted: true` for any story, stop polling that story immediately and surface the halt to the human — include the full failure reason from the handoff log and the exact `resume` command. Do NOT open a PR, clean up the worktree, or continue to step 5 for a halted story. A halted pipeline requires a human decision before it can proceed.
 5. When a story's pipeline reaches release-manager, its PR is opened from its own branch (`story/<story-id>`) as normal -- merges are independent, sequenced by the human same as any other PR.
 6. After merge, clean up: `node ~/.keel/bin/keel-worktree.cjs remove <story-id>`.
 

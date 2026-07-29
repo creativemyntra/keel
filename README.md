@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.16.7
+# Keel AI-SDLC Framework v3.16.8
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# -> keel v3.16.7 [x]
+# -> keel v3.16.8 [x]
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -97,6 +97,19 @@ snapshots) is done by a zero-dependency **state engine**
 [x] **Staged Deployment** -- canary / blue-green rollout via the release gate  
 
 ---
+## What's New in v3.16.8
+
+- **CJIS gate project-independence (CRIT-4)** — Universal NCIC_ID and LEID patterns now block at the framework level; project-specific identifiers moved to overlay (`cjis-project-patterns.json`). Overlay parse failure is fail-closed.
+- **Prompt injection guard (CRIT-1)** — OWASP LLM01 defense: 6 regex patterns (ignore/override, act-as, new-instructions, `<system>` tags, `###OVERRIDE`, `[system]` brackets) always-blocking at ALL hook stages including PostToolUse (exit 2).
+- **KEEL-R14 zombie-state prevention (CRIT-3)** — `phase_modes` manifest field + `phase-mode set/get` engine command tracks author/draft mode. Gate PASS auto-clears the marker; safe for context-compaction recovery.
+- **Defect-scope lessons writeback enforced (CRIT-2)** — Security engineer (last content phase for defects) has explicit obligation to write a `lessons.md` entry when RCA is present; phase-8 handshake gate verifies.
+- **`keel:implement` alias** — `commands/implement.md` routes `/keel:implement` to the orchestrator (all 10 phases); prevents silent fallback to phase-5-only software-engineer when the skill name was unknown.
+- **UI Designer upgrade: Branding Intake + Design System Generator** — Step -1 pauses to ask for reference URLs, brand assets, mood words, and existing UI before any codebase scan. Step 2f produces a full Design System Plan: named layout pattern, complete color palette with hex codes, typography pairing, CSS effects, direction-specific anti-patterns, and a 24-item pre-build checklist. Dashboard expertise, DFII scoring (≥8 gate), and differentiation anchor requirement added.
+- **Coverage baseline format fix (W-2)** — `keel-watch.cjs` normalizes both flat and nested baseline formats; drop detection works correctly after preflight rebuild.
+- **Resume phase guard (HIGH-2)** — `resume --phase N` now rejects if phase N-1 output file is absent.
+- **Defect scope-creep detection (HIGH-4)** — Handshake agent blocks new endpoints, DB columns, non-test dependencies, or UI flows outside the RCA without human acknowledgment.
+- **Halt escalation in parallel (HIGH-5)** — `keel:parallel` surfaces halt immediately when `describe` returns `halted: true` for any worktree story.
+
 ## What's New in v3.16.7
 
 - **Forensic engine audit: 14 fixes** — Comprehensive self-audit of `keel-state.cjs` and `keel-classify-gate.cjs` resolved 3 CRITICAL, 4 HIGH, 4 MEDIUM, and 3 LOW findings.
@@ -116,6 +129,12 @@ snapshots) is done by a zero-dependency **state engine**
 - **G-13 next-step reminder** — After every successful feature branch push, the push guard prints: `"Ask Claude Code: finish work on BRANCH"` with a direct GitHub compare URL, closing the loop between push and PR creation.
 - **G-12 advisory ticket traceability** — Ticket reference in commits is now advisory-only (warns, never blocks). Flexible ticket pattern (`/[A-Z]{2,}-\d+/i`) replaces the hardcoded format — any project-key style works.
 - **BRANCH-PROTECTION.md rewrite** — Complete developer workflow documentation: ASCII workflow diagram, G-11 promotion chain, branch naming table (advisory), guardrail reference table, and skills quick-reference.
+
+## What's New in v3.16.5
+
+- **`keel:start-work` skill** — Fetches a Jira ticket via Atlassian Rovo MCP, creates a typed branch (`fix/hart-302-slug`), pushes to remote, and transitions the Jira ticket to "In Progress". Works in description-only mode when no ticket exists.
+- **`keel:finish-work` skill** — Creates an industry-standard PR to `dev` via the GitHub REST API (`~/.keel/secrets/github.token`), then transitions the Jira ticket to "In Review". Handles 422 (PR already exists) gracefully.
+- **Advisory ticket traceability (G-12)** — Ticket reference in commits is advisory-only (warns, never blocks). Flexible pattern (`/[A-Z]{2,}-\d+/i`) replaces the hardcoded format.
 
 ## What's New in v3.16.4
 
@@ -210,7 +229,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# -> keel v3.16.7
+# -> keel v3.16.8
 ```
 
 ### Method 2: npm Global Package (not yet published -- coming soon)
@@ -249,27 +268,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.16.7
+        uses: creativemyntra/keel@v3.16.8
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.16.7
+        uses: creativemyntra/keel@v3.16.8
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.16.7
+        uses: creativemyntra/keel@v3.16.8
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.16.7
+        uses: creativemyntra/keel@v3.16.8
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -650,7 +669,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.16.7
+- uses: creativemyntra/keel@v3.16.8
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -816,10 +835,10 @@ Then:
 
 ---
 
-**Version:** 3.16.7  
-**Released:** 2026-07-21  
+**Version:** 3.16.8  
+**Released:** 2026-07-29  
 **Status:** PRODUCTION READY  
 **Agents:** 15 (10 pipeline phase + 2 meta/support (scrum-master, product-owner-standalone-use) + 3 infrastructure (handshake, audit, state-management))
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.16.7 (https://github.com/creativemyntra/keel/releases/tag/v3.16.7)
+**Tag:** v3.16.8 (https://github.com/creativemyntra/keel/releases/tag/v3.16.8)
