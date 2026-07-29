@@ -2,6 +2,27 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.16.9] - 2026-07-29 - AUDIT RELEASE: FULL-SPECTRUM HARDENING (PART A + PART B, 31 FINDINGS RESOLVED)
+
+### Security
+- **KEEL-AUDIT-004** (`scripts/keel-init.cjs`) — SessionStart now stages `injection-patterns.json` and `cjis-project-patterns.json` to `~/.keel/config/` on every session, closing the injection-guard bypass on the `~/.keel/bin/` invocation path.
+- **KEEL-AUDIT-006** (`config/injection-patterns.json`) — Pattern 5 flags `g` → `gi`; `### new instruction:` lowercase bypass closed.
+- **KEEL-AUDIT-026** (`action.yml`) — All `${{ inputs.* }}` interpolations in run blocks moved to env vars; shell metacharacter injection via workflow inputs closed.
+
+### Fixed
+- **KEEL-AUDIT-001..003** (`scripts/test-classify-gate.cjs`, `scripts/test-keel-watch.cjs`, `scripts/test-keel-state.cjs`) — Gate, watch, and phase-mode tests added (were zero); 50/50 now passing.
+- **KEEL-AUDIT-024** (`action.yml`) — `collect-outputs` step now reflects actual keel.js exit: writes `result=failed / confidence=low / lane2-ready=false` on non-zero exit instead of unconditionally hardcoding success.
+- **KEEL-AUDIT-025** (`action.yml`) — `claude-api-key` input wired to `ANTHROPIC_API_KEY` env var in every phase step (was declared but silently discarded).
+- **KEEL-AUDIT-027** (`agent-output-schema.json`) — `decisions` added to `required[]` (was in properties but not enforced).
+- **KEEL-AUDIT-M001** (`package.json`) — `engines.node` `>=16.0.0` → `>=18.0.0`; matches documented requirement for Playwright E2E.
+- **KEEL-AUDIT-M002** (`package.json`) — `files` array now includes `docs/`, `INSTALL.md`, `QUICK-START-CLAUDE-CODE.md`, `ALL-AGENTS-COMPLETE-GUIDE.md`, `TECHNICAL-SPECIFICATIONS.md`, `CHANGELOG.md`; README relative links resolve after npm install.
+- **KEEL-AUDIT-M004** (`CHANGELOG.md`) — Dead link `docs/defects/KEEL-101-rca.md` corrected to `dev-history/docs/defects/KEEL-101-rca.md`.
+
+### Documentation
+- **KEEL-AUDIT-005..021** (multiple doc files) — Compliance checklists replaced with evidence trail table; phase counts corrected (12→10); skill counts corrected (11→9); Node version clarified; coverage target corrected; G-15 duplicate removed; command surface gaps filled (describe, review-code, release-check).
+- **TECHNICAL-SPECIFICATIONS.md** — Version history table updated; 3.16.9 row added.
+
+---
 ## [3.16.8] - 2026-07-29 - AI-SDLC FRAMEWORK HARDENING: CJIS INDEPENDENCE, INJECTION GUARD, KEEL-R14 TRACKING, LESSONS GOVERNANCE
 
 ### Security

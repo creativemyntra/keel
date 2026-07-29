@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.16.8
+# Keel AI-SDLC Framework v3.16.9
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -80,7 +80,7 @@ The plugin registers `/keel:*` commands, 15 agents, and 9 skills. `~/.keel` conf
 **Verify:**
 ```bash
 claude plugin list
-# -> keel v3.16.8 [x]
+# -> keel v3.16.9 [x]
 ```
 
 **Quick start — run this immediately after install:**
@@ -124,27 +124,27 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.16.8
+        uses: creativemyntra/keel@v3.16.9
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
 
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.16.8
+        uses: creativemyntra/keel@v3.16.9
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
 
       - name: Run Tests
-        uses: creativemyntra/keel@v3.16.8
+        uses: creativemyntra/keel@v3.16.9
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
 
       - name: Security Scan
-        uses: creativemyntra/keel@v3.16.8
+        uses: creativemyntra/keel@v3.16.9
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -514,7 +514,7 @@ Standardize workflows with shared conventions and governance.
 Automate governed development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.16.8
+- uses: creativemyntra/keel@v3.16.9
   with:
     phase: 'all'   # Run complete pipeline
 ```
@@ -641,6 +641,14 @@ node bin/keel.js --help
 
 **[View Full Changelog →](CHANGELOG.md)**
 
+### What's New in v3.16.9
+
+- **Audit release (31 findings)** — Full-spectrum hardening: Part A (21 static findings) + Part B (10 distribution/dynamic findings).
+- **action.yml hardened** — Shell injection closed (env-var quoting), `claude-api-key` wired to `ANTHROPIC_API_KEY`, `collect-outputs` now reports actual pass/fail.
+- **Node >=18 engines** — `package.json` engines field updated to match documented Playwright requirement.
+- **npm package ships docs** — `INSTALL.md`, `QUICK-START-CLAUDE-CODE.md`, `ALL-AGENTS-COMPLETE-GUIDE.md`, `TECHNICAL-SPECIFICATIONS.md`, `CHANGELOG.md`, `docs/` now included.
+- **Schema enforced** — `decisions` added to `agent-output-schema.json` `required[]`.
+
 ### What's New in v3.16.8
 
 - **CJIS gate project-independence (CRIT-4)** — Universal NCIC_ID and LEID patterns now block at the framework level; project-specific identifiers moved to overlay (`cjis-project-patterns.json`). Overlay parse failure is fail-closed.
@@ -695,10 +703,10 @@ node bin/keel.js --help
 
 ---
 
-**Version:** 3.16.8  
+**Version:** 3.16.9  
 **Released:** 2026-07-29  
 **Status:** PRODUCTION READY  
 **Agents:** 15 (10 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.16.8 (https://github.com/creativemyntra/keel/releases/tag/v3.16.8)
+**Tag:** v3.16.9 (https://github.com/creativemyntra/keel/releases/tag/v3.16.9)
