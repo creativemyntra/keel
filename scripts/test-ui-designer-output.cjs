@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Structural validation for keel:ui-designer outputs (v3.16.8+).
+// Structural validation for keel:ui-designer outputs.
 // Verifies the 6 new gate criteria introduced in the ui-designer upgrade:
 //   1. tokens.css exists with all 6 token categories (colors, typography,
 //      spacing, shape, elevation, motion)

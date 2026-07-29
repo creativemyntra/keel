@@ -681,5 +681,5 @@ MIT - See [LICENSE](LICENSE) for details
 ---
 
 Last Updated: 2026-07-29
-Version: 3.16.8
+Version: 3.16.9
 Status: Production Ready
