@@ -1,7 +1,7 @@
 # Keel AI-SDLC Framework v3.16.9 - Technical Specifications
 
 **Document Version:** 2.0  
-**Last Updated:** 2026-07-22  
+**Last Updated:** 2026-07-29  
 **Status:** PRODUCTION  
 **Author:** Amar Singh  
 **Audience:** Development Team, Future Maintainers, Contributors  
@@ -26,7 +26,7 @@
 ## System Overview
 
 ### Purpose
-Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development lifecycle automation platform. It orchestrates 15 autonomous agents across 10 development phases to deliver production-ready features in 2-4 hours vs. 2 weeks.
+Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development lifecycle automation platform. It orchestrates 15 autonomous agents across 10 development phases to deliver production-ready features in 2-4 hours vs. 2 weeks (target — see docs/audit/).
 
 ### Key Metrics
 - **Code Coverage Target:** >=80% (measured: 95% — see docs/audit/2026-07-09-e2e-pipeline-live-test.md)
@@ -519,6 +519,6 @@ documentation.
 ---
 
 **Document Version:** 2.0  
-**Last Updated:** 2026-07-22  
+**Last Updated:** 2026-07-29  
 **Status:** PRODUCTION  
 **Next Review:** 2026-10-20 (quarterly)
