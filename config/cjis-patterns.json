@@ -1,6 +1,6 @@
 {
-  "_comment": "COVERAGE GAP (Forseti-format-pending): NCIC_ID, LEID, HART_CASE_ID, HART_SUBJECT_ID patterns are absent -- real CJIS compliance requires these formats from Forseti. Until supplied the gate catches SSN/PHONE/EMAIL/DOB/NAME_NARRATIVE/ADDRESS but is blind to NCIC numbers, LEIDs, and HART case/subject IDs. Declared in blocked_categories so the gate emits a machine-readable warning on every run. Action: file a Forseti request, add real regex formats, remove the category from blocked_categories.",
-  "blocked_categories": ["NCIC_ID", "LEID", "HART_CASE_ID", "HART_SUBJECT_ID"],
+  "_comment": "Universal LEA identifier patterns: NCIC_ID (ORI 9-char state+alphanum) and LEID (SID/FBN/ORI keyword + ID) are now detected. HART-specific identifiers (HART_CASE_ID, HART_SUBJECT_ID) remain in blocked_categories -- they belong in config/cjis-project-patterns.json where the HART compliance team can supply confirmed regexes. To make this gate project-independent in a new deployment: copy the project overlay template, define your case/subject ID patterns there, and remove your project IDs from blocked_categories once confirmed.",
+  "blocked_categories": ["HART_CASE_ID", "HART_SUBJECT_ID"],
   "allowlist": [
     { "description": "Keel project author domain -- strip before scanning to allow marketplace display", "pattern": "creativemyntra\\.com" },
     { "description": "matellio.com project domain -- strip before scanning", "pattern": "matellio\\.com" },
@@ -17,6 +17,8 @@
     { "category": "EMAIL", "pattern": "\\b[\\w.+-]+@[\\w-]+\\.[a-zA-Z][\\w.-]*\\b", "flags": "gi", "severity": "soft" },
     { "category": "DOB", "pattern": "\\b(dob|date of birth|born)\\b[^\\n]{0,20}\\b\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}\\b", "flags": "gi", "severity": "hard" },
     { "category": "NAME_NARRATIVE", "pattern": "\\b[A-Z][a-z]+ [A-Z][a-z]+ (was arrested|was booked|was detained|was charged)\\b", "flags": "g", "severity": "hard" },
-    { "category": "ADDRESS", "pattern": "\\b\\d{1,5} [A-Za-z0-9. ]+ (St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Ln|Lane|Dr|Drive)\\b", "flags": "gi", "severity": "soft" }
+    { "category": "ADDRESS", "pattern": "\\b\\d{1,5} [A-Za-z0-9. ]+ (St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Ln|Lane|Dr|Drive)\\b", "flags": "gi", "severity": "soft" },
+    { "category": "NCIC_ID", "pattern": "\\b[A-Z]{2}[A-Z0-9]{7}\\b", "flags": "g", "severity": "hard" },
+    { "category": "LEID", "pattern": "\\b(?:SID|FBN|ORI|LEID?)[-:#\\s]?[A-Z0-9]{5,12}\\b", "flags": "gi", "severity": "hard" }
   ]
 }

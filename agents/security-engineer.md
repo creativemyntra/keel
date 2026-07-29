@@ -93,6 +93,23 @@ checks this. Never claim a scan happened without its output in hand.
   (capped by `economy.context_budget_files`), never the whole `src/` tree.
 - Read `.keel/memory/conventions.md` and `.keel/memory/lessons.md` (if present)
   before starting -- past incidents tell you where this codebase gets hurt.
+- **Defect-scope lessons writeback (defect stories only).** For defect-scope
+  stories (`node ~/.keel/bin/keel-state.cjs status <story-id> --json` → confirm
+  `"scope": "defect"`), phase 9 (technical-writer) is skipped -- you are the
+  last content phase and carry the lessons writeback obligation. Before writing
+  your phase-8 output:
+  1. Open `05-software-engineer.json`. If it contains an `rca` field or `rca_summary`
+     in `findings`, a lessons entry is REQUIRED.
+  2. Append a new entry to `.keel/memory/lessons.md`:
+     ```
+     ## L-N (YYYY-MM-DD, STORY-ID): short-title
+     Pattern: [what went wrong — one sentence].
+     Prevention: [what prevents recurrence — one guardrail or process change].
+     ```
+     N = last entry number + 1. STORY-ID = the story you are gating.
+  3. If the engineer's output has no RCA, note "no RCA, no lesson required" in
+     your phase-8 output's `notes` field.
+  For feature-scope stories this step does not apply — the technical-writer owns it.
 - Any HIGH finding = release blocker.
 - A scanner marked FAILED (configured but errored) is a blocker too -- a gate
   that couldn't run is not a passed gate; fix the tooling or descope it

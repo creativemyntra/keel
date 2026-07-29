@@ -182,13 +182,13 @@ dev  ->  master  ->  prod
 
 **Release manager verification (run before GO verdict):**
 
-`ash
+```bash
 # Non-merge commits on master not in dev -- must be empty
-git log origin/dev..origin/master --oneline --no-merges
+git log marketplace/dev..marketplace/master --oneline --no-merges
 
 # Non-merge commits on prod not in master -- must be empty
-git log origin/master..origin/prod --oneline --no-merges
-`
+git log marketplace/master..marketplace/prod --oneline --no-merges
+```
 
 If either command returns output: **NO-GO**. The out-of-order commits must be
 brought into the chain (cherry-pick to dev, then re-promote) before release.
@@ -400,3 +400,27 @@ is out-of-scope — remove it or record it as NON-BLOCKING for the human.
 After coding, run `git diff --stat`. For every changed file: confirm it is
 cited in the AC→implementation mapping. A file in the diff but absent from
 the mapping is unrequested scope — revert it or escalate before handoff.
+---
+
+## Known Limitations (documented, not fixable mechanically)
+
+The following are acknowledged framework constraints. They are not bugs — each
+requires either a tool-restriction capability Claude Code does not expose, or
+an external enforcement mechanism beyond the gate scripts.
+
+**MED-1 — G-3 cross-story isolation is instruction-level only**
+GUARDRAIL G-3 ("no side channels — agents share state only through canonical
+phase output files") is enforced by agent instructions, not by tool restrictions.
+An agent has unrestricted `Read` and `Grep` access to other stories' state files
+under `.keel/state/`. The instruction is the control; tool-level restriction is
+not currently possible in Claude Code hooks. Mitigation: the audit log records
+every file access; gate agents are instructed to flag cross-story reads. Human
+review of the audit log is the compensating control.
+
+**LOW-2 — Output caps are LLM instructions only**
+Caps on output token counts (e.g. "report <= 500 words") are instructions in
+agent definitions, not hard limits enforced by the engine. A model that ignores
+or misapplies the cap cannot be mechanically blocked. Mitigation: the handshake
+gate checks that phase outputs do not exceed schema field limits; verbose free-text
+in `findings` is reviewable at the gate and may be cited as a gate failure for
+agents that consistently over-produce.

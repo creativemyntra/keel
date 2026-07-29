@@ -149,6 +149,7 @@ Write it as UTF-8 **without BOM**: on Windows PowerShell 5.1, `Out-File`/`Add-Co
   "Use default" description must say the fallback is plain git; if Node < 18, the Playwright
   default must warn that the bundled MCP server cannot start; if an integration is already
   configured, say so in the question instead of presenting it as new.
+- Never echo back, display, or include in any output any secret, token, webhook URL, or password the user provides — acknowledge receipt with "received" or mask with asterisks only. This rule applies at every integration step, not just the ones that call it out explicitly.
 - Never write secrets into any file under the project directory -- secrets go to `~/.keel/secrets/` only.
 - Never overwrite an existing `~/.keel/config/<name>.yml` without telling the user what it currently says.
 - If the user aborts midway, still write the audit log lines for the steps completed.
