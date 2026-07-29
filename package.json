@@ -1,6 +1,6 @@
 {
   "name": "@amarsingh/keel",
-  "version": "3.16.8",
+  "version": "3.16.9",
   "description": "Keel AI-SDLC Framework - Complete AI-powered software development lifecycle automation",
   "type": "module",
   "main": "bin/keel.js",
@@ -9,9 +9,12 @@
   },
   "scripts": {
     "start": "node ./bin/keel.js",
-    "test": "npm run test:engine && npm run test:phase-drift",
+    "test": "npm run test:engine && npm run test:phase-drift && npm run test:gate && npm run test:watch && npm run test:halt",
     "test:engine": "node scripts/test-keel-state.cjs",
     "test:phase-drift": "node scripts/test-phase-drift.cjs",
+    "test:gate": "node scripts/test-classify-gate.cjs",
+    "test:watch": "node scripts/test-keel-watch.cjs",
+    "test:halt": "node scripts/test-halt-message-paths.cjs",
     "test:legacy": "npm run test:unit && npm run test:integration",
     "test:unit": "jest tests/unit --coverage",
     "test:integration": "jest tests/integration",
@@ -44,7 +47,7 @@
     "url": "https://github.com/creativemyntra/keel/issues"
   },
   "engines": {
-    "node": ">=16.0.0",
+    "node": ">=18.0.0",
     "npm": ">=7.0.0"
   },
   "dependencies": {
@@ -75,10 +78,16 @@
     "scripts/",
     "config/",
     "stack-profiles/",
+    "docs/",
     ".mcp.json",
     "agent-output-schema.json",
     "setup-integrations.sh",
     "action.yml",
+    "INSTALL.md",
+    "QUICK-START-CLAUDE-CODE.md",
+    "ALL-AGENTS-COMPLETE-GUIDE.md",
+    "TECHNICAL-SPECIFICATIONS.md",
+    "CHANGELOG.md",
     "LICENSE",
     "README.md"
   ],

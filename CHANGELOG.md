@@ -2,6 +2,27 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
+## [3.16.9] - 2026-07-29 - AUDIT RELEASE: FULL-SPECTRUM HARDENING (PART A + PART B, 31 FINDINGS RESOLVED)
+
+### Security
+- **KEEL-AUDIT-004** (`scripts/keel-init.cjs`) — SessionStart now stages `injection-patterns.json` and `cjis-project-patterns.json` to `~/.keel/config/` on every session, closing the injection-guard bypass on the `~/.keel/bin/` invocation path.
+- **KEEL-AUDIT-006** (`config/injection-patterns.json`) — Pattern 5 flags `g` → `gi`; `### new instruction:` lowercase bypass closed.
+- **KEEL-AUDIT-026** (`action.yml`) — All `${{ inputs.* }}` interpolations in run blocks moved to env vars; shell metacharacter injection via workflow inputs closed.
+
+### Fixed
+- **KEEL-AUDIT-001..003** (`scripts/test-classify-gate.cjs`, `scripts/test-keel-watch.cjs`, `scripts/test-keel-state.cjs`) — Gate, watch, and phase-mode tests added (were zero); 50/50 now passing.
+- **KEEL-AUDIT-024** (`action.yml`) — `collect-outputs` step now reflects actual keel.js exit: writes `result=failed / confidence=low / lane2-ready=false` on non-zero exit instead of unconditionally hardcoding success.
+- **KEEL-AUDIT-025** (`action.yml`) — `claude-api-key` input wired to `ANTHROPIC_API_KEY` env var in every phase step (was declared but silently discarded).
+- **KEEL-AUDIT-027** (`agent-output-schema.json`) — `decisions` added to `required[]` (was in properties but not enforced).
+- **KEEL-AUDIT-M001** (`package.json`) — `engines.node` `>=16.0.0` → `>=18.0.0`; matches documented requirement for Playwright E2E.
+- **KEEL-AUDIT-M002** (`package.json`) — `files` array now includes `docs/`, `INSTALL.md`, `QUICK-START-CLAUDE-CODE.md`, `ALL-AGENTS-COMPLETE-GUIDE.md`, `TECHNICAL-SPECIFICATIONS.md`, `CHANGELOG.md`; README relative links resolve after npm install.
+- **KEEL-AUDIT-M004** (`CHANGELOG.md`) — Dead link `docs/defects/KEEL-101-rca.md` corrected to `dev-history/docs/defects/KEEL-101-rca.md`.
+
+### Documentation
+- **KEEL-AUDIT-005..021** (multiple doc files) — Compliance checklists replaced with evidence trail table; phase counts corrected (12→10); skill counts corrected (11→9); Node version clarified; coverage target corrected; G-15 duplicate removed; command surface gaps filled (describe, review-code, release-check).
+- **TECHNICAL-SPECIFICATIONS.md** — Version history table updated; 3.16.9 row added.
+
+---
 ## [3.16.8] - 2026-07-29 - AI-SDLC FRAMEWORK HARDENING: CJIS INDEPENDENCE, INJECTION GUARD, KEEL-R14 TRACKING, LESSONS GOVERNANCE
 
 ### Security
@@ -73,12 +94,6 @@ All notable changes to Keel AI-SDLC Framework are documented here.
 ### Added
 - **`skills/start-work/SKILL.md`** — `keel:start-work` Claude Code skill: fetches Jira ticket via Atlassian Rovo MCP (no separate token), creates branch with type-derived prefix + ticket slug, pushes to remote, transitions Jira to "In Progress". Works in description-only mode when no ticket exists.
 - **`skills/finish-work/SKILL.md`** — `keel:finish-work` Claude Code skill: reads commits ahead of dev, fetches Jira context via MCP, creates industry-standard PR to dev via GitHub REST API (`~/.keel/secrets/github.token`), transitions Jira to "In Review". Handles 422 (PR already exists) gracefully.
-- **G-15 Karpathy Protocol** (`GUARDRAILS.md`) — Four binding rules enforceable at every handshake gate:
-  - **K-1** Surface assumptions before starting (list in phase `findings`)
-  - **K-2** Ask, don't guess — HALT + record two interpretations on any ambiguity; never pick silently
-  - **K-3** Minimum code, zero speculation — every element traces to a named AC
-  - **K-4** Surgical diff verification — `git diff --stat` post-code; any unmapped file = scope creep, revert or escalate
-- **Pre-spawn clarity gate** (`agents/orchestrator.md`) — K-2 gate before phase 1 spawn: story type, bounded scope, and at least one testable AC required or pipeline halts for human clarification.
 - **Token economy observability** (`economy.yml`, `agents/orchestrator.md`, `commands/tokens.md`) — three features shipped together:
   - Pre-spawn `[token-estimate:]` line before every agent spawn (always on)
   - `confirm_before_spawn: true` (default) — orchestrator halts and shows estimate before spawning, waits for human OK
@@ -269,7 +284,7 @@ waiver (recorded verbatim), and 0 HIGH security findings. Full evidence:
 `docs/audit/2026-07-09-e2e-pipeline-live-test.md` + committed `.keel/state/KEEL-101/`.
 
 ### Fixed
-- **KEEL-101** -- the v3.9.0 path migration missed two hard-coded `keel-state.cjs resume` strings in user-facing messages (`keel-watch.cjs` stale warning, `keel-state.cjs` Slack halt text); both now instruct `node ~/.keel/bin/keel-state.cjs resume ...`. RCA at `docs/defects/KEEL-101-rca.md`; regression test `scripts/test-halt-message-paths.cjs` (revert-check proven); lesson L-1 recorded.
+- **KEEL-101** -- the v3.9.0 path migration missed two hard-coded `keel-state.cjs resume` strings in user-facing messages (`keel-watch.cjs` stale warning, `keel-state.cjs` Slack halt text); both now instruct `node ~/.keel/bin/keel-state.cjs resume ...`. RCA at `dev-history/docs/defects/KEEL-101-rca.md`; regression test `scripts/test-halt-message-paths.cjs` (revert-check proven); lesson L-1 recorded.
 - **Scope-aware gate advance** (found live by the e2e) -- `gate PASS` advanced `current_phase` by +1 regardless of scope; now advances to the next phase in scope (defect: 1->4->5->6) and reports "complete" after the last. Suite grew to 13/13.
 
 ### Changed
@@ -665,6 +680,6 @@ MIT - See [LICENSE](LICENSE) for details
 
 ---
 
-Last Updated: 2026-07-27
+Last Updated: 2026-07-29
 Version: 3.16.8
 Status: Production Ready

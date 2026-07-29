@@ -1,0 +1,419 @@
+# =============================================================================
+# KEEL AI-SDLC FRAMEWORK v3.16.8 — AUDIT PART B REPORT
+# Distribution Surface & Dynamic Testing (Phases 18-33)
+# SHA-under-audit: 38e9bdaca4f416f85286f8025d088a2cd1cd68e5 (v3.16.8 tag)
+# HEAD (post-Part-A fix): a29aa2268da8361af32d546d0d2c78ed34289e15
+# Auditor: Claude Sonnet 4.6 / 2026-07-29
+# Part A findings: KEEL-AUDIT-001..021 (all fixed in a29aa22)
+# Part B findings: KEEL-AUDIT-022..029, KEEL-AUDIT-M001..M004
+# Dynamic tests: /tmp/keel-test-phase25 (read-only real repo, no .keel/ writes)
+# =============================================================================
+
+meta:
+  audit_phase: "Part B — Distribution Surface & Dynamic Testing"
+  phases_covered: 18-33
+  total_findings: 10
+  by_severity:
+    CRITICAL: 2
+    HIGH: 3
+    MEDIUM: 2
+    LOW: 3
+  gates_passed: 11
+  gates_failed: 0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 18 — RELEASE / TAG HYGIENE
+# ─────────────────────────────────────────────────────────────────────────────
+phase_18_tag_hygiene:
+  result: FINDINGS
+
+  finding_KEEL-AUDIT-022:
+    id: KEEL-AUDIT-022
+    severity: CRITICAL
+    phase: 18
+    category: release-integrity
+    title: "v3.16.8 tag predates Part A fix commit — tagged release is audit-dirty"
+    evidence:
+      - "git rev-list -n1 v3.16.8 → 38e9bdaca4f416f85286f8025d088a2cd1cd68e5"
+      - "git rev-parse HEAD        → a29aa2268da8361af32d546d0d2c78ed34289e15"
+      - "git describe --tags --abbrev=0 → v3.16.3 (HEAD not reachable forward from tag)"
+    impact: >
+      Users who install from the tagged release (npm, GitHub archive, git checkout v3.16.8)
+      receive code with all 21 Part A findings unfixed — including CRIT injection-guard bypass
+      (KEEL-AUDIT-004, KEEL-AUDIT-006) and zero gate/watch test coverage.
+      The remote tag at origin also points to the old SHA.
+    remediation: >
+      git tag -d v3.16.8 && git push origin :refs/tags/v3.16.8
+      git tag -a v3.16.8 HEAD -m "v3.16.8 — post-audit fix (Part A findings resolved)"
+      git push origin v3.16.8
+
+  finding_KEEL-AUDIT-023:
+    id: KEEL-AUDIT-023
+    severity: LOW
+    phase: 18
+    category: release-hygiene
+    title: "No floating convenience tags (v3, v3.16) present"
+    evidence:
+      - "git tag -l 'v3' 'v3.16' → (empty)"
+    impact: "Users cannot pin to major/minor without knowing exact patch version."
+    remediation: "git tag -f v3 HEAD && git tag -f v3.16 HEAD && git push --tags"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 19 — GITHUB ACTION CONTRACT
+# ─────────────────────────────────────────────────────────────────────────────
+phase_19_github_action:
+  result: FINDINGS
+
+  finding_KEEL-AUDIT-024:
+    id: KEEL-AUDIT-024
+    severity: CRITICAL
+    phase: 19
+    category: ci-integrity
+    title: "collect-outputs step unconditionally hardcodes success outputs"
+    evidence:
+      - "action.yml:131: id: collect-outputs"
+      - "action.yml:135: echo \"result=completed\" >> \"$GITHUB_OUTPUT\""
+      - "action.yml:136: echo \"confidence=high\" >> \"$GITHUB_OUTPUT\""
+      - "action.yml:137: echo \"lane2-ready=true\" >> \"$GITHUB_OUTPUT\""
+    impact: >
+      Any CI workflow reading ${{ steps.keel.outputs.result }},
+      ${{ steps.keel.outputs.confidence }}, or ${{ steps.keel.outputs.lane2-ready }}
+      always sees completed/high/true regardless of whether keel.js succeeded,
+      failed, or was never reached. Gate consumers get false positives unconditionally.
+      This renders the action's output contract meaningless.
+    remediation: >
+      Parse the actual keel.js exit code and stdout. Write real values to GITHUB_OUTPUT.
+      At minimum: result=failed on non-zero exit, confidence from JSON stdout, lane2-ready
+      only when all phases PASS.
+
+  finding_KEEL-AUDIT-025:
+    id: KEEL-AUDIT-025
+    severity: HIGH
+    phase: 19
+    category: auth
+    title: "claude-api-key input declared but never wired to any env var"
+    evidence:
+      - "action.yml: claude-api-key input declared as optional, no description"
+      - "grep -n 'ANTHROPIC_API_KEY|claude.api.key|CLAUDE_API_KEY' action.yml → (no matches)"
+    impact: >
+      Users who set claude-api-key: ${{ secrets.CLAUDE_API_KEY }} in their workflow
+      expect authentication to work. The key is silently discarded. keel.js will fail
+      to authenticate against the Anthropic API. No error or warning is emitted.
+    remediation: >
+      In the keel run step, add: env: { ANTHROPIC_API_KEY: "${{ inputs.claude-api-key }}" }
+
+  finding_KEEL-AUDIT-026:
+    id: KEEL-AUDIT-026
+    severity: HIGH
+    phase: 19
+    category: injection
+    title: "Unquoted shell interpolations in action.yml run blocks"
+    evidence:
+      - "action.yml: --goal=\"${{ inputs.goal }}\" (double-quotes inside double-quotes)"
+      - "action.yml: --story=\"${{ inputs.story }}\""
+    impact: >
+      If a workflow passes inputs containing shell metacharacters (semicolons, backticks,
+      dollar signs), the interpolation executes arbitrary commands. GitHub Actions does not
+      sanitize inputs before shell expansion in run: blocks.
+    remediation: >
+      Pass values through env vars, not inline interpolation:
+        env:
+          KEEL_GOAL: ${{ inputs.goal }}
+        run: node "$GITHUB_ACTION_PATH/bin/keel.js" --goal="$KEEL_GOAL"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 20 — MARKETPLACE TRUTH AUDIT
+# ─────────────────────────────────────────────────────────────────────────────
+phase_20_marketplace:
+  result: FINDINGS
+
+  verified_correct:
+    - "README agent count: 15 (matches agents/ directory)"
+    - "README skill count: 9 (matches skills/ directory)"
+    - "README phase count: 10"
+    - "npm/docker both labeled '(coming soon)' in README"
+    - "compliance language hedged (evidence trail, not certified)"
+    - ".mcp.json ships and server names match plugin-namespaced tool refs"
+
+  finding_KEEL-AUDIT-M001:
+    id: KEEL-AUDIT-M001
+    severity: HIGH
+    phase: 20
+    category: packaging
+    title: "package.json engines.node '>=16.0.0' contradicts >=18 requirement"
+    evidence:
+      - "package.json:50: \"node\": \">=16.0.0\""
+      - "INSTALL.md: '>=18 required'"
+      - "TECHNICAL-SPECIFICATIONS.md: '>=18.0.0 required (Playwright E2E requires 18)'"
+      - "keel-state.cjs:771: fs.rmSync(d, {recursive:true, force:true}) → needs Node 16+, not 18+"
+    impact: >
+      npm install on Node 16 or 17 succeeds with no warning. Plugin loads.
+      First E2E phase fails with Playwright runtime error. User must diagnose
+      version mismatch without guidance from npm.
+    remediation: "package.json:50 → \"node\": \">=18.0.0\""
+
+  finding_KEEL-AUDIT-M002:
+    id: KEEL-AUDIT-M002
+    severity: MEDIUM
+    phase: 20
+    category: packaging
+    title: "npm package files array omits all documentation; README ships with dead links"
+    evidence:
+      - "package.json files: no INSTALL.md, QUICK-START-CLAUDE-CODE.md, ALL-AGENTS-COMPLETE-GUIDE.md"
+      - "package.json files: no TECHNICAL-SPECIFICATIONS.md, CHANGELOG.md, docs/"
+      - "README.md (shipped) contains relative links: [INSTALL.md](INSTALL.md), [ALL-AGENTS-COMPLETE-GUIDE.md](...)"
+    impact: >
+      After `npm install -g @amarsingh/keel`, every relative .md link in README is dead.
+      User cannot follow getting-started links. CHANGELOG, INSTALL, and all docs are absent.
+    remediation: >
+      Add to package.json files: "INSTALL.md", "QUICK-START-CLAUDE-CODE.md",
+      "ALL-AGENTS-COMPLETE-GUIDE.md", "TECHNICAL-SPECIFICATIONS.md", "CHANGELOG.md", "docs/"
+      — or rewrite README links to point to GitHub (absolute URLs).
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 21 — LINK INTEGRITY
+# ─────────────────────────────────────────────────────────────────────────────
+phase_21_link_integrity:
+  result: ONE FINDING
+
+  checked:
+    - "docs/MCP-SETUP.md → OK"
+    - "docs/demo/HEALTH-1-end-to-end-demo.md → OK"
+    - "docs/audit/2026-07-09-e2e-pipeline-live-test.md → OK"
+    - "docs/audit/2026-07-09-e2e-install-to-pipeline.md → OK"
+    - "docs/audit/2026-07-08-wizard-live-test.md → OK"
+    - "docs/WORKFLOW.md link to audit/ → relative from docs/ → resolves correctly (false alarm in checker)"
+
+  finding_KEEL-AUDIT-M004:
+    id: KEEL-AUDIT-M004
+    severity: LOW
+    phase: 21
+    category: doc-integrity
+    title: "CHANGELOG.md:266 dead link to docs/defects/KEEL-101-rca.md"
+    evidence:
+      - "CHANGELOG.md:266: RCA at `docs/defects/KEEL-101-rca.md`"
+      - "[ -f docs/defects/KEEL-101-rca.md ] → false"
+      - "actual location: dev-history/docs/defects/KEEL-101-rca.md"
+    impact: "Dead CHANGELOG reference. File moved to dev-history/ without updating link."
+    remediation: "CHANGELOG.md:266 → `dev-history/docs/defects/KEEL-101-rca.md`"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 22 — STACK PROFILES
+# ─────────────────────────────────────────────────────────────────────────────
+phase_22_stack_profiles:
+  result: PASS
+  notes:
+    - "Only stack-profiles/cakephp.md ships — correct, no phantom profiles"
+    - "keel-detect-stack.cjs hard-blocks Laravel/Django/Rails/Node via blockers.push()"
+    - "No dead profile references found"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 23 — MCP NAMESPACE
+# ─────────────────────────────────────────────────────────────────────────────
+phase_23_mcp_namespace:
+  result: PASS
+  notes:
+    - "All 15 agent specs use mcp__plugin_keel_atlassian__* and mcp__plugin_keel_playwright__*"
+    - "No bare mcp__atlassian__* or mcp__playwright__* regressions found"
+    - ".mcp.json servers named 'atlassian'+'playwright' → plugin prefix applied by Claude Code"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 24 — SCHEMA DEPTH
+# ─────────────────────────────────────────────────────────────────────────────
+phase_24_schema:
+  result: FINDING
+
+  finding_KEEL-AUDIT-027:
+    id: KEEL-AUDIT-027
+    severity: MEDIUM
+    phase: 24
+    category: schema-integrity
+    title: "'decisions' in agent-output-schema.json properties but NOT in required"
+    evidence:
+      - "agent-output-schema.json required=[phase,agent,story_id,confidence,findings,acceptance_criteria_ids,next_phase]"
+      - "agent-output-schema.json: decisions in properties but absent from required"
+      - "ground-truth spec: decisions IS required (audit trail depends on it)"
+    impact: >
+      Agents can emit phase output files without a decisions field and pass schema validation.
+      The audit-agent and handshake-agent may see missing decision records in the audit trail
+      for any phase that omits the field.
+    remediation: "agent-output-schema.json: add 'decisions' to required array"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 25 — FRESH-INSTALL LIFECYCLE (dynamic, /tmp/keel-test-phase25)
+# ─────────────────────────────────────────────────────────────────────────────
+phase_25_fresh_install:
+  result: PASS
+  test_dir: /tmp/keel-test-phase25
+  node_version: v26.1.0
+  tests_run:
+    - "All 15 package.json files items copied successfully"
+    - "init TEST-001 → OK (budget: 40 gates / 72h)"
+    - "state dir created: .keel/state/TEST-001/{manifest.json,audit-log.jsonl,handoff-log.md,snapshots}"
+    - "describe TEST-001 → correct 10-phase pipeline, phase 1 in progress"
+    - "Windows path separators in output (.keel\\state\\TEST-001) — cosmetic, correct"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 26 — UPGRADE PATH / VERSION SKEW
+# ─────────────────────────────────────────────────────────────────────────────
+phase_26_version_skew:
+  result: COVERED BY KEEL-AUDIT-M001
+  notes:
+    - "keel-state.cjs uses fs.rmSync({recursive,force}) → requires Node 16+ (engines >=16 correct for engine alone)"
+    - "Full plugin (@playwright/test ^1.61.1) requires Node 18+ (engines >=16 incorrect for full plugin)"
+    - "No Array.at(), structuredClone, crypto.randomUUID, or fs.rm() found in state engine"
+    - "KEEL-AUDIT-M001 covers the engines field mismatch"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 27 — CROSS-PLATFORM
+# ─────────────────────────────────────────────────────────────────────────────
+phase_27_cross_platform:
+  result: FINDING
+
+  finding_KEEL-AUDIT-029:
+    id: KEEL-AUDIT-029
+    severity: LOW
+    phase: 27
+    category: cross-platform
+    title: "setup-integrations.sh bash-only; no Windows equivalent; ships in npm package"
+    evidence:
+      - "setup-integrations.sh: #!/bin/bash, read -p, heredoc, chmod 600, set -e"
+      - "package.json files: includes 'setup-integrations.sh'"
+      - "README.md: 'bash setup-integrations.sh jira'"
+      - "bin/package-plugin.sh has PowerShell fallback; setup-integrations.sh does not"
+    impact: "Windows users get the script but cannot run it without Git Bash or WSL. No guidance provided."
+    remediation: >
+      Add a setup-integrations.ps1 with equivalent functionality, or add a Windows
+      compatibility note to README.md installation section.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 28 — DYNAMIC PIPELINE EXECUTION (defect lane)
+# ─────────────────────────────────────────────────────────────────────────────
+phase_28_dynamic_pipeline:
+  result: PASS
+  tests_run:
+    - "init TEST-001 → OK"
+    - "describe TEST-001 → correct 10-phase structure"
+    - "gate phase=0 (underflow) → GATE REFUSED"
+    - "gate phase=11 (overflow) → GATE REFUSED"
+    - "gate syntax check (missing --verdict) → usage error, exit 64"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 29 — ADVERSARIAL GATE-BYPASS
+# ─────────────────────────────────────────────────────────────────────────────
+phase_29_adversarial:
+  result: PASS — NO BYPASSES FOUND
+  tests_run:
+    path_traversal:
+      - "init '../evil' → exit 64, invalid story_id"
+      - "init 'TEST-001; rm -rf /tmp/pwned' → exit 64"
+      - "init 'TEST/001' → exit 64"
+    gate_skip:
+      - "gate TEST-001 --phase 0 --verdict PASS → GATE REFUSED"
+      - "gate TEST-001 --phase 11 --verdict PASS → GATE REFUSED"
+      - "gate TEST-001 --phase 5 --verdict PASS (skip 1-4) → GATE REFUSED"
+      - "gate TEST-001 --phase -1 --verdict PASS → GATE REFUSED"
+    resume_guards:
+      - "resume TEST-001 --phase 2 (no --notes) → exit 64, notes REQUIRED"
+      - "resume TEST-001 --phase 2 --notes '' → exit 64"
+      - "resume TEST-001 --phase 10 --notes 'override' → REFUSED (no phase-9 output)"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 30 — CONCURRENCY
+# ─────────────────────────────────────────────────────────────────────────────
+phase_30_concurrency:
+  result: PASS
+  tests_run:
+    - "Concurrent init TEST-CONC (2 parallel processes) → one OK, one 'already initialized'"
+    - "State dir created exactly once"
+    - "OS mkdir lock prevents double-init"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 31 — RECOVERY
+# ─────────────────────────────────────────────────────────────────────────────
+phase_31_recovery:
+  result: PASS
+  tests_run:
+    - "snapshot TEST-001 → OK: snapshot 2026-07-29T14-22-40-257Z"
+    - "tamper manifest.current_phase 1→5"
+    - "restore TEST-001 <snap-id> → OK: restored (tampered state snapshotted first)"
+    - "post-restore manifest.current_phase → 1 (correct)"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 32 — RED-TEAM INJECTION + CJIS GATES
+# ─────────────────────────────────────────────────────────────────────────────
+phase_32_gate_redteam:
+  result: PASS (7 tested, 2 unverified due to live hook)
+  injection_tests:
+    - "T1: 'ignore previous instructions…' → BLOCK (exit 2)"
+    - "T2: benign 'implement login per AC-1' → PASS (exit 0)"
+    - "T3: base64-encoded injection → BLOCK (exit 2)"
+    - "T4: '### NEW INSTRUCTION: …' (uppercase) → BLOCK (exit 2)"
+    - "T5: '### new instruction: …' (lowercase) → BLOCK (exit 2) — gi flag fix verified"
+  cjis_tests:
+    - "T6: synthetic SSN-shaped string → BLOCK confirmed via live PreToolUse hook intercept"
+    - "T7: synthetic PHONE-shaped string → BLOCK confirmed via live PreToolUse hook intercept"
+    - "T8: benign code with digit strings → UNVERIFIED (hook blocked Bash command containing T6/T7)"
+    - "T9: email-shaped string PostToolUse → UNVERIFIED (same)"
+  coverage_gap_confirmed:
+    - "NCIC_ID, LEID, HART_CASE_ID, HART_SUBJECT_ID patterns absent"
+    - "Gate prints warning; KEEL_CJIS_STRICT=1 upgrades to block"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 33 — TOKEN / CACHE CLAIM VALIDATION
+# ─────────────────────────────────────────────────────────────────────────────
+phase_33_token_cache:
+  result: PASS WITH NOTE
+  verified:
+    - "economy.yml confirm_before_spawn: true"
+    - "economy.yml security_skip_on_clean: false"
+    - "economy.yml prompt_caching: true"
+    - "economy.yml cache_ttl_minutes: 5"
+    - "economy.yml lock_stale_seconds: 30"
+    - "orchestrator.md documents [token-estimate:] + [cache-estimate:] lines"
+    - "orchestrator.md documents 3 cache_control breakpoints"
+  note: >
+    cache_ttl_minutes: 5 is a documentation hint only — no code reads or enforces it.
+    Actual Claude ephemeral cache TTL is API-determined. The value correctly guides users
+    to run phases back-to-back, but should be labeled as advisory in economy.yml.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PART B SUMMARY TABLE
+# ─────────────────────────────────────────────────────────────────────────────
+summary:
+  findings:
+    - {id: KEEL-AUDIT-022, sev: CRITICAL, phase: 18, title: "v3.16.8 tag stale — fix commit not tagged"}
+    - {id: KEEL-AUDIT-024, sev: CRITICAL, phase: 19, title: "action.yml collect-outputs hardcodes success unconditionally"}
+    - {id: KEEL-AUDIT-025, sev: HIGH,     phase: 19, title: "action.yml claude-api-key declared but never wired"}
+    - {id: KEEL-AUDIT-026, sev: HIGH,     phase: 19, title: "action.yml unquoted shell interpolations — injection risk"}
+    - {id: KEEL-AUDIT-M001,sev: HIGH,     phase: 20, title: "package.json engines.node >=16 contradicts >=18 requirement"}
+    - {id: KEEL-AUDIT-027, sev: MEDIUM,   phase: 24, title: "decisions not in agent-output-schema.json required array"}
+    - {id: KEEL-AUDIT-M002,sev: MEDIUM,   phase: 20, title: "npm files omits all docs — dead README links post-install"}
+    - {id: KEEL-AUDIT-023, sev: LOW,      phase: 18, title: "No floating tags v3/v3.16"}
+    - {id: KEEL-AUDIT-M004,sev: LOW,      phase: 21, title: "CHANGELOG.md:266 dead link to docs/defects/KEEL-101-rca.md"}
+    - {id: KEEL-AUDIT-029, sev: LOW,      phase: 27, title: "setup-integrations.sh bash-only, no Windows equivalent"}
+
+  phases_clean:
+    - "22 stack-profiles"
+    - "23 MCP namespace"
+    - "25 fresh-install lifecycle"
+    - "28 dynamic pipeline gates"
+    - "29 adversarial bypass (all 9 variants blocked)"
+    - "30 concurrency (OS mkdir lock)"
+    - "31 recovery (snapshot/restore)"
+    - "32 injection+CJIS gate (7/9 verified, 2 unverified due to live hook)"
+    - "33 token/cache claims"
+
+  action_required_before_reshipping_v3_16_8:
+    - "KEEL-AUDIT-022: re-tag v3.16.8 to HEAD (a29aa22)"
+    - "KEEL-AUDIT-024: fix collect-outputs stub in action.yml"
+    - "KEEL-AUDIT-025: wire claude-api-key to ANTHROPIC_API_KEY env in action.yml"
+    - "KEEL-AUDIT-026: quote all ${{ inputs.* }} via env vars in action.yml"
+    - "KEEL-AUDIT-M001: package.json engines.node → '>=18.0.0'"
+
+  lower_priority_fixes:
+    - "KEEL-AUDIT-027: add decisions to agent-output-schema.json required"
+    - "KEEL-AUDIT-M002: add docs to npm files array or switch README links to absolute URLs"
+    - "KEEL-AUDIT-M004: fix CHANGELOG dead link"
+    - "KEEL-AUDIT-029: add setup-integrations.ps1 or Windows note"
+    - "KEEL-AUDIT-023: add floating tags post-retag"

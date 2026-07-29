@@ -37,12 +37,12 @@ inputs:
     required: false
     default: 'cakephp'
   claude-api-key:
-    description: 'Optional: Anthropic API key for GitHub Action execution (uses your Claude subscription). Leave empty to use Claude Code native integration.'
+    description: 'Anthropic API key for GitHub Action execution. Required for CI runs — set as a repository secret (ANTHROPIC_API_KEY) and pass via secrets.ANTHROPIC_API_KEY.'
     required: false
 
 outputs:
   result:
-    description: 'Result of phase execution (JSON output schema)'
+    description: 'Result of phase execution: completed or failed'
     value: ${{ steps.collect-outputs.outputs.result }}
   confidence:
     description: 'Confidence level (high, medium, low)'
@@ -60,81 +60,136 @@ runs:
     - name: Initialize Keel Framework
       if: inputs.phase == 'init'
       shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.claude-api-key }}
+        KEEL_STACK: ${{ inputs.stack }}
       run: |
         echo "Initializing Keel AI-SDLC Framework..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" init --mode=new --stack=${{ inputs.stack }}
+        node "$GITHUB_ACTION_PATH/bin/keel.js" init --mode=new --stack="$KEEL_STACK"
+        echo "KEEL_RESULT=completed" >> "$GITHUB_ENV"
 
     - name: Run Brainstorm Phase
       if: inputs.phase == 'brainstorm'
       shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.claude-api-key }}
+        KEEL_GOAL: ${{ inputs.goal }}
+        KEEL_MODE: ${{ inputs.mode }}
       run: |
         echo "Running brainstorm phase..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" brainstorm --goal="${{ inputs.goal }}" --mode=${{ inputs.mode }}
+        node "$GITHUB_ACTION_PATH/bin/keel.js" brainstorm --goal="$KEEL_GOAL" --mode="$KEEL_MODE"
+        echo "KEEL_RESULT=completed" >> "$GITHUB_ENV"
 
     - name: Run Requirements Phase
       if: inputs.phase == 'req'
       shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.claude-api-key }}
+        KEEL_STORY: ${{ inputs.story-id }}
+        KEEL_FEATURE: ${{ inputs.feature }}
+        KEEL_MODE: ${{ inputs.mode }}
       run: |
         echo "Running requirements phase..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" req --story=${{ inputs.story-id }} --feature="${{ inputs.feature }}" --mode=${{ inputs.mode }}
+        node "$GITHUB_ACTION_PATH/bin/keel.js" req --story="$KEEL_STORY" --feature="$KEEL_FEATURE" --mode="$KEEL_MODE"
+        echo "KEEL_RESULT=completed" >> "$GITHUB_ENV"
 
     - name: Run Design Phase
       if: inputs.phase == 'design'
       shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.claude-api-key }}
+        KEEL_STORY: ${{ inputs.story-id }}
+        KEEL_SCOPE: ${{ inputs.scope }}
       run: |
         echo "Running design phase..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" design --story=${{ inputs.story-id }} --focus=${{ inputs.scope }}
+        node "$GITHUB_ACTION_PATH/bin/keel.js" design --story="$KEEL_STORY" --focus="$KEEL_SCOPE"
+        echo "KEEL_RESULT=completed" >> "$GITHUB_ENV"
 
     - name: Run Development Phase
       if: inputs.phase == 'dev'
       shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.claude-api-key }}
+        KEEL_STORY: ${{ inputs.story-id }}
+        KEEL_SCOPE: ${{ inputs.scope }}
       run: |
         echo "Running development phase..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" dev --story=${{ inputs.story-id }} --scope=${{ inputs.scope }}
+        node "$GITHUB_ACTION_PATH/bin/keel.js" dev --story="$KEEL_STORY" --scope="$KEEL_SCOPE"
+        echo "KEEL_RESULT=completed" >> "$GITHUB_ENV"
 
     - name: Run QA Phase
       if: inputs.phase == 'test'
       shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.claude-api-key }}
+        KEEL_STORY: ${{ inputs.story-id }}
+        KEEL_SCOPE: ${{ inputs.scope }}
       run: |
         echo "Running QA phase (AC mapping + integration tests)..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" test --story=${{ inputs.story-id }} --scope=${{ inputs.scope }}
+        node "$GITHUB_ACTION_PATH/bin/keel.js" test --story="$KEEL_STORY" --scope="$KEEL_SCOPE"
+        echo "KEEL_RESULT=completed" >> "$GITHUB_ENV"
 
     - name: Run E2E Phase
       if: inputs.phase == 'e2e-test'
       shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.claude-api-key }}
+        KEEL_STORY: ${{ inputs.story-id }}
       run: |
         echo "Running E2E phase (Playwright browser tests)..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" e2e-test --story=${{ inputs.story-id }}
+        node "$GITHUB_ACTION_PATH/bin/keel.js" e2e-test --story="$KEEL_STORY"
+        echo "KEEL_RESULT=completed" >> "$GITHUB_ENV"
 
     - name: Run Security Phase
       if: inputs.phase == 'sec'
       shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.claude-api-key }}
+        KEEL_STORY: ${{ inputs.story-id }}
+        KEEL_SCOPE: ${{ inputs.scope }}
       run: |
         echo "Running security phase..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" sec --story=${{ inputs.story-id }} --scope=${{ inputs.scope }}
+        node "$GITHUB_ACTION_PATH/bin/keel.js" sec --story="$KEEL_STORY" --scope="$KEEL_SCOPE"
+        echo "KEEL_RESULT=completed" >> "$GITHUB_ENV"
 
     - name: Run Release Check Phase
       if: inputs.phase == 'release-check'
       shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.claude-api-key }}
+        KEEL_STORY: ${{ inputs.story-id }}
       run: |
         echo "Running release check phase (go/no-go decision)..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" release-check --story=${{ inputs.story-id }}
+        node "$GITHUB_ACTION_PATH/bin/keel.js" release-check --story="$KEEL_STORY"
+        echo "KEEL_RESULT=completed" >> "$GITHUB_ENV"
 
     - name: Run Deployment Phase
       if: inputs.phase == 'deploy'
       shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.claude-api-key }}
+        KEEL_STORY: ${{ inputs.story-id }}
+        KEEL_MODE: ${{ inputs.mode }}
+        KEEL_ROLLOUT: ${{ inputs.rollout }}
       run: |
         echo "Running deployment phase..."
-        node "$GITHUB_ACTION_PATH/bin/keel.js" deploy --story=${{ inputs.story-id }} --mode=${{ inputs.mode }} --rollout=${{ inputs.rollout }}
+        node "$GITHUB_ACTION_PATH/bin/keel.js" deploy --story="$KEEL_STORY" --mode="$KEEL_MODE" --rollout="$KEEL_ROLLOUT"
+        echo "KEEL_RESULT=completed" >> "$GITHUB_ENV"
 
     - name: Collect outputs
       id: collect-outputs
       if: always()
       shell: bash
       run: |
-        echo "result=completed" >> "$GITHUB_OUTPUT"
-        echo "confidence=high" >> "$GITHUB_OUTPUT"
-        echo "lane2-ready=true" >> "$GITHUB_OUTPUT"
+        RESULT="${KEEL_RESULT:-failed}"
+        echo "result=$RESULT" >> "$GITHUB_OUTPUT"
+        if [ "$RESULT" = "completed" ]; then
+          echo "confidence=high" >> "$GITHUB_OUTPUT"
+          echo "lane2-ready=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "confidence=low" >> "$GITHUB_OUTPUT"
+          echo "lane2-ready=false" >> "$GITHUB_OUTPUT"
+        fi
         BRANCH=$(git branch --show-current 2>/dev/null || echo "")
         echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
 

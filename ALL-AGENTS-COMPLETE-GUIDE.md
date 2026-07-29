@@ -1,6 +1,6 @@
-# Keel v3.16.8 -- Complete Agent Guide
+# Keel v3.16.9 -- Complete Agent Guide
 
-**Framework Version:** 3.16.8  
+**Framework Version:** 3.16.9  
 **Total Agents:** 15 (10 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
@@ -56,7 +56,7 @@ These agents work sequentially to take a feature from idea to production.
 
 ### What It Does
 - Receives your feature request
-- Decomposes it into 12 sequential phases
+- Decomposes it into 10 sequential phases
 - Routes to the correct specialist agent for each phase
 - Enforces governance gates between phases
 - Produces final delivery summary
@@ -71,14 +71,12 @@ Your Request: "Build user payment export"
   2.  Business Analyst  -- functional spec + data flows
   3.  UI Designer       -- design spec + HTML mockup (or no-UI determination)
   4.  Solution Architect -- architecture, API contracts, ADRs
-  5.  Software Engineer -- production code (no tests)
-  6.  TDD Red           -- write tests (must fail without implementation)
-  7.  TDD Green         -- run tests; all pass, coverage >= 80%
-  8.  QA Engineer       -- full suite gate, AC-to-test mapping
-  9.  E2E Engineer      -- Playwright browser tests + screenshots
-  10. Security Engineer -- OWASP audit, prescan results
-  11. Technical Writer  -- README, CHANGELOG, docs
-  12. Release Manager   -- go/no-go, G-6 version stamp
+  5.  Software Engineer -- production code + unit tests (coverage >= 80%)
+  6.  QA Engineer       -- full suite gate, AC-to-test mapping
+  7.  E2E Engineer      -- Playwright browser tests + screenshots
+  8.  Security Engineer -- OWASP audit, prescan results
+  9.  Technical Writer  -- README, CHANGELOG, docs
+  10. Release Manager   -- go/no-go, G-6 version stamp
          v
 [Routes through all agents]
          v
@@ -1096,7 +1094,7 @@ Response: {
 # One command invokes all 15 agents
 /keel:implement-feature story="FEAT-123" feature="User payment export"
 
-# This automatically runs all 12 pipeline phases:
+# This automatically runs all 10 pipeline phases:
 # 1.  Product Owner     -> requirements + ACs
 # 2.  Business Analyst  -> functional spec + data flows
 # 3.  UI Designer       -> design spec + HTML mockup
@@ -1177,7 +1175,7 @@ command.)
 | **Handshake Agent** | Phase-to-phase validation + context passing |
 | **State Management Agent** | Locked state, atomic writes, audit trail, snapshots |
 
-**Infrastructure Scripts (v3.16.8)**
+**Infrastructure Scripts (v3.16.9)**
 
 | Script | Purpose |
 |--------|---------|
@@ -1196,7 +1194,7 @@ command.)
 
 ---
 
-**Framework:** Keel AI-SDLC Framework v3.16.8  
+**Framework:** Keel AI-SDLC Framework v3.16.9  
 **License:** MIT  
 **Author:** Amar Singh  
 **Repository:** https://github.com/creativemyntra/keel  

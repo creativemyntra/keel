@@ -53,6 +53,10 @@ try {
   fs.mkdirSync(cfgDir, { recursive: true });
   const patternsSrc = path.join(PLUGIN_ROOT, 'config', 'cjis-patterns.json');
   if (fs.existsSync(patternsSrc)) fs.copyFileSync(patternsSrc, path.join(cfgDir, 'cjis-patterns.json'));
+  const injectionSrc = path.join(PLUGIN_ROOT, 'config', 'injection-patterns.json');
+  if (fs.existsSync(injectionSrc)) fs.copyFileSync(injectionSrc, path.join(cfgDir, 'injection-patterns.json'));
+  const projectOverlaySrc = path.join(PLUGIN_ROOT, 'config', 'cjis-project-patterns.json');
+  if (fs.existsSync(projectOverlaySrc)) fs.copyFileSync(projectOverlaySrc, path.join(cfgDir, 'cjis-project-patterns.json'));
   // Stage agent-output-schema.json so agents can resolve it from KEEL_HOME
   // without requiring CLAUDE_PLUGIN_ROOT to be set (F-01 from init audit).
   const schemaSrc = path.join(PLUGIN_ROOT, 'agent-output-schema.json');
