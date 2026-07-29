@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en" data-state="default">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KEEL-UI-E2E — Onboarding Form Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* === Design Tokens (inlined from KEEL-UI-E2E-tokens.css) === */
+    :root {
+      --color-primary:          #6366f1;
+      --color-primary-hover:    #4f46e5;
+      --color-primary-active:   #4338ca;
+      --color-surface:          #ffffff;
+      --color-surface-elevated: #ffffff;
+      --color-surface-sunken:   #f8fafc;
+      --color-text-primary:     #0f172a;
+      --color-text-secondary:   #475569;
+      --color-text-muted:       #94a3b8;
+      --color-text-inverse:     #ffffff;
+      --color-border:           #e2e8f0;
+      --color-border-focus:     #6366f1;
+      --color-error:            #ef4444;
+      --color-error-surface:    #fef2f2;
+      --color-success:          #22c55e;
+      --color-success-surface:  #f0fdf4;
+      --color-warning:          #f59e0b;
+      --color-warning-surface:  #fffbeb;
+
+      --font-family-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-size-xs:   0.75rem;
+      --font-size-sm:   0.875rem;
+      --font-size-base: 1rem;
+      --font-size-lg:   1.125rem;
+      --font-size-2xl:  1.5rem;
+      --font-size-3xl:  1.875rem;
+      --font-weight-normal:   400;
+      --font-weight-medium:   500;
+      --font-weight-semibold: 600;
+      --font-weight-bold:     700;
+      --line-height-normal: 1.5;
+
+      --space-1:  4px;  --space-2:  8px;  --space-3:  12px; --space-4:  16px;
+      --space-5:  20px; --space-6:  24px; --space-8:  32px; --space-10: 40px;
+      --space-12: 48px; --space-16: 64px; --space-20: 80px;
+
+      --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-full: 9999px;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+      --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
+
+      --duration-instant: 100ms;
+      --duration-fast:    150ms;
+      --duration-normal:  200ms;
+      --duration-enter:   250ms;
+      --duration-exit:    200ms;
+
+      --ease-spring:   cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+      --ease-enter:    cubic-bezier(0.0, 0, 0.2, 1);
+      --ease-exit:     cubic-bezier(0.4, 0, 1, 1);
+
+      /* State-switcher chrome (dev-tooling UI inside the mockup) */
+      --color-switcher-bg:           #0f172a;
+      --color-switcher-border:       #334155;
+      --color-switcher-hover-text:   #f1f5f9;
+      --color-switcher-hover-border: #64748b;
+    }
+
+    /* === Reset === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* === Base === */
+    body {
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-base);
+      line-height: var(--line-height-normal);
+      color: var(--color-text-primary);
+      background: var(--color-surface-sunken);
+      min-height: 100vh;
+    }
+
+    /* === State switcher bar === */
+    .state-switcher {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-text-primary);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .state-switcher::-webkit-scrollbar { display: none; }
+    .state-switcher span {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      align-self: center;
+      margin-right: var(--space-2);
+    }
+    .state-btn {
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-muted);
+      background: transparent;
+      border: 1px solid var(--color-switcher-border);
+      border-radius: var(--radius-full);
+      padding: var(--space-1) var(--space-3);
+      cursor: pointer;
+      white-space: nowrap;
+      transition:
+        color           var(--duration-fast) var(--ease-standard),
+        border-color    var(--duration-fast) var(--ease-standard),
+        background      var(--duration-fast) var(--ease-standard);
+    }
+    .state-btn:hover { color: var(--color-switcher-hover-text); border-color: var(--color-switcher-hover-border); }
+    .state-btn.active {
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+      background: rgba(99,102,241,.12);
+    }
+
+    /* === Page layout === */
+    .page {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 48px);
+      padding: var(--space-8) var(--space-4);
+    }
+
+    /* === Card === */
+    .card {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: var(--space-8);
+      width: 100%;
+      max-width: 440px;
+    }
+
+    /* === Brand mark === */
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-6);
+    }
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--color-primary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-inverse);
+      font-weight: var(--font-weight-bold);
+      font-size: var(--font-size-sm);
+    }
+    .brand-name {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    /* === Heading === */
+    .card-title {
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+    .card-subtitle {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-8);
+    }
+    .card-subtitle a {
+      color: var(--color-primary);
+      text-decoration: none;
+      font-weight: var(--font-weight-medium);
+    }
+    .card-subtitle a:hover { text-decoration: underline; }
+
+    /* === Form === */
+    .form { display: flex; flex-direction: column; gap: var(--space-4); }
+
+    .field { display: flex; flex-direction: column; gap: var(--space-2); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+
+    label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-base);
+      color: var(--color-text-primary);
+      background: var(--color-surface-sunken);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      outline: none;
+      width: 100%;
+      transition:
+        border-color var(--duration-fast) var(--ease-standard),
+        box-shadow   var(--duration-fast) var(--ease-standard),
+        background   var(--duration-fast) var(--ease-standard);
+    }
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--color-border-focus);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+      background: var(--color-surface);
+    }
+    input::placeholder { color: var(--color-text-muted); }
+
+    /* Error state on input */
+    input.input-error {
+      border-color: var(--color-error);
+      background: var(--color-error-surface);
+    }
+    input.input-error:focus {
+      border-color: var(--color-error);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 18%, transparent);
+    }
+
+    .field-error-msg {
+      display: none;
+      font-size: var(--font-size-xs);
+      color: var(--color-error);
+      font-weight: var(--font-weight-medium);
+      animation: dropIn var(--duration-fast) var(--ease-enter);
+    }
+    .field-helper {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+    }
+
+    /* Password strength bar */
+    .strength-bar {
+      height: 4px;
+      border-radius: var(--radius-full);
+      background: var(--color-border);
+      overflow: hidden;
+      margin-top: var(--space-1);
+    }
+    .strength-fill {
+      height: 100%;
+      width: 60%;
+      background: var(--color-warning);
+      border-radius: var(--radius-full);
+      transition: width var(--duration-normal) var(--ease-spring);
+    }
+
+    /* Terms checkbox */
+    .terms {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+    .terms input[type="checkbox"] { margin-top: 2px; accent-color: var(--color-primary); }
+    .terms a { color: var(--color-primary); text-decoration: none; font-weight: var(--font-weight-medium); }
+    .terms a:hover { text-decoration: underline; }
+
+    /* === Submit button === */
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-inverse);
+      background: var(--color-primary);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-6);
+      cursor: pointer;
+      width: 100%;
+      height: 48px;
+      position: relative;
+      transition:
+        transform     var(--duration-instant) var(--ease-standard),
+        background    var(--duration-fast)    var(--ease-standard),
+        box-shadow    var(--duration-instant) var(--ease-standard),
+        opacity       var(--duration-fast)    var(--ease-standard);
+    }
+    .btn-primary:hover {
+      background: var(--color-primary-hover);
+      box-shadow: var(--shadow-md);
+      transform: scale(1.015);
+    }
+    .btn-primary:active {
+      background: var(--color-primary-active);
+      transform: scale(0.98);
+      box-shadow: none;
+    }
+    .btn-primary:disabled,
+    .btn-primary.loading {
+      opacity: 0.65;
+      cursor: not-allowed;
+      pointer-events: none;
+      transform: none;
+    }
+
+    /* === Spinner === */
+    .spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+    }
+
+    /* === Server error banner === */
+    .error-banner {
+      display: none;
+      align-items: flex-start;
+      gap: var(--space-3);
+      background: var(--color-error-surface);
+      border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      font-size: var(--font-size-sm);
+      color: var(--color-error);
+      animation: dropIn var(--duration-fast) var(--ease-enter);
+    }
+    .error-banner-icon { font-size: var(--font-size-lg); flex-shrink: 0; }
+    .error-banner-msg { color: var(--color-text-primary); }
+    .error-banner-msg strong { color: var(--color-error); }
+
+    /* === Toast (success) === */
+    .toast-container {
+      position: fixed;
+      bottom: var(--space-6);
+      right: var(--space-6);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      pointer-events: none;
+    }
+    .toast {
+      display: none;
+      align-items: center;
+      gap: var(--space-3);
+      background: var(--color-text-primary);
+      color: var(--color-text-inverse);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4) var(--space-5);
+      box-shadow: var(--shadow-xl);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      min-width: 280px;
+      pointer-events: auto;
+      animation: slideUp var(--duration-enter) var(--ease-spring);
+    }
+    .toast-icon { font-size: var(--font-size-lg); }
+    .toast-body { flex: 1; }
+    .toast-title { font-weight: var(--font-weight-semibold); margin-bottom: 2px; }
+    .toast-desc { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+
+    /* === Skeleton loader === */
+    .skeleton-overlay {
+      display: none;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .skel {
+      background: linear-gradient(90deg, var(--color-border) 25%, #f1f5f9 50%, var(--color-border) 75%);
+      background-size: 200% 100%;
+      border-radius: var(--radius-md);
+      animation: shimmer 1.4s infinite;
+    }
+    .skel-title   { height: 28px; width: 60%; }
+    .skel-sub     { height: 16px; width: 80%; }
+    .skel-label   { height: 14px; width: 40%; }
+    .skel-input   { height: 48px; }
+    .skel-btn     { height: 48px; }
+
+    /* ===================================
+       STATE MACHINE — data-state on <html>
+       =================================== */
+
+    /* DEFAULT: everything visible, no states active */
+
+    /* LOADING */
+    [data-state="loading"] .btn-text  { display: none; }
+    [data-state="loading"] .spinner   { display: block; }
+    [data-state="loading"] .btn-primary { opacity: 0.65; cursor: not-allowed; pointer-events: none; }
+    [data-state="loading"] input      { opacity: 0.6; pointer-events: none; }
+
+    /* SUCCESS */
+    [data-state="success"] .toast     { display: flex; }
+    [data-state="success"] .form      { opacity: 0.4; pointer-events: none; }
+
+    /* ERROR — validation */
+    [data-state="error-validation"] #email-input    { border-color: var(--color-error); background: var(--color-error-surface); }
+    [data-state="error-validation"] #password-input { border-color: var(--color-error); background: var(--color-error-surface); }
+    [data-state="error-validation"] .field-error-msg { display: block; }
+
+    /* ERROR — server */
+    [data-state="error-server"] .error-banner { display: flex; }
+
+    /* SKELETON */
+    [data-state="skeleton"] .card-content { display: none; }
+    [data-state="skeleton"] .skeleton-overlay { display: flex; }
+
+    /* === Animations === */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes slideUp {
+      from { transform: translateY(8px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+    @keyframes dropIn {
+      from { transform: translateY(-4px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    @keyframes shimmer {
+      from { background-position: 200% 0; }
+      to   { background-position: -200% 0; }
+    }
+
+    /* === Responsive — 375px mobile === */
+    @media (max-width: 640px) {
+      .card { padding: var(--space-6); border-radius: var(--radius-lg); }
+      .field-row { grid-template-columns: 1fr; }
+      .card-title { font-size: var(--font-size-xl); }
+      .toast-container { left: var(--space-4); right: var(--space-4); bottom: var(--space-4); }
+      .toast { min-width: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- State switcher bar -->
+  <nav class="state-switcher" aria-label="Mockup state preview">
+    <span>State:</span>
+    <button class="state-btn active" data-state="default">Default</button>
+    <button class="state-btn" data-state="loading">Loading</button>
+    <button class="state-btn" data-state="success">Success</button>
+    <button class="state-btn" data-state="error-validation">Error (validation)</button>
+    <button class="state-btn" data-state="error-server">Error (server)</button>
+    <button class="state-btn" data-state="skeleton">Skeleton</button>
+  </nav>
+
+  <main class="page">
+    <div class="card">
+
+      <!-- Brand -->
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">K</div>
+        <span class="brand-name">Keel</span>
+      </div>
+
+      <!-- Skeleton overlay (shown in skeleton state) -->
+      <div class="skeleton-overlay" aria-hidden="true">
+        <div class="skel skel-title"></div>
+        <div class="skel skel-sub"></div>
+        <div style="margin-top: var(--space-4); display:flex; flex-direction:column; gap:var(--space-4);">
+          <div>
+            <div class="skel skel-label" style="margin-bottom:var(--space-2)"></div>
+            <div class="skel skel-input"></div>
+          </div>
+          <div>
+            <div class="skel skel-label" style="margin-bottom:var(--space-2)"></div>
+            <div class="skel skel-input"></div>
+          </div>
+          <div class="skel skel-btn" style="margin-top:var(--space-2)"></div>
+        </div>
+      </div>
+
+      <!-- Real content -->
+      <div class="card-content">
+        <h1 class="card-title">Create your account</h1>
+        <p class="card-subtitle">
+          Already have an account? <a href="#" tabindex="-1">Sign in</a>
+        </p>
+
+        <!-- Server error banner -->
+        <div class="error-banner" role="alert" aria-live="assertive">
+          <span class="error-banner-icon" aria-hidden="true">⚠</span>
+          <div class="error-banner-msg">
+            <strong>Account creation failed.</strong> Our servers are temporarily unavailable.
+            Please try again in a few minutes or <a href="#" style="color:var(--color-primary)">contact support</a>.
+          </div>
+        </div>
+
+        <form class="form" novalidate aria-label="Create account form">
+          <!-- First name / Last name -->
+          <div class="field-row">
+            <div class="field">
+              <label for="first-name">First name</label>
+              <input type="text" id="first-name" name="first_name"
+                placeholder="Amar" autocomplete="given-name" aria-required="true">
+            </div>
+            <div class="field">
+              <label for="last-name">Last name</label>
+              <input type="text" id="last-name" name="last_name"
+                placeholder="Singh" autocomplete="family-name" aria-required="true">
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="field">
+            <label for="email-input">Work email</label>
+            <input type="email" id="email-input" name="email"
+              placeholder="amar.singh@matellio.com" autocomplete="email" aria-required="true"
+              aria-describedby="email-error">
+            <span class="field-error-msg" id="email-error" role="alert">
+              Enter a valid work email address
+            </span>
+          </div>
+
+          <!-- Password -->
+          <div class="field">
+            <label for="password-input">Password</label>
+            <input type="password" id="password-input" name="password"
+              placeholder="Minimum 8 characters" autocomplete="new-password" aria-required="true"
+              aria-describedby="password-error password-strength-desc">
+            <div class="strength-bar" aria-hidden="true">
+              <div class="strength-fill"></div>
+            </div>
+            <span class="field-helper" id="password-strength-desc">
+              Use a mix of letters, numbers, and symbols for a stronger password
+            </span>
+            <span class="field-error-msg" id="password-error" role="alert">
+              Password must be at least 8 characters
+            </span>
+          </div>
+
+          <!-- Terms -->
+          <div class="terms">
+            <input type="checkbox" id="terms" aria-required="true">
+            <label for="terms" style="margin-bottom:0;">
+              I agree to the <a href="#" tabindex="-1">Terms of Service</a>
+              and <a href="#" tabindex="-1">Privacy Policy</a>
+            </label>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-primary" aria-label="Create account">
+            <span class="spinner" role="status" aria-label="Creating account…"></span>
+            <span class="btn-text">Create account</span>
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Toast (success) -->
+  <div class="toast-container" aria-live="polite">
+    <div class="toast" role="status">
+      <span class="toast-icon" aria-hidden="true">✓</span>
+      <div class="toast-body">
+        <div class="toast-title">Account created!</div>
+        <div class="toast-desc">Check your email to verify your address</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- State machine: minimal class-toggle JS only, no business logic -->
+  <script>
+    const btns = document.querySelectorAll('.state-btn');
+    btns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.documentElement.dataset.state = btn.dataset.state;
+        btns.forEach(b => b.classList.toggle('active', b === btn));
+      });
+    });
+  </script>
+
+</body>
+</html>
