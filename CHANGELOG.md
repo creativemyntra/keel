@@ -263,7 +263,7 @@ waiver (recorded verbatim), and 0 HIGH security findings. Full evidence:
 `docs/audit/2026-07-09-e2e-pipeline-live-test.md` + committed `.keel/state/KEEL-101/`.
 
 ### Fixed
-- **KEEL-101** -- the v3.9.0 path migration missed two hard-coded `keel-state.cjs resume` strings in user-facing messages (`keel-watch.cjs` stale warning, `keel-state.cjs` Slack halt text); both now instruct `node ~/.keel/bin/keel-state.cjs resume ...`. RCA at `docs/defects/KEEL-101-rca.md`; regression test `scripts/test-halt-message-paths.cjs` (revert-check proven); lesson L-1 recorded.
+- **KEEL-101** -- the v3.9.0 path migration missed two hard-coded `keel-state.cjs resume` strings in user-facing messages (`keel-watch.cjs` stale warning, `keel-state.cjs` Slack halt text); both now instruct `node ~/.keel/bin/keel-state.cjs resume ...`. RCA at `dev-history/docs/defects/KEEL-101-rca.md`; regression test `scripts/test-halt-message-paths.cjs` (revert-check proven); lesson L-1 recorded.
 - **Scope-aware gate advance** (found live by the e2e) -- `gate PASS` advanced `current_phase` by +1 regardless of scope; now advances to the next phase in scope (defect: 1->4->5->6) and reports "complete" after the last. Suite grew to 13/13.
 
 ### Changed

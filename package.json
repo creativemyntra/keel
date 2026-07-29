@@ -47,7 +47,7 @@
     "url": "https://github.com/creativemyntra/keel/issues"
   },
   "engines": {
-    "node": ">=16.0.0",
+    "node": ">=18.0.0",
     "npm": ">=7.0.0"
   },
   "dependencies": {
@@ -78,10 +78,16 @@
     "scripts/",
     "config/",
     "stack-profiles/",
+    "docs/",
     ".mcp.json",
     "agent-output-schema.json",
     "setup-integrations.sh",
     "action.yml",
+    "INSTALL.md",
+    "QUICK-START-CLAUDE-CODE.md",
+    "ALL-AGENTS-COMPLETE-GUIDE.md",
+    "TECHNICAL-SPECIFICATIONS.md",
+    "CHANGELOG.md",
     "LICENSE",
     "README.md"
   ],
