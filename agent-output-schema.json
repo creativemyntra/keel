@@ -4,7 +4,7 @@
   "title": "Keel Agent Phase Output",
   "description": "Contract for the output file each Keel phase agent writes to .keel/state/<story-id>/<NN>-<agent>.json. This is how agents pass context to each other.",
   "type": "object",
-  "required": ["phase", "agent", "story_id", "confidence", "findings", "acceptance_criteria_ids", "next_phase"],
+  "required": ["phase", "agent", "story_id", "confidence", "findings", "acceptance_criteria_ids", "decisions", "next_phase"],
   "properties": {
     "phase": {
       "type": "integer",

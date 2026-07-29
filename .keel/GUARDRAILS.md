@@ -163,6 +163,13 @@ triggered the block. For hard prevention (stopping data from reaching the model 
 rely on PreToolUse hooks, which fire before the tool runs. Every PostToolUse incident
 warrants immediate human review of what the model received in that turn.
 
+**Enforcement scope (client-side compensating control):** This gate is wired through
+`hooks/hooks.json` and runs as a local Claude Code hook. It is a client-side
+compensating control — it is bypassable by editing `hooks/hooks.json`. It is NOT
+a network-level proxy or server-side enforcement mechanism. Treat it as a
+first-line deterrent and audit trail, not a hard enforcement boundary. For
+network-level enforcement, a separate proxy or server-side gate is required.
+
 
 ---
 

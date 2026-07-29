@@ -1,7 +1,7 @@
 # HEALTH-1 — End-to-End Keel Pipeline Demo *(Historical — v3.0 / 8-phase era)*
 
 > **Note:** This demo was recorded against Keel v3.0.2 (8-phase pipeline). The current
-> pipeline is 12 phases (v3.14.3+). Phase numbering and agent names differ. Kept as a
+> pipeline is 10 phases (v3.15.0+). Phase numbering and agent names differ. Kept as a
 > historical record of the original pipeline run.
 
 **Story:** HEALTH-1 — Health Check API Endpoint  
