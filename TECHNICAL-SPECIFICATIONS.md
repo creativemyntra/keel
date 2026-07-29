@@ -29,7 +29,7 @@
 Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development lifecycle automation platform. It orchestrates 15 autonomous agents across 10 development phases to deliver production-ready features in 2-4 hours vs. 2 weeks.
 
 ### Key Metrics
-- **Code Coverage Target:** >=80% (Current: 95%)
+- **Code Coverage Target:** >=80% (measured: 95% — see docs/audit/2026-07-09-e2e-pipeline-live-test.md)
 - **Vulnerability Target:** 0 (Current: 0)
 - **Test Pass Rate:** 100%
 - **Development Speed:** 99.4% faster than traditional (target — see docs/audit/)
@@ -223,7 +223,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ## Technical Stack
 
 ### Runtime
-- **Node.js:** >=18.0.0 (18 required for Playwright E2E; engine runs on 16+)
+- **Node.js:** >=18.0.0 required (Playwright E2E requires 18; state engine alone runs on 16+, but the full pipeline requires 18)
 - **npm:** >=7.0.0
 - **Language:** JavaScript (ES2020+)
 
@@ -417,7 +417,7 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 ## Performance Requirements
 
 ### Execution Time
-- **Feature Development:** <4 hours (current: 54 min)
+- **Feature Development:** <4 hours (measured: 54 min — see docs/audit/2026-07-09-e2e-pipeline-live-test.md)
 - **Phase Execution:** <2 seconds average
 - **Full Testing:** <5 seconds
 - **Code Generation:** <3 seconds

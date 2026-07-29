@@ -75,7 +75,7 @@ claude plugin marketplace add https://github.com/creativemyntra/keel
 claude plugin install keel
 ```
 
-The plugin registers `/keel:*` commands, 15 agents, and 11 skills. `~/.keel` configuration directories are created on first session.
+The plugin registers `/keel:*` commands, 15 agents, and 9 skills. `~/.keel` configuration directories are created on first session.
 
 **Verify:**
 ```bash
@@ -545,7 +545,7 @@ Add new features to existing projects with impact analysis.
 
 ### Framework
 - 15 agent definitions (10 pipeline + 2 meta/support + 3 infrastructure)
-- 11 skills (start-work, finish-work, implement, ui-designer, brainstorm, and more)
+- 9 skills (start-work, finish-work, implement-feature, investigate-defect, review-code, release-check, e2e-test, task-breakdown, create-mom)
 - 18 slash commands covering every pipeline phase and utility
 - Deterministic state engine + proactive watchers (zero-dependency Node)
 - Governance gates enforced between every phase
