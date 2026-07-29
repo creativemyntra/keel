@@ -54,7 +54,7 @@ Look in each location; stop at the first hit:
 2. `docs/design/brand-guide.*` or `DESIGN.md`
 3. Figma URL in any story context field → note it for Step 0b
 
-**If branding context is found** → record it as `brand_intake` in the output JSON and proceed to Step 0.
+**If branding context is found** → record it as `brand_intake` in the output JSON with `"status": "auto-detected"` and proceed to Step 0.
 
 **If branding context is MISSING** → pause and ask the user:
 
@@ -250,12 +250,12 @@ Choose ONE dominant direction. Do not blend more than two:
 
 | Direction | When to use |
 |-----------|-------------|
-| **Luxury minimal** | B2B SaaS, enterprise, finance — trust + authority |
-| **Editorial / magazine** | Content-heavy, publishing, media — visual hierarchy |
-| **Warm utilitarian** | Productivity tools, ops dashboards — efficiency + comfort |
-| **Precision technical** | Dev tools, analytics, monitoring — information density |
-| **Refined modern** | Consumer apps, onboarding, growth — delight + conversion |
-| **Industrial bold** | Data-heavy, internal tools, command-line-adjacent |
+| **Luxury Minimal** | B2B SaaS, enterprise, finance — trust + authority |
+| **Editorial / Magazine** | Content-heavy, publishing, media — visual hierarchy |
+| **Warm Utilitarian** | Productivity tools, ops dashboards — efficiency + comfort |
+| **Precision Technical** | Dev tools, analytics, monitoring — information density |
+| **Refined Modern** | Consumer apps, onboarding, growth — delight + conversion |
+| **Industrial Bold** | Data-heavy, internal tools, command-line-adjacent |
 
 Name the direction explicitly: e.g. `"Precision Technical — high information density, restrained color, monospace accents"`.
 
@@ -737,7 +737,7 @@ Tokens inlined in `<style>`. Font loaded via CDN `<link>`. Works when double-cli
 - **Token decisions** — any new tokens introduced
 - **Motion rationale** — why specific easings; spring for entrances = alive; exit = fast = confident
 - **Dashboard decisions** — if applicable: data hierarchy, chart type selection, empty state design
-- **Brand alignment** — what existing tokens were reused and from where
+- **Brand alignment** — what existing tokens were reused and from where. If any existing UI pattern was NOT followed, explicitly justify: `"Deviated from existing card pattern — this story introduces a new data-dense layout not present in the existing UI; justified by the dashboard requirement."`
 - **Figma status** — connected or codebase scan
 
 ---
@@ -761,7 +761,7 @@ Tokens inlined in `<style>`. Font loaded via CDN `<link>`. Works when double-cli
     "mood_words": [],
     "color_constraints": "none",
     "design_principles_extracted": [],
-    "status": "provided | skipped"
+    "status": "provided | skipped | auto-detected"
   },
   "design_system_plan": {
     "layout_pattern": "<name + one-line spec>",
@@ -819,7 +819,7 @@ Tokens inlined in `<style>`. Font loaded via CDN `<link>`. Works when double-cli
 - `docs/design/<story-id>-tokens.css` exists with all 6 categories, no empty values
 - Every browser-UI AC has a motion spec table
 - HTML mockup: CSS vars only (no hardcoded hex/px outside `:root`), working transitions, `data-state` switcher, responsive at 375px+1280px, reduced-motion block
-- `aesthetic_direction`, `dfii_score`, `differentiation_anchor`, `figma_mcp`, `brand_intake`, `design_system_plan` in output JSON
+- All 12 fields present in output JSON: `phase`, `agent`, `story_id`, `confidence`, `aesthetic_direction`, `dfii_score`, `differentiation_anchor`, `figma_mcp`, `brand_intake`, `design_system_plan`, `ux_findings`, `findings`, `decisions`, `artifacts`, `next_phase`, `blockers`
 - Dashboard ACs include: data hierarchy (P1/P2/P3), skeleton loader geometry, empty state copy, time range default
 
 ---
