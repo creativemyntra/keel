@@ -170,8 +170,19 @@ node ~/.keel/bin/keel-state.cjs <command> <story-id> [args]
    phase makes no executable claims, so spawning a full gate agent to verify
    grep-able facts wastes ~50k tokens. Instead: run the engine validate via
    Bash, spot-check the intake's citations with Read/Grep yourself, then run
-   the engine `gate` command directly (PASS auto-audits). From phase 2 onward, always
-   spawn the handshake agent -- it chooses a verification depth tier
+   the engine `gate` command directly (PASS auto-audits).
+   **Compensating controls for phase-1 self-gate** (HIGH-1 acknowledged — this
+   is the only place in the pipeline where the orchestrator approves its own
+   work without adversarial review):
+   - *jira-entry mode*: read at least one AC from the Jira ticket directly
+     (via MCP or prior fetch) and verify it matches what was transcribed
+     verbatim — any paraphrase or invented AC is an immediate FAIL requiring
+     the BA agent to re-run.
+   - *full-pipeline mode*: phase-1 output is a PROPOSAL — present it to the
+     human and require an explicit "yes" or approval before phase 2 starts. A
+     human confirmation replaces the adversarial check the handshake would
+     otherwise perform. Never proceed to phase 2 without it.
+   From phase 2 onward, always spawn the handshake agent -- it chooses a verification depth tier
    (TRIVIAL/NORMAL/FULL) per its spec; never instruct it to tier down.
    Use haiku for TRIVIAL-tier handshakes when `model_tiering` is enabled; sonnet for NORMAL and FULL tiers.
    Do NOT spawn separate state or audit agents in the phase loop -- the engine

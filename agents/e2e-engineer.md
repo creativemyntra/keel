@@ -36,9 +36,11 @@ starts relative to phase 6.
   from context compaction. Then stop and wait to be re-invoked in execute mode.
 - **`--mode=execute`** (or no `--mode` given -- this is the default and the only
   mode that existed before KEEL-R14): requires phase 6 to already be gated
-  PASS. Perform Step 2 (app running), Step 4 (run the tests you -- or a prior
-  author-mode invocation -- already wrote), Step 5, Step 6, and write the real
-  phase-7 output. This is the only mode that may ever write
+  PASS. Before running tests, verify author-mode spec files exist: glob
+  `tests/e2e/<story-id>-*.spec.{ts,js}` and confirm at least one file is
+  present. If none exist (no prior author-mode pass), run Steps 0-3 first to
+  write the specs, then proceed. Perform Step 2 (app running), Step 4 (run the
+  tests), Step 5, Step 6, and write the real phase-7 output. This is the only mode that may ever write
   `07-e2e-engineer.json` or advance `next_phase`.
 
 If invoked in execute mode and no test files exist yet from a prior author-mode
@@ -135,7 +137,10 @@ test.describe('<Feature> -- <STORY-ID>', () => {
    assertions.
 3. Check `browser_console_messages` for errors -- a flow that "works" while
    logging JS errors is not passing.
-4. Take a screenshot on the final state: `await page.screenshot({ path: 'docs/e2e-evidence/<test-name>.png' })`.
+4. Take a screenshot on the final state using a story-scoped path:
+   `await page.screenshot({ path: 'docs/e2e-evidence/<story-id>/<test-name>.png' })`.
+   Story-scoped paths prevent stale screenshots from prior runs being accepted
+   as evidence for this story by the handshake gate.
 
 ## Step 4 -- Run the tests
 

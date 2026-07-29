@@ -24,6 +24,13 @@ const BASELINE = path.join('.keel', 'watch', 'baseline.json');
 const COVERAGE_DROP_PTS = 2;
 const STALE_HOURS = 48;
 
+// Normalize baseline coverage from either legacy scalar (94.4) or new nested
+// format ({ statements: { pct: 94.4, ... } }) produced by keel-preflight.
+function baselineCoveragePct(baseline) {
+  if (!baseline || baseline.coverage == null) return null;
+  return typeof baseline.coverage === 'object' ? (baseline.coverage?.statements?.pct ?? null) : baseline.coverage;
+}
+
 function safeExit() { process.exit(0); }
 
 function postBash() {
@@ -50,8 +57,9 @@ function postBash() {
 
       const warnings = [];
       if (baseline) {
-        if (coverage !== null && baseline.coverage !== null && coverage < baseline.coverage - COVERAGE_DROP_PTS) {
-          warnings.push(`coverage dropped ${baseline.coverage}% -> ${coverage}% (baseline ${baseline.ts})`);
+        const basePct = baselineCoveragePct(baseline);
+        if (coverage !== null && basePct !== null && coverage < basePct - COVERAGE_DROP_PTS) {
+          warnings.push(`coverage dropped ${basePct}% -> ${coverage}% (baseline ${baseline.ts})`);
         }
         if (tests !== null && baseline.tests !== null && tests < baseline.tests) {
           warnings.push(`test count shrank ${baseline.tests} -> ${tests} — deleted or skipped tests are a patch pattern, justify or restore them`);
@@ -63,7 +71,7 @@ function postBash() {
         fs.mkdirSync(path.dirname(BASELINE), { recursive: true });
         fs.writeFileSync(BASELINE, JSON.stringify({
           tests,
-          coverage: coverage !== null ? coverage : (baseline ? baseline.coverage : null),
+          coverage: coverage !== null ? { statements: { pct: coverage } } : (baseline ? baseline.coverage : null),
           ts: new Date().toISOString(),
         }, null, 2) + '\n');
       }

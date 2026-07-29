@@ -206,7 +206,7 @@ function notifyHalt(storyId, phase, attempt, reasons) {
         throw new Error(`Webhook URL hostname "${url.hostname}" is not hooks.slack.com — update ~/.keel/secrets/slack.webhook`);
       }
       const body = JSON.stringify({
-        text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): ${selfInvocation()} resume ${storyId} --phase ${phase} --notes "..."`,
+        text: `:rotating_light: Keel pipeline HALTED — story ${storyId}, phase ${phase} failed ${attempt} times.\n${reasons}\nResume (human decision required): node ~/.keel/bin/keel-state.cjs resume ${storyId} --phase ${phase} --notes "..."`,
       });
       const req = require('https').request(url, {
         method: 'POST',
@@ -841,6 +841,16 @@ function cmdResume(storyId, args) {
   const notes = (flag(args, '--notes') || '').trim();
   if (!Number.isInteger(phase) || !notes) {
     die(64, 'usage: resume <story-id> --phase N --notes "human rationale" — notes are REQUIRED; resume records a human decision, agents must never resume on their own initiative');
+  }
+  // HIGH-2: require the preceding phase output file to exist before resuming.
+  // Prevents a confusing "input file not found" failure at the next gate when
+  // the pipeline was resumed into the middle without predecessor outputs.
+  if (phase > 1) {
+    const prevPad = String(phase - 1).padStart(2, '0');
+    let prevExists = false;
+    try { prevExists = fs.readdirSync(stateDir(storyId)).some((f) => f.startsWith(prevPad + '-') && f.endsWith('.json')); }
+    catch { /* stateDir unreadable — withLock below will surface the real error */ }
+    if (!prevExists) die(1, `resume --phase ${phase} refused: no phase-${phase - 1} output file in .keel/state/${storyId}/ — the preceding phase must have a gated output before resuming here. Run 'status ${storyId}' to see the full pipeline state.`);
   }
   withLock(storyId, () => {
     const manifest = readManifest(storyId);

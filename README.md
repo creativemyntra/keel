@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.16.7
+# Keel AI-SDLC Framework v3.16.8
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -16,7 +16,7 @@ claude plugin install keel
 
 # 2. Verify installation
 claude plugin list
-# -> keel v3.16.7 [x]
+# -> keel v3.16.8 [x]
 
 # 3. Initialize your project
 /keel:init --mode=new --stack=cakephp
@@ -97,7 +97,7 @@ snapshots) is done by a zero-dependency **state engine**
 [x] **Staged Deployment** -- canary / blue-green rollout via the release gate  
 
 ---
-## What's New in v3.16.7
+## What's New in v3.16.8
 
 - **Forensic engine audit: 14 fixes** — Comprehensive self-audit of `keel-state.cjs` and `keel-classify-gate.cjs` resolved 3 CRITICAL, 4 HIGH, 4 MEDIUM, and 3 LOW findings.
 - **Path traversal closed (CRIT-02)** — `story_id` validated with strict `^[A-Za-z0-9_-]+$` regex at CLI entry; arbitrary filesystem access via crafted story IDs is blocked (exit 64).
@@ -210,7 +210,7 @@ That's it! The plugin will:
 **Verify:**
 ```bash
 claude plugin list
-# -> keel v3.16.7
+# -> keel v3.16.8
 ```
 
 ### Method 2: npm Global Package (not yet published -- coming soon)
@@ -249,27 +249,27 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.16.7
+        uses: creativemyntra/keel@v3.16.8
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
       
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.16.7
+        uses: creativemyntra/keel@v3.16.8
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
       
       - name: Run Tests
-        uses: creativemyntra/keel@v3.16.7
+        uses: creativemyntra/keel@v3.16.8
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
       
       - name: Security Scan
-        uses: creativemyntra/keel@v3.16.7
+        uses: creativemyntra/keel@v3.16.8
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -650,7 +650,7 @@ Standardize workflows across teams with governance.
 Automate development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.16.7
+- uses: creativemyntra/keel@v3.16.8
   with:
     phase: 'all'  # Run complete pipeline
 ```
@@ -816,10 +816,10 @@ Then:
 
 ---
 
-**Version:** 3.16.7  
+**Version:** 3.16.8  
 **Released:** 2026-07-21  
 **Status:** PRODUCTION READY  
 **Agents:** 15 (10 pipeline phase + 2 meta/support (scrum-master, product-owner-standalone-use) + 3 infrastructure (handshake, audit, state-management))
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.16.7 (https://github.com/creativemyntra/keel/releases/tag/v3.16.7)
+**Tag:** v3.16.8 (https://github.com/creativemyntra/keel/releases/tag/v3.16.8)
