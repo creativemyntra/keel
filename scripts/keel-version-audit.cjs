@@ -46,7 +46,7 @@ const HISTORICAL_LINE_PATTERNS = [
   /^-*##\s+\[\d+\.\d+\.\d+\]/, // CHANGELOG section headers (with optional --- prefix)
   /^\|\s+\d+\.\d+\.\d+\s+\|/,  // TECHNICAL-SPECIFICATIONS version table rows
   /^#+\s+What.?s New in v\d+\.\d+\.\d+/, // README "What's New in vX.Y.Z" historical sections
-  /\(v\d+\.\d+\.\d+\)/,        // "(v3.16.3)" — "introduced in" notations
+  /\(v\d+\.\d+\.\d+\+?\)/,      // "(v3.16.3)" or "(v3.16.8+)" — "introduced in" notations
   /done in v\d+\.\d+\.\d+/i,   // "done in v3.16.3" roadmap notes
   /added.*in.*v\d+\.\d+\.\d+/i,
   /introduced.*v\d+\.\d+\.\d+/i,
