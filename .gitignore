@@ -81,3 +81,6 @@ playwright-report/
 # E2E evidence — machine-specific stdout snapshots with absolute tmp paths.
 # Tests themselves are the evidence; these files add noise and stale faster than CI runs.
 docs/e2e-evidence/
+# Playwright screenshots dropped at repo root by MCP tool (session artifacts only)
+e2e-*.png
+.playwright-mcp/
