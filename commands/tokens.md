@@ -1,83 +1,84 @@
-# /keel:tokens — Token Usage Summary
+---
+description: Show token usage for the current pipeline run, or toggle economy settings.
+argument-hint: [<story-id>] [confirm on|off] [cache on|off]
+---
 
-Show cumulative token usage for the current pipeline run, or toggle the
-pre-spawn confirmation gate.
+The user invoked `/keel:tokens` with: $ARGUMENTS
 
-## Usage
+## Routing
+
+- No argument or just `<story-id>` → print token ledger for that story (or prompt for story-id)
+- `confirm on|off` → toggle `confirm_before_spawn` for this session
+- `cache on|off` → toggle `prompt_caching` for this session
+
+## Print the ledger
+
+Run the engine command — do NOT reconstruct the table from conversation memory:
+
+```bash
+node ~/.keel/bin/keel-state.cjs token-ledger summary <story-id>
+```
+
+The engine reads `.keel/state/<story-id>/token-ledger.jsonl` and prints:
 
 ```
-/keel:tokens               # print current token ledger summary
-/keel:tokens confirm on    # enable confirm_before_spawn for this session
-/keel:tokens confirm off   # disable confirm_before_spawn for this session
-/keel:tokens cache on      # enable prompt_caching for this session
-/keel:tokens cache off     # disable prompt_caching for this session
-```
+=== Keel Token Ledger — <STORY-ID> ===
 
-## What it prints
-
-```
-=== Keel Token Usage — <STORY-ID> ===
-
-Phase | Agent              | Model  | Est. input | Est. output | Cache saved | Est. net
-------+--------------------+--------+------------+-------------+-------------+---------
-1     | business-analyst   | haiku  |       ~20k |         ~8k |         ~7k |     ~21k
-4     | solution-architect | sonnet |       ~60k |        ~50k |        ~11k |     ~99k
-5     | software-engineer  | sonnet |       ~60k |        ~50k |        ~11k |     ~99k
+Phase | Agent                | Model   | Est.in  | Est.out | Cached  | Net
+------+---------------------+--------+--------+--------+--------+--------
+1     | business-analyst     | haiku   |    ~20k |     ~8k |     ~7k |    ~21k
+5     | software-engineer    | sonnet  |    ~60k |    ~50k |    ~11k |    ~99k
 ...
-TOTAL |                    |        |      ~XXXk |        ~XXXk |       ~XXXk |    ~XXXk
-
-Budget cap (economy.yml): 420k output tokens
-Remaining budget:         ~XXXk output tokens
-Cache TTL:                5 min (ephemeral) — phases run back-to-back stay warm
-confirm_before_spawn:     on | off
-prompt_caching:           on | off
+TOTAL |                      |         |   ~XXXk |   ~XXXk |   ~XXXk |   ~XXXk
 ```
 
-## How estimates are derived
+## Diagnostic — if the ledger is empty
 
-- **Output**: `economy.token_weights.<agent>` from `.keel/economy.yml`
-- **Input**: `economy.context_budget_files × ~10k` per file (avg)
-- **Cache saved**: BP-1+BP-2 (system prompt + tools prefix) × 90%; haiku ~7k, sonnet ~11k per spawn. Repeat calls within the 5-min TTL also cache BP-3 (static context).
-- Values come from the orchestrator's `[token-estimate:]` + `[cache-estimate:]` ledger lines — not re-derived on demand
+If `token-ledger summary` prints "no entries", the orchestrator did not append
+ledger entries after phase gates. Possible causes:
 
-## Prompt cache breakpoints
+1. **economy.yml not read at startup** — orchestrator used inline defaults instead
+   of the live file. Verify the pipeline started with:
+   `[economy-config: confirm_before_spawn=true token_summary=true ...]`
+2. **Old orchestrator context** — the agent was spawned before the token-ledger
+   write instruction was added to `agents/orchestrator.md`. Re-run the pipeline
+   to get the updated orchestrator behavior.
+3. **Ledger write failed** — check for a Bash error after the `token-ledger append`
+   call in the orchestrator's output.
 
-When `prompt_caching: true`, the orchestrator places `cache_control: {type: "ephemeral"}` at 3 canonical boundaries:
+## Read current economy settings
 
-| BP | After | What is cached | Stable? |
-|----|-------|---------------|---------|
-| BP-1 | System prompt end | Agent persona + guardrails | Yes — same per agent type |
-| BP-2 | Tool definitions end | Tool list | Yes — stable per pipeline run |
-| BP-3 | Static context end | Prior phase output files | Yes — until next phase output changes |
+```bash
+cat .keel/economy.yml
+```
 
-Dynamic per-call instructions (after BP-3) are never cached — they change every spawn.
+## Toggle confirm_before_spawn (session only)
 
-Savings model: BP-1 + BP-2 ≈ 90% of system+tools cost. BP-3 savings apply on retry/re-spawn within TTL.
-
-## Toggle confirm_before_spawn
-
-`confirm_before_spawn` can be toggled for the current session without editing
-`economy.yml`. Session override resets when the conversation ends. To make it
-permanent, edit `.keel/economy.yml` directly:
+When you say `confirm on` or `confirm off`:
+- Update `.keel/economy.yml` `confirm_before_spawn` in-session, confirm the change
+- Tell the user that the next agent spawn will (or will not) pause for OK
 
 ```yaml
 economy:
-  confirm_before_spawn: true
+  confirm_before_spawn: true   # on → pause before every spawn with estimate
 ```
 
-When enabled, the orchestrator emits before every phase agent spawn:
+The orchestrator reads economy.yml before phase 1 every run, so any change
+takes effect on the next pipeline invocation.
+
+## Token estimate format (emitted by orchestrator before every spawn)
+
 ```
-[token-estimate: phase N / <agent> / <model> / ~Xk input + ~Yk output ≈ ~Zk total]
-[cache-estimate: BP-1+BP-2 ~12k cached → ~11k tokens saved (~90%); BP-3 ~20k cached on repeat]
+[economy-config: confirm_before_spawn=true token_summary=true prompt_caching=true model_tiering=true]
+[token-estimate: phase 5 / software-engineer / sonnet / ~60k input + ~50k output ≈ ~110k]
+[cache-estimate: BP-1+BP-2 ~12k cached → ~11k saved (~90%); BP-3 ~20k cached on repeat]
 Proceed with this spawn? (reply OK to continue, or describe a change)
 ```
-No spawn happens until human replies OK.
 
-## Pre-spawn estimate format (always emitted, confirm on or off)
+No spawn happens until human replies OK (when confirm_before_spawn=true).
 
-The orchestrator always emits two estimate lines before every spawn:
-
-```
-[token-estimate: phase 5 / software-engineer / sonnet / ~60k input + ~50k output ≈ ~110k]
-[cache-estimate: BP-1+BP-2 ~12k cached → ~11k saved; BP-3 ~20k cached on repeat calls]
-```
+## Rules
+- Always use the engine command for ledger output — never reconstruct from conversation.
+- If the story-id is unknown, ask for it rather than guessing.
+- Session toggles are advisory (they edit economy.yml or instruct the orchestrator's
+  next read); they do not retroactively change already-spawned agents.

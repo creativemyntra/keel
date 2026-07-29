@@ -1390,9 +1390,67 @@ function cmdPhaseMode(args) {
   die(1, `unknown phase-mode subcommand: ${sub} (expected set or get)`);
 }
 
+// ------------------------------------------------------------------- token ledger
+// Persistent store for per-spawn token estimates so the orchestrator can produce
+// a final summary even after context compaction wipes the conversation history.
+// File: .keel/state/<story>/token-ledger.jsonl  (one JSON object per line)
+// Commands:
+//   token-ledger append <story> --phase N --agent <name> --model <id>
+//                               --input <k> --output <k> [--cached <k>]
+//   token-ledger summary <story> [--json]
+
+function tokenLedgerPath(storyId) { return path.join(stateDir(storyId), 'token-ledger.jsonl'); }
+
+function cmdTokenLedger(args) {
+  const sub = args[0];
+  const storyId = args[1];
+  if (!sub || !storyId) die(64, 'usage: token-ledger <append|summary> <story-id> [options]');
+  validateStoryId(storyId);
+
+  if (sub === 'append') {
+    const phase = parseInt(flag(args, '--phase') || '0', 10);
+    const agent = flag(args, '--agent') || '';
+    const model = flag(args, '--model') || 'sonnet';
+    const inputK = parseFloat(flag(args, '--input') || '0');
+    const outputK = parseFloat(flag(args, '--output') || '0');
+    const cachedK = parseFloat(flag(args, '--cached') || '0');
+    if (!phase || !agent) die(64, 'token-ledger append requires --phase, --agent');
+    const entry = JSON.stringify({ ts: nowIso(), phase, agent, model, input_k: inputK, output_k: outputK, cached_k: cachedK, net_k: inputK + outputK - cachedK });
+    const lPath = tokenLedgerPath(storyId);
+    fs.mkdirSync(path.dirname(lPath), { recursive: true });
+    fs.appendFileSync(lPath, entry + '\n');
+    console.log(`OK: token-ledger entry appended — phase ${phase} / ${agent} / ${model}`);
+    return;
+  }
+
+  if (sub === 'summary') {
+    const lPath = tokenLedgerPath(storyId);
+    let entries = [];
+    try { entries = fs.readFileSync(lPath, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)); }
+    catch { /* no ledger yet */ }
+    if (!entries.length) { console.log(`token-ledger: no entries for story ${storyId} — orchestrator may not have run or did not append entries`); return; }
+    if (args.includes('--json')) { console.log(JSON.stringify(entries, null, 2)); return; }
+    const totIn = entries.reduce((s, e) => s + e.input_k, 0);
+    const totOut = entries.reduce((s, e) => s + e.output_k, 0);
+    const totCached = entries.reduce((s, e) => s + e.cached_k, 0);
+    const totNet = entries.reduce((s, e) => s + e.net_k, 0);
+    const hdr = 'Phase | Agent                | Model      | Est.in  | Est.out | Cached  | Net';
+    const sep = '------+---------------------+-----------+--------+--------+--------+--------';
+    const shortModel = (m) => (m || '').replace(/^claude-/, '').replace(/-\d{8,}$/, '').slice(0, 10);
+    const rows = entries.map((e) =>
+      `${String(e.phase).padEnd(5)} | ${e.agent.padEnd(20)} | ${shortModel(e.model).padEnd(10)} | ${String(e.input_k + 'k').padStart(7)} | ${String(e.output_k + 'k').padStart(7)} | ${String(e.cached_k + 'k').padStart(7)} | ${String(e.net_k.toFixed(1) + 'k').padStart(7)}`
+    );
+    const tot = `TOTAL |                      |            | ${String(totIn.toFixed(1) + 'k').padStart(7)} | ${String(totOut.toFixed(1) + 'k').padStart(7)} | ${String(totCached.toFixed(1) + 'k').padStart(7)} | ${String(totNet.toFixed(1) + 'k').padStart(7)}`;
+    console.log(['', `=== Keel Token Ledger — ${storyId} ===`, '', hdr, sep, ...rows, sep, tot, ''].join('\n'));
+    return;
+  }
+
+  die(64, `unknown token-ledger subcommand: ${sub} (expected append or summary)`);
+}
+
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
@@ -1415,5 +1473,6 @@ switch (cmd) {
   case 'revert-check': cmdRevertCheck(storyId, rest); break;
   case 'prescan': cmdPrescan(storyId); break;
   case 'phase-mode': cmdPhaseMode([storyId, ...rest]); break;
+  case 'token-ledger': cmdTokenLedger([storyId, ...rest]); break;
   default: die(64, `unknown command: ${cmd}`);
 }
