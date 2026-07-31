@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-31T07:18:32.845Z",
+  "generated_at": "2026-07-31T09:26:55.377Z",
   "nodes": {
     "App\\Controller\\HealthController": {
       "file": "src/Controller/HealthController.php",

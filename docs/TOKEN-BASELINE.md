@@ -1,186 +1,313 @@
 # Keel Token Baseline — v3.16.9
 
-**Date:** 2026-07-31  
-**Purpose:** Establish a measurement baseline before any token-optimization changes to the framework  
-**Methodology:** One complete story run from cold session start  
+**Status:** [TO BE POPULATED — Run a complete story and record real metrics here]
 
 ---
 
-## Run Details
+## Before You Start
 
-| Field | Value | Measured/Estimated |
-|-------|-------|-------------------|
-| Story ID | TBD | — |
-| Story Title | TBD | — |
-| Scope | feature/defect | — |
-| Session Start | [ISO timestamp] | — |
-| Session End | [ISO timestamp] | — |
-| Wall-clock Duration | [mm:ss] | measured |
+This file records **real token metrics from a complete story run**. Do NOT estimate or use templates.
 
----
-
-## Phases Executed
-
-| Phase | Agent | Duration | Model | Effort Level | Status |
-|-------|-------|----------|-------|-------------|--------|
-| 1 | intake | [mm:ss] | haiku / sonnet | [level] | PASS/FAIL |
-| 2 | business-analyst | [mm:ss] | [model] | [level] | PASS/FAIL |
-| 3 | ui-designer | [mm:ss] | [model] | [level] | PASS/FAIL |
-| 4 | solution-architect | [mm:ss] | [model] | [level] | PASS/FAIL |
-| 5 | software-engineer | [mm:ss] | [model] | [level] | PASS/FAIL |
-| 6 | qa-engineer | [mm:ss] | [model] | [level] | PASS/FAIL |
-| 7 | e2e-engineer | [mm:ss] | [model] | [level] | PASS/FAIL |
-| 8 | security-engineer | [mm:ss] | [model] | [level] | PASS/FAIL |
-| 9 | technical-writer | [mm:ss] | [model] | [level] | PASS/FAIL |
-| 10 | release-manager | [mm:ss] | [model] | [level] | PASS/FAIL |
+**Prerequisites:**
+1. Open a **fresh Claude Code session** (close all terminals, start new)
+2. Pick a simple feature story (5-10 minutes of work, not complex)
+3. Run: `/keel:implement-feature story="BASELINE-001" feature="[simple task]"`
+4. After EACH phase completes, copy metrics from **Claude Code Session Summary**
+5. Fill in this file with the MEASURED values
+6. Commit the file with real data
 
 ---
 
-## Token Usage — Session Totals
+## Story Details
 
-| Metric | Value | Measured/Estimated | Notes |
-|--------|-------|-------------------|-------|
-| Input Tokens | [number] | measured | From Claude Code UI → Session Summary |
-| Output Tokens | [number] | measured | From Claude Code UI → Session Summary |
-| Cache Read Input Tokens | [number] | measured | Tokens saved by prompt cache hits |
-| Cache Creation Input Tokens | [number] | measured | Tokens written to cache on first turns |
-| **Cache Read-to-Creation Ratio** | [ratio] | measured | cache_read / cache_creation; >1.0 means caching is active |
-| Total Effective Tokens | [number] | estimated | input + output; excludes cache read (already counted) |
+| Field | Measured Value | Measured/Estimated |
+|-------|---|---|
+| Story ID | [e.g., BASELINE-001] | measured |
+| Feature | [e.g., Add user profile avatar upload] | measured |
+| Scope | feature OR defect | measured |
+| Session Start | [ISO timestamp] | measured |
+| Session End | [ISO timestamp] | measured |
+| Total Duration | [HH:MM:SS] | measured |
 
 ---
 
 ## Per-Phase Breakdown
 
-**How to capture per-phase metrics:**
+**After EACH phase, copy from Claude Code UI → Session Summary:**
 
-After each phase completes, before moving to the next:
+### Phase 1: Product Owner (Intake)
 
-1. Look at Claude Code's **Session Summary** (visible in the UI after each response)
-2. Record the **incremental** token change:
-   - Input tokens added
-   - Output tokens added
-   - Cache read/creation deltas
-   - Model and effort level reported
+| Field | Value | Measured/Estimated |
+|-------|-------|---|
+| Duration | [mm:ss] | measured |
+| Model | haiku OR sonnet OR opus | measured |
+| Effort | trivial OR normal OR full | measured |
+| Input Tokens | [number] | measured |
+| Output Tokens | [number] | measured |
+| Cache Read | [number] | measured |
+| Cache Creation | [number] | measured |
 
-**Template for each phase:**
-
-```
-### Phase N: [agent-name]
-
-Duration: [mm:ss] (wall-clock)
-Model: [haiku/sonnet/opus/fable]
-Effort Level: [trivial/normal/full]
-
-Input Tokens (phase delta): [number] (measured)
-Output Tokens (phase delta): [number] (measured)
-Cache Read (phase delta): [number] (measured)
-Cache Creation (phase delta): [number] (measured)
-
-Gate Verdict: PASS / FAIL / SKIPPED
-Notes: [Any cache invalidation observed? Model selection rationale?]
-```
+Gate: PASS / FAIL
 
 ---
 
-## Cache Efficiency Analysis
+### Phase 2: Business Analyst
 
-### Expected Behavior
+| Field | Value | Measured/Estimated |
+|-------|-------|---|
+| Duration | [mm:ss] | measured |
+| Model | haiku OR sonnet OR opus | measured |
+| Effort | trivial OR normal OR full | measured |
+| Input Tokens | [number] | measured |
+| Output Tokens | [number] | measured |
+| Cache Read | [number] | measured |
+| Cache Creation | [number] | measured |
 
-- **First turn of session:** Cache creation only (no prior context cached)
-- **Turns 2-10 (phases 2-10):** Cache read should be > cache creation
-  - System prompt + tool definitions + static context are cached
-  - Per-turn changes invalidate and rebuild the cache
-- **Ratio to expect:** 2.0x to 5.0x read-to-creation (if caching works well)
+Gate: PASS / FAIL
 
-### What Invalidates Cache
+---
 
-Record any of these observed during the run:
+### Phase 3: UI Designer
 
-- [ ] CodeGraph changed (file impact set changed)
-- [ ] Agent definition updated (frontmatter, tools list)
-- [ ] System prompt updated
-- [ ] Context budget exceeded (new files loaded)
-- [ ] Phase schema or gate checks modified
+| Field | Value | Measured/Estimated |
+|-------|-------|---|
+| Duration | [mm:ss] | measured |
+| Model | haiku OR sonnet OR opus | measured |
+| Effort | trivial OR normal OR full | measured |
+| Input Tokens | [number] | measured |
+| Output Tokens | [number] | measured |
+| Cache Read | [number] | measured |
+| Cache Creation | [number] | measured |
+
+Gate: PASS / FAIL
+
+---
+
+### Phase 4: Solution Architect
+
+| Field | Value | Measured/Estimated |
+|-------|-------|---|
+| Duration | [mm:ss] | measured |
+| Model | haiku OR sonnet OR opus | measured |
+| Effort | trivial OR normal OR full | measured |
+| Input Tokens | [number] | measured |
+| Output Tokens | [number] | measured |
+| Cache Read | [number] | measured |
+| Cache Creation | [number] | measured |
+
+Gate: PASS / FAIL
+
+---
+
+### Phase 5: Software Engineer
+
+| Field | Value | Measured/Estimated |
+|-------|-------|---|
+| Duration | [mm:ss] | measured |
+| Model | haiku OR sonnet OR opus | measured |
+| Effort | trivial OR normal OR full | measured |
+| Input Tokens | [number] | measured |
+| Output Tokens | [number] | measured |
+| Cache Read | [number] | measured |
+| Cache Creation | [number] | measured |
+
+Gate: PASS / FAIL
+
+---
+
+### Phase 6: QA Engineer
+
+| Field | Value | Measured/Estimated |
+|-------|-------|---|
+| Duration | [mm:ss] | measured |
+| Model | haiku OR sonnet OR opus | measured |
+| Effort | trivial OR normal OR full | measured |
+| Input Tokens | [number] | measured |
+| Output Tokens | [number] | measured |
+| Cache Read | [number] | measured |
+| Cache Creation | [number] | measured |
+
+Gate: PASS / FAIL
+
+---
+
+### Phase 7: E2E Engineer
+
+| Field | Value | Measured/Estimated |
+|-------|-------|---|
+| Duration | [mm:ss] | measured |
+| Model | haiku OR sonnet OR opus | measured |
+| Effort | trivial OR normal OR full | measured |
+| Input Tokens | [number] | measured |
+| Output Tokens | [number] | measured |
+| Cache Read | [number] | measured |
+| Cache Creation | [number] | measured |
+
+Gate: PASS / FAIL
+
+---
+
+### Phase 8: Security Engineer
+
+| Field | Value | Measured/Estimated |
+|-------|-------|---|
+| Duration | [mm:ss] | measured |
+| Model | haiku OR sonnet OR opus | measured |
+| Effort | trivial OR normal OR full | measured |
+| Input Tokens | [number] | measured |
+| Output Tokens | [number] | measured |
+| Cache Read | [number] | measured |
+| Cache Creation | [number] | measured |
+
+Gate: PASS / FAIL
+
+---
+
+### Phase 9: Technical Writer
+
+| Field | Value | Measured/Estimated |
+|-------|-------|---|
+| Duration | [mm:ss] | measured |
+| Model | haiku OR sonnet OR opus | measured |
+| Effort | trivial OR normal OR full | measured |
+| Input Tokens | [number] | measured |
+| Output Tokens | [number] | measured |
+| Cache Read | [number] | measured |
+| Cache Creation | [number] | measured |
+
+Gate: PASS / FAIL
+
+---
+
+### Phase 10: Release Manager
+
+| Field | Value | Measured/Estimated |
+|-------|-------|---|
+| Duration | [mm:ss] | measured |
+| Model | haiku OR sonnet OR opus | measured |
+| Effort | trivial OR normal OR full | measured |
+| Input Tokens | [number] | measured |
+| Output Tokens | [number] | measured |
+| Cache Read | [number] | measured |
+| Cache Creation | [number] | measured |
+
+Gate: PASS / FAIL
+
+---
+
+## Session Totals
+
+| Metric | Value | Measured/Estimated |
+|--------|-------|---|
+| **Total Input Tokens** | [sum of all phases] | measured |
+| **Total Output Tokens** | [sum of all phases] | measured |
+| **Total Cache Read** | [sum of all phases] | measured |
+| **Total Cache Creation** | [sum of all phases] | measured |
+| **Cache Read-to-Creation Ratio** | [read / creation] | measured |
+| **Effective Cost** | [input + output] | measured |
+| **Cache Savings** | [cache read tokens] | measured |
+
+---
+
+## Cache Analysis
+
+**Expected behavior:**
+- Phase 1: High cache creation (first turn, writing cache)
+- Phases 2-10: High cache read (reusing cache from phase 1)
+- Ratio should improve from 1.0x (phase 1) to 2.0x+ (phases 2-10)
+
+**Observed behavior:**
+
+```
+Phase 1 cache: [report what happened]
+Phases 2-10:   [report if cache improved]
+Overall ratio: [cache_read / cache_creation across all phases]
+```
+
+**Cache invalidations observed:**
+- [ ] CodeGraph changed (file impact set)
+- [ ] Agent definition updated
+- [ ] System prompt changed
+- [ ] Context budget exceeded
+- [ ] Schema changed
 - [ ] Memory files edited
 - [ ] Other: [describe]
 
-**Cache invalidation checklist:** All items should be unchecked for a clean baseline.
+---
+
+## Measurement Integrity Checklist
+
+✅ **Before committing this file:**
+
+- [ ] All values from Claude Code Session Summary (not estimated)
+- [ ] All fields marked "measured"
+- [ ] Every phase has cache metrics (0 if none, not blank)
+- [ ] Cache ratio calculated correctly: cache_read / cache_creation
+- [ ] No code changes to agents/, economy.yml, or scripts/ (verify: `git status`)
+- [ ] Session was cold start (fresh Claude Code terminal)
+- [ ] All 10 phases completed (or note which were skipped)
 
 ---
 
-## Honest Measurement Notes
+## Measurement Caveat
 
-⚠️ **CRITICAL:** This baseline is only valid for ONE run. Do NOT compare it to a second run
-of the same story, because:
+⚠️ **CRITICAL — Record this before next run:**
 
-1. Cache may be warm from a prior session (cost is hidden)
-2. Code changes between runs (confounds the comparison)
-3. Different agents may spawn (different model/effort mix)
+A **second run** of the same story from the **same session** is NOT comparable to this baseline because:
+1. Cache may be warm (prior session's cache hits)
+2. Code may have changed
+3. Model selection may differ (different effort tiers)
 
-**To compare before/after honestly:**
-
-- **Option A (hardest, most honest):** Run both baseline and optimized stories from separate cold sessions,
-  on trivial stories of the same scope.
-- **Option B (acceptable):** Compare averages across 3-5 similar stories in each config,
-  not individual runs.
-- **Option C (not useful):** Compare a single warm run to this cold baseline (invalidates the comparison).
+**For honest before/after comparison:**
+- ✅ Run baseline from cold session A (this file)
+- ✅ Run optimized from separate cold session B
+- ✅ Compare per-phase averages, not single runs
+- ❌ Never compare warm re-run to cold baseline
+- ❌ Never claim savings from same-session repeat
 
 ---
 
-## How to Fill This In
+## How to Fill This In (Step by Step)
 
-1. **Start a fresh Claude Code session** (terminal, desktop, or web)
-2. **Run the baseline story:**
+1. **Open fresh Claude Code** (terminal, desktop, or web)
+2. **Run:** `/keel:implement-feature story="BASELINE-001" feature="[simple task]"`
+3. **After phase 1 completes:**
+   - Look at Claude Code UI → "Session Summary"
+   - Copy: Input tokens, Output tokens, Cache read, Cache creation
+   - Note: Model (haiku/sonnet/opus), Effort (trivial/normal/full)
+   - Stop timer: record duration
+   - Paste into Phase 1 section above
+4. **Repeat for phases 2-10** (or stop if story completes early)
+5. **Sum all phases** into Session Totals
+6. **Calculate ratio:** cache_read / cache_creation
+7. **Check the integrity checklist**
+8. **Commit this file:**
    ```bash
-   /keel:implement-feature story="BASELINE-001" feature="[simple feature]"
+   git add docs/TOKEN-BASELINE.md
+   git commit -m "baseline: complete 10-phase story — [story-id] with real metrics"
    ```
-3. **After each phase:**
-   - Copy token metrics from Claude Code UI
-   - Record duration (visible in phase output or transcript)
-   - Note the model and effort level
-   - Paste into the per-phase breakdown above
-4. **After all 10 phases:**
-   - Fill in session totals
-   - Calculate cache read-to-creation ratio
-   - Check the cache invalidation checklist
-   - Add notes on any observations
-5. **Commit this file with the populated data**
 
 ---
 
-## Baseline Run Record (EDIT BELOW)
+## This Is Not a Template
 
-[Placeholder for actual run data — replace this section after execution]
+This file is **ready to be filled in**. Every bracket `[like this]` is a place to paste real measured data.
 
-### Session Metadata
-- Baseline Story: [STORY-ID]
-- Session Start: [timestamp]
-- Session End: [timestamp]
-- Total Duration: [mm:ss]
-
-### Session Totals (Measured)
-- Input Tokens: [number]
-- Output Tokens: [number]
-- Cache Read Tokens: [number]
-- Cache Creation Tokens: [number]
-- **Cache Read-to-Creation Ratio: [ratio]**
-
-### Key Findings
-- [Summary of which phases were most expensive]
-- [Whether caching worked as expected]
-- [Any surprising token costs]
-- [Any cache invalidations]
+Do not commit this file with brackets still in it. Every value must be a number, timestamp, or one of the valid choices (haiku/sonnet/opus, trivial/normal/full, etc.).
 
 ---
 
-## Related Documentation
+## Next: Before/After Comparison
 
-- `.keel/economy.yml` — Token weight caps and cache configuration
-- `docs/WORKFLOW.md` § Token Economy — Philosophy behind the settings
-- `commands/tokens.md` — How to interpret token estimates during development
+Once this baseline is complete and committed, you can:
 
----
+1. Make changes to economy.yml or agent definitions
+2. Run the same story again from a cold session
+3. Populate a new file: `docs/TOKEN-BASELINE-OPTIMIZED.md`
+4. Compare:
+   - Same phases completed?
+   - Lower per-phase tokens?
+   - Cache ratio stable or better?
+   - Total cost improved?
 
-**Next:** Once this baseline is recorded and committed, run the same story again with
-proposed optimizations and record metrics in a new file (e.g., `TOKEN-OPTIMIZED-v2.md`)
-to compare before/after honestly.
+**Without this baseline, optimization claims are meaningless.**
