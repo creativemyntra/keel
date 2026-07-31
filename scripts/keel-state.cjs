@@ -586,6 +586,53 @@ const checkRegistry = {
     return { id: 'C-0003', status: 'PASS', detail: 'test marker not set (normal operation)' };
   },
 
+  // C-0005 (T3): Findings terminal state validation — block PASS if CRITICAL/HIGH findings are OPEN.
+  // Enforces that defects, security issues, and performance concerns are resolved before advancing.
+  // MEDIUM/LOW findings do not block (advisory only).
+  // Status: PASS if all blocking findings resolved, FAIL if any CRITICAL/HIGH at OPEN.
+  findings_terminal_state: (storyId, phase, manifest) => {
+    const prefix = String(phase).padStart(2, '0') + '-';
+    const phaseFile = fs.readdirSync(stateDir(storyId))
+      .find((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+    if (!phaseFile) {
+      return { id: 'C-0005', status: 'SKIP', detail: 'phase file not found (pre-validation check)' };
+    }
+
+    let phaseOutput;
+    try {
+      phaseOutput = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+    } catch {
+      return { id: 'C-0005', status: 'SKIP', detail: 'phase file unreadable (pre-validation check)' };
+    }
+
+    if (!Array.isArray(phaseOutput.findings) || phaseOutput.findings.length === 0) {
+      return { id: 'C-0005', status: 'PASS', detail: 'no findings in phase output' };
+    }
+
+    // Check for blocking findings (CRITICAL or HIGH at OPEN state)
+    const blocking = phaseOutput.findings.filter((f) =>
+      (f.severity === 'CRITICAL' || f.severity === 'HIGH') && f.state === 'OPEN'
+    );
+
+    if (blocking.length > 0) {
+      const details = blocking
+        .map((f) => `${f.id} [${f.severity}]: ${f.text}`)
+        .join('; ');
+      return {
+        id: 'C-0005',
+        status: 'FAIL',
+        detail: `${blocking.length} blocking finding(s): ${details}`
+      };
+    }
+
+    return {
+      id: 'C-0005',
+      status: 'PASS',
+      detail: `all CRITICAL/HIGH findings resolved; ${phaseOutput.findings.length} finding(s) total`
+    };
+  },
+
   // C-0004 (T2): Phase sequence validation — all predecessor phases must have valid output.
   // Verifies that before advancing to phase N, all phases that come before N in the
   // expected_phases list have valid output files (exist and pass schema validation).
@@ -1724,9 +1771,103 @@ function cmdTokenLedger(args) {
   die(64, `unknown token-ledger subcommand: ${sub} (expected append or summary)`);
 }
 
+// ------------------------------------------------------------------- finding (T3)
+// Transition finding state: OPEN → RESOLVED|DEFERRED|WAIVED
+// RESOLVED requires commit sha (verified with git)
+// DEFERRED rejected for CRITICAL findings
+// WAIVED requires approver and reason (blocked until FINDING-A)
+
+function cmdFinding(args) {
+  const sub = args[0];
+  const storyId = args[1];
+  const findingId = args[2];
+  const newState = flag(args, '--state') || '';
+  if (!sub || !storyId || !findingId || !newState) {
+    die(64, 'usage: finding <story-id> <finding-id> --state RESOLVED|DEFERRED|WAIVED [--commit <sha>] [--approver <name>] [--reason "..."]');
+  }
+  validateStoryId(storyId);
+
+  if (sub !== 'set-state') die(64, 'usage: finding <story-id> <finding-id> --state ...');
+
+  const manifestPath = path.join(stateDir(storyId), 'manifest.json');
+  if (!fs.existsSync(manifestPath)) die(1, `story ${storyId} not found`);
+
+  // Find the phase file with this finding
+  const stateDir_ = stateDir(storyId);
+  const phaseFiles = fs.readdirSync(stateDir_)
+    .filter((f) => /^\d{2}-.*\.json$/.test(f) && f.endsWith('.json'));
+
+  let foundInPhase = null;
+  let phaseOutputs = {};
+
+  for (const pf of phaseFiles) {
+    try {
+      const output = JSON.parse(fs.readFileSync(path.join(stateDir_, pf), 'utf8'));
+      phaseOutputs[pf] = output;
+      if (Array.isArray(output.findings)) {
+        const f = output.findings.find((fi) => fi.id === findingId);
+        if (f) {
+          foundInPhase = { file: pf, finding: f, output };
+          break;
+        }
+      }
+    } catch { /* skip */ }
+  }
+
+  if (!foundInPhase) die(1, `finding ${findingId} not found in any phase output`);
+
+  const { file: phaseFile, finding, output: phaseOutput } = foundInPhase;
+  const priorState = finding.state;
+
+  // Validate state transition
+  if (newState === 'RESOLVED') {
+    const commit = flag(args, '--commit') || '';
+    if (!commit) die(1, 'RESOLVED requires --commit <sha>');
+
+    // Verify commit exists and touches at least one file
+    let verifyOutput;
+    try {
+      verifyOutput = require('child_process').execSync(`git rev-parse ${commit} && git diff-tree --no-commit-id --name-only -r ${commit}`, { stdio: 'pipe', encoding: 'utf8' });
+    } catch {
+      die(1, `commit ${commit} not found or invalid — verify with: git log --oneline`);
+    }
+    const filesChanged = verifyOutput.trim().split('\n').filter(Boolean);
+    if (filesChanged.length === 0) {
+      die(1, `commit ${commit} does not change any files (empty commit) — cannot resolve finding`);
+    }
+
+    finding.state = 'RESOLVED';
+    finding.evidence = finding.evidence || {};
+    finding.evidence.commit = commit;
+  } else if (newState === 'DEFERRED') {
+    if (finding.severity === 'CRITICAL') die(1, 'CRITICAL findings cannot be deferred — must be resolved or waived');
+    die(1, 'DEFERRED requires human approval anchor — not yet implemented, see FINDING-A');
+  } else if (newState === 'WAIVED') {
+    die(1, 'WAIVED requires human approval anchor — not yet implemented, see FINDING-A');
+  } else {
+    die(64, `unknown state: ${newState} (expected RESOLVED, DEFERRED, or WAIVED)`);
+  }
+
+  // Update phase output and write back
+  const phasePath = path.join(stateDir_, phaseFile);
+  fs.writeFileSync(phasePath, JSON.stringify(phaseOutput, null, 2));
+
+  // Audit log
+  appendAudit(storyId, {
+    action: 'finding_state_changed',
+    finding_id: findingId,
+    prior_state: priorState,
+    new_state: finding.state,
+    evidence: finding.evidence || {},
+    notes: `finding state transitioned by user command`
+  });
+
+  console.log(`OK: ${findingId} state ${priorState} → ${finding.state}`);
+}
+
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
@@ -1750,5 +1891,6 @@ switch (cmd) {
   case 'prescan': cmdPrescan(storyId); break;
   case 'phase-mode': cmdPhaseMode([storyId, ...rest]); break;
   case 'token-ledger': cmdTokenLedger([storyId, ...rest]); break;
+  case 'finding': cmdFinding(['set-state', storyId, ...rest]); break;
   default: die(64, `unknown command: ${cmd}`);
 }

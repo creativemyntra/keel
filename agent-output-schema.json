@@ -42,8 +42,56 @@
       "type": "array",
       "minItems": 1,
       "maxItems": 15,
-      "items": { "type": "string" },
-      "description": "What the phase concluded, decided, or discovered. Reference file paths and identifiers — never inline file contents."
+      "items": {
+        "type": "object",
+        "required": ["id", "text", "severity", "state"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z]+-[0-9]+$",
+            "description": "Finding identifier (e.g., BUG-1, PERF-2, SEC-3)"
+          },
+          "text": {
+            "type": "string",
+            "description": "Human-readable finding description. Reference file paths and identifiers — never inline file contents."
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+            "description": "CRITICAL/HIGH findings block PASS if OPEN. MEDIUM/LOW do not block."
+          },
+          "state": {
+            "type": "string",
+            "enum": ["OPEN", "RESOLVED", "DEFERRED", "WAIVED"],
+            "description": "Terminal state. OPEN blocks PASS if severity CRITICAL/HIGH. RESOLVED requires commit verification. DEFERRED/WAIVED require human approval."
+          },
+          "evidence": {
+            "type": "object",
+            "description": "Evidence for the state transition (optional, populated by keel state finding --set-state)",
+            "properties": {
+              "commit": {
+                "type": "string",
+                "description": "Git commit SHA that resolved this finding"
+              },
+              "deferred_to": {
+                "type": "string",
+                "description": "Phase or future ticket this was deferred to"
+              },
+              "approver": {
+                "type": "string",
+                "description": "Name/email of human approver (for WAIVED)"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Verbatim reason for deferral or waiver (>= 15 words)"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Findings from this phase: defects, performance issues, security concerns, etc. Each finding has severity and state. CRITICAL/HIGH findings at OPEN block pipeline advancement."
     },
     "acceptance_criteria_ids": {
       "type": "array",

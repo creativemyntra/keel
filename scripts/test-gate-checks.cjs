@@ -330,6 +330,67 @@ test('exit code contract: --dry-run = 0', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
+// TASK T3: Findings Terminal State Check (C-0005)
+// ─────────────────────────────────────────────────────────────────────────
+
+// AC-1: HIGH finding at OPEN + PASS verdict → rejected, finding named
+test('T3-AC1: HIGH finding OPEN blocks PASS verdict', () => {
+  initStory('story-t3-ac1');
+
+  // Create phase with HIGH finding at OPEN
+  const phaseFile = path.join('.keel/state', 'story-t3-ac1', '01-product-owner.json');
+  fs.writeFileSync(phaseFile, JSON.stringify({
+    phase: 1,
+    agent: 'product-owner',
+    story_id: 'story-t3-ac1',
+    confidence: 'high',
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    findings: [
+      { id: 'BUG-1', text: 'Critical payment issue', severity: 'HIGH', state: 'OPEN' }
+    ],
+    next_phase: null
+  }, null, 2));
+
+  const result = runGate('story-t3-ac1', 1, 'PASS', false);
+
+  if (result.code !== 2) {
+    throw new Error(`expected exit 2 (HALT), got ${result.code}`);
+  }
+  if (!result.output.includes('BUG-1') || !result.output.includes('HIGH')) {
+    throw new Error('error should mention finding BUG-1 and severity HIGH');
+  }
+});
+
+// AC-5: MEDIUM/LOW findings open → passes (no false positive)
+test('T3-AC5: MEDIUM/LOW findings OPEN do not block PASS', () => {
+  initStory('story-t3-ac5');
+
+  const phaseFile = path.join('.keel/state', 'story-t3-ac5', '01-product-owner.json');
+  fs.writeFileSync(phaseFile, JSON.stringify({
+    phase: 1,
+    agent: 'product-owner',
+    story_id: 'story-t3-ac5',
+    confidence: 'high',
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    findings: [
+      { id: 'PERF-1', text: 'Slow query in reports', severity: 'MEDIUM', state: 'OPEN' },
+      { id: 'DOC-1', text: 'Missing API docs', severity: 'LOW', state: 'OPEN' }
+    ],
+    next_phase: null
+  }, null, 2));
+
+  const result = runGate('story-t3-ac5', 1, 'PASS', false);
+
+  if (result.code !== 0) {
+    throw new Error(`expected exit 0, got ${result.code}: ${result.output}`);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
 // TASK T2: Phase Sequence Check (C-0004)
 // ─────────────────────────────────────────────────────────────────────────
 
