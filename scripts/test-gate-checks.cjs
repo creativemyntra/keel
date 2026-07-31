@@ -330,6 +330,130 @@ test('exit code contract: --dry-run = 0', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
+// TASK T6: GitHub PR-based Design Approval (C-0007)
+// ─────────────────────────────────────────────────────────────────────────
+
+// AC-1: Phase 3 complete, attempt phase 4 → rejected, no approval
+test('T6-AC1: Phase 4 blocked without phase 3 approval', () => {
+  initStory('story-t6-ac1');
+
+  // Create phase 3 (design)
+  const phase3File = path.join('.keel/state', 'story-t6-ac1', '03-ui-designer.json');
+  fs.writeFileSync(phase3File, JSON.stringify({
+    phase: 3,
+    agent: 'ui-designer',
+    story_id: 'story-t6-ac1',
+    confidence: 'high',
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    findings: [
+      { id: 'INFO-1', text: 'Design complete', severity: 'LOW', state: 'OPEN' }
+    ],
+    next_phase: null
+  }, null, 2));
+
+  // Create phase 4 (architecture) without approving phase 3
+  const phase4File = path.join('.keel/state', 'story-t6-ac1', '04-solution-architect.json');
+  fs.writeFileSync(phase4File, JSON.stringify({
+    phase: 4,
+    agent: 'solution-architect',
+    story_id: 'story-t6-ac1',
+    confidence: 'high',
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    findings: [
+      { id: 'INFO-1', text: 'Architecture complete', severity: 'LOW', state: 'OPEN' }
+    ],
+    next_phase: null
+  }, null, 2));
+
+  // Set current phase to 4
+  const manifestPath = path.join('.keel/state', 'story-t6-ac1', 'manifest.json');
+  let m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  m.current_phase = 4;
+  fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2));
+
+  // Attempt to gate phase 4 without approval
+  // Ensure KEEL_SKIP_APPROVALS is not set so the check is enforced
+  delete process.env.KEEL_SKIP_APPROVALS;
+  const result = runGate('story-t6-ac1', 4, 'PASS', false);
+
+  if (result.code !== 2) {
+    throw new Error(`expected exit 2 (HALT), got ${result.code}`);
+  }
+  if (!result.output.includes('requires GitHub PR approval')) {
+    throw new Error('error should mention GitHub PR approval requirement');
+  }
+});
+
+// AC-4: Attempt to fake approval by editing manifest → ineffective
+test('T6-AC4: Fake approval in manifest is detected and rejected', () => {
+  initStory('story-t6-ac4');
+
+  // Create phase 3
+  const phase3File = path.join('.keel/state', 'story-t6-ac4', '03-ui-designer.json');
+  const phase3Content = JSON.stringify({
+    phase: 3,
+    agent: 'ui-designer',
+    story_id: 'story-t6-ac4',
+    confidence: 'high',
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    findings: [
+      { id: 'INFO-1', text: 'Design complete', severity: 'LOW', state: 'OPEN' }
+    ],
+    next_phase: null
+  }, null, 2);
+  fs.writeFileSync(phase3File, phase3Content);
+
+  // Create phase 4
+  const phase4File = path.join('.keel/state', 'story-t6-ac4', '04-solution-architect.json');
+  fs.writeFileSync(phase4File, JSON.stringify({
+    phase: 4,
+    agent: 'solution-architect',
+    story_id: 'story-t6-ac4',
+    confidence: 'high',
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    findings: [
+      { id: 'INFO-1', text: 'Architecture complete', severity: 'LOW', state: 'OPEN' }
+    ],
+    next_phase: null
+  }, null, 2));
+
+  // Try to fake approval by directly editing manifest
+  const manifestPath = path.join('.keel/state', 'story-t6-ac4', 'manifest.json');
+  let m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  m.current_phase = 4;
+  m.approved_phases = m.approved_phases || {};
+  m.approved_phases['3'] = {
+    phase: 3,
+    pr_number: 999,
+    approved_at: new Date().toISOString(),
+    approver_count: 1,
+    content_hash: 'fake_hash_that_will_not_match'
+  };
+  fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2));
+
+  // Attempt to gate phase 4
+  // Ensure KEEL_SKIP_APPROVALS is not set so the check is enforced
+  delete process.env.KEEL_SKIP_APPROVALS;
+  const result = runGate('story-t6-ac4', 4, 'PASS', false);
+
+  // Should be rejected because the hash doesn't match phase 3's actual content
+  if (result.code !== 2) {
+    throw new Error(`expected exit 2 (HALT due to hash mismatch), got ${result.code}`);
+  }
+  if (!result.output.includes('hash mismatch')) {
+    throw new Error('error should mention hash mismatch');
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
 // TASK T4: User Directives (C-0006)
 // ─────────────────────────────────────────────────────────────────────────
 

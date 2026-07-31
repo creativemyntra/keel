@@ -105,6 +105,22 @@
       "type": "boolean",
       "description": "Optional: pipeline halted at attempt limit"
     },
+    "approved_phases": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["phase", "pr_number", "approved_at", "approver_count", "content_hash"],
+        "properties": {
+          "phase": { "type": "integer", "minimum": 1, "maximum": 10 },
+          "pr_number": { "type": "integer", "minimum": 1 },
+          "approved_at": { "type": "string", "format": "date-time" },
+          "approver_count": { "type": "integer", "minimum": 1 },
+          "content_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "SHA256 hash of approved phase output" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Record of GitHub PR approvals for phase outputs (e.g., design review for phase 3)"
+    },
     "directives": {
       "type": "array",
       "items": {

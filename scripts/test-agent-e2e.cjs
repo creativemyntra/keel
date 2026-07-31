@@ -28,7 +28,8 @@ function makeTmpDir(name) {
 }
 
 function engine(cwd, ...cliArgs) {
-  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8' });
+  const env = Object.assign({}, process.env, { KEEL_SKIP_APPROVALS: '1' });
+  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8', env });
   return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
 }
 

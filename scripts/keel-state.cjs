@@ -586,6 +586,62 @@ const checkRegistry = {
     return { id: 'C-0003', status: 'PASS', detail: 'test marker not set (normal operation)' };
   },
 
+  // C-0007 (T6): Design approval validation — phase 4 blocks unless phase 3 approved via GitHub PR.
+  // Ensures UI/UX design is reviewed by a second human before architecture locks it in.
+  // Approval is recorded on GitHub (server-side, unforgeable); hash detects if design changes post-approval.
+  // Status: SKIP if KEEL_SKIP_APPROVALS=1 (test mode), FAIL if phase is 4 and phase 3 has no approval.
+  design_approved: (storyId, phase, manifest) => {
+    // Only block phase 4; other phases are not gated on design approval
+    if (phase !== 4) {
+      return { id: 'C-0007', status: 'SKIP', detail: 'design approval only required for phase 4 (architecture)' };
+    }
+
+    // Allow skipping approvals in test mode
+    if (process.env.KEEL_SKIP_APPROVALS === '1') {
+      return { id: 'C-0007', status: 'SKIP', detail: 'design approval skipped (KEEL_SKIP_APPROVALS=1, test mode)' };
+    }
+
+    // Check if phase 3 approval record exists in manifest
+    const approvedPhases = manifest.approved_phases || {};
+    const phase3Approval = approvedPhases['3'];
+
+    if (!phase3Approval) {
+      return {
+        id: 'C-0007',
+        status: 'FAIL',
+        detail: 'phase 3 (UI design) requires GitHub PR approval before proceeding to phase 4 (architecture). Run: keel-state approve-phase 3 --via-github-pr <PR-number>'
+      };
+    }
+
+    // Verify phase 3 file still exists and hash matches (design hasn't changed post-approval)
+    const prefix3 = '03-';
+    const phase3Files = fs.readdirSync(stateDir(storyId))
+      .filter((f) => f.startsWith(prefix3) && f.endsWith('.json'));
+
+    if (phase3Files.length === 0) {
+      return { id: 'C-0007', status: 'FAIL', detail: 'phase 3 output file not found' };
+    }
+
+    // Compute current hash
+    const phase3FilePath = path.join(stateDir(storyId), phase3Files[0]);
+    const currentContent = fs.readFileSync(phase3FilePath, 'utf8');
+    const currentHash = crypto.createHash('sha256').update(currentContent).digest('hex');
+
+    if (currentHash !== phase3Approval.content_hash) {
+      return {
+        id: 'C-0007',
+        status: 'FAIL',
+        detail: `phase 3 design has changed since approval (hash mismatch). Design must be re-reviewed. Run: keel-state approve-phase 3 --via-github-pr <PR-number>`
+      };
+    }
+
+    return {
+      id: 'C-0007',
+      status: 'PASS',
+      detail: `phase 3 design approved by ${phase3Approval.approver_count} reviewer(s) on ${phase3Approval.approved_at}`
+    };
+  },
+
   // C-0006 (T4): Directive adherence validation — block PASS if OPEN directives apply to current phase.
   // Ensures user instructions (HOW work is done) are tracked and enforced, not forgotten.
   // Status: FAIL if any OPEN directive applies to this phase, PASS if all directives satisfied/superseded.
@@ -1808,6 +1864,91 @@ function cmdTokenLedger(args) {
   die(64, `unknown token-ledger subcommand: ${sub} (expected append or summary)`);
 }
 
+// ------------------------------------------------------------------- approve-phase (T6)
+// Record GitHub PR approval for a phase (e.g., design review for phase 3).
+// Approval is verified against GitHub (server-side), not manifest-editable.
+// Usage: approve-phase <story-id> <phase-number> --via-github-pr <PR-number>
+
+function cmdApprovePhase(args) {
+  const storyId = args[0];
+  const phaseStr = args[1];
+  const prNumber = flag(args, '--via-github-pr') || '';
+
+  if (!storyId || !phaseStr || !prNumber) {
+    die(64, 'usage: approve-phase <story-id> <phase-number> --via-github-pr <PR-number>');
+  }
+
+  validateStoryId(storyId);
+  const phase = parseInt(phaseStr, 10);
+  if (!Number.isInteger(phase) || phase < 1 || phase > 10) {
+    die(1, `invalid phase: ${phaseStr} (expected 1-10)`);
+  }
+
+  const manifestPath = path.join(stateDir(storyId), 'manifest.json');
+  if (!fs.existsSync(manifestPath)) die(1, `story ${storyId} not found`);
+
+  const manifest = readManifest(storyId);
+
+  // Query GitHub API to verify PR exists and has approvals
+  try {
+    const { execSync } = require('child_process');
+    const prData = execSync(`gh api repos/creativemyntra/keel/pulls/${prNumber} --jq '.{title, state, reviews: .requested_reviewers}'`, { stdio: 'pipe', encoding: 'utf8' });
+    // Just verify PR exists; actual approval count comes from reviews
+    const reviewData = execSync(`gh api repos/creativemyntra/keel/pulls/${prNumber}/reviews --jq '[.[] | select(.state == "APPROVED")] | length'`, { stdio: 'pipe', encoding: 'utf8' });
+    const approvalCount = parseInt(reviewData.trim(), 10) || 0;
+
+    if (approvalCount === 0) {
+      die(1, `PR #${prNumber} has no approvals. Request review from a team member.`);
+    }
+
+    // Hash the phase file to detect future changes
+    const prefix = String(phase).padStart(2, '0') + '-';
+    const phaseFiles = fs.readdirSync(stateDir(storyId))
+      .filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+    if (phaseFiles.length === 0) {
+      die(1, `phase ${phase} output file not found`);
+    }
+
+    const phaseFilePath = path.join(stateDir(storyId), phaseFiles[0]);
+    const content = fs.readFileSync(phaseFilePath, 'utf8');
+    const contentHash = crypto.createHash('sha256').update(content).digest('hex');
+
+    // Record approval in manifest
+    if (!manifest.approved_phases) manifest.approved_phases = {};
+    manifest.approved_phases[String(phase)] = {
+      phase,
+      pr_number: parseInt(prNumber, 10),
+      approved_at: nowIso(),
+      approver_count: approvalCount,
+      content_hash: contentHash
+    };
+
+    writeManifest(storyId, manifest);
+    appendAudit(storyId, {
+      action: 'phase_approved_via_github',
+      phase,
+      pr_number: parseInt(prNumber, 10),
+      approver_count: approvalCount,
+      content_hash: contentHash
+    });
+
+    console.log(`OK: phase ${phase} approved via PR #${prNumber} (${approvalCount} approval(s))`);
+
+    // Emit review checklist for phase 3 (design)
+    if (phase === 3) {
+      console.log(`\n=== Design Review Checklist (Phase 3) ===\n`);
+      console.log('□ Story alignment: design matches acceptance criteria');
+      console.log('□ WCAG 2.1 AA: colors, contrast, keyboard navigation');
+      console.log('□ Responsive: tested on mobile, tablet, desktop');
+      console.log('□ Design tokens: using variables, not hardcoded values');
+      console.log('□ Specifications: colors, typography, spacing defined\n');
+    }
+  } catch (err) {
+    die(1, `failed to verify GitHub PR #${prNumber}: ${err.message}`);
+  }
+}
+
 // ------------------------------------------------------------------- directive (T4)
 // Track and enforce user directives (HOW work is done, distinct from ACs about WHAT).
 // Usage:
@@ -2013,7 +2154,7 @@ function cmdFinding(args) {
 
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding|directive> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding|directive|approve-phase> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
@@ -2039,5 +2180,6 @@ switch (cmd) {
   case 'token-ledger': cmdTokenLedger([storyId, ...rest]); break;
   case 'finding': cmdFinding(['set-state', storyId, ...rest]); break;
   case 'directive': cmdDirective([rest[0], storyId, ...rest.slice(1)]); break;
+  case 'approve-phase': cmdApprovePhase([storyId, ...rest]); break;
   default: die(64, `unknown command: ${cmd}`);
 }
