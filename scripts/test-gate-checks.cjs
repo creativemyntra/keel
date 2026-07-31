@@ -46,7 +46,7 @@ function initStory(storyId) {
   } catch { /* init may warn but not fail */ }
 }
 
-function createPhaseFile(storyId, phase) {
+function createPhaseFile(storyId, phase, customFindings) {
   const agentMap = {
     1: 'product-owner',
     2: 'business-analyst',
@@ -62,6 +62,12 @@ function createPhaseFile(storyId, phase) {
   const agent = agentMap[phase] || 'product-owner';
   const phaseNum = String(phase).padStart(2, '0');
   const phaseFile = path.join('.keel/state', storyId, `${phaseNum}-${agent}.json`);
+
+  // Default finding object (schema requires findings to be non-empty array of objects)
+  const defaultFindings = [{ id: `FIND-${phase}`, text: 'Phase finding', severity: 'LOW', state: 'OPEN' }];
+  const findings = customFindings || defaultFindings;
+
+  // For phase 3 (UI designer), add design_review_checklist
   const phaseData = {
     phase,
     agent,
@@ -70,9 +76,20 @@ function createPhaseFile(storyId, phase) {
     acceptance_criteria_ids: ['AC-1'],
     decisions: [],
     artifacts: [],
-    findings: ['Test finding'],
+    findings,
     next_phase: null,
   };
+
+  if (phase === 3) {
+    phaseData.design_review_checklist = {
+      story_alignment: true,
+      wcag_2_1_aa: true,
+      responsive_design: true,
+      design_tokens: true,
+      palette_typography: true
+    };
+  }
+
   fs.writeFileSync(phaseFile, JSON.stringify(phaseData, null, 2));
   return phaseFile;
 }
@@ -682,10 +699,11 @@ test('T2-AC3: normal in-order story with all predecessors passes', () => {
   createPhaseFile('story-t2-ac3', 2);
   runGate('story-t2-ac3', 2, 'PASS', false);
 
+  // Phase 3 - createPhaseFile now includes design_review_checklist automatically
   createPhaseFile('story-t2-ac3', 3);
   const result = runGate('story-t2-ac3', 3, 'PASS', false);
 
-  // Should succeed because all predecessors are valid
+  // Should succeed because all predecessors are valid and checklist is complete
   if (result.code !== 0) {
     throw new Error(`expected exit 0, got ${result.code}: ${result.output}`);
   }
@@ -726,6 +744,249 @@ test('T2-AC4: defect express-lane (1→5→6→8) passes without false positives
   result = runGate('story-t2-ac4-defect', 8, 'PASS', false);
   if (result.code !== 0) {
     throw new Error(`phase 8 should pass (final phase of defect lane): ${result.output}`);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// T5 Tests: Design Review Checklist Enforcement (C-0008)
+
+test('T5 AC-1: Phase 3 gate PASSES when checklist is missing (backward compatibility)', () => {
+  cleanupStories();
+  initStory('story-t5-ac1');
+
+  // Gate phases 1 and 2 first
+  createPhaseFile('story-t5-ac1', 1);
+  runGate('story-t5-ac1', 1, 'PASS', false);
+  createPhaseFile('story-t5-ac1', 2);
+  runGate('story-t5-ac1', 2, 'PASS', false);
+
+  // Create phase 3 file WITHOUT design_review_checklist (backward compatible with pre-T5)
+  const phase3File = '.keel/state/story-t5-ac1/03-ui-designer.json';
+  fs.writeFileSync(phase3File, JSON.stringify({
+    phase: 3,
+    agent: 'ui-designer',
+    story_id: 'story-t5-ac1',
+    confidence: 'high',
+    findings: [{ id: 'DESIGN-1', text: 'Design specification', severity: 'LOW', state: 'OPEN' }],
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    next_phase: 4
+  }));
+
+  // C-0008 should SKIP for backward compatibility (checklist is optional if not provided)
+  const result = runGate('story-t5-ac1', 3, 'PASS', false);
+  if (result.code !== 0) {
+    throw new Error('C-0008 should SKIP missing checklist for backward compatibility');
+  }
+});
+
+test('T5 AC-2: Phase 3 gate FAILS with incomplete checklist', () => {
+  cleanupStories();
+  initStory('story-t5-ac2');
+
+  // Gate phases 1 and 2 first
+  createPhaseFile('story-t5-ac2', 1);
+  runGate('story-t5-ac2', 1, 'PASS', false);
+  createPhaseFile('story-t5-ac2', 2);
+  runGate('story-t5-ac2', 2, 'PASS', false);
+
+  // Create phase 3 with incomplete checklist (must have findings)
+  const phase3File = '.keel/state/story-t5-ac2/03-ui-designer.json';
+  fs.writeFileSync(phase3File, JSON.stringify({
+    phase: 3,
+    agent: 'ui-designer',
+    story_id: 'story-t5-ac2',
+    confidence: 'high',
+    findings: [{ id: 'DESIGN-1', text: 'Design specification', severity: 'LOW', state: 'OPEN' }],
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    next_phase: 4,
+    design_review_checklist: {
+      story_alignment: true,
+      wcag_2_1_aa: false,  // Not checked
+      responsive_design: true,
+      design_tokens: true,
+      palette_typography: true
+    }
+  }));
+
+  const result = runGate('story-t5-ac2', 3, 'PASS', false);
+  if (result.code === 0) {
+    throw new Error('C-0008 should FAIL with incomplete checklist');
+  }
+  if (!result.output.includes('not checked')) {
+    throw new Error('gate output should mention unchecked items');
+  }
+});
+
+test('T5 AC-3: Phase 3 gate PASSES with complete checklist', () => {
+  cleanupStories();
+  initStory('story-t5-ac3');
+
+  // Gate phases 1 and 2 first
+  createPhaseFile('story-t5-ac3', 1);
+  runGate('story-t5-ac3', 1, 'PASS', false);
+  createPhaseFile('story-t5-ac3', 2);
+  runGate('story-t5-ac3', 2, 'PASS', false);
+
+  // Create phase 3 with complete checklist (must have findings)
+  const phase3File = '.keel/state/story-t5-ac3/03-ui-designer.json';
+  fs.writeFileSync(phase3File, JSON.stringify({
+    phase: 3,
+    agent: 'ui-designer',
+    story_id: 'story-t5-ac3',
+    confidence: 'high',
+    findings: [{ id: 'DESIGN-1', text: 'Design specification', severity: 'LOW', state: 'OPEN' }],
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    next_phase: 4,
+    design_review_checklist: {
+      story_alignment: true,
+      wcag_2_1_aa: true,
+      responsive_design: true,
+      design_tokens: true,
+      palette_typography: true
+    }
+  }));
+
+  const result = runGate('story-t5-ac3', 3, 'PASS', false);
+  if (result.code !== 0) {
+    throw new Error(`C-0008 should PASS with complete checklist: ${result.output}`);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// FINDING-A Tests: Human Approval for State Transitions (C-0009, C-0010)
+
+test('FINDING-A AC-1: Phase FAILS with DEFERRED finding lacking approval', () => {
+  cleanupStories();
+  initStory('story-fa-ac1');
+
+  // Create phase 5 with DEFERRED finding (manually set without approval)
+  const phase5Path = '.keel/state/story-fa-ac1/05-software-engineer.json';
+  fs.mkdirSync(path.dirname(phase5Path), { recursive: true });
+  fs.writeFileSync(phase5Path, JSON.stringify({
+    phase: 5, agent: 'software-engineer', story_id: 'story-fa-ac1', confidence: 'high',
+    findings: [{ id: 'BUG-1', text: 'Performance issue', severity: 'MEDIUM', state: 'DEFERRED' }],
+    acceptance_criteria_ids: ['AC-1'], decisions: [], artifacts: [], next_phase: 6
+  }));
+
+  // Manually advance manifest to phase 5 for testing
+  const manifest = JSON.parse(fs.readFileSync('.keel/state/story-fa-ac1/manifest.json', 'utf8'));
+  manifest.current_phase = 5;
+  fs.writeFileSync('.keel/state/story-fa-ac1/manifest.json', JSON.stringify(manifest, null, 2));
+
+  const result = runGate('story-fa-ac1', 5, 'PASS', false);
+  if (result.code === 0) {
+    throw new Error('C-0009 should FAIL: DEFERRED finding lacks approval');
+  }
+  if (!result.output.includes('C-0009')) {
+    throw new Error('gate output should mention C-0009 check failure');
+  }
+});
+
+test('FINDING-A AC-2: Phase PASSES with DEFERRED finding having approval', () => {
+  cleanupStories();
+  initStory('story-fa-ac2');
+
+  // Create predecessor phases 1-4 first (required by C-0004)
+  for (let p = 1; p <= 4; p++) {
+    createPhaseFile('story-fa-ac2', p);
+  }
+
+  // Create phase 5 with OPEN finding
+  const phase5Path = '.keel/state/story-fa-ac2/05-software-engineer.json';
+  fs.writeFileSync(phase5Path, JSON.stringify({
+    phase: 5, agent: 'software-engineer', story_id: 'story-fa-ac2', confidence: 'high',
+    findings: [{ id: 'BUG-1', text: 'Performance issue', severity: 'MEDIUM', state: 'OPEN' }],
+    acceptance_criteria_ids: ['AC-1'], decisions: [], artifacts: [], next_phase: 6
+  }));
+
+  // Manually advance manifest to phase 5 (skip gating phases 1-4 for test speed)
+  const manifest = JSON.parse(fs.readFileSync('.keel/state/story-fa-ac2/manifest.json', 'utf8'));
+  manifest.current_phase = 5;
+  fs.writeFileSync('.keel/state/story-fa-ac2/manifest.json', JSON.stringify(manifest, null, 2));
+
+  // Approve the transition from OPEN → DEFERRED
+  execSync(
+    `node scripts/keel-state.cjs approve-state-transition story-fa-ac2 BUG-1 DEFERRED --subject-type finding --approver "amar.singh@matellio.com" --reason "This performance issue is tracked in a separate effort and will be addressed in the next sprint planning cycle"`,
+    { stdio: 'pipe' }
+  );
+
+  // Update phase file to reflect new state
+  const phase5Content = JSON.parse(fs.readFileSync(phase5Path, 'utf8'));
+  phase5Content.findings[0].state = 'DEFERRED';
+  fs.writeFileSync(phase5Path, JSON.stringify(phase5Content));
+
+  // Gate should pass
+  const result = runGate('story-fa-ac2', 5, 'PASS', false);
+  if (result.code !== 0) {
+    throw new Error(`C-0009 should PASS with approval: ${result.output}`);
+  }
+});
+
+test('FINDING-A AC-3: Phase FAILS with SUPERSEDED directive lacking approval', () => {
+  cleanupStories();
+  initStory('story-fa-ac3');
+
+  // Add directive in OPEN state
+  execSync(
+    `node scripts/keel-state.cjs directive story-fa-ac3 add --verbatim "Use React hooks exclusively throughout the codebase for state management" --phases 5`,
+    { stdio: 'pipe' }
+  );
+
+  // Manually set to SUPERSEDED without approval (simulate incomplete workflow)
+  const manifest = JSON.parse(fs.readFileSync('.keel/state/story-fa-ac3/manifest.json', 'utf8'));
+  manifest.directives[0].state = 'SUPERSEDED';
+  manifest.current_phase = 5;
+  fs.writeFileSync('.keel/state/story-fa-ac3/manifest.json', JSON.stringify(manifest, null, 2));
+
+  // Create phase 5 file
+  createPhaseFile('story-fa-ac3', 5);
+
+  const result = runGate('story-fa-ac3', 5, 'PASS', false);
+  if (result.code === 0) {
+    throw new Error('C-0010 should FAIL: SUPERSEDED directive lacks approval');
+  }
+  if (!result.output.includes('C-0010')) {
+    throw new Error('gate output should mention C-0010 check failure');
+  }
+});
+
+test('FINDING-A AC-4: Phase PASSES with DECLINED directive having approval', () => {
+  cleanupStories();
+  initStory('story-fa-ac4');
+
+  // Add directive in OPEN state
+  execSync(
+    `node scripts/keel-state.cjs directive story-fa-ac4 add --verbatim "Require full TypeScript strict mode configuration for all new modules without exceptions" --phases 5`,
+    { stdio: 'pipe' }
+  );
+
+  // Approve the DECLINED state transition
+  execSync(
+    `node scripts/keel-state.cjs approve-state-transition story-fa-ac4 D-001 DECLINED --subject-type directive --approver "amar.singh@matellio.com" --reason "Product team has decided strict TypeScript is not required for velocity reasons and we will use focused type checking instead on critical paths"`,
+    { stdio: 'pipe' }
+  );
+
+  // Create predecessor phases 1-4 first (required by C-0004)
+  for (let p = 1; p <= 4; p++) {
+    createPhaseFile('story-fa-ac4', p);
+  }
+
+  // Manually advance manifest to phase 5
+  const manifest = JSON.parse(fs.readFileSync('.keel/state/story-fa-ac4/manifest.json', 'utf8'));
+  manifest.current_phase = 5;
+  fs.writeFileSync('.keel/state/story-fa-ac4/manifest.json', JSON.stringify(manifest, null, 2));
+
+  createPhaseFile('story-fa-ac4', 5);
+
+  const result = runGate('story-fa-ac4', 5, 'PASS', false);
+  if (result.code !== 0) {
+    throw new Error(`C-0010 should PASS with approval: ${result.output}`);
   }
 });
 

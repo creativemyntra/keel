@@ -117,6 +117,34 @@
       "items": { "type": "string" },
       "description": "Anything preventing the next phase from starting"
     },
+    "design_review_checklist": {
+      "type": "object",
+      "description": "Phase 3 (UI designer) required review checklist. Must pass all items for gate C-0008 to PASS.",
+      "required": ["story_alignment", "wcag_2_1_aa", "responsive_design", "design_tokens", "palette_typography"],
+      "properties": {
+        "story_alignment": {
+          "type": "boolean",
+          "description": "Design aligns with story requirements and user flows"
+        },
+        "wcag_2_1_aa": {
+          "type": "boolean",
+          "description": "Design meets WCAG 2.1 Level AA accessibility compliance"
+        },
+        "responsive_design": {
+          "type": "boolean",
+          "description": "Layout works on mobile (375px), tablet (768px), desktop (1200px+)"
+        },
+        "design_tokens": {
+          "type": "boolean",
+          "description": "All colors, spacing, typography use design system tokens (not hardcoded values)"
+        },
+        "palette_typography": {
+          "type": "boolean",
+          "description": "Color palette and typography specs documented (min 2 font families, max 5 colors primary)"
+        }
+      },
+      "additionalProperties": false
+    },
     "timestamp": {
       "type": "string",
       "format": "date-time"

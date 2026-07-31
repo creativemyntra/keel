@@ -149,7 +149,7 @@
           "state": {
             "type": "string",
             "enum": ["OPEN", "SATISFIED", "SUPERSEDED", "DECLINED"],
-            "description": "Terminal state: OPEN (awaiting action), SATISFIED (done), SUPERSEDED (replaced), DECLINED (rejected by human)"
+            "description": "Terminal state: OPEN (awaiting action), SATISFIED (done), SUPERSEDED (replaced by human), DECLINED (rejected by human)"
           },
           "restated_count": {
             "type": "integer",
@@ -158,10 +158,12 @@
           },
           "evidence": {
             "type": "object",
-            "description": "Evidence for the state transition (populated by directive satisfy|supersede|decline)",
+            "description": "Evidence for the state transition (populated by directive satisfy|supersede|decline or human_approval)",
             "properties": {
               "satisfied_at": { "type": "string", "format": "date-time" },
               "satisfied_by": { "type": "string" },
+              "approved_by": { "type": "string" },
+              "approval_id": { "type": "string", "pattern": "^FINDING-A-[0-9]{3}$" },
               "notes": { "type": "string" }
             },
             "additionalProperties": false
@@ -170,6 +172,56 @@
         "additionalProperties": false
       },
       "description": "User directives: instructions about HOW work is done (distinct from ACs about WHAT is built)"
+    },
+    "human_approvals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "subject_id", "subject_type", "approved_at", "approver"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^FINDING-A-[0-9]{3}$",
+            "description": "Human approval ID (FINDING-A-001, FINDING-A-002, etc.)"
+          },
+          "subject_id": {
+            "type": "string",
+            "description": "ID of the finding or directive being approved (e.g., BUG-1, D-001)"
+          },
+          "subject_type": {
+            "type": "string",
+            "enum": ["finding", "directive"],
+            "description": "Whether this approval is for a finding state transition or directive state transition"
+          },
+          "prior_state": {
+            "type": "string",
+            "description": "State before approval (e.g., OPEN, DEFERRED)"
+          },
+          "new_state": {
+            "type": "string",
+            "description": "State after approval (WAIVED, DEFERRED, SUPERSEDED, DECLINED)"
+          },
+          "approved_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 timestamp of approval"
+          },
+          "approver": {
+            "type": "string",
+            "description": "Name, email, or role of approver (e.g., 'amar.singh@matellio.com' or 'Product Manager')"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Justification for the approval (min 15 words)"
+          },
+          "evidence_link": {
+            "type": "string",
+            "description": "Reference to supporting documentation (URL, ticket, decision log entry)"
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Human approval decisions (FINDING-A) that override automatic state transitions for findings (DEFERRED/WAIVED) and directives (SUPERSEDED/DECLINED)"
     }
   },
   "additionalProperties": false

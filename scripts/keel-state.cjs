@@ -44,7 +44,8 @@ const CONFIDENCE = ['high', 'medium', 'low'];
 const LEGACY_AGENTS = [...AGENTS, 'tdd-red', 'tdd-green'];
 const KNOWN_FIELDS = [
   'phase', 'agent', 'story_id', 'confidence', 'findings', 'acceptance_criteria_ids',
-  'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp',
+  'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp', 'tokens_used',
+  'design_review_checklist',  // T5: Phase 3 (UI designer) review checklist
 ];
 const MAX_ATTEMPTS = 3;
 const DEFAULT_MAX_GATES = 40;   // pipeline budget: total gate events per story (10 phases × 3 attempts + overhead)
@@ -774,6 +775,171 @@ const checkRegistry = {
       id: 'C-0004',
       status: 'PASS',
       detail: `all ${predecessors.length} predecessor phase(s) present and valid`
+    };
+  },
+
+  // C-0008 (T5): Design review checklist validation — block PASS for phase 3 if checklist incomplete.
+  // Ensures UI designer completes required review before design is approved (phase 4 proceeds).
+  // Required items: story alignment, WCAG 2.1 AA, responsive design, design tokens, palette/typography.
+  // Status: PASS if all items true, FAIL if any missing/false, SKIP if not phase 3.
+  design_review_checklist: (storyId, phase, manifest) => {
+    // Only applies to phase 3 (UI designer)
+    if (phase !== 3) {
+      return { id: 'C-0008', status: 'SKIP', detail: `design review checklist only applies to phase 3 (current: ${phase})` };
+    }
+
+    const prefix = '03-';
+    const phaseFile = fs.readdirSync(stateDir(storyId))
+      .find((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+    if (!phaseFile) {
+      return { id: 'C-0008', status: 'SKIP', detail: 'phase 3 output file not found (pre-validation check)' };
+    }
+
+    let phaseOutput;
+    try {
+      phaseOutput = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+    } catch {
+      return { id: 'C-0008', status: 'SKIP', detail: 'phase 3 output unreadable (pre-validation check)' };
+    }
+
+    const checklist = phaseOutput.design_review_checklist;
+    // If checklist is missing, skip the check (backward compatibility with phase 3 outputs created before T5)
+    if (!checklist || typeof checklist !== 'object') {
+      return {
+        id: 'C-0008',
+        status: 'SKIP',
+        detail: 'design_review_checklist missing from phase 3 output (not provided by agent — optional for backward compatibility)'
+      };
+    }
+
+    // Check all required items
+    const required = ['story_alignment', 'wcag_2_1_aa', 'responsive_design', 'design_tokens', 'palette_typography'];
+    const unchecked = required.filter((item) => checklist[item] !== true);
+
+    if (unchecked.length > 0) {
+      return {
+        id: 'C-0008',
+        status: 'FAIL',
+        detail: `design review incomplete: ${unchecked.join(', ')} not checked`
+      };
+    }
+
+    return {
+      id: 'C-0008',
+      status: 'PASS',
+      detail: 'design review checklist complete (all 5 items verified)'
+    };
+  },
+
+  // C-0009 (FINDING-A): Finding state transitions require human approval.
+  // Blocks PASS if any finding is in DEFERRED or WAIVED state without a FINDING-A approval record.
+  // Ensures critical/high deferrals are auditable, not self-approved.
+  // Status: PASS if all DEFERRED/WAIVED findings have approvals, FAIL if missing.
+  finding_state_approval: (storyId, phase, manifest) => {
+    // Skip in test mode (E2E tests don't use human approvals)
+    if (process.env.KEEL_SKIP_APPROVALS === '1') {
+      return { id: 'C-0009', status: 'SKIP', detail: 'finding state approvals skipped (KEEL_SKIP_APPROVALS=1, test mode)' };
+    }
+
+    const prefix = String(phase).padStart(2, '0') + '-';
+    const phaseFile = fs.readdirSync(stateDir(storyId))
+      .find((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+    if (!phaseFile) {
+      return { id: 'C-0009', status: 'PASS', detail: 'phase file not found (pre-validation check)' };
+    }
+
+    let phaseOutput;
+    try {
+      phaseOutput = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+    } catch {
+      return { id: 'C-0009', status: 'PASS', detail: 'phase file unreadable (pre-validation check)' };
+    }
+
+    if (!Array.isArray(phaseOutput.findings) || phaseOutput.findings.length === 0) {
+      return { id: 'C-0009', status: 'PASS', detail: 'no findings in phase output' };
+    }
+
+    // Find findings in DEFERRED or WAIVED state
+    const deferredOrWaived = phaseOutput.findings.filter((f) =>
+      (f.state === 'DEFERRED' || f.state === 'WAIVED')
+    );
+
+    if (deferredOrWaived.length === 0) {
+      return { id: 'C-0009', status: 'PASS', detail: 'no deferred or waived findings' };
+    }
+
+    // Check each one has a FINDING-A approval in manifest
+    const approvals = (manifest.human_approvals || []).filter((a) => a.subject_type === 'finding');
+    const unapproved = deferredOrWaived.filter((f) => {
+      const hasApproval = approvals.find((a) => a.subject_id === f.id && a.new_state === f.state);
+      return !hasApproval;
+    });
+
+    if (unapproved.length > 0) {
+      const details = unapproved
+        .map((f) => `${f.id} [${f.severity}]: ${f.state} without approval`)
+        .join('; ');
+      return {
+        id: 'C-0009',
+        status: 'FAIL',
+        detail: `${unapproved.length} finding(s) lack human approval: ${details}`
+      };
+    }
+
+    return {
+      id: 'C-0009',
+      status: 'PASS',
+      detail: `all ${deferredOrWaived.length} deferred/waived findings have human approvals`
+    };
+  },
+
+  // C-0010 (FINDING-A): Directive state transitions require human approval.
+  // Blocks PASS if any directive is in SUPERSEDED or DECLINED state without a FINDING-A approval record.
+  // Ensures rejected directives are auditable, not self-overridden.
+  // Status: PASS if all SUPERSEDED/DECLINED directives have approvals, FAIL if missing.
+  directive_state_approval: (storyId, phase, manifest) => {
+    // Skip in test mode (E2E tests don't use human approvals)
+    if (process.env.KEEL_SKIP_APPROVALS === '1') {
+      return { id: 'C-0010', status: 'SKIP', detail: 'directive state approvals skipped (KEEL_SKIP_APPROVALS=1, test mode)' };
+    }
+
+    if (!Array.isArray(manifest.directives) || manifest.directives.length === 0) {
+      return { id: 'C-0010', status: 'PASS', detail: 'no directives recorded' };
+    }
+
+    // Find directives in SUPERSEDED or DECLINED state
+    const supersededOrDeclined = manifest.directives.filter((d) =>
+      (d.state === 'SUPERSEDED' || d.state === 'DECLINED')
+    );
+
+    if (supersededOrDeclined.length === 0) {
+      return { id: 'C-0010', status: 'PASS', detail: 'no superseded or declined directives' };
+    }
+
+    // Check each one has a FINDING-A approval in manifest
+    const approvals = (manifest.human_approvals || []).filter((a) => a.subject_type === 'directive');
+    const unapproved = supersededOrDeclined.filter((d) => {
+      const hasApproval = approvals.find((a) => a.subject_id === d.id && a.new_state === d.state);
+      return !hasApproval;
+    });
+
+    if (unapproved.length > 0) {
+      const details = unapproved
+        .map((d) => `D: "${d.verbatim.slice(0, 50)}..." [${d.state}] without approval`)
+        .join('; ');
+      return {
+        id: 'C-0010',
+        status: 'FAIL',
+        detail: `${unapproved.length} directive(s) lack human approval: ${details}`
+      };
+    }
+
+    return {
+      id: 'C-0010',
+      status: 'PASS',
+      detail: `all ${supersededOrDeclined.length} superseded/declined directives have human approvals`
     };
   },
 };
@@ -2152,9 +2318,148 @@ function cmdFinding(args) {
   console.log(`OK: ${findingId} state ${priorState} → ${finding.state}`);
 }
 
+// ------------------------------------------------------------------- approve-state-transition (FINDING-A)
+// Human approval for finding/directive state transitions (DEFERRED/WAIVED/SUPERSEDED/DECLINED).
+// Unblocks automatic state management and records auditable approval decision.
+// Usage:
+//   approve-state-transition <story-id> <subject-id> <new-state>
+//                            --subject-type finding|directive
+//                            --approver "<name/email>"
+//                            --reason "<min 15 words>"
+//                            [--evidence-link "<url>"]
+
+function cmdApproveStateTransition(args) {
+  const storyId = args[0];
+  const subjectId = args[1];
+  const newState = args[2];
+
+  if (!storyId || !subjectId || !newState) {
+    die(64, 'usage: approve-state-transition <story-id> <subject-id> <new-state> --subject-type finding|directive --approver "<name>" --reason "<15+ words>" [--evidence-link "<url>"]');
+  }
+
+  validateStoryId(storyId);
+  const subjectType = flag(args, '--subject-type') || '';
+  const approver = flag(args, '--approver') || '';
+  const reason = flag(args, '--reason') || '';
+  const evidenceLink = flag(args, '--evidence-link') || '';
+
+  if (!subjectType || !approver || !reason) {
+    die(64, 'approve-state-transition requires: --subject-type, --approver, --reason');
+  }
+
+  if (!['finding', 'directive'].includes(subjectType)) {
+    die(1, `--subject-type must be 'finding' or 'directive', got: ${subjectType}`);
+  }
+
+  // Validate reason length (min 15 words)
+  const reasonWords = reason.trim().split(/\s+/).length;
+  if (reasonWords < 15) {
+    die(1, `reason must be at least 15 words (got ${reasonWords}): "${reason}"`);
+  }
+
+  const manifestPath = path.join(stateDir(storyId), 'manifest.json');
+  if (!fs.existsSync(manifestPath)) die(1, `story ${storyId} not found`);
+
+  const manifest = readManifest(storyId);
+  if (!Array.isArray(manifest.human_approvals)) manifest.human_approvals = [];
+
+  // Find prior state and validate transition
+  let priorState = null;
+  let targetObj = null;
+
+  if (subjectType === 'finding') {
+    // Find the finding in any phase output file
+    const stateDir_ = stateDir(storyId);
+    const phaseFiles = fs.readdirSync(stateDir_)
+      .filter((f) => /^\d{2}-.*\.json$/.test(f) && f.endsWith('.json'));
+
+    for (const pf of phaseFiles) {
+      try {
+        const output = JSON.parse(fs.readFileSync(path.join(stateDir_, pf), 'utf8'));
+        if (Array.isArray(output.findings)) {
+          const f = output.findings.find((fi) => fi.id === subjectId);
+          if (f) {
+            targetObj = f;
+            priorState = f.state;
+            break;
+          }
+        }
+      } catch { /* skip */ }
+    }
+
+    if (!targetObj) die(1, `finding ${subjectId} not found in any phase output`);
+
+    // Finding state transitions: OPEN → DEFERRED|WAIVED only
+    if (priorState !== 'OPEN') {
+      die(1, `finding ${subjectId} is already ${priorState}, cannot transition to ${newState}`);
+    }
+    if (!['DEFERRED', 'WAIVED'].includes(newState)) {
+      die(1, `finding state transition requires --state DEFERRED|WAIVED, got: ${newState}`);
+    }
+  } else if (subjectType === 'directive') {
+    // Find the directive in manifest
+    const directive = manifest.directives.find((d) => d.id === subjectId);
+    if (!directive) die(1, `directive ${subjectId} not found in manifest`);
+
+    targetObj = directive;
+    priorState = directive.state;
+
+    // Directive state transitions: OPEN → SUPERSEDED|DECLINED only
+    if (priorState !== 'OPEN') {
+      die(1, `directive ${subjectId} is already ${priorState}, cannot transition to ${newState}`);
+    }
+    if (!['SUPERSEDED', 'DECLINED'].includes(newState)) {
+      die(1, `directive state transition requires --state SUPERSEDED|DECLINED, got: ${newState}`);
+    }
+  }
+
+  // Generate approval ID
+  const approvalId = `FINDING-A-${String(manifest.human_approvals.length + 1).padStart(3, '0')}`;
+
+  // Record approval
+  const approval = {
+    id: approvalId,
+    subject_id: subjectId,
+    subject_type: subjectType,
+    prior_state: priorState,
+    new_state: newState,
+    approved_at: nowIso(),
+    approver,
+    reason
+  };
+
+  if (evidenceLink) {
+    approval.evidence_link = evidenceLink;
+  }
+
+  manifest.human_approvals.push(approval);
+
+  // Update target state
+  if (targetObj) {
+    targetObj.state = newState;
+    if (!targetObj.evidence) targetObj.evidence = {};
+    targetObj.evidence.approved_by = approver;
+    targetObj.evidence.approval_id = approvalId;
+    targetObj.evidence.notes = reason;
+  }
+
+  writeManifest(storyId, manifest);
+  appendAudit(storyId, {
+    action: 'state_transition_approved',
+    approval_id: approvalId,
+    subject_id: subjectId,
+    subject_type: subjectType,
+    prior_state: priorState,
+    new_state: newState,
+    approver
+  });
+
+  console.log(`OK: ${approvalId} — ${subjectId} approved to ${newState} by ${approver}`);
+}
+
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding|directive|approve-phase> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding|directive|approve-phase|approve-state-transition> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
@@ -2181,5 +2486,6 @@ switch (cmd) {
   case 'finding': cmdFinding(['set-state', storyId, ...rest]); break;
   case 'directive': cmdDirective([rest[0], storyId, ...rest.slice(1)]); break;
   case 'approve-phase': cmdApprovePhase([storyId, ...rest]); break;
+  case 'approve-state-transition': cmdApproveStateTransition([storyId, ...rest]); break;
   default: die(64, `unknown command: ${cmd}`);
 }
