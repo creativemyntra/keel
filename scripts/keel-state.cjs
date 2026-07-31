@@ -555,6 +555,36 @@ const checkRegistry = {
   trivial_pass: (storyId, phase, manifest) => {
     return { id: 'C-0001', status: 'PASS', detail: 'baseline check: no contradictions' };
   },
+
+  // C-0002: Verify gate budget is within healthy range (advisory check).
+  // FAILS only if gate_events >= 95% of max_gates (very high stress, close to halt).
+  // SKIPS if gate_events >= max_gates (built-in halt logic already triggered).
+  // Status: PASS if healthy, SKIP at limit, FAIL only in very high stress (95%+).
+  gate_budget_stress: (storyId, phase, manifest) => {
+    const current = manifest.gate_events || 0;
+    const max = manifest.max_gates || 40;
+    // SKIP this check if we've already hit the limit (halt logic will take over)
+    if (current >= max) {
+      return { id: 'C-0002', status: 'SKIP', detail: `gate budget at/over limit: ${current}/${max} events (halt logic will stop further attempts)` };
+    }
+    // FAIL only if we're at very high stress (95%+)
+    const threshold = max * 0.95;
+    if (current >= threshold) {
+      return { id: 'C-0002', status: 'FAIL', detail: `gate budget critical: ${current}/${max} events used (${(current/max*100).toFixed(1)}% — critically close to limit)` };
+    }
+    return { id: 'C-0002', status: 'PASS', detail: `gate budget is healthy: ${current}/${max} events (${(current/max*100).toFixed(1)}%)` };
+  },
+
+  // C-0003: Test-only FAIL check for AC-1 contradiction testing.
+  // If manifest has __test_fail_check: true, this check returns FAIL.
+  // Used by test suite to verify contradiction detection (PASS verdict rejected when check fails).
+  // Status: PASS normally, FAIL if __test_fail_check is set in manifest.
+  test_contradiction_marker: (storyId, phase, manifest) => {
+    if (manifest.__test_fail_check) {
+      return { id: 'C-0003', status: 'FAIL', detail: 'test contradiction marker: this check was intentionally failed to verify contradiction detection' };
+    }
+    return { id: 'C-0003', status: 'PASS', detail: 'test marker not set (normal operation)' };
+  },
 };
 
 function runChecks(storyId, phase, manifest) {
