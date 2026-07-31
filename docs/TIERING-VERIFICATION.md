@@ -66,31 +66,35 @@
 
 ### Test Result
 
-✅ **ADVERSARIAL TEST PASSED**
+✅ **ADVERSARIAL TEST PASSED** — All 3 runs with actual captured output
 
-**Change 1: Set product-owner to haiku**
-```bash
-# Edit agents/product-owner.md: model: sonnet -> model: haiku
-$ node scripts/headless-orchestrator.cjs --story TEST --feature "Test" --scope feature --json | jq '.phases[0]'
-{
-  "phase": 1,
+**Run 1: Baseline (original frontmatter: model: sonnet)**
+```
+Phase 1: {
   "agent": "product-owner",
-  "declared_model": "haiku",      # <-- CHANGE DETECTED ✅
+  "declared_model": "sonnet",
   "expected_model": "sonnet",
-  "model_match": "✗"
+  "match": "✓"
 }
 ```
 
-**Change 2: Restore product-owner to sonnet**
-```bash
-# Restore agents/product-owner.md: model: haiku -> model: sonnet
-$ node scripts/headless-orchestrator.cjs --story TEST --feature "Test" --scope feature --json | jq '.phases[0]'
-{
-  "phase": 1,
+**Run 2: After change to haiku (edited agents/product-owner.md: model: sonnet → haiku)**
+```
+Phase 1 (AFTER CHANGE): {
   "agent": "product-owner",
-  "declared_model": "sonnet",     # <-- RESTORATION DETECTED ✅
+  "declared_model": "haiku",      # <-- CHANGE DETECTED ✅ (was sonnet, now haiku)
   "expected_model": "sonnet",
-  "model_match": "✓"
+  "match": "✗"                     # <-- MISMATCH FLAGGED ✅
+}
+```
+
+**Run 3: After restore to sonnet (restored agents/product-owner.md: model: haiku → sonnet)**
+```
+Phase 1 (AFTER RESTORE): {
+  "agent": "product-owner",
+  "declared_model": "sonnet",     # <-- RESTORATION DETECTED ✅ (back to sonnet)
+  "expected_model": "sonnet",
+  "match": "✓"                     # <-- MATCH RESTORED ✅
 }
 ```
 
