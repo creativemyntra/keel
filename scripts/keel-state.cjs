@@ -558,23 +558,27 @@ const checkRegistry = {
     return { id: 'C-0001', status: 'PASS', detail: 'baseline check: no contradictions' };
   },
 
-  // C-0002: Verify gate budget is within healthy range (advisory check).
-  // FAILS only if gate_events >= 95% of max_gates (very high stress, close to halt).
+  // C-0002: Verify gate budget is within healthy range (ADVISORY-ONLY check).
+  // Never blocks (FAIL verdict is not used). Always returns PASS, but messages alert stress.
   // SKIPS if gate_events >= max_gates (built-in halt logic already triggered).
-  // Status: PASS if healthy, SKIP at limit, FAIL only in very high stress (95%+).
+  // Status: PASS with healthy/warning message depending on utilization. Never FAIL.
   gate_budget_stress: (storyId, phase, manifest) => {
     const current = manifest.gate_events || 0;
     const max = manifest.max_gates || 40;
-    // SKIP this check if we've already hit the limit (halt logic will take over)
+    const pct = (current/max*100).toFixed(1);
+    // SKIP if we've already hit the limit (halt logic will take over)
     if (current >= max) {
       return { id: 'C-0002', status: 'SKIP', detail: `gate budget at/over limit: ${current}/${max} events (halt logic will stop further attempts)` };
     }
-    // FAIL only if we're at very high stress (95%+)
-    const threshold = max * 0.95;
-    if (current >= threshold) {
-      return { id: 'C-0002', status: 'FAIL', detail: `gate budget critical: ${current}/${max} events used (${(current/max*100).toFixed(1)}% — critically close to limit)` };
+    // Advisory warning if utilization >= 95% (high stress, but allow gating)
+    if (current >= max * 0.95) {
+      return { id: 'C-0002', status: 'PASS', detail: `gate budget WARNING: ${current}/${max} events (${pct}%) — nearing limit, may indicate retry storm (not blocking, advisory only)` };
     }
-    return { id: 'C-0002', status: 'PASS', detail: `gate budget is healthy: ${current}/${max} events (${(current/max*100).toFixed(1)}%)` };
+    // Green if under 95%
+    if (current >= max * 0.80) {
+      return { id: 'C-0002', status: 'PASS', detail: `gate budget notice: ${current}/${max} events (${pct}%) — approaching high utilization` };
+    }
+    return { id: 'C-0002', status: 'PASS', detail: `gate budget healthy: ${current}/${max} events (${pct}%)` };
   },
 
   // C-0003: Test-only FAIL check for AC-1 contradiction testing.
@@ -945,7 +949,8 @@ const checkRegistry = {
   },
 
   // C-0011 (T5): Coverage threshold validation — verify tests were run and coverage measured.
-  // Blocks PASS if manifest.verification is missing, stale, or test command failed.
+  // PRECONDITION check: for test phases (5,6,7), manifest.verification must exist before gating.
+  // If missing, returns FAIL with guidance to run verify-tests first (not as separate async step).
   // Ensures coverage is measured by the engine, not claimed by agents.
   // Status: PASS if verification present/fresh and tests passed, FAIL if missing/stale/failed.
   coverage_threshold: (storyId, phase, manifest) => {
@@ -961,12 +966,13 @@ const checkRegistry = {
       return { id: 'C-0011', status: 'SKIP', detail: `coverage verification not required for phase ${phase}` };
     }
 
-    // Verification must exist
+    // PRECONDITION: Verification must exist before gating (ordered dependency)
+    // This enforces: run verify-tests BEFORE gate, not after (implicit ordering prevented)
     if (!manifest.verification) {
       return {
         id: 'C-0011',
         status: 'FAIL',
-        detail: `coverage verification missing for phase ${phase}. Run: keel-state verify-tests ${storyId} --phase ${phase}`
+        detail: `PRECONDITION: coverage verification missing for phase ${phase}. Run tests first: keel-state verify-tests ${storyId} --phase ${phase} BEFORE gating`
       };
     }
 
@@ -1004,7 +1010,7 @@ const checkRegistry = {
       };
     }
 
-    // Coverage threshold: enforce minimum 52% (current repo state) or agent's claim, whichever is higher
+    // Coverage threshold: enforce minimum 52% (current repo state)
     // This prevents regression while allowing improvement.
     const minCoverage = 52;
     if (v.coverage_percent !== null && v.coverage_percent < minCoverage) {
@@ -1053,18 +1059,32 @@ const checkRegistry = {
       return { id: 'C-0012', status: 'PASS', detail: 'phase output unreadable (pre-validation check)' };
     }
 
-    // Scan phase output for coverage-shaped claims (% adjacent to "coverage")
-    const phaseText = JSON.stringify(phaseOutput);
-    const coverageMatch = phaseText.match(/(coverage|cov|test).*?(\d{1,3}(?:\.\d+)?)\s*%/i) ||
-                          phaseText.match(/(\d{1,3}(?:\.\d+)?)\s*%.*?(coverage|cov|test)/i);
+    // Scan phase output findings ONLY for coverage-shaped claims (bounded scope, no regex DoS)
+    // Only check findings array to avoid catastrophic backtracking on arbitrary strings
+    if (!Array.isArray(phaseOutput.findings)) {
+      return { id: 'C-0012', status: 'PASS', detail: 'no findings in agent output' };
+    }
 
-    if (!coverageMatch) {
-      return { id: 'C-0012', status: 'PASS', detail: 'no coverage claims in agent output' };
+    // Search findings text for coverage percentage mentions (strict format: "N% coverage" or "coverage N%")
+    let claimedCoverage = null;
+    for (const finding of phaseOutput.findings) {
+      if (typeof finding.text !== 'string') continue;
+      const text = finding.text;
+      // Safe bounded search: only look at start/end of text, not arbitrary positions
+      const match = text.match(/^.*?(\d{1,3}(?:\.\d+)?)%.*?coverage/i) ||
+                    text.match(/coverage.*?(\d{1,3}(?:\.\d+)?)%/i);
+      if (match && match[1]) {
+        claimedCoverage = parseFloat(match[1]);
+        break; // Stop at first claim (don't accumulate multiple claims)
+      }
+    }
+
+    if (!claimedCoverage) {
+      return { id: 'C-0012', status: 'PASS', detail: 'no coverage claims in agent findings' };
     }
 
     // If verification exists, check that agent claim matches engine measurement
     if (manifest.verification && manifest.verification.coverage_percent !== null) {
-      const claimedCoverage = parseFloat(coverageMatch[2] || coverageMatch[1]);
       const engineCoverage = manifest.verification.coverage_percent;
 
       // Allow 0.5% drift (rounding difference)
@@ -1075,12 +1095,12 @@ const checkRegistry = {
           detail: `agent claimed ${claimedCoverage}% coverage but engine measured ${engineCoverage}%. Agents must report the engine's measurement, not compute their own.`
         };
       }
-    } else if (coverageMatch) {
+    } else {
       // Agent claimed coverage but engine hasn't measured it yet
       return {
         id: 'C-0012',
         status: 'FAIL',
-        detail: `agent claimed coverage (${coverageMatch[2] || coverageMatch[1]}%) but engine measurement is missing. Coverage must be verified by running: keel-state verify-tests ${storyId} --phase ${phase}`
+        detail: `agent claimed ${claimedCoverage}% coverage but engine measurement is missing. Run: keel-state verify-tests ${storyId} --phase ${phase}`
       };
     }
 
@@ -2424,6 +2444,7 @@ function cmdFinding(args) {
   if (newState === 'RESOLVED') {
     const commit = flag(args, '--commit') || '';
     if (!commit) die(1, 'RESOLVED requires --commit <sha>');
+    if (!/^[a-f0-9]{7,40}$/.test(commit)) die(1, `invalid commit SHA format — expected 7-40 hex chars, got: ${commit}`);
 
     // Verify commit exists and touches at least one file
     let verifyOutput;

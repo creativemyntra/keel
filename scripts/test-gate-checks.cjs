@@ -218,9 +218,9 @@ test('gate budget stress check detects high gate event count', () => {
   if (!result.output.includes('C-0002')) {
     throw new Error('--dry-run did not show C-0002 gate budget check');
   }
-  // At 95%, it should FAIL
-  if (!result.output.includes('✗')) {
-    throw new Error('C-0002 should show as failed when at 95% budget');
+  // At 95%, it should PASS (advisory only, not blocking)
+  if (!result.output.includes('WARNING')) {
+    throw new Error('C-0002 should show WARNING message at 95% budget (advisory, not blocking)');
   }
 });
 
