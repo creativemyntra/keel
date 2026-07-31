@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Keel Pipeline Manifest Schema",
+  "description": "State for a single story in the KEEL pipeline",
+  "type": "object",
+  "required": [
+    "story_id",
+    "title",
+    "scope",
+    "expected_phases",
+    "current_phase",
+    "attempts",
+    "phase_modes",
+    "gate_events",
+    "max_gates",
+    "max_hours",
+    "started_at",
+    "updated_at"
+  ],
+  "properties": {
+    "story_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Alphanumeric story ID (path traversal safe)"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 0,
+      "description": "Human-readable story title"
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["feature", "defect"],
+      "description": "Feature (10 phases) or defect (express lane 1→5→6→8)"
+    },
+    "expected_phases": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 10
+      },
+      "minItems": 1,
+      "maxItems": 10,
+      "description": "Phases expected to run for this story scope"
+    },
+    "current_phase": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 11,
+      "description": "Current phase pointer (11 = past final phase)"
+    },
+    "attempts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 3
+      },
+      "description": "Per-phase attempt counters (max 3 attempts)"
+    },
+    "phase_modes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "null"],
+        "enum": ["author", "draft", "execute", "finalize", null]
+      },
+      "description": "Per-phase mode markers for overlapping phases (E2E author-before-QA, docs draft-before-security)"
+    },
+    "gate_events": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total gate events (PASS/FAIL) for this story"
+    },
+    "max_gates": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 40,
+      "description": "Gate event budget (halts if exceeded)"
+    },
+    "max_hours": {
+      "type": "number",
+      "minimum": 0.1,
+      "default": 72,
+      "description": "Wall-clock hours budget (halts if exceeded)"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when story initialized"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of last state update"
+    },
+    "attempt_hashes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Optional: SHA256 hashes of phase files for identical-retry detection"
+    },
+    "halted": {
+      "type": "boolean",
+      "description": "Optional: pipeline halted at attempt limit"
+    }
+  },
+  "additionalProperties": false
+}

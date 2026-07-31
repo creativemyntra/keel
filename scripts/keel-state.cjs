@@ -14,7 +14,7 @@
  * Usage:
  *   node keel-state.cjs init     <story-id> [--title "..."]
  *   node keel-state.cjs validate <story-id> <NN-agent.json>
- *   node keel-state.cjs gate     <story-id> --phase N --verdict PASS|FAIL [--notes "..."]
+ *   node keel-state.cjs gate     <story-id> --phase N --verdict PASS|FAIL [--notes "..."] [--dry-run true]
  *   node keel-state.cjs audit    <story-id> --phase-file <NN-agent.json> [--commit <sha>] [--notes "..."]
  *   node keel-state.cjs audit    <story-id> --json '<object>'
  *   node keel-state.cjs status   <story-id> | --all
@@ -94,17 +94,95 @@ function readJson(file) {
   catch (e) { die(1, `FAIL: cannot read/parse ${file}: ${e.message}`); }
 }
 
+// Validate manifest against schema (P2-02: manifest schema validation)
+function validateManifestSchema(manifest) {
+  const required = ['story_id', 'title', 'scope', 'expected_phases', 'current_phase', 'attempts',
+                    'phase_modes', 'gate_events', 'max_gates', 'max_hours', 'started_at', 'updated_at'];
+  const errors = [];
+
+  // Check required fields
+  for (const field of required) {
+    if (!(field in manifest)) errors.push(`missing required field "${field}"`);
+  }
+
+  // Validate scope enum
+  if (manifest.scope && !['feature', 'defect'].includes(manifest.scope)) {
+    errors.push(`scope must be "feature" or "defect", got "${manifest.scope}"`);
+  }
+
+  // Validate expected_phases is array of ints 1-10
+  if (manifest.expected_phases && Array.isArray(manifest.expected_phases)) {
+    for (let i = 0; i < manifest.expected_phases.length; i++) {
+      const p = manifest.expected_phases[i];
+      if (!Number.isInteger(p) || p < 1 || p > 10) {
+        errors.push(`expected_phases[${i}]: phase ${p} out of range 1-10`);
+      }
+    }
+  } else if (manifest.expected_phases) {
+    errors.push(`expected_phases must be an array, got ${typeof manifest.expected_phases}`);
+  }
+
+  // Validate current_phase is 1-11
+  if (manifest.current_phase && (!Number.isInteger(manifest.current_phase) || manifest.current_phase < 1 || manifest.current_phase > 11)) {
+    errors.push(`current_phase must be integer 1-11, got ${manifest.current_phase}`);
+  }
+
+  // Validate attempts is object with int values 0-3
+  if (manifest.attempts && typeof manifest.attempts === 'object') {
+    for (const [phase, count] of Object.entries(manifest.attempts)) {
+      if (!Number.isInteger(count) || count < 0 || count > 3) {
+        errors.push(`attempts.${phase}: count ${count} out of range 0-3`);
+      }
+    }
+  }
+
+  // Validate phase_modes is object with string|null values
+  if (manifest.phase_modes && typeof manifest.phase_modes === 'object') {
+    const validModes = ['author', 'draft', 'execute', 'finalize'];
+    for (const [phase, mode] of Object.entries(manifest.phase_modes)) {
+      if (mode !== null && (typeof mode !== 'string' || !validModes.includes(mode))) {
+        errors.push(`phase_modes.${phase}: invalid mode "${mode}" (must be author|draft|execute|finalize|null)`);
+      }
+    }
+  }
+
+  // Validate numeric fields
+  if (manifest.gate_events !== undefined && (!Number.isInteger(manifest.gate_events) || manifest.gate_events < 0)) {
+    errors.push(`gate_events must be non-negative integer, got ${manifest.gate_events}`);
+  }
+
+  if (manifest.max_gates !== undefined && (!Number.isInteger(manifest.max_gates) || manifest.max_gates < 1)) {
+    errors.push(`max_gates must be positive integer, got ${manifest.max_gates}`);
+  }
+
+  if (manifest.max_hours !== undefined && (typeof manifest.max_hours !== 'number' || manifest.max_hours < 0.1)) {
+    errors.push(`max_hours must be number >= 0.1, got ${manifest.max_hours}`);
+  }
+
+  return errors;
+}
+
 function readManifest(storyId) {
   if (!fs.existsSync(manifestPath(storyId))) {
     die(1, `FAIL: no manifest for story ${storyId} — pipeline not initialized (run: init ${storyId})`);
   }
-  return readJson(manifestPath(storyId));
+  const manifest = readJson(manifestPath(storyId));
+  const errors = validateManifestSchema(manifest);
+  if (errors.length > 0) {
+    die(1, `FAIL: manifest validation error(s):\n  - ${errors.join('\n  - ')}`);
+  }
+  return manifest;
 }
 
 // Atomic replace: write to a temp file, then rename. rename() is atomic on the
 // same volume on both Windows (NTFS) and POSIX, so readers never see a torn file.
 function writeManifest(storyId, manifest) {
   manifest.updated_at = nowIso();
+  // P2-02: Validate manifest schema before writing
+  const errors = validateManifestSchema(manifest);
+  if (errors.length > 0) {
+    die(1, `FAIL: cannot write invalid manifest — ${errors.length} error(s):\n  - ${errors.join('\n  - ')}`);
+  }
   const file = manifestPath(storyId);
   const tmp = file + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(manifest, null, 2) + '\n');
@@ -262,10 +340,53 @@ const SCOPES = {
   defect: [1, 5, 6, 8],
 };
 
+// G-10: CJIS Data Classification Gate precondition check.
+// Verifies that keel-classify-gate.cjs is wired into hooks.json for CJIS-scoped stories.
+function checkCJISGatePrecondition(isCJISScoped) {
+  if (!isCJISScoped) return; // CJIS gate not required for non-CJIS stories
+
+  let hooksConfig;
+  try {
+    hooksConfig = JSON.parse(fs.readFileSync('hooks/hooks.json', 'utf8'));
+  } catch (e) {
+    die(2, `HALT: CJIS Data Classification Gate precondition not met — hooks/hooks.json not found or invalid JSON: ${e.message}`);
+  }
+
+  const requiredStages = ['UserPromptSubmit', 'PreToolUse', 'PostToolUse'];
+  const missingStages = [];
+
+  for (const stage of requiredStages) {
+    const stageHooks = hooksConfig.hooks?.[stage];
+    if (!stageHooks) {
+      missingStages.push(stage);
+      continue;
+    }
+
+    // Check if keel-classify-gate.cjs is wired for this stage
+    const hasGate = stageHooks.some((entry) => {
+      if (entry.hooks) {
+        return entry.hooks.some((hook) => hook.command?.includes('keel-classify-gate.cjs'));
+      }
+      return false;
+    });
+
+    if (!hasGate) missingStages.push(stage);
+  }
+
+  if (missingStages.length > 0) {
+    die(2, `HALT: CJIS Data Classification Gate precondition not met — keel-classify-gate.cjs not wired for stages: ${missingStages.join(', ')}. Update hooks/hooks.json per .keel/GUARDRAILS.md (G-10).`);
+  }
+}
+
 function cmdInit(storyId, args) {
   const dir = stateDir(storyId);
   const scope = flag(args, '--scope') || 'feature';
   if (!SCOPES[scope]) die(64, `unknown --scope "${scope}" (feature|defect)`);
+  const isCJISScoped = args.includes('--cjis-scope');
+
+  // G-10: Check CJIS gate precondition BEFORE initializing story
+  checkCJISGatePrecondition(isCJISScoped);
+
   const positionalTitle = args.find((a) => !a.startsWith('--'));
   if (positionalTitle && !flag(args, '--title')) {
     console.warn(`WARNING: positional title "${positionalTitle}" ignored — use --title "${positionalTitle}"`);
@@ -423,12 +544,44 @@ function haltPipeline(storyId, manifest, phase, attempt, reason, extraAudit) {
   notifyHalt(storyId, phase, attempt, reasons).then(() => process.exit(2));
 }
 
+// TASK T1: Check registry for verdict contradiction detection.
+// Each check is a pure function returning {id, status: "PASS"|"FAIL"|"SKIP", detail}.
+// Checks can examine manifest, phase file, artifacts, or state. All run before PASS verdict is honored.
+// If any check FAIL + verdict PASS, gate rejects with exit 2 (HALT).
+const checkRegistry = {
+  // C-0001: Trivial always-PASS check — shipped as baseline to verify check execution.
+  // Real checks will be added by compliance/governance teams as policy hardens.
+  // Status: always PASS unless thrown.
+  trivial_pass: (storyId, phase, manifest) => {
+    return { id: 'C-0001', status: 'PASS', detail: 'baseline check: no contradictions' };
+  },
+};
+
+function runChecks(storyId, phase, manifest) {
+  const results = [];
+  for (const [name, checkFn] of Object.entries(checkRegistry)) {
+    try {
+      const result = checkFn(storyId, phase, manifest);
+      if (result && typeof result === 'object' && result.id && result.status && result.detail) {
+        results.push(result);
+      } else {
+        results.push({ id: `${name}:invalid`, status: 'FAIL', detail: 'check returned invalid format' });
+      }
+    } catch (err) {
+      // Fail-closed: thrown checks become FAIL, never swallowed.
+      results.push({ id: `${name}:throw`, status: 'FAIL', detail: `check threw: ${err.message}` });
+    }
+  }
+  return results;
+}
+
 function cmdGate(storyId, args) {
   const phase = parseInt(flag(args, '--phase') || '', 10);
   const verdict = (flag(args, '--verdict') || '').toUpperCase();
+  const dryRun = flag(args, '--dry-run') === 'true';
   const notes = flag(args, '--notes') || '';
   if (!Number.isInteger(phase) || !['PASS', 'FAIL'].includes(verdict)) {
-    die(64, 'usage: gate <story-id> --phase N --verdict PASS|FAIL [--notes "..."]');
+    die(64, 'usage: gate <story-id> --phase N --verdict PASS|FAIL [--notes "..."] [--dry-run true]');
   }
   const key = String(phase);
 
@@ -492,6 +645,48 @@ function cmdGate(storyId, args) {
         die(1, 'A PASS verdict cannot be recorded against an invalid phase file. Fix the phase output (or call gate --verdict FAIL to log the attempt) and retry.');
       }
 
+      // TASK T1: Run check registry before honoring PASS verdict.
+      // Checks can contradict the verdict; if any FAIL, reject the PASS claim.
+      const checkResults = runChecks(storyId, phase, manifest);
+      const failedChecks = checkResults.filter((c) => c.status === 'FAIL');
+
+      // --dry-run: print check results and exit without modifying manifest.
+      if (dryRun) {
+        console.log(`CHECK REGISTRY RESULTS (--dry-run mode):`);
+        console.log(`Phase: ${phase}, Verdict: ${verdict}, Story: ${storyId}`);
+        console.log(`${checkResults.length} check(s) executed:\n`);
+        checkResults.forEach((c) => {
+          const icon = c.status === 'PASS' ? '✓' : c.status === 'SKIP' ? '◯' : '✗';
+          console.log(`  ${icon} ${c.id}: ${c.status} — ${c.detail}`);
+        });
+        if (failedChecks.length) {
+          console.log(`\n${failedChecks.length} check(s) failed. PASS verdict would be REJECTED.`);
+        } else {
+          console.log(`\nAll checks passed. PASS verdict would be ACCEPTED.`);
+        }
+        console.log('Manifest unchanged. Exiting --dry-run mode.');
+        process.exit(0);
+      }
+
+      // Verdict contradiction detection: if verdict is PASS but any check FAILs, halt.
+      if (failedChecks.length) {
+        const contradiction = failedChecks.map((c) => `${c.id}: ${c.detail}`).join('; ');
+        manifest.halted = true;
+        writeManifest(storyId, manifest);
+        appendAudit(storyId, {
+          phase, agent: 'handshake', action: 'gate_rejected_contradiction',
+          notes: `verdict PASS contradicted by ${failedChecks.length} check(s): ${contradiction}`,
+          checks: checkResults,
+        });
+        fs.appendFileSync(handoffPath(storyId),
+          `- ${nowIso()} | phase ${phase} | HALT | verdict contradiction: ${failedChecks.length} check(s) failed | ${contradiction}\n`);
+        console.error(`GATE REJECTED: verdict is PASS but checks have failed:`);
+        failedChecks.forEach((c) => console.error(`  ✗ ${c.id}: ${c.detail}`));
+        console.error(`The engine cannot honor a PASS verdict contradicted by facts. Pipeline halted.`);
+        console.error(`Resume (human decision required): ${selfInvocation()} resume ${storyId} --phase ${phase} --notes "<rationale>"`);
+        process.exit(2);
+      }
+
       delete manifest.attempts[key];
       if (manifest.attempt_hashes) delete manifest.attempt_hashes[key];
       // Clear any author/draft mode marker — execute/finalize has now run and gated.
@@ -505,7 +700,7 @@ function cmdGate(storyId, args) {
       writeManifest(storyId, manifest);
       fs.appendFileSync(handoffPath(storyId),
         `- ${nowIso()} | phase ${phase} -> ${label} | PASS | ${notes}\n`);
-      appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_passed', notes });
+      appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_passed', notes, checks: checkResults });
       // auto-audit the phase completion — the separate `audit --phase-file`
       // step proved fragile in practice (a fast-model gate skipped it in the
       // KEEL-102 e2e), so the engine owns it on PASS. phaseFile is already
