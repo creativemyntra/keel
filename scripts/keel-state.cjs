@@ -585,6 +585,57 @@ const checkRegistry = {
     }
     return { id: 'C-0003', status: 'PASS', detail: 'test marker not set (normal operation)' };
   },
+
+  // C-0004 (T2): Phase sequence validation — all predecessor phases must have valid output.
+  // Verifies that before advancing to phase N, all phases that come before N in the
+  // expected_phases list have valid output files (exist and pass schema validation).
+  // Prevents skipping phases via `resume` without leaving output behind.
+  // Status: PASS if all predecessors valid, FAIL if any missing or invalid, SKIP if this is phase 1.
+  phase_sequence: (storyId, phase, manifest) => {
+    const expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
+    if (phase === 1 || phase < 1) {
+      return { id: 'C-0004', status: 'SKIP', detail: 'phase 1 has no predecessors' };
+    }
+
+    // Find all phases that come before the current phase in the expected sequence
+    const predecessors = expected.filter((p) => p < phase);
+    if (predecessors.length === 0) {
+      return { id: 'C-0004', status: 'SKIP', detail: `no predecessors in expected_phases for phase ${phase}` };
+    }
+
+    // Check each predecessor
+    const missing = [];
+    for (const pred of predecessors) {
+      const prefix = String(pred).padStart(2, '0') + '-';
+      const phaseFile = fs.readdirSync(stateDir(storyId))
+        .find((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+      if (!phaseFile) {
+        missing.push(`phase ${pred} output not found`);
+        continue;
+      }
+
+      // Validate the predecessor's output file
+      const errors = validatePhaseFile(storyId, phaseFile);
+      if (errors.length > 0) {
+        missing.push(`phase ${pred} (${phaseFile}): ${errors.join('; ')}`);
+      }
+    }
+
+    if (missing.length > 0) {
+      return {
+        id: 'C-0004',
+        status: 'FAIL',
+        detail: `predecessor phase validation failed: ${missing.join(' | ')}`
+      };
+    }
+
+    return {
+      id: 'C-0004',
+      status: 'PASS',
+      detail: `all ${predecessors.length} predecessor phase(s) present and valid`
+    };
+  },
 };
 
 function runChecks(storyId, phase, manifest) {

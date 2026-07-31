@@ -329,6 +329,126 @@ test('exit code contract: --dry-run = 0', () => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────
+// TASK T2: Phase Sequence Check (C-0004)
+// ─────────────────────────────────────────────────────────────────────────
+
+// AC-1: Story with phases 1,2,4 present and 3 missing; gate phase 5 → rejected, names phase 3
+test('T2-AC1: missing predecessor phase rejected with error naming it', () => {
+  initStory('story-t2-ac1');
+  createPhaseFile('story-t2-ac1', 1);
+  createPhaseFile('story-t2-ac1', 2);
+  createPhaseFile('story-t2-ac1', 4);
+  // Intentionally skip phase 3
+
+  // Manually set current_phase to 4 (simulating resume that skipped 3)
+  const manifestPath = path.join('.keel/state', 'story-t2-ac1', 'manifest.json');
+  const m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  m.current_phase = 4;
+  fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2));
+
+  // Try to gate phase 4 with PASS
+  const result = runGate('story-t2-ac1', 4, 'PASS', false);
+
+  // Should fail (exit 2) because phase 3 is missing
+  if (result.code !== 2) {
+    throw new Error(`expected exit 2 (HALT), got ${result.code}`);
+  }
+
+  // Should mention phase 3 in error
+  if (!result.output.includes('phase 3')) {
+    throw new Error('error message should mention missing phase 3');
+  }
+});
+
+// AC-2: Phase 3 present but schema-invalid → still rejected
+test('T2-AC2: invalid predecessor phase rejected', () => {
+  initStory('story-t2-ac2');
+  createPhaseFile('story-t2-ac2', 1);
+  createPhaseFile('story-t2-ac2', 2);
+
+  // Create phase 3 with invalid schema (missing required fields)
+  const phase3Invalid = path.join('.keel/state', 'story-t2-ac2', '03-ui-designer.json');
+  fs.writeFileSync(phase3Invalid, JSON.stringify({
+    phase: 3,
+    agent: 'ui-designer',
+    // Missing story_id, confidence, findings, etc.
+  }, null, 2));
+
+  createPhaseFile('story-t2-ac2', 4);
+
+  // Manually advance to phase 4
+  const manifestPath = path.join('.keel/state', 'story-t2-ac2', 'manifest.json');
+  const m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  m.current_phase = 4;
+  fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2));
+
+  const result = runGate('story-t2-ac2', 4, 'PASS', false);
+
+  // Should fail because phase 3 is invalid
+  if (result.code !== 2) {
+    throw new Error(`expected exit 2, got ${result.code}`);
+  }
+});
+
+// AC-3: Normal in-order story → passes
+test('T2-AC3: normal in-order story with all predecessors passes', () => {
+  initStory('story-t2-ac3');
+
+  // Create and gate phases 1, 2, 3 in order
+  createPhaseFile('story-t2-ac3', 1);
+  runGate('story-t2-ac3', 1, 'PASS', false);
+
+  createPhaseFile('story-t2-ac3', 2);
+  runGate('story-t2-ac3', 2, 'PASS', false);
+
+  createPhaseFile('story-t2-ac3', 3);
+  const result = runGate('story-t2-ac3', 3, 'PASS', false);
+
+  // Should succeed because all predecessors are valid
+  if (result.code !== 0) {
+    throw new Error(`expected exit 0, got ${result.code}: ${result.output}`);
+  }
+});
+
+// AC-4: Defect express-lane story (1,5,6,8) → passes without false positives
+test('T2-AC4: defect express-lane (1→5→6→8) passes without false positives', () => {
+  initStory('story-t2-ac4-defect');
+
+  // Initialize as defect scope
+  let manifestPath = path.join('.keel/state', 'story-t2-ac4-defect', 'manifest.json');
+  let m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  m.scope = 'defect';
+  m.expected_phases = [1, 5, 6, 8];
+  m.current_phase = 1;
+  fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2));
+
+  // Gate phase 1 with PASS
+  createPhaseFile('story-t2-ac4-defect', 1);
+  runGate('story-t2-ac4-defect', 1, 'PASS', false);
+
+  // Gate phase 5 with PASS (skips 2,3,4 which is intentional for defect scope)
+  createPhaseFile('story-t2-ac4-defect', 5);
+  let result = runGate('story-t2-ac4-defect', 5, 'PASS', false);
+  if (result.code !== 0) {
+    throw new Error(`phase 5 should pass (no false positive for intentional skip): ${result.output}`);
+  }
+
+  // Gate phase 6 with PASS
+  createPhaseFile('story-t2-ac4-defect', 6);
+  result = runGate('story-t2-ac4-defect', 6, 'PASS', false);
+  if (result.code !== 0) {
+    throw new Error(`phase 6 should pass: ${result.output}`);
+  }
+
+  // Gate phase 8 with PASS (skips 7 which is intentional)
+  createPhaseFile('story-t2-ac4-defect', 8);
+  result = runGate('story-t2-ac4-defect', 8, 'PASS', false);
+  if (result.code !== 0) {
+    throw new Error(`phase 8 should pass (final phase of defect lane): ${result.output}`);
+  }
+});
+
 // ─────────────────────────────────────────────────────────────────────
 
 cleanupStories();
