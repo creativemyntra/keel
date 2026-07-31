@@ -330,6 +330,101 @@ test('exit code contract: --dry-run = 0', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
+// TASK T4: User Directives (C-0006)
+// ─────────────────────────────────────────────────────────────────────────
+
+// AC-1: Add a directive, ignore it, restate it → restated_count 2 and HIGH finding auto-appended
+test('T4-AC1: Directive restatement triggers auto-added HIGH finding', () => {
+  initStory('story-t4-ac1');
+
+  // Add directive
+  let result = require('child_process').execSync(
+    `node scripts/keel-state.cjs directive story-t4-ac1 add --verbatim "Use JWT tokens for auth" --phases 5,6,7`,
+    { stdio: 'pipe', encoding: 'utf8' }
+  );
+  if (!result.includes('OK')) {
+    throw new Error('directive add failed');
+  }
+
+  // Create phase-5 file (directive applies to it)
+  const phaseFile = path.join('.keel/state', 'story-t4-ac1', '05-software-engineer.json');
+  fs.writeFileSync(phaseFile, JSON.stringify({
+    phase: 5,
+    agent: 'software-engineer',
+    story_id: 'story-t4-ac1',
+    confidence: 'high',
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    findings: [],
+    next_phase: null
+  }, null, 2));
+
+  // Advance to phase 5
+  const manifestPath = path.join('.keel/state', 'story-t4-ac1', 'manifest.json');
+  let m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  m.current_phase = 5;
+  fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2));
+
+  // Restate the directive (restated_count will become 2)
+  result = require('child_process').execSync(
+    `node scripts/keel-state.cjs directive story-t4-ac1 add --verbatim "Use JWT tokens for auth" --phases 5,6,7`,
+    { stdio: 'pipe', encoding: 'utf8' }
+  );
+  if (!result.includes('restated')) {
+    throw new Error('directive restatement not detected');
+  }
+
+  // Check that HIGH finding was auto-added
+  const phaseData = JSON.parse(fs.readFileSync(phaseFile, 'utf8'));
+  const directiveHighFinding = phaseData.findings.find((f) => f.id.startsWith('DRCT-') && f.severity === 'HIGH');
+  if (!directiveHighFinding) {
+    throw new Error('auto-added HIGH finding for restated directive not found');
+  }
+  if (!directiveHighFinding.text.includes('restated')) {
+    throw new Error('HIGH finding text should mention restatement');
+  }
+});
+
+// AC-4: Satisfy directive with evidence → gate passes, directive listed in PASS output
+test('T4-AC4: Satisfied directives allow gate PASS', () => {
+  initStory('story-t4-ac4');
+
+  // Add and immediately satisfy directive for phase 1
+  require('child_process').execSync(
+    `node scripts/keel-state.cjs directive story-t4-ac4 add --verbatim "Document all API endpoints" --phases 1`,
+    { stdio: 'pipe', encoding: 'utf8' }
+  );
+
+  require('child_process').execSync(
+    `node scripts/keel-state.cjs directive story-t4-ac4 satisfy D-001 --notes "Documented in README"`,
+    { stdio: 'pipe', encoding: 'utf8' }
+  );
+
+  // Create phase-1 and gate it
+  const phaseFile = path.join('.keel/state', 'story-t4-ac4', '01-product-owner.json');
+  fs.writeFileSync(phaseFile, JSON.stringify({
+    phase: 1,
+    agent: 'product-owner',
+    story_id: 'story-t4-ac4',
+    confidence: 'high',
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    findings: [
+      { id: 'INFO-1', text: 'Phase completed successfully', severity: 'LOW', state: 'OPEN' }
+    ],
+    next_phase: null
+  }, null, 2));
+
+  // Gate should pass (directive is SATISFIED)
+  const result = runGate('story-t4-ac4', 1, 'PASS', false);
+  if (result.code !== 0) {
+    throw new Error(`expected exit 0, got ${result.code}: ${result.output}`);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
 // TASK T3: Findings Terminal State Check (C-0005)
 // ─────────────────────────────────────────────────────────────────────────
 

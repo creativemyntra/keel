@@ -586,6 +586,43 @@ const checkRegistry = {
     return { id: 'C-0003', status: 'PASS', detail: 'test marker not set (normal operation)' };
   },
 
+  // C-0006 (T4): Directive adherence validation — block PASS if OPEN directives apply to current phase.
+  // Ensures user instructions (HOW work is done) are tracked and enforced, not forgotten.
+  // Status: FAIL if any OPEN directive applies to this phase, PASS if all directives satisfied/superseded.
+  directive_adherence: (storyId, phase, manifest) => {
+    if (!Array.isArray(manifest.directives) || manifest.directives.length === 0) {
+      return { id: 'C-0006', status: 'PASS', detail: 'no directives recorded' };
+    }
+
+    // Find OPEN directives that apply to this phase
+    const blocking = manifest.directives.filter((d) =>
+      d.state === 'OPEN' && Array.isArray(d.applies_to_phases) && d.applies_to_phases.includes(phase)
+    );
+
+    if (blocking.length > 0) {
+      const details = blocking
+        .map((d) => `D: "${d.verbatim}" (restated ${d.restated_count}x)`)
+        .join('; ');
+      return {
+        id: 'C-0006',
+        status: 'FAIL',
+        detail: `${blocking.length} OPEN directive(s) apply to phase ${phase}: ${details}`
+      };
+    }
+
+    // Also report satisfied directives for visibility
+    const satisfied = manifest.directives.filter((d) => d.state === 'SATISFIED');
+    const satisfiedDetail = satisfied.length > 0
+      ? `all directives satisfied or superseded (${satisfied.length} satisfied)`
+      : 'no directives apply to this phase';
+
+    return {
+      id: 'C-0006',
+      status: 'PASS',
+      detail: satisfiedDetail
+    };
+  },
+
   // C-0005 (T3): Findings terminal state validation — block PASS if CRITICAL/HIGH findings are OPEN.
   // Enforces that defects, security issues, and performance concerns are resolved before advancing.
   // MEDIUM/LOW findings do not block (advisory only).
@@ -1771,6 +1808,115 @@ function cmdTokenLedger(args) {
   die(64, `unknown token-ledger subcommand: ${sub} (expected append or summary)`);
 }
 
+// ------------------------------------------------------------------- directive (T4)
+// Track and enforce user directives (HOW work is done, distinct from ACs about WHAT).
+// Usage:
+//   directive <story-id> add --verbatim "<exact user words>" --phases <1,5,6>
+//   directive <story-id> satisfy <D-NNN> --notes "evidence"
+//   directive <story-id> list
+
+function cmdDirective(args) {
+  const sub = args[0];
+  const storyId = args[1];
+  if (!sub || !storyId) die(64, 'usage: directive <story-id> <add|satisfy|supersede|list> [options]');
+  validateStoryId(storyId);
+
+  const manifestPath = path.join(stateDir(storyId), 'manifest.json');
+  if (!fs.existsSync(manifestPath)) die(1, `story ${storyId} not found`);
+
+  const manifest = readManifest(storyId);
+  if (!Array.isArray(manifest.directives)) manifest.directives = [];
+
+  if (sub === 'add') {
+    const verbatim = flag(args, '--verbatim') || '';
+    const phasesStr = flag(args, '--phases') || '';
+    if (!verbatim || !phasesStr) die(64, 'add requires --verbatim "<text>" --phases <1,2,3>');
+
+    const applies_to_phases = phasesStr.split(',').map((p) => parseInt(p.trim(), 10)).filter(Number.isInteger);
+    if (applies_to_phases.length === 0) die(1, 'invalid --phases format (expected 1,2,3)');
+
+    // Check for restatement (same verbatim already exists in OPEN state)
+    const existing = manifest.directives.find((d) => d.verbatim === verbatim && d.state === 'OPEN');
+    if (existing) {
+      existing.restated_count = (existing.restated_count || 1) + 1;
+      console.log(`OK: directive ${existing.id} restated (count: ${existing.restated_count})`);
+
+      // At restated_count >= 2, auto-append HIGH finding to current phase output
+      if (existing.restated_count >= 2) {
+        const manifest2 = readManifest(storyId);
+        const currentPhase = manifest2.current_phase;
+        const prefix = String(currentPhase).padStart(2, '0') + '-';
+        const phaseFiles = fs.readdirSync(stateDir(storyId))
+          .filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
+        if (phaseFiles.length > 0) {
+          const phaseFile = phaseFiles[0];
+          const phaseData = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+          if (Array.isArray(phaseData.findings)) {
+            phaseData.findings.push({
+              id: `DRCT-${existing.id.slice(2)}`,
+              text: `Directive ${existing.id} restated ${existing.restated_count} times while still OPEN`,
+              severity: 'HIGH',
+              state: 'OPEN'
+            });
+            fs.writeFileSync(path.join(stateDir(storyId), phaseFile), JSON.stringify(phaseData, null, 2));
+            appendAudit(storyId, { action: 'directive_restatement_finding_added', directive_id: existing.id, restated_count: existing.restated_count });
+          }
+        }
+      }
+
+      writeManifest(storyId, manifest);
+      appendAudit(storyId, { action: 'directive_restated', directive_id: existing.id, restated_count: existing.restated_count });
+      return;
+    }
+
+    // New directive
+    const nextId = `D-${String(manifest.directives.length + 1).padStart(3, '0')}`;
+    const directive = {
+      id: nextId,
+      verbatim,
+      captured_at: nowIso(),
+      applies_to_phases,
+      state: 'OPEN',
+      restated_count: 1
+    };
+
+    manifest.directives.push(directive);
+    writeManifest(storyId, manifest);
+    appendAudit(storyId, { action: 'directive_added', directive_id: nextId, applies_to_phases });
+    console.log(`OK: directive added: ${nextId}`);
+  } else if (sub === 'satisfy') {
+    const directiveId = args[2];
+    if (!directiveId) die(64, 'satisfy requires directive ID (D-001, etc.)');
+    const notes = flag(args, '--notes') || '';
+
+    const directive = manifest.directives.find((d) => d.id === directiveId);
+    if (!directive) die(1, `directive ${directiveId} not found`);
+    if (directive.state !== 'OPEN') die(1, `directive ${directiveId} is ${directive.state}, not OPEN`);
+
+    directive.state = 'SATISFIED';
+    directive.evidence = directive.evidence || {};
+    directive.evidence.satisfied_at = nowIso();
+    directive.evidence.notes = notes;
+
+    writeManifest(storyId, manifest);
+    appendAudit(storyId, { action: 'directive_satisfied', directive_id: directiveId, notes });
+    console.log(`OK: directive ${directiveId} satisfied`);
+  } else if (sub === 'list') {
+    if (manifest.directives.length === 0) {
+      console.log('No directives recorded.');
+      return;
+    }
+    console.log(`\n=== Directives for ${storyId} ===\n`);
+    manifest.directives.forEach((d) => {
+      console.log(`${d.id} [${d.state}] (restated ${d.restated_count}x)`);
+      console.log(`  "${d.verbatim}"`);
+      console.log(`  Applies to phases: ${d.applies_to_phases.join(', ')}\n`);
+    });
+  } else {
+    die(64, 'unknown directive subcommand: ' + sub);
+  }
+}
+
 // ------------------------------------------------------------------- finding (T3)
 // Transition finding state: OPEN → RESOLVED|DEFERRED|WAIVED
 // RESOLVED requires commit sha (verified with git)
@@ -1867,7 +2013,7 @@ function cmdFinding(args) {
 
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding|directive> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
@@ -1892,5 +2038,6 @@ switch (cmd) {
   case 'phase-mode': cmdPhaseMode([storyId, ...rest]); break;
   case 'token-ledger': cmdTokenLedger([storyId, ...rest]); break;
   case 'finding': cmdFinding(['set-state', storyId, ...rest]); break;
+  case 'directive': cmdDirective([rest[0], storyId, ...rest.slice(1)]); break;
   default: die(64, `unknown command: ${cmd}`);
 }
