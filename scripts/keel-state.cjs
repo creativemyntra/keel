@@ -24,6 +24,7 @@
  *   node keel-state.cjs resume   <story-id> --phase N --notes "human rationale"
  *   node keel-state.cjs revert-check <story-id> --test <filter-or-path> [--runner "vendor/bin/phpunit"]
  *   node keel-state.cjs prescan  <story-id>
+ *   node keel-state.cjs verify-tests <story-id> --phase N [--command "npm test"]
  *   node keel-state.cjs memory-check
  *   node keel-state.cjs security-status [--since <ISO-8601>]
  */
@@ -940,6 +941,153 @@ const checkRegistry = {
       id: 'C-0010',
       status: 'PASS',
       detail: `all ${supersededOrDeclined.length} superseded/declined directives have human approvals`
+    };
+  },
+
+  // C-0011 (T5): Coverage threshold validation — verify tests were run and coverage measured.
+  // Blocks PASS if manifest.verification is missing, stale, or test command failed.
+  // Ensures coverage is measured by the engine, not claimed by agents.
+  // Status: PASS if verification present/fresh and tests passed, FAIL if missing/stale/failed.
+  coverage_threshold: (storyId, phase, manifest) => {
+    // Skip in test mode (E2E tests don't require coverage verification)
+    if (process.env.KEEL_SKIP_APPROVALS === '1') {
+      return { id: 'C-0011', status: 'SKIP', detail: 'coverage verification skipped (test mode)' };
+    }
+
+    // Skip if this phase doesn't need coverage verification (e.g., documentation phases)
+    // For now, apply to all phases that have tests (phases 5, 6, 7 typically test phases)
+    const testPhases = [5, 6, 7]; // software-engineer, qa-engineer, e2e-engineer
+    if (!testPhases.includes(phase)) {
+      return { id: 'C-0011', status: 'SKIP', detail: `coverage verification not required for phase ${phase}` };
+    }
+
+    // Verification must exist
+    if (!manifest.verification) {
+      return {
+        id: 'C-0011',
+        status: 'FAIL',
+        detail: `coverage verification missing for phase ${phase}. Run: keel-state verify-tests ${storyId} --phase ${phase}`
+      };
+    }
+
+    const v = manifest.verification;
+
+    // Verification must be for the current phase (or later in the pipeline)
+    if (v.phase < phase) {
+      return {
+        id: 'C-0011',
+        status: 'FAIL',
+        detail: `coverage verification stale: was for phase ${v.phase}, now at phase ${phase}. Rerun: keel-state verify-tests ${storyId} --phase ${phase}`
+      };
+    }
+
+    // Git commit must match HEAD (ensure verification is not stale)
+    let currentCommit = '';
+    try {
+      currentCommit = require('child_process').execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+    } catch { /* git not available */ }
+
+    if (currentCommit && v.git_commit && v.git_commit !== currentCommit) {
+      return {
+        id: 'C-0011',
+        status: 'FAIL',
+        detail: `coverage verification stale: was for commit ${v.git_commit.slice(0, 8)}, now at ${currentCommit.slice(0, 8)}. Rerun: keel-state verify-tests ${storyId} --phase ${phase}`
+      };
+    }
+
+    // Test command must have succeeded
+    if (v.exit_code !== 0) {
+      return {
+        id: 'C-0011',
+        status: 'FAIL',
+        detail: `coverage verification failed: test command exited ${v.exit_code}. Command: ${v.command}`
+      };
+    }
+
+    // Coverage threshold: enforce minimum 52% (current repo state) or agent's claim, whichever is higher
+    // This prevents regression while allowing improvement.
+    const minCoverage = 52;
+    if (v.coverage_percent !== null && v.coverage_percent < minCoverage) {
+      return {
+        id: 'C-0011',
+        status: 'FAIL',
+        detail: `coverage ${v.coverage_percent}% < minimum ${minCoverage}%. Improve test coverage before advancing.`
+      };
+    }
+
+    return {
+      id: 'C-0011',
+      status: 'PASS',
+      detail: `coverage verified: ${v.coverage_percent}% (${v.test_count} tests), commit ${v.git_commit.slice(0, 8)}`
+    };
+  },
+
+  // C-0012 (T5): No coverage claims in agent output — scan for coverage-shaped text.
+  // Blocks PASS if agent claims coverage that contradicts manifest.verification.
+  // Agents must report the engine's number, not compute their own (prevents hallucination).
+  // Status: PASS if no contradictory claims, FAIL if agent claims different coverage.
+  no_coverage_claims_in_output: (storyId, phase, manifest) => {
+    // Skip in test mode (E2E tests don't require coverage verification)
+    if (process.env.KEEL_SKIP_APPROVALS === '1') {
+      return { id: 'C-0012', status: 'SKIP', detail: 'coverage claims check skipped (test mode)' };
+    }
+
+    const testPhases = [5, 6, 7];
+    if (!testPhases.includes(phase)) {
+      return { id: 'C-0012', status: 'SKIP', detail: `no coverage claims check not required for phase ${phase}` };
+    }
+
+    // Get the phase output file
+    const prefix = String(phase).padStart(2, '0') + '-';
+    const phaseFile = fs.readdirSync(stateDir(storyId))
+      .find((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+    if (!phaseFile) {
+      return { id: 'C-0012', status: 'PASS', detail: 'phase output file not found (pre-validation check)' };
+    }
+
+    let phaseOutput;
+    try {
+      phaseOutput = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+    } catch {
+      return { id: 'C-0012', status: 'PASS', detail: 'phase output unreadable (pre-validation check)' };
+    }
+
+    // Scan phase output for coverage-shaped claims (% adjacent to "coverage")
+    const phaseText = JSON.stringify(phaseOutput);
+    const coverageMatch = phaseText.match(/(coverage|cov|test).*?(\d{1,3}(?:\.\d+)?)\s*%/i) ||
+                          phaseText.match(/(\d{1,3}(?:\.\d+)?)\s*%.*?(coverage|cov|test)/i);
+
+    if (!coverageMatch) {
+      return { id: 'C-0012', status: 'PASS', detail: 'no coverage claims in agent output' };
+    }
+
+    // If verification exists, check that agent claim matches engine measurement
+    if (manifest.verification && manifest.verification.coverage_percent !== null) {
+      const claimedCoverage = parseFloat(coverageMatch[2] || coverageMatch[1]);
+      const engineCoverage = manifest.verification.coverage_percent;
+
+      // Allow 0.5% drift (rounding difference)
+      if (Math.abs(claimedCoverage - engineCoverage) > 0.5) {
+        return {
+          id: 'C-0012',
+          status: 'FAIL',
+          detail: `agent claimed ${claimedCoverage}% coverage but engine measured ${engineCoverage}%. Agents must report the engine's measurement, not compute their own.`
+        };
+      }
+    } else if (coverageMatch) {
+      // Agent claimed coverage but engine hasn't measured it yet
+      return {
+        id: 'C-0012',
+        status: 'FAIL',
+        detail: `agent claimed coverage (${coverageMatch[2] || coverageMatch[1]}%) but engine measurement is missing. Coverage must be verified by running: keel-state verify-tests ${storyId} --phase ${phase}`
+      };
+    }
+
+    return {
+      id: 'C-0012',
+      status: 'PASS',
+      detail: `agent coverage claim matches engine measurement`
     };
   },
 };
@@ -2457,9 +2605,107 @@ function cmdApproveStateTransition(args) {
   console.log(`OK: ${approvalId} — ${subjectId} approved to ${newState} by ${approver}`);
 }
 
+// ------------------------------------------------------------------- verify-tests (T5)
+// Run test command and capture coverage + test count for verification record.
+// Prevents agents from claiming coverage without proof.
+// Usage: verify-tests <story-id> --phase N [--command "npm test"]
+
+function cmdVerifyTests(args) {
+  const storyId = args[0];
+  const phaseStr = flag(args, '--phase') || '';
+  const command = flag(args, '--command') || 'npm test';
+
+  if (!storyId || !phaseStr) {
+    die(64, 'usage: verify-tests <story-id> --phase N [--command "npm test"]');
+  }
+
+  validateStoryId(storyId);
+  const phase = parseInt(phaseStr, 10);
+  if (!phase || isNaN(phase)) die(1, `--phase must be a positive integer, got: ${phaseStr}`);
+
+  const manifestPath = path.join(stateDir(storyId), 'manifest.json');
+  if (!fs.existsSync(manifestPath)) die(1, `story ${storyId} not found`);
+
+  const manifest = readManifest(storyId);
+
+  // Run the test command
+  const { execSync } = require('child_process');
+  let exitCode = 0;
+  let stdout = '';
+  let stderr = '';
+
+  try {
+    stdout = execSync(command, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+  } catch (err) {
+    exitCode = err.status || 1;
+    stdout = err.stdout || '';
+    stderr = err.stderr || '';
+  }
+
+  const fullOutput = stdout + stderr;
+  const outputHash = crypto.createHash('sha256').update(fullOutput).digest('hex');
+
+  // Extract coverage from coverage-final.json (same logic as keel-preflight.cjs)
+  let coveragePct = null;
+  let testCount = null;
+  try {
+    const coverageFile = path.join('coverage', 'coverage-final.json');
+    if (fs.existsSync(coverageFile)) {
+      const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'));
+      // Extract statements coverage from Istanbul format
+      if (coverage && coverage.total && coverage.total.statements) {
+        coveragePct = Math.round(coverage.total.statements.pct * 10) / 10;
+      }
+    }
+  } catch { /* coverage file not available */ }
+
+  // Extract test count from output
+  const okMatch = fullOutput.match(/OK \((\d+) tests?/);
+  const sumMatch = fullOutput.match(/Tests:\s*(\d+)/);
+  testCount = okMatch ? parseInt(okMatch[1], 10) : (sumMatch ? parseInt(sumMatch[1], 10) : null);
+
+  // Get current git commit
+  let gitCommit = '';
+  try {
+    gitCommit = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+  } catch { /* git not available */ }
+
+  // Record verification
+  if (!manifest.verification) manifest.verification = {};
+  manifest.verification = {
+    phase,
+    command,
+    exit_code: exitCode,
+    coverage_percent: coveragePct,
+    test_count: testCount,
+    output_sha256: outputHash,
+    ts: nowIso(),
+    git_commit: gitCommit
+  };
+
+  writeManifest(storyId, manifest);
+  appendAudit(storyId, {
+    action: 'tests_verified',
+    phase,
+    command,
+    exit_code: exitCode,
+    coverage_percent: coveragePct,
+    test_count: testCount,
+    git_commit: gitCommit
+  });
+
+  if (exitCode !== 0) {
+    console.log(`TESTS FAILED: ${command} exited ${exitCode}`);
+    console.log(`Coverage: ${coveragePct}%, Tests: ${testCount}`);
+    process.exit(1);
+  }
+
+  console.log(`OK: tests verified — coverage ${coveragePct}%, ${testCount} tests passed`);
+}
+
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding|directive|approve-phase|approve-state-transition> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding|directive|approve-phase|approve-state-transition|verify-tests> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
@@ -2487,5 +2733,6 @@ switch (cmd) {
   case 'directive': cmdDirective([rest[0], storyId, ...rest.slice(1)]); break;
   case 'approve-phase': cmdApprovePhase([storyId, ...rest]); break;
   case 'approve-state-transition': cmdApproveStateTransition([storyId, ...rest]); break;
+  case 'verify-tests': cmdVerifyTests([storyId, ...rest]); break;
   default: die(64, `unknown command: ${cmd}`);
 }

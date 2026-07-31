@@ -94,7 +94,7 @@ function createPhaseFile(storyId, phase, customFindings) {
   return phaseFile;
 }
 
-function runGate(storyId, phase, verdict, dryRun = false) {
+function runGate(storyId, phase, verdict, dryRun = false, skipApprovals = true) {
   const args = [
     `node scripts/keel-state.cjs gate ${storyId}`,
     `--phase ${phase}`,
@@ -103,7 +103,13 @@ function runGate(storyId, phase, verdict, dryRun = false) {
   if (dryRun) args.push('--dry-run true');
   const cmd = args.join(' ');
   try {
-    const result = execSync(cmd, { stdio: 'pipe', encoding: 'utf8' });
+    const env = Object.assign({}, process.env);
+    if (skipApprovals) {
+      env.KEEL_SKIP_APPROVALS = '1';
+    } else {
+      delete env.KEEL_SKIP_APPROVALS;
+    }
+    const result = execSync(cmd, { stdio: 'pipe', encoding: 'utf8', env });
     return { code: 0, output: result };
   } catch (err) {
     return { code: err.status, output: err.stdout + err.stderr };
@@ -393,9 +399,8 @@ test('T6-AC1: Phase 4 blocked without phase 3 approval', () => {
   fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2));
 
   // Attempt to gate phase 4 without approval
-  // Ensure KEEL_SKIP_APPROVALS is not set so the check is enforced
-  delete process.env.KEEL_SKIP_APPROVALS;
-  const result = runGate('story-t6-ac1', 4, 'PASS', false);
+  // Use skipApprovals=false to enforce the approval check
+  const result = runGate('story-t6-ac1', 4, 'PASS', false, false);
 
   if (result.code !== 2) {
     throw new Error(`expected exit 2 (HALT), got ${result.code}`);
@@ -457,9 +462,8 @@ test('T6-AC4: Fake approval in manifest is detected and rejected', () => {
   fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2));
 
   // Attempt to gate phase 4
-  // Ensure KEEL_SKIP_APPROVALS is not set so the check is enforced
-  delete process.env.KEEL_SKIP_APPROVALS;
-  const result = runGate('story-t6-ac4', 4, 'PASS', false);
+  // Use skipApprovals=false to enforce the approval check
+  const result = runGate('story-t6-ac4', 4, 'PASS', false, false);
 
   // Should be rejected because the hash doesn't match phase 3's actual content
   if (result.code !== 2) {
@@ -879,7 +883,7 @@ test('FINDING-A AC-1: Phase FAILS with DEFERRED finding lacking approval', () =>
   manifest.current_phase = 5;
   fs.writeFileSync('.keel/state/story-fa-ac1/manifest.json', JSON.stringify(manifest, null, 2));
 
-  const result = runGate('story-fa-ac1', 5, 'PASS', false);
+  const result = runGate('story-fa-ac1', 5, 'PASS', false, false);
   if (result.code === 0) {
     throw new Error('C-0009 should FAIL: DEFERRED finding lacks approval');
   }
@@ -947,7 +951,7 @@ test('FINDING-A AC-3: Phase FAILS with SUPERSEDED directive lacking approval', (
   // Create phase 5 file
   createPhaseFile('story-fa-ac3', 5);
 
-  const result = runGate('story-fa-ac3', 5, 'PASS', false);
+  const result = runGate('story-fa-ac3', 5, 'PASS', false, false);
   if (result.code === 0) {
     throw new Error('C-0010 should FAIL: SUPERSEDED directive lacks approval');
   }

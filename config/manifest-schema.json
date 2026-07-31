@@ -222,6 +222,54 @@
         "additionalProperties": false
       },
       "description": "Human approval decisions (FINDING-A) that override automatic state transitions for findings (DEFERRED/WAIVED) and directives (SUPERSEDED/DECLINED)"
+    },
+    "verification": {
+      "type": "object",
+      "description": "Test verification record written by keel-state verify-tests (engine-only, agents cannot write)",
+      "required": ["phase", "command", "exit_code", "ts", "git_commit"],
+      "properties": {
+        "phase": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Phase when tests were verified"
+        },
+        "command": {
+          "type": "string",
+          "description": "Test command that was run (e.g., 'npm test')"
+        },
+        "exit_code": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Exit code from test command (0 = all tests passed)"
+        },
+        "coverage_percent": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Code coverage percentage from coverage-final.json (null if unavailable)"
+        },
+        "test_count": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Number of tests that ran (null if unavailable)"
+        },
+        "output_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA256 hash of full test output"
+        },
+        "ts": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 timestamp when verification ran"
+        },
+        "git_commit": {
+          "type": "string",
+          "description": "Git commit SHA when verification ran"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

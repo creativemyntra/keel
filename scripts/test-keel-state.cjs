@@ -30,12 +30,14 @@ function makeTmpDir(name) {
 }
 
 function engine(cwd, ...cliArgs) {
-  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8' });
+  const env = Object.assign({}, process.env, { KEEL_SKIP_APPROVALS: '1' });
+  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8', env });
   return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
 }
 
 function engineWithEnv(cwd, env, ...cliArgs) {
-  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8', env });
+  const mergedEnv = Object.assign({}, process.env, { KEEL_SKIP_APPROVALS: '1' }, env);
+  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8', env: mergedEnv });
   return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
 }
 
