@@ -1,0 +1,124 @@
+# KEEL Branch Strategy Configuration
+# Defines promotion pipeline for environments: dev → qa → stage → preprod → prod
+#
+# Last Updated: 2026-08-03
+# Owner: Amar Singh
+
+branch_strategy:
+  # Strategy name (identifier for logs/messages)
+  name: "promotion-pipeline"
+  description: "Multi-environment promotion workflow with gated transitions"
+
+  # Environment promotion order (strict sequence, no skipping allowed)
+  environments:
+    - name: dev
+      description: "Development - feature integration"
+      allow_direct_push: true
+      require_approval: false
+    - name: qa
+      description: "QA - testing & validation"
+      allow_direct_push: false
+      require_approval: false
+    - name: stage
+      description: "Staging - pre-production replica"
+      allow_direct_push: false
+      require_approval: false
+    - name: preprod
+      description: "Pre-production - final validation"
+      allow_direct_push: false
+      require_approval: false
+    - name: prod
+      description: "Production - customer-facing release"
+      allow_direct_push: false
+      require_approval: true
+      approval_count: 2
+
+  # Promotion rules: source → target transitions
+  promotion_rules:
+    - source: "feat/*,fix/*,chore/*,docs/*,audit/*"
+      target: "dev"
+      allowed: true
+      skip_allowed: false
+      description: "Feature branches merge to dev"
+
+    - source: "dev"
+      target: "qa"
+      allowed: true
+      skip_allowed: false
+      description: "dev promotes to qa (no skipping to stage/preprod/prod)"
+
+    - source: "qa"
+      target: "stage"
+      allowed: true
+      skip_allowed: false
+      description: "qa promotes to stage (no skipping)"
+
+    - source: "stage"
+      target: "preprod"
+      allowed: true
+      skip_allowed: false
+      description: "stage promotes to preprod (no skipping)"
+
+    - source: "preprod"
+      target: "prod"
+      allowed: true
+      skip_allowed: false
+      require_approval: 2
+      description: "preprod releases to prod (requires 2 approvals, no skipping)"
+
+    # Explicit blocks
+    - source: "*"
+      target: "main"
+      allowed: false
+      description: "BLOCK: main is reserved for release merge from preprod only"
+
+    - source: "feat/*"
+      target: "prod"
+      allowed: false
+      description: "BLOCK: features cannot push directly to prod"
+
+    - source: "feat/*"
+      target: "stage"
+      allowed: false
+      description: "BLOCK: features must go through dev → qa first"
+
+    - source: "feat/*"
+      target: "qa"
+      allowed: false
+      description: "BLOCK: features cannot skip to qa, must merge to dev first"
+
+  # Feature branch patterns (allowed for developers)
+  feature_branch_patterns:
+    - "feat/*"      # new features
+    - "fix/*"       # bug fixes
+    - "chore/*"     # maintenance
+    - "docs/*"      # documentation
+    - "audit/*"     # audits/reviews
+    - "test/*"      # tests
+
+  # Enforcement configuration
+  enforcement:
+    pre_push_hook: true           # Block invalid pushes before they reach remote
+    pr_validation: true           # Validate PR target branch against rules
+    branch_delete_protection: true # Prevent accidental deletion of protected branches
+    protected_branches:
+      - dev
+      - qa
+      - stage
+      - preprod
+      - prod
+
+  # Git operations that require confirmation
+  require_confirmation:
+    - git push to protected branch
+    - merge to stage/preprod/prod
+    - force push anywhere
+    - branch deletion
+
+  # Error messages (shown when rules violated)
+  messages:
+    block_direct_prod: "❌ BLOCKED: Cannot push directly to prod. Use preprod → prod promotion via PR."
+    block_skip_env: "❌ BLOCKED: Cannot skip environments. Expected: dev → qa → stage → preprod → prod"
+    block_feature_to_prod: "❌ BLOCKED: Feature branches cannot target production. Use promotion pipeline."
+    success_allowed: "✅ ALLOWED: This push follows the promotion pipeline rules."
+    approval_required: "⚠️  APPROVAL REQUIRED: This merge to {branch} requires {count} approval(s)."

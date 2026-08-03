@@ -1,0 +1,64 @@
+{
+  "phase": 1,
+  "agent": "business-analyst",
+  "story_id": "BASELINE-002",
+  "confidence": "high",
+  "findings": [
+    {
+      "id": "REQ-1",
+      "text": "All 7 acceptance criteria are testable and map to concrete user actions: file format/size validation (AC-1), dimension validation (AC-2), S3 upload + DB linkage (AC-3), duplicate replacement (AC-4), deletion (AC-5), mobile pickers (AC-6), web drag-drop + input (AC-7).",
+      "severity": "LOW",
+      "state": "RESOLVED"
+    },
+    {
+      "id": "DATA-1",
+      "text": "Data flows documented in 7-step pipeline: file selection → validation (format, size, dimensions) → S3 upload → DB update → confirmation. Each step identifies source, data, and validation rules.",
+      "severity": "LOW",
+      "state": "RESOLVED"
+    },
+    {
+      "id": "DOMAIN-1",
+      "text": "7 domain rules enforced: file format whitelist (JPG/PNG only), 5 MB hard limit, 100×100 minimum pixels, single active image per user, S3 object lifecycle, private ACL, platform-specific UI. All rules specify enforcement mechanism.",
+      "severity": "LOW",
+      "state": "RESOLVED"
+    },
+    {
+      "id": "EDGE-1",
+      "text": "7 edge cases identified with mitigations: concurrent uploads (button disable + row lock), S3 success + DB failure (compensating rollback), S3 delete fails + DB cleared (async cleanup), corrupted image header, unauthorized access, disk exhaustion, extension/MIME mismatch.",
+      "severity": "LOW",
+      "state": "RESOLVED"
+    },
+    {
+      "id": "OPEN-1",
+      "text": "5 open questions require PO/stakeholder input: image resizing, S3 region/bucket/CDN strategy, soft delete vs permanent deletion, upload timeout/progress UI, multiple image sizes. These do not block phase 2; architect will document assumptions.",
+      "severity": "MEDIUM",
+      "state": "OPEN"
+    },
+    {
+      "id": "ASSUME-1",
+      "text": "6 assumptions documented: S3 bucket pre-provisioned, user authentication in place, users table has profile_image_url column, mobile apps can make HTTPS requests, image dimension extraction via library, no payment/PII involved.",
+      "severity": "LOW",
+      "state": "RESOLVED"
+    }
+  ],
+  "acceptance_criteria_ids": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5",
+    "AC-6",
+    "AC-7"
+  ],
+  "decisions": [
+    "Story BASELINE-002 is a synthetic test case for token usage measurement across 10 pipeline phases.",
+    "Platform scope: iOS (native picker), Android (native picker), Web (drag-drop + file input) all feed same validation and S3 upload pipeline.",
+    "S3 storage pattern: users/{userId}/profile.{ext}; single active image per user with atomic replacement on re-upload.",
+    "Image validation: format (JPG/PNG), size (<=5MB), dimensions (>=100x100) applied before S3 upload.",
+    "Error cases: S3 failure compensated by rollback; orphaned S3 objects resolved by async cleanup job."
+  ],
+  "artifacts": [],
+  "next_phase": 2,
+  "blockers": [],
+  "timestamp": "2026-07-31T00:00:00Z"
+}

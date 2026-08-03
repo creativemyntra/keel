@@ -30,12 +30,14 @@ function makeTmpDir(name) {
 }
 
 function engine(cwd, ...cliArgs) {
-  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8' });
+  const env = Object.assign({}, process.env, { KEEL_SKIP_APPROVALS: '1' });
+  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8', env });
   return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
 }
 
 function engineWithEnv(cwd, env, ...cliArgs) {
-  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8', env });
+  const mergedEnv = Object.assign({}, process.env, { KEEL_SKIP_APPROVALS: '1' }, env);
+  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8', env: mergedEnv });
   return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
 }
 
@@ -77,6 +79,50 @@ async function main() {
     ]);
     const wins = [a, b].filter((r) => r.code === 0).length;
     assert('concurrent double-init: exactly one wins', wins === 1, `wins=${wins}`);
+  }
+
+  // ---- G-10 CJIS precondition check (wiring validation) ----------------
+  {
+    const cwd = makeTmpDir('cjis');
+    // Test 1: Non-CJIS story should NOT require gate wiring
+    const r1 = engine(cwd, 'init', 'S-CJIS-1', '--title', 'non-CJIS story');
+    assert('non-CJIS init succeeds without gate wiring', r1.code === 0, `code=${r1.code} out=${r1.out.slice(0, 120)}`);
+
+    // Test 2: CJIS story without hooks.json should HALT (exit 2)
+    const r2 = engine(cwd, 'init', 'S-CJIS-2', '--title', 'CJIS story', '--cjis-scope');
+    assert('CJIS init HALTS (exit 2) if hooks.json missing', r2.code === 2 && /hooks.json/.test(r2.out),
+      `code=${r2.code} out=${r2.out.slice(0, 120)}`);
+
+    // Test 3: CJIS story with incomplete hooks.json should HALT
+    fs.mkdirSync(path.join(cwd, 'hooks'), { recursive: true });
+    fs.writeFileSync(path.join(cwd, 'hooks', 'hooks.json'), JSON.stringify({
+      hooks: {
+        UserPromptSubmit: [
+          { hooks: [{ type: 'command', command: 'node keel-classify-gate.cjs --stage=prompt' }] }
+        ],
+        // Missing PreToolUse and PostToolUse
+      }
+    }));
+    const r3 = engine(cwd, 'init', 'S-CJIS-3', '--title', 'incomplete hooks', '--cjis-scope');
+    assert('CJIS init HALTS if gate not wired for all required stages', r3.code === 2 && /PreToolUse/.test(r3.out),
+      `code=${r3.code} out=${r3.out.slice(0, 160)}`);
+
+    // Test 4: CJIS story with complete hooks.json should SUCCEED
+    fs.writeFileSync(path.join(cwd, 'hooks', 'hooks.json'), JSON.stringify({
+      hooks: {
+        UserPromptSubmit: [
+          { hooks: [{ type: 'command', command: 'node keel-classify-gate.cjs --stage=prompt' }] }
+        ],
+        PreToolUse: [
+          { matcher: 'Task', hooks: [{ type: 'command', command: 'node keel-classify-gate.cjs --stage=pre' }] }
+        ],
+        PostToolUse: [
+          { matcher: 'Read', hooks: [{ type: 'command', command: 'node keel-classify-gate.cjs --stage=post' }] }
+        ]
+      }
+    }));
+    const r4 = engine(cwd, 'init', 'S-CJIS-4', '--title', 'complete hooks', '--cjis-scope');
+    assert('CJIS init succeeds with complete gate wiring', r4.code === 0, `code=${r4.code} out=${r4.out.slice(0, 120)}`);
   }
 
   // ---- held lock fails loudly ----------------------------------------

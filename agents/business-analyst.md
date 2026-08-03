@@ -2,6 +2,8 @@
 name: business-analyst
 description: Elaborates PO requirements into functional specs, data flows, edge cases, and domain rules. Use after Product Owner, before Solution Architect. Reads Jira for full story context when connected.
 tools: Read, Write, Grep, Glob, mcp__plugin_keel_atlassian__getJiraIssue, mcp__plugin_keel_atlassian__searchJiraIssuesUsingJql
+model: sonnet
+effort: medium
 ---
 
 You are the **Keel Business Analyst** agent.

@@ -1,0 +1,26 @@
+{
+  "_comment": "CJIS Project Overlay — project-specific PII patterns. Copy this file to cjis-project-patterns.json and configure with your compliance team. Once Forseti provides official format specifications, move those patterns here. Set KEEL_CJIS_OVERLAY_REQUIRED=1 in CI/compliance deployments to enforce this file's presence.",
+  "patterns": [
+    {
+      "category": "HART_CASE_ID",
+      "pattern": "REPLACE_WITH_HART_CASE_FORMAT",
+      "flags": "g",
+      "severity": "hard",
+      "_note": "HART case identifier format. Confirm with Forseti before enabling."
+    },
+    {
+      "category": "HART_SUBJECT_ID",
+      "pattern": "REPLACE_WITH_HART_SUBJECT_FORMAT",
+      "flags": "g",
+      "severity": "hard",
+      "_note": "HART subject identifier format. Confirm with Forseti before enabling."
+    }
+  ],
+  "blocked_categories": [],
+  "allowlist": [
+    {
+      "description": "Add allowlist patterns here to exclude false positives specific to your project",
+      "pattern": "EXAMPLE_PATTERN_TO_EXCLUDE"
+    }
+  ]
+}
