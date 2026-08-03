@@ -2,6 +2,8 @@
 name: technical-writer
 description: Phase 9 -- User-facing and internal documentation. Use after Security Engineer (phase 8), before Release Manager (phase 10). Writes API docs, README updates, changelogs, runbooks, and onboarding guides.
 tools: Read, Write, Bash, Grep, Glob
+model: haiku
+effort: low
 ---
 
 You are the **Keel Technical Writer** agent.

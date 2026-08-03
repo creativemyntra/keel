@@ -1,0 +1,26 @@
+{
+  "story_id": "BASELINE-002",
+  "title": "Profile upload feature",
+  "scope": "feature",
+  "expected_phases": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "current_phase": 7,
+  "attempts": {},
+  "phase_modes": {},
+  "gate_events": 8,
+  "max_gates": 50,
+  "max_hours": 72,
+  "started_at": "2026-07-31T10:34:10.034Z",
+  "updated_at": "2026-07-31T14:19:45.607Z",
+  "attempt_hashes": {}
+}

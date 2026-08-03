@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en" data-state="idle">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BASELINE-002 — Profile Image Upload</title>
+
+  <!-- Existing project font stack: Space Grotesk + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ===================================================================
+       DESIGN TOKENS — matches KEEL-UI-E2E-tokens.css / onboarding mockup
+       "Precision Technical" dark theme
+    =================================================================== */
+    :root {
+      /* Brand */
+      --color-primary:          #6366f1;
+      --color-primary-hover:    #4f46e5;
+      --color-primary-active:   #4338ca;
+      --color-accent:           #10b981;
+
+      /* Surfaces */
+      --color-bg:               #0a0a0f;
+      --color-surface:          #111118;
+      --color-surface-elevated: #16161f;
+      --color-surface-sunken:   #0d0d14;
+
+      /* Text */
+      --color-text-primary:     #f1f5f9;
+      --color-text-secondary:   #94a3b8;
+      --color-text-muted:       #475569;
+      --color-text-inverse:     #0f172a;
+
+      /* Borders */
+      --color-border:           rgba(255,255,255,0.07);
+      --color-border-strong:    rgba(255,255,255,0.14);
+      --color-border-focus:     #6366f1;
+      --color-accent-line:      #6366f1;
+
+      /* Semantic */
+      --color-error:            #f87171;
+      --color-error-surface:    rgba(248,113,113,0.08);
+      --color-error-border:     rgba(248,113,113,0.30);
+      --color-success:          #34d399;
+      --color-success-surface:  rgba(52,211,153,0.08);
+      --color-success-border:   rgba(52,211,153,0.30);
+      --color-warning:          #fbbf24;
+      --color-warning-surface:  rgba(251,191,36,0.08);
+
+      /* Drop-zone specific */
+      --color-dropzone-idle:    rgba(255,255,255,0.03);
+      --color-dropzone-hover:   rgba(99,102,241,0.06);
+      --color-dropzone-active:  rgba(99,102,241,0.12);
+      --color-dropzone-border:  rgba(255,255,255,0.12);
+      --color-dropzone-hover-border: rgba(99,102,241,0.50);
+      --color-dropzone-active-border: #6366f1;
+
+      /* State-switcher chrome (matches existing pattern exactly) */
+      --color-sw-bg:            #070710;
+      --color-sw-border:        rgba(255,255,255,0.1);
+      --color-sw-hover:         rgba(255,255,255,0.06);
+      --color-sw-text:          #64748b;
+      --color-sw-active-text:   #6366f1;
+      --color-sw-active-bg:     rgba(99,102,241,0.1);
+
+      /* Typography */
+      --font-display: 'Space Grotesk', -apple-system, sans-serif;
+      --font-body:    'Space Grotesk', -apple-system, sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+
+      --text-xs:   0.6875rem;
+      --text-sm:   0.8125rem;
+      --text-base: 0.9375rem;
+      --text-lg:   1.0625rem;
+      --text-xl:   1.25rem;
+      --text-2xl:  1.5rem;
+      --weight-normal: 400;
+      --weight-medium: 500;
+      --weight-semi:   600;
+      --weight-bold:   700;
+      --leading-tight:   1.2;
+      --leading-normal:  1.55;
+      --leading-relaxed: 1.65;
+      --tracking-tight:  -0.03em;
+      --tracking-normal: -0.01em;
+      --tracking-wide:   0.06em;
+
+      /* Spacing (8pt scale) */
+      --s-1:4px;  --s-2:8px;   --s-3:12px; --s-4:16px;
+      --s-5:20px; --s-6:24px;  --s-8:32px; --s-10:40px;
+      --s-12:48px; --s-16:64px;
+
+      /* Shape */
+      --r-sm:4px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:9999px;
+
+      /* Elevation */
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.2);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.2);
+      --shadow-glow: 0 0 0 1px rgba(99,102,241,0.25), 0 0 20px rgba(99,102,241,0.08);
+
+      /* Motion */
+      --dur-fast:    150ms;
+      --dur-normal:  200ms;
+      --dur-slow:    300ms;
+      --ease-spring:   cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      background: var(--color-bg);
+      min-height: 100vh;
+      letter-spacing: var(--tracking-normal);
+    }
+
+    /* ================================================================
+       STATE SWITCHER — identical pattern to onboarding-form-mockup.html
+    ================================================================ */
+    .switcher {
+      position: sticky; top: 0; z-index: 999;
+      display: flex; align-items: center; gap: var(--s-2);
+      padding: var(--s-2) var(--s-4);
+      background: var(--color-sw-bg);
+      border-bottom: 1px solid var(--color-sw-border);
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .switcher::-webkit-scrollbar { display: none; }
+    .switcher-label {
+      font-family: var(--font-mono); font-size: 10px;
+      color: var(--color-sw-text); letter-spacing: 0.08em;
+      text-transform: uppercase; white-space: nowrap;
+      padding-right: var(--s-2); border-right: 1px solid var(--color-sw-border);
+    }
+    .sw-btn {
+      font-family: var(--font-mono); font-size: 11px; font-weight: var(--weight-medium);
+      color: var(--color-sw-text);
+      background: transparent;
+      border: 1px solid var(--color-sw-border);
+      border-radius: var(--r-sm);
+      padding: 3px var(--s-3);
+      cursor: pointer; white-space: nowrap;
+      transition: color var(--dur-fast) var(--ease-standard),
+                  background var(--dur-fast) var(--ease-standard),
+                  border-color var(--dur-fast) var(--ease-standard);
+    }
+    .sw-btn:hover  { background: var(--color-sw-hover); color: var(--color-text-secondary); }
+    .sw-btn.active { color: var(--color-sw-active-text); background: var(--color-sw-active-bg); border-color: var(--color-accent-line); }
+
+    /* ================================================================
+       PAGE LAYOUT — centred single-column card (settings page pattern)
+    ================================================================ */
+    .page-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: var(--s-10) var(--s-4) var(--s-16);
+    }
+
+    /* Page header breadcrumb */
+    .page-header {
+      display: flex; align-items: center; gap: var(--s-2);
+      margin-bottom: var(--s-8);
+    }
+    .breadcrumb {
+      font-family: var(--font-mono); font-size: var(--text-xs);
+      color: var(--color-text-muted); letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .breadcrumb-sep { color: var(--color-text-muted); font-size: var(--text-xs); }
+    .breadcrumb-current { color: var(--color-text-secondary); }
+
+    /* ================================================================
+       CARD — matches existing "Precision Technical" card pattern:
+       left indigo accent bar, dark surface, border
+    ================================================================ */
+    .card {
+      position: relative;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--color-accent-line);
+    }
+    .card-header {
+      padding: var(--s-6) var(--s-8);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .card-title {
+      font-size: var(--text-lg); font-weight: var(--weight-semi);
+      letter-spacing: var(--tracking-tight);
+      color: var(--color-text-primary);
+    }
+    .card-subtitle {
+      margin-top: var(--s-1);
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      line-height: var(--leading-normal);
+    }
+    .card-body { padding: var(--s-8); }
+
+    /* ================================================================
+       AVATAR AREA
+    ================================================================ */
+    .avatar-row {
+      display: flex; align-items: center; gap: var(--s-6);
+      margin-bottom: var(--s-8);
+    }
+    .avatar-container {
+      position: relative; flex-shrink: 0;
+      width: 96px; height: 96px;
+    }
+    .avatar {
+      width: 96px; height: 96px; border-radius: var(--r-full);
+      background: var(--color-surface-elevated);
+      border: 2px solid var(--color-border-strong);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .avatar img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .avatar-placeholder {
+      font-family: var(--font-mono); font-size: var(--text-xl);
+      font-weight: var(--weight-bold);
+      color: var(--color-text-muted);
+      letter-spacing: 0;
+    }
+    /* Success ring around avatar */
+    .avatar-container.avatar-success .avatar {
+      border-color: var(--color-success);
+      box-shadow: 0 0 0 3px rgba(52,211,153,0.18);
+    }
+    /* Error ring */
+    .avatar-container.avatar-error .avatar {
+      border-color: var(--color-error);
+      box-shadow: 0 0 0 3px rgba(248,113,113,0.18);
+    }
+
+    .avatar-meta { flex: 1; }
+    .avatar-name {
+      font-size: var(--text-lg); font-weight: var(--weight-semi);
+      letter-spacing: var(--tracking-tight);
+    }
+    .avatar-email {
+      margin-top: var(--s-1);
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+    }
+    .avatar-hint {
+      margin-top: var(--s-3);
+      font-family: var(--font-mono); font-size: var(--text-xs);
+      color: var(--color-text-muted); line-height: var(--leading-relaxed);
+    }
+
+    /* ================================================================
+       DROP ZONE (AC-7: web drag-drop + file input)
+    ================================================================ */
+    .dropzone {
+      position: relative;
+      border: 1.5px dashed var(--color-dropzone-border);
+      border-radius: var(--r-lg);
+      background: var(--color-dropzone-idle);
+      padding: var(--s-10) var(--s-6);
+      text-align: center;
+      transition:
+        background var(--dur-normal) var(--ease-standard),
+        border-color var(--dur-normal) var(--ease-standard),
+        box-shadow var(--dur-normal) var(--ease-standard);
+      cursor: pointer;
+    }
+    /* Hidden native file input sits over the entire zone */
+    .dropzone input[type="file"] {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      opacity: 0; cursor: pointer; z-index: 2;
+    }
+
+    /* Hover state (drag enter OR mouse hover) */
+    .dropzone.dz-hover,
+    [data-state="hover"] .dropzone {
+      background: var(--color-dropzone-hover);
+      border-color: var(--color-dropzone-hover-border);
+      border-style: solid;
+    }
+
+    /* Active / drag-over state */
+    .dropzone.dz-active,
+    [data-state="dragover"] .dropzone {
+      background: var(--color-dropzone-active);
+      border-color: var(--color-dropzone-active-border);
+      border-style: solid;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .dz-icon {
+      margin: 0 auto var(--s-4);
+      width: 48px; height: 48px;
+      border-radius: var(--r-md);
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-border-strong);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      transition: background var(--dur-normal) var(--ease-standard),
+                  transform var(--dur-normal) var(--ease-spring);
+    }
+    [data-state="dragover"] .dz-icon,
+    .dropzone.dz-active .dz-icon {
+      background: rgba(99,102,241,0.15);
+      transform: scale(1.08);
+    }
+    .dz-headline {
+      font-size: var(--text-base); font-weight: var(--weight-semi);
+      color: var(--color-text-primary);
+      margin-bottom: var(--s-1);
+    }
+    .dz-subline {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      line-height: var(--leading-normal);
+    }
+    .dz-subline strong { color: var(--color-primary); }
+    .dz-constraints {
+      margin-top: var(--s-4);
+      font-family: var(--font-mono); font-size: var(--text-xs);
+      color: var(--color-text-muted); letter-spacing: 0.04em;
+    }
+    .dz-constraints span {
+      display: inline-block;
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--r-sm);
+      padding: 2px var(--s-2);
+      margin: 2px;
+    }
+
+    /* OR divider */
+    .dz-or {
+      display: flex; align-items: center; gap: var(--s-3);
+      margin: var(--s-5) 0;
+    }
+    .dz-or-line {
+      flex: 1; height: 1px;
+      background: var(--color-border);
+    }
+    .dz-or-text {
+      font-family: var(--font-mono); font-size: var(--text-xs);
+      color: var(--color-text-muted); letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ================================================================
+       BUTTONS
+    ================================================================ */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: var(--s-2);
+      font-family: var(--font-body); font-size: var(--text-sm);
+      font-weight: var(--weight-semi); letter-spacing: var(--tracking-normal);
+      border-radius: var(--r-md);
+      padding: 9px var(--s-5);
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition:
+        background var(--dur-fast) var(--ease-standard),
+        color var(--dur-fast) var(--ease-standard),
+        box-shadow var(--dur-fast) var(--ease-standard),
+        opacity var(--dur-fast) var(--ease-standard);
+      white-space: nowrap;
+      position: relative;
+      z-index: 3; /* above file input overlay */
+      pointer-events: none; /* let the file input handle clicks in the zone */
+    }
+    /* Primary */
+    .btn-primary {
+      background: var(--color-primary); color: #fff;
+      pointer-events: all;
+    }
+    .btn-primary:hover { background: var(--color-primary-hover); box-shadow: var(--shadow-glow); }
+    .btn-primary:active { background: var(--color-primary-active); }
+    /* Ghost */
+    .btn-ghost {
+      background: transparent; color: var(--color-text-secondary);
+      border-color: var(--color-border-strong);
+      pointer-events: all;
+    }
+    .btn-ghost:hover { background: var(--color-surface-elevated); color: var(--color-text-primary); }
+    /* Danger */
+    .btn-danger {
+      background: transparent; color: var(--color-error);
+      border-color: var(--color-error-border);
+      pointer-events: all;
+    }
+    .btn-danger:hover { background: var(--color-error-surface); }
+    /* Disabled */
+    .btn[disabled], .btn.disabled {
+      opacity: 0.4; cursor: not-allowed; pointer-events: none;
+    }
+
+    /* Spinner for loading state */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* ================================================================
+       PROGRESS BAR (AC-7: progress during upload)
+    ================================================================ */
+    .progress-wrap {
+      margin-top: var(--s-5);
+    }
+    .progress-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: var(--s-2);
+      font-family: var(--font-mono); font-size: var(--text-xs);
+      color: var(--color-text-secondary);
+    }
+    .progress-filename {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      max-width: 260px;
+      color: var(--color-text-primary);
+    }
+    .progress-pct { color: var(--color-primary); font-weight: var(--weight-semi); }
+    .progress-bar-track {
+      width: 100%; height: 4px;
+      background: var(--color-surface-elevated);
+      border-radius: var(--r-full);
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; border-radius: var(--r-full);
+      background: linear-gradient(90deg, var(--color-primary) 0%, #818cf8 100%);
+      transition: width 0.3s var(--ease-standard);
+    }
+    /* Indeterminate animation */
+    @keyframes indeterminate {
+      0%   { transform: translateX(-100%) scaleX(0.4); }
+      50%  { transform: translateX(0%)    scaleX(0.8); }
+      100% { transform: translateX(100%)  scaleX(0.4); }
+    }
+    .progress-bar-fill.indeterminate {
+      width: 60% !important;
+      animation: indeterminate 1.4s ease-in-out infinite;
+    }
+
+    /* ================================================================
+       INLINE VALIDATION MESSAGES (AC-1, AC-2)
+    ================================================================ */
+    .field-error {
+      display: flex; align-items: flex-start; gap: var(--s-2);
+      margin-top: var(--s-3);
+      padding: var(--s-3) var(--s-4);
+      background: var(--color-error-surface);
+      border: 1px solid var(--color-error-border);
+      border-radius: var(--r-md);
+      font-size: var(--text-sm); color: var(--color-error);
+      line-height: var(--leading-normal);
+    }
+    .field-error-icon { flex-shrink: 0; font-size: 15px; margin-top: 1px; }
+    .field-error-text { flex: 1; }
+    .field-error-code {
+      font-family: var(--font-mono); font-size: var(--text-xs);
+      color: var(--color-text-muted); margin-top: 2px;
+    }
+
+    /* ================================================================
+       SUCCESS BANNER
+    ================================================================ */
+    .banner-success {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: var(--s-3) var(--s-4);
+      background: var(--color-success-surface);
+      border: 1px solid var(--color-success-border);
+      border-radius: var(--r-md);
+      margin-top: var(--s-5);
+      font-size: var(--text-sm); color: var(--color-success);
+      line-height: var(--leading-normal);
+    }
+    .banner-success-icon { font-size: 16px; flex-shrink: 0; }
+
+    /* Server error banner */
+    .banner-error {
+      display: flex; align-items: flex-start; gap: var(--s-3);
+      padding: var(--s-4) var(--s-5);
+      background: var(--color-error-surface);
+      border: 1px solid var(--color-error-border);
+      border-radius: var(--r-md);
+      margin-top: var(--s-5);
+      font-size: var(--text-sm); color: var(--color-error);
+      line-height: var(--leading-normal);
+    }
+    .banner-error-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .banner-retry-btn {
+      margin-top: var(--s-3);
+      display: inline-flex; align-items: center; gap: var(--s-1);
+      font-family: var(--font-body); font-size: var(--text-sm);
+      font-weight: var(--weight-medium);
+      background: transparent;
+      border: 1px solid var(--color-error-border);
+      border-radius: var(--r-md);
+      color: var(--color-error);
+      padding: 5px var(--s-3);
+      cursor: pointer;
+    }
+    .banner-retry-btn:hover { background: var(--color-error-surface); }
+
+    /* ================================================================
+       ACTION ROW
+    ================================================================ */
+    .action-row {
+      display: flex; align-items: center; gap: var(--s-3);
+      margin-top: var(--s-6);
+      flex-wrap: wrap;
+    }
+    .action-row .spacer { flex: 1; }
+
+    /* ================================================================
+       STATE VISIBILITY RULES — everything hidden by default,
+       only the relevant state's elements are shown
+    ================================================================ */
+
+    /* Elements that are state-conditional */
+    .show-idle,
+    .show-hover,
+    .show-dragover,
+    .show-uploading,
+    .show-success,
+    .show-error-format,
+    .show-error-size,
+    .show-error-dims,
+    .show-error-server { display: none !important; }
+
+    /* idle */
+    [data-state="idle"]     .show-idle     { display: flex !important; }
+    /* hover */
+    [data-state="hover"]    .show-hover    { display: flex !important; }
+    [data-state="hover"]    .show-idle     { display: flex !important; }
+    /* dragover */
+    [data-state="dragover"] .show-dragover { display: flex !important; }
+    [data-state="dragover"] .show-idle     { display: flex !important; }
+    /* uploading */
+    [data-state="uploading"] .show-uploading { display: flex !important; }
+    [data-state="uploading"] .show-idle      { display: flex !important; }
+    /* success */
+    [data-state="success"]  .show-success  { display: flex !important; }
+    [data-state="success"]  .show-idle     { display: flex !important; }
+    /* error states */
+    [data-state="error-format"] .show-error-format { display: flex !important; }
+    [data-state="error-format"] .show-idle          { display: flex !important; }
+    [data-state="error-size"]   .show-error-size    { display: flex !important; }
+    [data-state="error-size"]   .show-idle          { display: flex !important; }
+    [data-state="error-dims"]   .show-error-dims    { display: flex !important; }
+    [data-state="error-dims"]   .show-idle          { display: flex !important; }
+    [data-state="error-server"] .show-error-server  { display: flex !important; }
+    [data-state="error-server"] .show-idle          { display: flex !important; }
+
+    /* Avatar image only in success state */
+    .avatar-img-placeholder { display: flex; }
+    [data-state="success"] .avatar-img-placeholder { display: none; }
+    .avatar-img-actual { display: none; }
+    [data-state="success"] .avatar-img-actual { display: block; }
+
+    /* Remove image button only when there's an image */
+    .btn-remove-image { display: none; }
+    [data-state="success"] .btn-remove-image { display: inline-flex !important; }
+
+    /* Disabled states during upload */
+    [data-state="uploading"] .btn-primary { display: none !important; }
+    [data-state="uploading"] .btn-ghost   { opacity: 0.4; pointer-events: none; }
+
+    /* Progress wrap */
+    .progress-wrap { display: none; }
+    [data-state="uploading"] .progress-wrap { display: block; }
+
+    /* Dropzone visual override via data-state is handled by CSS selectors above */
+
+    /* ================================================================
+       RESPONSIVE: tablet (768px) and mobile (375px)
+    ================================================================ */
+    @media (max-width: 768px) {
+      .page-wrap { padding: var(--s-6) var(--s-4) var(--s-12); }
+      .card-header { padding: var(--s-5) var(--s-5); }
+      .card-body   { padding: var(--s-5); }
+      .avatar-row  { gap: var(--s-4); }
+      .avatar-container, .avatar { width: 80px; height: 80px; }
+    }
+    @media (max-width: 480px) {
+      .page-wrap { padding: var(--s-4) var(--s-3) var(--s-10); }
+      .card-header { padding: var(--s-4) var(--s-4); }
+      .card-body   { padding: var(--s-4); }
+      .avatar-row  { flex-direction: column; align-items: flex-start; gap: var(--s-3); }
+      .action-row  { flex-direction: column; align-items: stretch; }
+      .action-row .spacer { display: none; }
+      .action-row .btn { justify-content: center; }
+      .dz-or { margin: var(--s-4) 0; }
+    }
+
+    /* ================================================================
+       FOCUS STYLES — WCAG AA (keyboard navigation, AC-6/AC-7)
+    ================================================================ */
+    :focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 3px;
+      border-radius: var(--r-sm);
+    }
+    .dropzone:focus-within {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    /* ================================================================
+       MOBILE SPEC NOTE — shown in a corner badge for reference
+    ================================================================ */
+    .platform-badge {
+      display: inline-flex; align-items: center; gap: var(--s-1);
+      font-family: var(--font-mono); font-size: 10px;
+      color: var(--color-text-muted); letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--r-sm);
+      padding: 2px var(--s-2);
+    }
+
+    /* ================================================================
+       SPEC ANNOTATION (removed in production; toggle-only chrome)
+    ================================================================ */
+    .spec-note {
+      margin-top: var(--s-8);
+      padding: var(--s-4) var(--s-5);
+      background: var(--color-surface-sunken);
+      border: 1px solid var(--color-border);
+      border-radius: var(--r-md);
+      font-family: var(--font-mono); font-size: var(--text-xs);
+      color: var(--color-text-muted); line-height: var(--leading-relaxed);
+    }
+    .spec-note strong { color: var(--color-text-secondary); }
+  </style>
+</head>
+<body>
+
+  <!-- ================================================================
+       STATE SWITCHER (dev tooling chrome — identical to onboarding mockup)
+  ================================================================ -->
+  <div class="switcher" role="toolbar" aria-label="State switcher">
+    <span class="switcher-label">BASELINE-002 / profile-upload / state</span>
+    <button class="sw-btn active" onclick="setState('idle')"        aria-pressed="true">idle</button>
+    <button class="sw-btn"        onclick="setState('hover')"       aria-pressed="false">drop-hover</button>
+    <button class="sw-btn"        onclick="setState('dragover')"    aria-pressed="false">drag-over</button>
+    <button class="sw-btn"        onclick="setState('uploading')"   aria-pressed="false">uploading</button>
+    <button class="sw-btn"        onclick="setState('success')"     aria-pressed="false">success</button>
+    <button class="sw-btn"        onclick="setState('error-format')" aria-pressed="false">err: format</button>
+    <button class="sw-btn"        onclick="setState('error-size')"  aria-pressed="false">err: size</button>
+    <button class="sw-btn"        onclick="setState('error-dims')"  aria-pressed="false">err: dimensions</button>
+    <button class="sw-btn"        onclick="setState('error-server')" aria-pressed="false">err: server</button>
+  </div>
+
+  <!-- ================================================================
+       PAGE CONTENT
+  ================================================================ -->
+  <main class="page-wrap" role="main">
+
+    <!-- Breadcrumb -->
+    <nav class="page-header" aria-label="Breadcrumb">
+      <span class="breadcrumb">Account</span>
+      <span class="breadcrumb-sep" aria-hidden="true">/</span>
+      <span class="breadcrumb breadcrumb-current">Profile</span>
+    </nav>
+
+    <!-- Profile upload card -->
+    <section class="card" aria-label="Profile image">
+      <!-- Left accent bar is a ::before pseudo-element on .card -->
+
+      <div class="card-header">
+        <h1 class="card-title">Profile image</h1>
+        <p class="card-subtitle">
+          Upload a photo to personalise your account. Visible to team members.
+        </p>
+      </div>
+
+      <div class="card-body">
+
+        <!-- ── Avatar area ── -->
+        <div class="avatar-row">
+          <div class="avatar-container" id="avatarContainer" aria-live="polite">
+            <div class="avatar" role="img" aria-label="Current profile image">
+              <!-- Empty state placeholder initials -->
+              <span class="avatar-placeholder avatar-img-placeholder" aria-hidden="true">AS</span>
+              <!-- Shown only on success state -->
+              <img
+                class="avatar-img-actual"
+                src="https://ui-avatars.com/api/?name=Amar+Singh&background=6366f1&color=fff&size=192&bold=true"
+                alt="Amar Singh's profile photo"
+                width="96"
+                height="96">
+            </div>
+          </div>
+          <div class="avatar-meta">
+            <p class="avatar-name">Amar Singh</p>
+            <p class="avatar-email">amar.singh@matellio.com</p>
+            <p class="avatar-hint" aria-label="Image requirements">
+              JPG or PNG &bull; max 5 MB &bull; min 100 &times; 100 px
+            </p>
+          </div>
+        </div>
+
+        <!-- ── Drop zone (AC-7: drag-drop + file input button) ── -->
+        <div
+          class="dropzone"
+          id="dropzone"
+          role="region"
+          aria-label="Upload area. Drag and drop an image here, or activate the Choose file button."
+          tabindex="0"
+          aria-describedby="dz-constraints-desc">
+
+          <!-- File input covers the entire zone for native click-to-browse -->
+          <input
+            type="file"
+            id="fileInput"
+            accept="image/jpeg,image/png"
+            aria-label="Select image file"
+            tabindex="-1">
+
+          <div class="dz-icon" aria-hidden="true">&#128247;</div>
+
+          <p class="dz-headline">Drag &amp; drop your photo here</p>
+          <p class="dz-subline">
+            or <strong>browse your device</strong>
+          </p>
+
+          <p class="dz-constraints" id="dz-constraints-desc" aria-live="polite">
+            <span>JPG / PNG</span>
+            <span>Max 5 MB</span>
+            <span>Min 100 &times; 100 px</span>
+          </p>
+        </div>
+
+        <!-- Drag-over overlay label (AC-7 visual feedback) -->
+        <div class="show-dragover" style="
+          display:none;
+          position:relative; margin-top:var(--s-3); text-align:center;
+          font-family:var(--font-mono); font-size:var(--text-xs);
+          color:var(--color-primary); letter-spacing:0.06em; text-transform:uppercase;">
+          Release to upload
+        </div>
+
+        <!-- Progress bar (AC-7: shown during upload) -->
+        <div class="progress-wrap" role="progressbar" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100" aria-label="Upload progress">
+          <div class="progress-header">
+            <span class="progress-filename">avatar-photo.jpg</span>
+            <span class="progress-pct">62%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width:62%"></div>
+          </div>
+        </div>
+
+        <!-- ── OR divider between drop zone and button row ── -->
+        <div class="dz-or" aria-hidden="true">
+          <div class="dz-or-line"></div>
+          <span class="dz-or-text">or</span>
+          <div class="dz-or-line"></div>
+        </div>
+
+        <!-- ── Action row ── -->
+        <div class="action-row">
+          <!-- Primary CTA: triggers the file input -->
+          <button
+            class="btn btn-primary show-idle"
+            type="button"
+            onclick="document.getElementById('fileInput').click()"
+            aria-controls="fileInput">
+            Choose file
+          </button>
+
+          <!-- Uploading in-progress button (disabled, shows spinner) -->
+          <button class="btn btn-primary show-uploading" type="button" disabled aria-busy="true">
+            <span class="spinner" aria-hidden="true"></span>
+            Uploading&hellip;
+          </button>
+
+          <!-- Remove current image (shown only when image exists = success state) -->
+          <button
+            class="btn btn-danger btn-remove-image"
+            type="button"
+            aria-label="Remove current profile image">
+            Remove photo
+          </button>
+
+          <span class="spacer" aria-hidden="true"></span>
+
+          <!-- Cancel (always visible as ghost) -->
+          <button class="btn btn-ghost" type="button">Cancel</button>
+        </div>
+
+        <!-- ================================================================
+             VALIDATION ERROR MESSAGES (AC-1: format / size; AC-2: dims)
+        ================================================================ -->
+
+        <!-- AC-1a: Invalid format error -->
+        <div class="field-error show-error-format" role="alert" aria-live="assertive">
+          <span class="field-error-icon" aria-hidden="true">&#9888;</span>
+          <div class="field-error-text">
+            <strong>Unsupported file format.</strong>
+            Only JPG and PNG files are accepted. Please choose a different file.
+            <div class="field-error-code">Code: INVALID_FORMAT &bull; Allowed: image/jpeg, image/png</div>
+          </div>
+        </div>
+
+        <!-- AC-1b: File too large error -->
+        <div class="field-error show-error-size" role="alert" aria-live="assertive">
+          <span class="field-error-icon" aria-hidden="true">&#9888;</span>
+          <div class="field-error-text">
+            <strong>File is too large.</strong>
+            Your image is over the 5 MB limit. Please resize or compress it and try again.
+            <div class="field-error-code">Code: FILE_TOO_LARGE &bull; Limit: 5 MB (5,242,880 bytes)</div>
+          </div>
+        </div>
+
+        <!-- AC-2: Dimensions too small error -->
+        <div class="field-error show-error-dims" role="alert" aria-live="assertive">
+          <span class="field-error-icon" aria-hidden="true">&#9888;</span>
+          <div class="field-error-text">
+            <strong>Image is too small.</strong>
+            Your photo must be at least 100 &times; 100 pixels. Please upload a higher-resolution image.
+            <div class="field-error-code">Code: DIMENSIONS_TOO_SMALL &bull; Minimum: 100 &times; 100 px</div>
+          </div>
+        </div>
+
+        <!-- Server / storage error -->
+        <div class="banner-error show-error-server" role="alert" aria-live="assertive">
+          <span class="banner-error-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Upload failed.</strong>
+            We could not save your photo right now. Please check your connection and try again.
+            <div>
+              <button class="banner-retry-btn" type="button">
+                &#8635; Retry upload
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Success banner -->
+        <div class="banner-success show-success" role="status" aria-live="polite">
+          <span class="banner-success-icon" aria-hidden="true">&#10003;</span>
+          Profile photo updated successfully.
+        </div>
+
+      </div><!-- /card-body -->
+    </section><!-- /card -->
+
+    <!-- ================================================================
+         MOBILE / PLATFORM SPEC NOTE (design reference only)
+    ================================================================ -->
+    <div class="spec-note" aria-label="Design spec annotation">
+      <strong>AC-6 — Mobile native picker (iOS / Android):</strong>
+      On iOS the Upload flow invokes <code>PHPickerViewController</code> (iOS 14+) or
+      <code>UIImagePickerController</code> (fallback). HEIC sources are converted to JPEG at
+      quality 0.8 before upload. On Android an <code>Intent.ACTION_GET_CONTENT</code>
+      with <code>image/*</code> MIME filter is launched; Bitmap dimensions are validated
+      before the multipart POST. Both platforms show a native loading indicator while
+      the upload is in progress and re-enable the button on response.
+      This screen (web) mirrors the same validation messages and states visible on mobile.
+    </div>
+
+  </main>
+
+  <!-- ================================================================
+       STATE TOGGLE SCRIPT (static state switching only — no business logic)
+  ================================================================ -->
+  <script>
+    function setState(state) {
+      // Update root data-state
+      document.documentElement.setAttribute('data-state', state);
+
+      // Update avatar ring
+      var c = document.getElementById('avatarContainer');
+      c.classList.remove('avatar-success', 'avatar-error');
+      if (state === 'success') c.classList.add('avatar-success');
+      if (state.startsWith('error')) c.classList.add('avatar-error');
+
+      // Update switcher active button
+      document.querySelectorAll('.sw-btn').forEach(function(btn) {
+        var isActive = btn.textContent.trim().replace('drop-hover','hover').replace('drag-over','dragover') ===
+          state.replace('-format','').replace('-size','').replace('-dims','').replace('-server','') ||
+          btn.getAttribute('onclick').indexOf("'" + state + "'") > -1;
+        btn.classList.toggle('active', btn.getAttribute('onclick').indexOf("'" + state + "'") > -1);
+        btn.setAttribute('aria-pressed', btn.getAttribute('onclick').indexOf("'" + state + "'") > -1 ? 'true' : 'false');
+      });
+    }
+  </script>
+</body>
+</html>
