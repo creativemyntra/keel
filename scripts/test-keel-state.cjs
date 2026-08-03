@@ -466,6 +466,77 @@ async function main() {
     assert('gate FAIL preserves phase_modes[1]', m3.phase_modes && m3.phase_modes['1'] === 'draft', JSON.stringify(m3.phase_modes));
   }
 
+  // ---- visual-baseline-approve ----
+  {
+    const cwd = makeTmpDir('visual');
+    engine(cwd, 'init', 'S-VIS1');
+
+    // Create a mock screenshot baseline
+    const screenshotDir = path.join(cwd, 'tests', 'e2e', '__screenshots__', 'chromium-desktop');
+    fs.mkdirSync(screenshotDir, { recursive: true });
+    fs.writeFileSync(path.join(screenshotDir, 'component.png'), 'fake PNG data');
+
+    // Setup git
+    const git = (args) => {
+      spawnSync('git', args, { cwd, stdio: 'pipe' });
+    };
+    git(['init']);
+    git(['config', 'user.name', 'TestUser']);
+    git(['config', 'user.email', 'test@localhost']);
+    git(['add', 'tests', '.keel']);
+    git(['commit', '-m', 'initial']);
+
+    // Modify the baseline file
+    fs.writeFileSync(path.join(screenshotDir, 'component.png'), 'modified PNG data');
+
+    // Test: approve with clean state (only screenshot changes)
+    const approveR = engine(cwd, 'visual-baseline-approve', 'S-VIS1', '--reviewer', 'reviewer1', '--notes', 'design update');
+    assert('visual-baseline-approve: exits 0 with clean screenshot changes',
+      approveR.code === 0 && /BASELINE APPROVED/.test(approveR.out),
+      `code=${approveR.code} ${approveR.out.slice(0, 160)}`);
+    assert('visual-baseline-approve: prints git commands',
+      /git add/.test(approveR.out) && /git commit/.test(approveR.out),
+      approveR.out.slice(0, 160));
+
+    // Test: refuse when non-screenshot files are dirty
+    const cwd2 = makeTmpDir('visual-dirty');
+    engine(cwd2, 'init', 'S-VIS2');
+    fs.mkdirSync(path.join(cwd2, 'tests', 'e2e', '__screenshots__'), { recursive: true });
+    fs.writeFileSync(path.join(cwd2, 'tests', 'e2e', '__screenshots__', 'test.png'), 'baseline');
+    fs.mkdirSync(path.join(cwd2, '.git'), { recursive: true });
+    const git2 = (args) => {
+      spawnSync('git', args, { cwd: cwd2, stdio: 'pipe' });
+    };
+    git2(['init']);
+    git2(['config', 'user.name', 'User2']);
+    git2(['config', 'user.email', 'user@local']);
+    git2(['add', '.']);
+    git2(['commit', '-m', 'init']);
+    fs.writeFileSync(path.join(cwd2, 'tests', 'e2e', '__screenshots__', 'test.png'), 'changed');
+    fs.writeFileSync(path.join(cwd2, 'app.txt'), 'other');
+    const denyR = engine(cwd2, 'visual-baseline-approve', 'S-VIS2', '--reviewer', 'reviewer2', '--notes', 'test');
+    assert('visual-baseline-approve: rejects non-screenshot changes',
+      denyR.code === 1 && /only screenshot files/.test(denyR.out),
+      `code=${denyR.code} ${denyR.out.slice(0, 160)}`);
+
+    // Test: refuse when nothing changed
+    const cwd3 = makeTmpDir('visual-clean');
+    engine(cwd3, 'init', 'S-VIS3');
+    fs.mkdirSync(path.join(cwd3, '.git'), { recursive: true });
+    const git3 = (args) => {
+      spawnSync('git', args, { cwd: cwd3, stdio: 'pipe' });
+    };
+    git3(['init']);
+    git3(['config', 'user.name', 'User3']);
+    git3(['config', 'user.email', 'user@local']);
+    git3(['add', '.']);
+    git3(['commit', '-m', 'init']);
+    const nothingR = engine(cwd3, 'visual-baseline-approve', 'S-VIS3', '--reviewer', 'reviewer3', '--notes', 'test');
+    assert('visual-baseline-approve: refuses when no screenshots changed',
+      nothingR.code === 1 && /nothing to approve/.test(nothingR.out),
+      `code=${nothingR.code} ${nothingR.out.slice(0, 160)}`);
+  }
+
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed`);
   process.exit(failed.length ? 1 : 0);
