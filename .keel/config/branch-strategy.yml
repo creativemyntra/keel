@@ -82,6 +82,11 @@ branch_strategy:
       allowed: false
       description: "BLOCK: features must go through dev → qa first"
 
+    - source: "feat/*"
+      target: "qa"
+      allowed: false
+      description: "BLOCK: features cannot skip to qa, must merge to dev first"
+
   # Feature branch patterns (allowed for developers)
   feature_branch_patterns:
     - "feat/*"      # new features
