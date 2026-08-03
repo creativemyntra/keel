@@ -19,6 +19,14 @@ economy:
 state_engine:
   lock_stale_seconds: 30
 
+# Visual regression testing policy — pixel-to-pixel fidelity
+visual:
+  enabled: true
+  max_diff_pixels: 0        # pixel-to-pixel default (zero tolerance)
+  threshold: 0.1            # per-pixel color tolerance for anti-aliasing
+  # OWNER DECISION: raising max_diff_pixels above 0 is explicit policy change
+  # to relax visual assertions. Document the reason and owner in the PR description.
+
 # Per-agent token-weight caps (output tokens; input tokens are capped by context_budget_files).
 # total_pipeline_budget is the sum-ceiling across one full pipeline run.
 # weight-budget.test.cjs asserts: each agent <= default_cap AND sum(agents) <= total_pipeline_budget.

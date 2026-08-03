@@ -1766,6 +1766,61 @@ function cmdPrescan(storyId) {
   console.log(`PRESCAN CLEAN: all runnable scanners passed — inventory in .keel/state/${storyId}/prescan.json`);
 }
 
+function cmdVisualBaselineApprove(storyId, args) {
+  readManifest(storyId);
+  const reviewer = flag(args, '--reviewer') || die(64, '--reviewer is required');
+  const notes = flag(args, '--notes') || die(64, '--notes is required');
+
+  // Get git status to check for modified/new files
+  const { execSync } = require('child_process');
+  let status = '';
+  try {
+    status = execSync('git status --short', { encoding: 'utf8', stdio: 'pipe' });
+  } catch (e) {
+    die(1, 'FAIL: git status failed — not in a git repo or git error');
+  }
+
+  const changes = status.trim().split('\n').filter(l => l.trim());
+  const screenshotChanges = changes.filter(l => l.includes('tests/e2e/__screenshots__'));
+  const nonScreenshotChanges = changes.filter(l => !l.includes('tests/e2e/__screenshots__'));
+
+  if (nonScreenshotChanges.length > 0) {
+    die(1, `FAIL: only screenshot files should be modified in this operation. Found changes to:\n${nonScreenshotChanges.join('\n')}`);
+  }
+
+  if (screenshotChanges.length === 0) {
+    die(1, 'FAIL: no screenshot files changed — nothing to approve');
+  }
+
+  // Calculate SHA-256 for each modified baseline
+  const baselineHashes = {};
+  screenshotChanges.forEach(line => {
+    const filePath = line.slice(3).trim(); // Remove status prefix like "M ", "?? "
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, 'utf8');
+      const hash = crypto.createHash('sha256').update(content).digest('hex');
+      baselineHashes[filePath] = hash;
+    }
+  });
+
+  // Append audit entry with visual_baseline action
+  appendAudit(storyId, {
+    agent: 'human',
+    action: 'visual_baseline',
+    reviewer,
+    notes,
+    baselines: baselineHashes,
+  });
+
+  // Print the git commands for the human to run
+  console.log('\nBASELINE APPROVED. Run these commands to commit:');
+  console.log('');
+  console.log('  git add ' + screenshotChanges.map(l => l.slice(3).trim()).join(' '));
+  console.log('  git commit -m "chore(visual): baseline approved by ' + reviewer + '"');
+  console.log('');
+  console.log(`Approval recorded in audit log with ${Object.keys(baselineHashes).length} baseline(s).`);
+}
+
 function cmdMemoryCheck() {
   const conv = path.join('.keel', 'memory', 'conventions.md');
   const les = path.join('.keel', 'memory', 'lessons.md');
@@ -2755,5 +2810,6 @@ switch (cmd) {
   case 'approve-phase': cmdApprovePhase([storyId, ...rest]); break;
   case 'approve-state-transition': cmdApproveStateTransition([storyId, ...rest]); break;
   case 'verify-tests': cmdVerifyTests([storyId, ...rest]); break;
+  case 'visual-baseline-approve': cmdVisualBaselineApprove(storyId, rest); break;
   default: die(64, `unknown command: ${cmd}`);
 }
