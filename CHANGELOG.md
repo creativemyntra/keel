@@ -1,3 +1,18 @@
+## [3.17.0] - 2026-08-03 - P-16 RELEASE: VISUAL REGRESSION TESTING FRAMEWORK
+
+### Features
+- **E2E Testing Framework** — Complete Playwright visual regression testing setup with developer fixtures
+- **Developer Guides** — Comprehensive DEVELOPER-SETUP, E2E-VISUAL-REGRESSION, and ROADMAP documentation
+- **Documentation Consolidation** — INDEX.md navigation hub, unified docs/guides directory structure
+- **Governance** — Branch strategy config with pre-push hook enforcement (G-13)
+
+### Fixes
+- **CJIS Gate** — Added missing PHONE pattern to config/cjis-patterns.json
+
+### Version History
+- Previous: 3.16.9 (2026-07-29)
+- Current: 3.17.0 (2026-08-03)
+
 # Changelog
 
 All notable changes to Keel AI-SDLC Framework are documented here.
