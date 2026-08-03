@@ -43,7 +43,25 @@ Pre-push hooks are installed locally on each developer machine to enforce the pr
 
 ## Installation
 
-The hooks are created during first use. If missing:
+### Automated Installation (Recommended)
+
+Use the automated installer for your platform:
+
+**Bash (Mac/Linux):**
+```bash
+./scripts/install-hooks.sh
+```
+
+**PowerShell (Windows):**
+```powershell
+.\scripts\install-hooks.ps1
+```
+
+The installer handles all setup steps automatically. See `.keel/HOOK-INSTALLER.md` for details.
+
+### Manual Installation
+
+If the automated installer doesn't work:
 
 ```bash
 # Create pre-push hook wrapper

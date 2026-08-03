@@ -123,9 +123,29 @@ User sees:
   Cannot create PR until target is fixed
 ```
 
+## First-Time Setup
+
+Before using the wrappers, install the pre-push hooks:
+
+```bash
+# Bash (Mac/Linux)
+./scripts/install-hooks.sh
+
+# PowerShell (Windows)
+.\scripts\install-hooks.ps1
+```
+
+This enables validation at two points:
+1. **Pre-push hook** — Blocks invalid `git push` attempts
+2. **PR wrapper** — Validates before PR creation
+
 ## Related
 
 - `scripts/validate-pr-target.cjs` — PR target validation
+- `scripts/install-hooks.sh` — Bash hook installer
+- `scripts/install-hooks.ps1` — PowerShell hook installer
 - `.keel/config/branch-strategy.yml` — Promotion pipeline rules
 - `.keel/PR-VALIDATOR.md` — Validator documentation
+- `.keel/HOOK-SETUP.md` — Hook installation guide
+- `.keel/HOOK-INSTALLER.md` — Automated installer guide
 - `~/.claude/CLAUDE.md` — Branch strategy user guide
