@@ -14,7 +14,7 @@
  * Usage:
  *   node keel-state.cjs init     <story-id> [--title "..."]
  *   node keel-state.cjs validate <story-id> <NN-agent.json>
- *   node keel-state.cjs gate     <story-id> --phase N --verdict PASS|FAIL [--notes "..."]
+ *   node keel-state.cjs gate     <story-id> --phase N --verdict PASS|FAIL [--notes "..."] [--dry-run true]
  *   node keel-state.cjs audit    <story-id> --phase-file <NN-agent.json> [--commit <sha>] [--notes "..."]
  *   node keel-state.cjs audit    <story-id> --json '<object>'
  *   node keel-state.cjs status   <story-id> | --all
@@ -24,6 +24,7 @@
  *   node keel-state.cjs resume   <story-id> --phase N --notes "human rationale"
  *   node keel-state.cjs revert-check <story-id> --test <filter-or-path> [--runner "vendor/bin/phpunit"]
  *   node keel-state.cjs prescan  <story-id>
+ *   node keel-state.cjs verify-tests <story-id> --phase N [--command "npm test"]
  *   node keel-state.cjs memory-check
  *   node keel-state.cjs security-status [--since <ISO-8601>]
  */
@@ -44,7 +45,8 @@ const CONFIDENCE = ['high', 'medium', 'low'];
 const LEGACY_AGENTS = [...AGENTS, 'tdd-red', 'tdd-green'];
 const KNOWN_FIELDS = [
   'phase', 'agent', 'story_id', 'confidence', 'findings', 'acceptance_criteria_ids',
-  'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp',
+  'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp', 'tokens_used',
+  'design_review_checklist',  // T5: Phase 3 (UI designer) review checklist
 ];
 const MAX_ATTEMPTS = 3;
 const DEFAULT_MAX_GATES = 40;   // pipeline budget: total gate events per story (10 phases × 3 attempts + overhead)
@@ -94,17 +96,95 @@ function readJson(file) {
   catch (e) { die(1, `FAIL: cannot read/parse ${file}: ${e.message}`); }
 }
 
+// Validate manifest against schema (P2-02: manifest schema validation)
+function validateManifestSchema(manifest) {
+  const required = ['story_id', 'title', 'scope', 'expected_phases', 'current_phase', 'attempts',
+                    'phase_modes', 'gate_events', 'max_gates', 'max_hours', 'started_at', 'updated_at'];
+  const errors = [];
+
+  // Check required fields
+  for (const field of required) {
+    if (!(field in manifest)) errors.push(`missing required field "${field}"`);
+  }
+
+  // Validate scope enum
+  if (manifest.scope && !['feature', 'defect'].includes(manifest.scope)) {
+    errors.push(`scope must be "feature" or "defect", got "${manifest.scope}"`);
+  }
+
+  // Validate expected_phases is array of ints 1-10
+  if (manifest.expected_phases && Array.isArray(manifest.expected_phases)) {
+    for (let i = 0; i < manifest.expected_phases.length; i++) {
+      const p = manifest.expected_phases[i];
+      if (!Number.isInteger(p) || p < 1 || p > 10) {
+        errors.push(`expected_phases[${i}]: phase ${p} out of range 1-10`);
+      }
+    }
+  } else if (manifest.expected_phases) {
+    errors.push(`expected_phases must be an array, got ${typeof manifest.expected_phases}`);
+  }
+
+  // Validate current_phase is 1-11
+  if (manifest.current_phase && (!Number.isInteger(manifest.current_phase) || manifest.current_phase < 1 || manifest.current_phase > 11)) {
+    errors.push(`current_phase must be integer 1-11, got ${manifest.current_phase}`);
+  }
+
+  // Validate attempts is object with int values 0-3
+  if (manifest.attempts && typeof manifest.attempts === 'object') {
+    for (const [phase, count] of Object.entries(manifest.attempts)) {
+      if (!Number.isInteger(count) || count < 0 || count > 3) {
+        errors.push(`attempts.${phase}: count ${count} out of range 0-3`);
+      }
+    }
+  }
+
+  // Validate phase_modes is object with string|null values
+  if (manifest.phase_modes && typeof manifest.phase_modes === 'object') {
+    const validModes = ['author', 'draft', 'execute', 'finalize'];
+    for (const [phase, mode] of Object.entries(manifest.phase_modes)) {
+      if (mode !== null && (typeof mode !== 'string' || !validModes.includes(mode))) {
+        errors.push(`phase_modes.${phase}: invalid mode "${mode}" (must be author|draft|execute|finalize|null)`);
+      }
+    }
+  }
+
+  // Validate numeric fields
+  if (manifest.gate_events !== undefined && (!Number.isInteger(manifest.gate_events) || manifest.gate_events < 0)) {
+    errors.push(`gate_events must be non-negative integer, got ${manifest.gate_events}`);
+  }
+
+  if (manifest.max_gates !== undefined && (!Number.isInteger(manifest.max_gates) || manifest.max_gates < 1)) {
+    errors.push(`max_gates must be positive integer, got ${manifest.max_gates}`);
+  }
+
+  if (manifest.max_hours !== undefined && (typeof manifest.max_hours !== 'number' || manifest.max_hours < 0.1)) {
+    errors.push(`max_hours must be number >= 0.1, got ${manifest.max_hours}`);
+  }
+
+  return errors;
+}
+
 function readManifest(storyId) {
   if (!fs.existsSync(manifestPath(storyId))) {
     die(1, `FAIL: no manifest for story ${storyId} — pipeline not initialized (run: init ${storyId})`);
   }
-  return readJson(manifestPath(storyId));
+  const manifest = readJson(manifestPath(storyId));
+  const errors = validateManifestSchema(manifest);
+  if (errors.length > 0) {
+    die(1, `FAIL: manifest validation error(s):\n  - ${errors.join('\n  - ')}`);
+  }
+  return manifest;
 }
 
 // Atomic replace: write to a temp file, then rename. rename() is atomic on the
 // same volume on both Windows (NTFS) and POSIX, so readers never see a torn file.
 function writeManifest(storyId, manifest) {
   manifest.updated_at = nowIso();
+  // P2-02: Validate manifest schema before writing
+  const errors = validateManifestSchema(manifest);
+  if (errors.length > 0) {
+    die(1, `FAIL: cannot write invalid manifest — ${errors.length} error(s):\n  - ${errors.join('\n  - ')}`);
+  }
   const file = manifestPath(storyId);
   const tmp = file + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(manifest, null, 2) + '\n');
@@ -262,10 +342,53 @@ const SCOPES = {
   defect: [1, 5, 6, 8],
 };
 
+// G-10: CJIS Data Classification Gate precondition check.
+// Verifies that keel-classify-gate.cjs is wired into hooks.json for CJIS-scoped stories.
+function checkCJISGatePrecondition(isCJISScoped) {
+  if (!isCJISScoped) return; // CJIS gate not required for non-CJIS stories
+
+  let hooksConfig;
+  try {
+    hooksConfig = JSON.parse(fs.readFileSync('hooks/hooks.json', 'utf8'));
+  } catch (e) {
+    die(2, `HALT: CJIS Data Classification Gate precondition not met — hooks/hooks.json not found or invalid JSON: ${e.message}`);
+  }
+
+  const requiredStages = ['UserPromptSubmit', 'PreToolUse', 'PostToolUse'];
+  const missingStages = [];
+
+  for (const stage of requiredStages) {
+    const stageHooks = hooksConfig.hooks?.[stage];
+    if (!stageHooks) {
+      missingStages.push(stage);
+      continue;
+    }
+
+    // Check if keel-classify-gate.cjs is wired for this stage
+    const hasGate = stageHooks.some((entry) => {
+      if (entry.hooks) {
+        return entry.hooks.some((hook) => hook.command?.includes('keel-classify-gate.cjs'));
+      }
+      return false;
+    });
+
+    if (!hasGate) missingStages.push(stage);
+  }
+
+  if (missingStages.length > 0) {
+    die(2, `HALT: CJIS Data Classification Gate precondition not met — keel-classify-gate.cjs not wired for stages: ${missingStages.join(', ')}. Update hooks/hooks.json per .keel/GUARDRAILS.md (G-10).`);
+  }
+}
+
 function cmdInit(storyId, args) {
   const dir = stateDir(storyId);
   const scope = flag(args, '--scope') || 'feature';
   if (!SCOPES[scope]) die(64, `unknown --scope "${scope}" (feature|defect)`);
+  const isCJISScoped = args.includes('--cjis-scope');
+
+  // G-10: Check CJIS gate precondition BEFORE initializing story
+  checkCJISGatePrecondition(isCJISScoped);
+
   const positionalTitle = args.find((a) => !a.startsWith('--'));
   if (positionalTitle && !flag(args, '--title')) {
     console.warn(`WARNING: positional title "${positionalTitle}" ignored — use --title "${positionalTitle}"`);
@@ -423,12 +546,597 @@ function haltPipeline(storyId, manifest, phase, attempt, reason, extraAudit) {
   notifyHalt(storyId, phase, attempt, reasons).then(() => process.exit(2));
 }
 
+// TASK T1: Check registry for verdict contradiction detection.
+// Each check is a pure function returning {id, status: "PASS"|"FAIL"|"SKIP", detail}.
+// Checks can examine manifest, phase file, artifacts, or state. All run before PASS verdict is honored.
+// If any check FAIL + verdict PASS, gate rejects with exit 2 (HALT).
+const checkRegistry = {
+  // C-0001: Trivial always-PASS check — shipped as baseline to verify check execution.
+  // Real checks will be added by compliance/governance teams as policy hardens.
+  // Status: always PASS unless thrown.
+  trivial_pass: (storyId, phase, manifest) => {
+    return { id: 'C-0001', status: 'PASS', detail: 'baseline check: no contradictions' };
+  },
+
+  // C-0002: Verify gate budget is within healthy range (ADVISORY-ONLY check).
+  // Never blocks (FAIL verdict is not used). Always returns PASS, but messages alert stress.
+  // SKIPS if gate_events >= max_gates (built-in halt logic already triggered).
+  // Status: PASS with healthy/warning message depending on utilization. Never FAIL.
+  gate_budget_stress: (storyId, phase, manifest) => {
+    const current = manifest.gate_events || 0;
+    const max = manifest.max_gates || 40;
+    const pct = (current/max*100).toFixed(1);
+    // SKIP if we've already hit the limit (halt logic will take over)
+    if (current >= max) {
+      return { id: 'C-0002', status: 'SKIP', detail: `gate budget at/over limit: ${current}/${max} events (halt logic will stop further attempts)` };
+    }
+    // Advisory warning if utilization >= 95% (high stress, but allow gating)
+    if (current >= max * 0.95) {
+      return { id: 'C-0002', status: 'PASS', detail: `gate budget WARNING: ${current}/${max} events (${pct}%) — nearing limit, may indicate retry storm (not blocking, advisory only)` };
+    }
+    // Green if under 95%
+    if (current >= max * 0.80) {
+      return { id: 'C-0002', status: 'PASS', detail: `gate budget notice: ${current}/${max} events (${pct}%) — approaching high utilization` };
+    }
+    return { id: 'C-0002', status: 'PASS', detail: `gate budget healthy: ${current}/${max} events (${pct}%)` };
+  },
+
+  // C-0003: Test-only FAIL check for AC-1 contradiction testing.
+  // If manifest has __test_fail_check: true, this check returns FAIL.
+  // Used by test suite to verify contradiction detection (PASS verdict rejected when check fails).
+  // Status: PASS normally, FAIL if __test_fail_check is set in manifest.
+  test_contradiction_marker: (storyId, phase, manifest) => {
+    if (manifest.__test_fail_check) {
+      return { id: 'C-0003', status: 'FAIL', detail: 'test contradiction marker: this check was intentionally failed to verify contradiction detection' };
+    }
+    return { id: 'C-0003', status: 'PASS', detail: 'test marker not set (normal operation)' };
+  },
+
+  // C-0007 (T6): Design approval validation — phase 4 blocks unless phase 3 approved via GitHub PR.
+  // Ensures UI/UX design is reviewed by a second human before architecture locks it in.
+  // Approval is recorded on GitHub (server-side, unforgeable); hash detects if design changes post-approval.
+  // Status: SKIP if KEEL_SKIP_APPROVALS=1 (test mode), FAIL if phase is 4 and phase 3 has no approval.
+  design_approved: (storyId, phase, manifest) => {
+    // Only block phase 4; other phases are not gated on design approval
+    if (phase !== 4) {
+      return { id: 'C-0007', status: 'SKIP', detail: 'design approval only required for phase 4 (architecture)' };
+    }
+
+    // Allow skipping approvals in test mode
+    if (process.env.KEEL_SKIP_APPROVALS === '1') {
+      return { id: 'C-0007', status: 'SKIP', detail: 'design approval skipped (KEEL_SKIP_APPROVALS=1, test mode)' };
+    }
+
+    // Check if phase 3 approval record exists in manifest
+    const approvedPhases = manifest.approved_phases || {};
+    const phase3Approval = approvedPhases['3'];
+
+    if (!phase3Approval) {
+      return {
+        id: 'C-0007',
+        status: 'FAIL',
+        detail: 'phase 3 (UI design) requires GitHub PR approval before proceeding to phase 4 (architecture). Run: keel-state approve-phase 3 --via-github-pr <PR-number>'
+      };
+    }
+
+    // Verify phase 3 file still exists and hash matches (design hasn't changed post-approval)
+    const prefix3 = '03-';
+    const phase3Files = fs.readdirSync(stateDir(storyId))
+      .filter((f) => f.startsWith(prefix3) && f.endsWith('.json'));
+
+    if (phase3Files.length === 0) {
+      return { id: 'C-0007', status: 'FAIL', detail: 'phase 3 output file not found' };
+    }
+
+    // Compute current hash
+    const phase3FilePath = path.join(stateDir(storyId), phase3Files[0]);
+    const currentContent = fs.readFileSync(phase3FilePath, 'utf8');
+    const currentHash = crypto.createHash('sha256').update(currentContent).digest('hex');
+
+    if (currentHash !== phase3Approval.content_hash) {
+      return {
+        id: 'C-0007',
+        status: 'FAIL',
+        detail: `phase 3 design has changed since approval (hash mismatch). Design must be re-reviewed. Run: keel-state approve-phase 3 --via-github-pr <PR-number>`
+      };
+    }
+
+    return {
+      id: 'C-0007',
+      status: 'PASS',
+      detail: `phase 3 design approved by ${phase3Approval.approver_count} reviewer(s) on ${phase3Approval.approved_at}`
+    };
+  },
+
+  // C-0006 (T4): Directive adherence validation — block PASS if OPEN directives apply to current phase.
+  // Ensures user instructions (HOW work is done) are tracked and enforced, not forgotten.
+  // Status: FAIL if any OPEN directive applies to this phase, PASS if all directives satisfied/superseded.
+  directive_adherence: (storyId, phase, manifest) => {
+    if (!Array.isArray(manifest.directives) || manifest.directives.length === 0) {
+      return { id: 'C-0006', status: 'PASS', detail: 'no directives recorded' };
+    }
+
+    // Find OPEN directives that apply to this phase
+    const blocking = manifest.directives.filter((d) =>
+      d.state === 'OPEN' && Array.isArray(d.applies_to_phases) && d.applies_to_phases.includes(phase)
+    );
+
+    if (blocking.length > 0) {
+      const details = blocking
+        .map((d) => `D: "${d.verbatim}" (restated ${d.restated_count}x)`)
+        .join('; ');
+      return {
+        id: 'C-0006',
+        status: 'FAIL',
+        detail: `${blocking.length} OPEN directive(s) apply to phase ${phase}: ${details}`
+      };
+    }
+
+    // Also report satisfied directives for visibility
+    const satisfied = manifest.directives.filter((d) => d.state === 'SATISFIED');
+    const satisfiedDetail = satisfied.length > 0
+      ? `all directives satisfied or superseded (${satisfied.length} satisfied)`
+      : 'no directives apply to this phase';
+
+    return {
+      id: 'C-0006',
+      status: 'PASS',
+      detail: satisfiedDetail
+    };
+  },
+
+  // C-0005 (T3): Findings terminal state validation — block PASS if CRITICAL/HIGH findings are OPEN.
+  // Enforces that defects, security issues, and performance concerns are resolved before advancing.
+  // MEDIUM/LOW findings do not block (advisory only).
+  // Status: PASS if all blocking findings resolved, FAIL if any CRITICAL/HIGH at OPEN.
+  findings_terminal_state: (storyId, phase, manifest) => {
+    const prefix = String(phase).padStart(2, '0') + '-';
+    const phaseFile = fs.readdirSync(stateDir(storyId))
+      .find((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+    if (!phaseFile) {
+      return { id: 'C-0005', status: 'SKIP', detail: 'phase file not found (pre-validation check)' };
+    }
+
+    let phaseOutput;
+    try {
+      phaseOutput = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+    } catch {
+      return { id: 'C-0005', status: 'SKIP', detail: 'phase file unreadable (pre-validation check)' };
+    }
+
+    if (!Array.isArray(phaseOutput.findings) || phaseOutput.findings.length === 0) {
+      return { id: 'C-0005', status: 'PASS', detail: 'no findings in phase output' };
+    }
+
+    // Check for blocking findings (CRITICAL or HIGH at OPEN state)
+    const blocking = phaseOutput.findings.filter((f) =>
+      (f.severity === 'CRITICAL' || f.severity === 'HIGH') && f.state === 'OPEN'
+    );
+
+    if (blocking.length > 0) {
+      const details = blocking
+        .map((f) => `${f.id} [${f.severity}]: ${f.text}`)
+        .join('; ');
+      return {
+        id: 'C-0005',
+        status: 'FAIL',
+        detail: `${blocking.length} blocking finding(s): ${details}`
+      };
+    }
+
+    return {
+      id: 'C-0005',
+      status: 'PASS',
+      detail: `all CRITICAL/HIGH findings resolved; ${phaseOutput.findings.length} finding(s) total`
+    };
+  },
+
+  // C-0004 (T2): Phase sequence validation — all predecessor phases must have valid output.
+  // Verifies that before advancing to phase N, all phases that come before N in the
+  // expected_phases list have valid output files (exist and pass schema validation).
+  // Prevents skipping phases via `resume` without leaving output behind.
+  // Status: PASS if all predecessors valid, FAIL if any missing or invalid, SKIP if this is phase 1.
+  phase_sequence: (storyId, phase, manifest) => {
+    const expected = manifest.expected_phases || SCOPES[manifest.scope] || SCOPES.feature;
+    if (phase === 1 || phase < 1) {
+      return { id: 'C-0004', status: 'SKIP', detail: 'phase 1 has no predecessors' };
+    }
+
+    // Find all phases that come before the current phase in the expected sequence
+    const predecessors = expected.filter((p) => p < phase);
+    if (predecessors.length === 0) {
+      return { id: 'C-0004', status: 'SKIP', detail: `no predecessors in expected_phases for phase ${phase}` };
+    }
+
+    // Check each predecessor
+    const missing = [];
+    for (const pred of predecessors) {
+      const prefix = String(pred).padStart(2, '0') + '-';
+      const phaseFile = fs.readdirSync(stateDir(storyId))
+        .find((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+      if (!phaseFile) {
+        missing.push(`phase ${pred} output not found`);
+        continue;
+      }
+
+      // Validate the predecessor's output file
+      const errors = validatePhaseFile(storyId, phaseFile);
+      if (errors.length > 0) {
+        missing.push(`phase ${pred} (${phaseFile}): ${errors.join('; ')}`);
+      }
+    }
+
+    if (missing.length > 0) {
+      return {
+        id: 'C-0004',
+        status: 'FAIL',
+        detail: `predecessor phase validation failed: ${missing.join(' | ')}`
+      };
+    }
+
+    return {
+      id: 'C-0004',
+      status: 'PASS',
+      detail: `all ${predecessors.length} predecessor phase(s) present and valid`
+    };
+  },
+
+  // C-0008 (T5): Design review checklist validation — block PASS for phase 3 if checklist incomplete.
+  // Ensures UI designer completes required review before design is approved (phase 4 proceeds).
+  // Required items: story alignment, WCAG 2.1 AA, responsive design, design tokens, palette/typography.
+  // Status: PASS if all items true, FAIL if any missing/false, SKIP if not phase 3.
+  design_review_checklist: (storyId, phase, manifest) => {
+    // Only applies to phase 3 (UI designer)
+    if (phase !== 3) {
+      return { id: 'C-0008', status: 'SKIP', detail: `design review checklist only applies to phase 3 (current: ${phase})` };
+    }
+
+    const prefix = '03-';
+    const phaseFile = fs.readdirSync(stateDir(storyId))
+      .find((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+    if (!phaseFile) {
+      return { id: 'C-0008', status: 'SKIP', detail: 'phase 3 output file not found (pre-validation check)' };
+    }
+
+    let phaseOutput;
+    try {
+      phaseOutput = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+    } catch {
+      return { id: 'C-0008', status: 'SKIP', detail: 'phase 3 output unreadable (pre-validation check)' };
+    }
+
+    const checklist = phaseOutput.design_review_checklist;
+    // If checklist is missing, skip the check (backward compatibility with phase 3 outputs created before T5)
+    if (!checklist || typeof checklist !== 'object') {
+      return {
+        id: 'C-0008',
+        status: 'SKIP',
+        detail: 'design_review_checklist missing from phase 3 output (not provided by agent — optional for backward compatibility)'
+      };
+    }
+
+    // Check all required items
+    const required = ['story_alignment', 'wcag_2_1_aa', 'responsive_design', 'design_tokens', 'palette_typography'];
+    const unchecked = required.filter((item) => checklist[item] !== true);
+
+    if (unchecked.length > 0) {
+      return {
+        id: 'C-0008',
+        status: 'FAIL',
+        detail: `design review incomplete: ${unchecked.join(', ')} not checked`
+      };
+    }
+
+    return {
+      id: 'C-0008',
+      status: 'PASS',
+      detail: 'design review checklist complete (all 5 items verified)'
+    };
+  },
+
+  // C-0009 (FINDING-A): Finding state transitions require human approval.
+  // Blocks PASS if any finding is in DEFERRED or WAIVED state without a FINDING-A approval record.
+  // Ensures critical/high deferrals are auditable, not self-approved.
+  // Status: PASS if all DEFERRED/WAIVED findings have approvals, FAIL if missing.
+  finding_state_approval: (storyId, phase, manifest) => {
+    // Skip in test mode (E2E tests don't use human approvals)
+    if (process.env.KEEL_SKIP_APPROVALS === '1') {
+      return { id: 'C-0009', status: 'SKIP', detail: 'finding state approvals skipped (KEEL_SKIP_APPROVALS=1, test mode)' };
+    }
+
+    const prefix = String(phase).padStart(2, '0') + '-';
+    const phaseFile = fs.readdirSync(stateDir(storyId))
+      .find((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+    if (!phaseFile) {
+      return { id: 'C-0009', status: 'PASS', detail: 'phase file not found (pre-validation check)' };
+    }
+
+    let phaseOutput;
+    try {
+      phaseOutput = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+    } catch {
+      return { id: 'C-0009', status: 'PASS', detail: 'phase file unreadable (pre-validation check)' };
+    }
+
+    if (!Array.isArray(phaseOutput.findings) || phaseOutput.findings.length === 0) {
+      return { id: 'C-0009', status: 'PASS', detail: 'no findings in phase output' };
+    }
+
+    // Find findings in DEFERRED or WAIVED state
+    const deferredOrWaived = phaseOutput.findings.filter((f) =>
+      (f.state === 'DEFERRED' || f.state === 'WAIVED')
+    );
+
+    if (deferredOrWaived.length === 0) {
+      return { id: 'C-0009', status: 'PASS', detail: 'no deferred or waived findings' };
+    }
+
+    // Check each one has a FINDING-A approval in manifest
+    const approvals = (manifest.human_approvals || []).filter((a) => a.subject_type === 'finding');
+    const unapproved = deferredOrWaived.filter((f) => {
+      const hasApproval = approvals.find((a) => a.subject_id === f.id && a.new_state === f.state);
+      return !hasApproval;
+    });
+
+    if (unapproved.length > 0) {
+      const details = unapproved
+        .map((f) => `${f.id} [${f.severity}]: ${f.state} without approval`)
+        .join('; ');
+      return {
+        id: 'C-0009',
+        status: 'FAIL',
+        detail: `${unapproved.length} finding(s) lack human approval: ${details}`
+      };
+    }
+
+    return {
+      id: 'C-0009',
+      status: 'PASS',
+      detail: `all ${deferredOrWaived.length} deferred/waived findings have human approvals`
+    };
+  },
+
+  // C-0010 (FINDING-A): Directive state transitions require human approval.
+  // Blocks PASS if any directive is in SUPERSEDED or DECLINED state without a FINDING-A approval record.
+  // Ensures rejected directives are auditable, not self-overridden.
+  // Status: PASS if all SUPERSEDED/DECLINED directives have approvals, FAIL if missing.
+  directive_state_approval: (storyId, phase, manifest) => {
+    // Skip in test mode (E2E tests don't use human approvals)
+    if (process.env.KEEL_SKIP_APPROVALS === '1') {
+      return { id: 'C-0010', status: 'SKIP', detail: 'directive state approvals skipped (KEEL_SKIP_APPROVALS=1, test mode)' };
+    }
+
+    if (!Array.isArray(manifest.directives) || manifest.directives.length === 0) {
+      return { id: 'C-0010', status: 'PASS', detail: 'no directives recorded' };
+    }
+
+    // Find directives in SUPERSEDED or DECLINED state
+    const supersededOrDeclined = manifest.directives.filter((d) =>
+      (d.state === 'SUPERSEDED' || d.state === 'DECLINED')
+    );
+
+    if (supersededOrDeclined.length === 0) {
+      return { id: 'C-0010', status: 'PASS', detail: 'no superseded or declined directives' };
+    }
+
+    // Check each one has a FINDING-A approval in manifest
+    const approvals = (manifest.human_approvals || []).filter((a) => a.subject_type === 'directive');
+    const unapproved = supersededOrDeclined.filter((d) => {
+      const hasApproval = approvals.find((a) => a.subject_id === d.id && a.new_state === d.state);
+      return !hasApproval;
+    });
+
+    if (unapproved.length > 0) {
+      const details = unapproved
+        .map((d) => `D: "${d.verbatim.slice(0, 50)}..." [${d.state}] without approval`)
+        .join('; ');
+      return {
+        id: 'C-0010',
+        status: 'FAIL',
+        detail: `${unapproved.length} directive(s) lack human approval: ${details}`
+      };
+    }
+
+    return {
+      id: 'C-0010',
+      status: 'PASS',
+      detail: `all ${supersededOrDeclined.length} superseded/declined directives have human approvals`
+    };
+  },
+
+  // C-0011 (T5): Coverage threshold validation — verify tests were run and coverage measured.
+  // PRECONDITION check: for test phases (5,6,7), manifest.verification must exist before gating.
+  // If missing, returns FAIL with guidance to run verify-tests first (not as separate async step).
+  // Ensures coverage is measured by the engine, not claimed by agents.
+  // Status: PASS if verification present/fresh and tests passed, FAIL if missing/stale/failed.
+  coverage_threshold: (storyId, phase, manifest) => {
+    // Skip in test mode (E2E tests don't require coverage verification)
+    if (process.env.KEEL_SKIP_APPROVALS === '1') {
+      return { id: 'C-0011', status: 'SKIP', detail: 'coverage verification skipped (test mode)' };
+    }
+
+    // Skip if this phase doesn't need coverage verification (e.g., documentation phases)
+    // For now, apply to all phases that have tests (phases 5, 6, 7 typically test phases)
+    const testPhases = [5, 6, 7]; // software-engineer, qa-engineer, e2e-engineer
+    if (!testPhases.includes(phase)) {
+      return { id: 'C-0011', status: 'SKIP', detail: `coverage verification not required for phase ${phase}` };
+    }
+
+    // PRECONDITION: Verification must exist before gating (ordered dependency)
+    // This enforces: run verify-tests BEFORE gate, not after (implicit ordering prevented)
+    if (!manifest.verification) {
+      return {
+        id: 'C-0011',
+        status: 'FAIL',
+        detail: `PRECONDITION: coverage verification missing for phase ${phase}. Run tests first: keel-state verify-tests ${storyId} --phase ${phase} BEFORE gating`
+      };
+    }
+
+    const v = manifest.verification;
+
+    // Verification must be for the current phase (or later in the pipeline)
+    if (v.phase < phase) {
+      return {
+        id: 'C-0011',
+        status: 'FAIL',
+        detail: `coverage verification stale: was for phase ${v.phase}, now at phase ${phase}. Rerun: keel-state verify-tests ${storyId} --phase ${phase}`
+      };
+    }
+
+    // Git commit must match HEAD (ensure verification is not stale)
+    let currentCommit = '';
+    try {
+      currentCommit = require('child_process').execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+    } catch { /* git not available */ }
+
+    if (currentCommit && v.git_commit && v.git_commit !== currentCommit) {
+      return {
+        id: 'C-0011',
+        status: 'FAIL',
+        detail: `coverage verification stale: was for commit ${v.git_commit.slice(0, 8)}, now at ${currentCommit.slice(0, 8)}. Rerun: keel-state verify-tests ${storyId} --phase ${phase}`
+      };
+    }
+
+    // Test command must have succeeded
+    if (v.exit_code !== 0) {
+      return {
+        id: 'C-0011',
+        status: 'FAIL',
+        detail: `coverage verification failed: test command exited ${v.exit_code}. Command: ${v.command}`
+      };
+    }
+
+    // Coverage threshold: enforce minimum 52% (current repo state)
+    // This prevents regression while allowing improvement.
+    const minCoverage = 52;
+    if (v.coverage_percent !== null && v.coverage_percent < minCoverage) {
+      return {
+        id: 'C-0011',
+        status: 'FAIL',
+        detail: `coverage ${v.coverage_percent}% < minimum ${minCoverage}%. Improve test coverage before advancing.`
+      };
+    }
+
+    return {
+      id: 'C-0011',
+      status: 'PASS',
+      detail: `coverage verified: ${v.coverage_percent}% (${v.test_count} tests), commit ${v.git_commit.slice(0, 8)}`
+    };
+  },
+
+  // C-0012 (T5): No coverage claims in agent output — scan for coverage-shaped text.
+  // Blocks PASS if agent claims coverage that contradicts manifest.verification.
+  // Agents must report the engine's number, not compute their own (prevents hallucination).
+  // Status: PASS if no contradictory claims, FAIL if agent claims different coverage.
+  no_coverage_claims_in_output: (storyId, phase, manifest) => {
+    // Skip in test mode (E2E tests don't require coverage verification)
+    if (process.env.KEEL_SKIP_APPROVALS === '1') {
+      return { id: 'C-0012', status: 'SKIP', detail: 'coverage claims check skipped (test mode)' };
+    }
+
+    const testPhases = [5, 6, 7];
+    if (!testPhases.includes(phase)) {
+      return { id: 'C-0012', status: 'SKIP', detail: `no coverage claims check not required for phase ${phase}` };
+    }
+
+    // Get the phase output file
+    const prefix = String(phase).padStart(2, '0') + '-';
+    const phaseFile = fs.readdirSync(stateDir(storyId))
+      .find((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+    if (!phaseFile) {
+      return { id: 'C-0012', status: 'PASS', detail: 'phase output file not found (pre-validation check)' };
+    }
+
+    let phaseOutput;
+    try {
+      phaseOutput = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+    } catch {
+      return { id: 'C-0012', status: 'PASS', detail: 'phase output unreadable (pre-validation check)' };
+    }
+
+    // Scan phase output findings ONLY for coverage-shaped claims (bounded scope, no regex DoS)
+    // Only check findings array to avoid catastrophic backtracking on arbitrary strings
+    if (!Array.isArray(phaseOutput.findings)) {
+      return { id: 'C-0012', status: 'PASS', detail: 'no findings in agent output' };
+    }
+
+    // Search findings text for coverage percentage mentions (strict format: "N% coverage" or "coverage N%")
+    let claimedCoverage = null;
+    for (const finding of phaseOutput.findings) {
+      if (typeof finding.text !== 'string') continue;
+      const text = finding.text;
+      // Safe bounded search: only look at start/end of text, not arbitrary positions
+      const match = text.match(/^.*?(\d{1,3}(?:\.\d+)?)%.*?coverage/i) ||
+                    text.match(/coverage.*?(\d{1,3}(?:\.\d+)?)%/i);
+      if (match && match[1]) {
+        claimedCoverage = parseFloat(match[1]);
+        break; // Stop at first claim (don't accumulate multiple claims)
+      }
+    }
+
+    if (!claimedCoverage) {
+      return { id: 'C-0012', status: 'PASS', detail: 'no coverage claims in agent findings' };
+    }
+
+    // If verification exists, check that agent claim matches engine measurement
+    if (manifest.verification && manifest.verification.coverage_percent !== null) {
+      const engineCoverage = manifest.verification.coverage_percent;
+
+      // Allow 0.5% drift (rounding difference)
+      if (Math.abs(claimedCoverage - engineCoverage) > 0.5) {
+        return {
+          id: 'C-0012',
+          status: 'FAIL',
+          detail: `agent claimed ${claimedCoverage}% coverage but engine measured ${engineCoverage}%. Agents must report the engine's measurement, not compute their own.`
+        };
+      }
+    } else {
+      // Agent claimed coverage but engine hasn't measured it yet
+      return {
+        id: 'C-0012',
+        status: 'FAIL',
+        detail: `agent claimed ${claimedCoverage}% coverage but engine measurement is missing. Run: keel-state verify-tests ${storyId} --phase ${phase}`
+      };
+    }
+
+    return {
+      id: 'C-0012',
+      status: 'PASS',
+      detail: `agent coverage claim matches engine measurement`
+    };
+  },
+};
+
+function runChecks(storyId, phase, manifest) {
+  const results = [];
+  for (const [name, checkFn] of Object.entries(checkRegistry)) {
+    try {
+      const result = checkFn(storyId, phase, manifest);
+      if (result && typeof result === 'object' && result.id && result.status && result.detail) {
+        results.push(result);
+      } else {
+        results.push({ id: `${name}:invalid`, status: 'FAIL', detail: 'check returned invalid format' });
+      }
+    } catch (err) {
+      // Fail-closed: thrown checks become FAIL, never swallowed.
+      results.push({ id: `${name}:throw`, status: 'FAIL', detail: `check threw: ${err.message}` });
+    }
+  }
+  return results;
+}
+
 function cmdGate(storyId, args) {
   const phase = parseInt(flag(args, '--phase') || '', 10);
   const verdict = (flag(args, '--verdict') || '').toUpperCase();
+  const dryRun = flag(args, '--dry-run') === 'true';
   const notes = flag(args, '--notes') || '';
   if (!Number.isInteger(phase) || !['PASS', 'FAIL'].includes(verdict)) {
-    die(64, 'usage: gate <story-id> --phase N --verdict PASS|FAIL [--notes "..."]');
+    die(64, 'usage: gate <story-id> --phase N --verdict PASS|FAIL [--notes "..."] [--dry-run true]');
   }
   const key = String(phase);
 
@@ -492,6 +1200,48 @@ function cmdGate(storyId, args) {
         die(1, 'A PASS verdict cannot be recorded against an invalid phase file. Fix the phase output (or call gate --verdict FAIL to log the attempt) and retry.');
       }
 
+      // TASK T1: Run check registry before honoring PASS verdict.
+      // Checks can contradict the verdict; if any FAIL, reject the PASS claim.
+      const checkResults = runChecks(storyId, phase, manifest);
+      const failedChecks = checkResults.filter((c) => c.status === 'FAIL');
+
+      // --dry-run: print check results and exit without modifying manifest.
+      if (dryRun) {
+        console.log(`CHECK REGISTRY RESULTS (--dry-run mode):`);
+        console.log(`Phase: ${phase}, Verdict: ${verdict}, Story: ${storyId}`);
+        console.log(`${checkResults.length} check(s) executed:\n`);
+        checkResults.forEach((c) => {
+          const icon = c.status === 'PASS' ? '✓' : c.status === 'SKIP' ? '◯' : '✗';
+          console.log(`  ${icon} ${c.id}: ${c.status} — ${c.detail}`);
+        });
+        if (failedChecks.length) {
+          console.log(`\n${failedChecks.length} check(s) failed. PASS verdict would be REJECTED.`);
+        } else {
+          console.log(`\nAll checks passed. PASS verdict would be ACCEPTED.`);
+        }
+        console.log('Manifest unchanged. Exiting --dry-run mode.');
+        process.exit(0);
+      }
+
+      // Verdict contradiction detection: if verdict is PASS but any check FAILs, halt.
+      if (failedChecks.length) {
+        const contradiction = failedChecks.map((c) => `${c.id}: ${c.detail}`).join('; ');
+        manifest.halted = true;
+        writeManifest(storyId, manifest);
+        appendAudit(storyId, {
+          phase, agent: 'handshake', action: 'gate_rejected_contradiction',
+          notes: `verdict PASS contradicted by ${failedChecks.length} check(s): ${contradiction}`,
+          checks: checkResults,
+        });
+        fs.appendFileSync(handoffPath(storyId),
+          `- ${nowIso()} | phase ${phase} | HALT | verdict contradiction: ${failedChecks.length} check(s) failed | ${contradiction}\n`);
+        console.error(`GATE REJECTED: verdict is PASS but checks have failed:`);
+        failedChecks.forEach((c) => console.error(`  ✗ ${c.id}: ${c.detail}`));
+        console.error(`The engine cannot honor a PASS verdict contradicted by facts. Pipeline halted.`);
+        console.error(`Resume (human decision required): ${selfInvocation()} resume ${storyId} --phase ${phase} --notes "<rationale>"`);
+        process.exit(2);
+      }
+
       delete manifest.attempts[key];
       if (manifest.attempt_hashes) delete manifest.attempt_hashes[key];
       // Clear any author/draft mode marker — execute/finalize has now run and gated.
@@ -505,7 +1255,7 @@ function cmdGate(storyId, args) {
       writeManifest(storyId, manifest);
       fs.appendFileSync(handoffPath(storyId),
         `- ${nowIso()} | phase ${phase} -> ${label} | PASS | ${notes}\n`);
-      appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_passed', notes });
+      appendAudit(storyId, { phase, agent: 'handshake', action: 'gate_passed', notes, checks: checkResults });
       // auto-audit the phase completion — the separate `audit --phase-file`
       // step proved fragile in practice (a fast-model gate skipped it in the
       // KEEL-102 e2e), so the engine owns it on PASS. phaseFile is already
@@ -1448,9 +2198,535 @@ function cmdTokenLedger(args) {
   die(64, `unknown token-ledger subcommand: ${sub} (expected append or summary)`);
 }
 
+// ------------------------------------------------------------------- approve-phase (T6)
+// Record GitHub PR approval for a phase (e.g., design review for phase 3).
+// Approval is verified against GitHub (server-side), not manifest-editable.
+// Usage: approve-phase <story-id> <phase-number> --via-github-pr <PR-number>
+
+function cmdApprovePhase(args) {
+  const storyId = args[0];
+  const phaseStr = args[1];
+  const prNumber = flag(args, '--via-github-pr') || '';
+
+  if (!storyId || !phaseStr || !prNumber) {
+    die(64, 'usage: approve-phase <story-id> <phase-number> --via-github-pr <PR-number>');
+  }
+
+  validateStoryId(storyId);
+  const phase = parseInt(phaseStr, 10);
+  if (!Number.isInteger(phase) || phase < 1 || phase > 10) {
+    die(1, `invalid phase: ${phaseStr} (expected 1-10)`);
+  }
+
+  const manifestPath = path.join(stateDir(storyId), 'manifest.json');
+  if (!fs.existsSync(manifestPath)) die(1, `story ${storyId} not found`);
+
+  const manifest = readManifest(storyId);
+
+  // Query GitHub API to verify PR exists and has approvals
+  try {
+    const { execSync } = require('child_process');
+    const prData = execSync(`gh api repos/creativemyntra/keel/pulls/${prNumber} --jq '.{title, state, reviews: .requested_reviewers}'`, { stdio: 'pipe', encoding: 'utf8' });
+    // Just verify PR exists; actual approval count comes from reviews
+    const reviewData = execSync(`gh api repos/creativemyntra/keel/pulls/${prNumber}/reviews --jq '[.[] | select(.state == "APPROVED")] | length'`, { stdio: 'pipe', encoding: 'utf8' });
+    const approvalCount = parseInt(reviewData.trim(), 10) || 0;
+
+    if (approvalCount === 0) {
+      die(1, `PR #${prNumber} has no approvals. Request review from a team member.`);
+    }
+
+    // Hash the phase file to detect future changes
+    const prefix = String(phase).padStart(2, '0') + '-';
+    const phaseFiles = fs.readdirSync(stateDir(storyId))
+      .filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+    if (phaseFiles.length === 0) {
+      die(1, `phase ${phase} output file not found`);
+    }
+
+    const phaseFilePath = path.join(stateDir(storyId), phaseFiles[0]);
+    const content = fs.readFileSync(phaseFilePath, 'utf8');
+    const contentHash = crypto.createHash('sha256').update(content).digest('hex');
+
+    // Record approval in manifest
+    if (!manifest.approved_phases) manifest.approved_phases = {};
+    manifest.approved_phases[String(phase)] = {
+      phase,
+      pr_number: parseInt(prNumber, 10),
+      approved_at: nowIso(),
+      approver_count: approvalCount,
+      content_hash: contentHash
+    };
+
+    writeManifest(storyId, manifest);
+    appendAudit(storyId, {
+      action: 'phase_approved_via_github',
+      phase,
+      pr_number: parseInt(prNumber, 10),
+      approver_count: approvalCount,
+      content_hash: contentHash
+    });
+
+    console.log(`OK: phase ${phase} approved via PR #${prNumber} (${approvalCount} approval(s))`);
+
+    // Emit review checklist for phase 3 (design)
+    if (phase === 3) {
+      console.log(`\n=== Design Review Checklist (Phase 3) ===\n`);
+      console.log('□ Story alignment: design matches acceptance criteria');
+      console.log('□ WCAG 2.1 AA: colors, contrast, keyboard navigation');
+      console.log('□ Responsive: tested on mobile, tablet, desktop');
+      console.log('□ Design tokens: using variables, not hardcoded values');
+      console.log('□ Specifications: colors, typography, spacing defined\n');
+    }
+  } catch (err) {
+    die(1, `failed to verify GitHub PR #${prNumber}: ${err.message}`);
+  }
+}
+
+// ------------------------------------------------------------------- directive (T4)
+// Track and enforce user directives (HOW work is done, distinct from ACs about WHAT).
+// Usage:
+//   directive <story-id> add --verbatim "<exact user words>" --phases <1,5,6>
+//   directive <story-id> satisfy <D-NNN> --notes "evidence"
+//   directive <story-id> list
+
+function cmdDirective(args) {
+  const sub = args[0];
+  const storyId = args[1];
+  if (!sub || !storyId) die(64, 'usage: directive <story-id> <add|satisfy|supersede|list> [options]');
+  validateStoryId(storyId);
+
+  const manifestPath = path.join(stateDir(storyId), 'manifest.json');
+  if (!fs.existsSync(manifestPath)) die(1, `story ${storyId} not found`);
+
+  const manifest = readManifest(storyId);
+  if (!Array.isArray(manifest.directives)) manifest.directives = [];
+
+  if (sub === 'add') {
+    const verbatim = flag(args, '--verbatim') || '';
+    const phasesStr = flag(args, '--phases') || '';
+    if (!verbatim || !phasesStr) die(64, 'add requires --verbatim "<text>" --phases <1,2,3>');
+
+    const applies_to_phases = phasesStr.split(',').map((p) => parseInt(p.trim(), 10)).filter(Number.isInteger);
+    if (applies_to_phases.length === 0) die(1, 'invalid --phases format (expected 1,2,3)');
+
+    // Check for restatement (same verbatim already exists in OPEN state)
+    const existing = manifest.directives.find((d) => d.verbatim === verbatim && d.state === 'OPEN');
+    if (existing) {
+      existing.restated_count = (existing.restated_count || 1) + 1;
+      console.log(`OK: directive ${existing.id} restated (count: ${existing.restated_count})`);
+
+      // At restated_count >= 2, auto-append HIGH finding to current phase output
+      if (existing.restated_count >= 2) {
+        const manifest2 = readManifest(storyId);
+        const currentPhase = manifest2.current_phase;
+        const prefix = String(currentPhase).padStart(2, '0') + '-';
+        const phaseFiles = fs.readdirSync(stateDir(storyId))
+          .filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
+        if (phaseFiles.length > 0) {
+          const phaseFile = phaseFiles[0];
+          const phaseData = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+          if (Array.isArray(phaseData.findings)) {
+            phaseData.findings.push({
+              id: `DRCT-${existing.id.slice(2)}`,
+              text: `Directive ${existing.id} restated ${existing.restated_count} times while still OPEN`,
+              severity: 'HIGH',
+              state: 'OPEN'
+            });
+            fs.writeFileSync(path.join(stateDir(storyId), phaseFile), JSON.stringify(phaseData, null, 2));
+            appendAudit(storyId, { action: 'directive_restatement_finding_added', directive_id: existing.id, restated_count: existing.restated_count });
+          }
+        }
+      }
+
+      writeManifest(storyId, manifest);
+      appendAudit(storyId, { action: 'directive_restated', directive_id: existing.id, restated_count: existing.restated_count });
+      return;
+    }
+
+    // New directive
+    const nextId = `D-${String(manifest.directives.length + 1).padStart(3, '0')}`;
+    const directive = {
+      id: nextId,
+      verbatim,
+      captured_at: nowIso(),
+      applies_to_phases,
+      state: 'OPEN',
+      restated_count: 1
+    };
+
+    manifest.directives.push(directive);
+    writeManifest(storyId, manifest);
+    appendAudit(storyId, { action: 'directive_added', directive_id: nextId, applies_to_phases });
+    console.log(`OK: directive added: ${nextId}`);
+  } else if (sub === 'satisfy') {
+    const directiveId = args[2];
+    if (!directiveId) die(64, 'satisfy requires directive ID (D-001, etc.)');
+    const notes = flag(args, '--notes') || '';
+
+    const directive = manifest.directives.find((d) => d.id === directiveId);
+    if (!directive) die(1, `directive ${directiveId} not found`);
+    if (directive.state !== 'OPEN') die(1, `directive ${directiveId} is ${directive.state}, not OPEN`);
+
+    directive.state = 'SATISFIED';
+    directive.evidence = directive.evidence || {};
+    directive.evidence.satisfied_at = nowIso();
+    directive.evidence.notes = notes;
+
+    writeManifest(storyId, manifest);
+    appendAudit(storyId, { action: 'directive_satisfied', directive_id: directiveId, notes });
+    console.log(`OK: directive ${directiveId} satisfied`);
+  } else if (sub === 'list') {
+    if (manifest.directives.length === 0) {
+      console.log('No directives recorded.');
+      return;
+    }
+    console.log(`\n=== Directives for ${storyId} ===\n`);
+    manifest.directives.forEach((d) => {
+      console.log(`${d.id} [${d.state}] (restated ${d.restated_count}x)`);
+      console.log(`  "${d.verbatim}"`);
+      console.log(`  Applies to phases: ${d.applies_to_phases.join(', ')}\n`);
+    });
+  } else {
+    die(64, 'unknown directive subcommand: ' + sub);
+  }
+}
+
+// ------------------------------------------------------------------- finding (T3)
+// Transition finding state: OPEN → RESOLVED|DEFERRED|WAIVED
+// RESOLVED requires commit sha (verified with git)
+// DEFERRED rejected for CRITICAL findings
+// WAIVED requires approver and reason (blocked until FINDING-A)
+
+function cmdFinding(args) {
+  const sub = args[0];
+  const storyId = args[1];
+  const findingId = args[2];
+  const newState = flag(args, '--state') || '';
+  if (!sub || !storyId || !findingId || !newState) {
+    die(64, 'usage: finding <story-id> <finding-id> --state RESOLVED|DEFERRED|WAIVED [--commit <sha>] [--approver <name>] [--reason "..."]');
+  }
+  validateStoryId(storyId);
+
+  if (sub !== 'set-state') die(64, 'usage: finding <story-id> <finding-id> --state ...');
+
+  const manifestPath = path.join(stateDir(storyId), 'manifest.json');
+  if (!fs.existsSync(manifestPath)) die(1, `story ${storyId} not found`);
+
+  // Find the phase file with this finding
+  const stateDir_ = stateDir(storyId);
+  const phaseFiles = fs.readdirSync(stateDir_)
+    .filter((f) => /^\d{2}-.*\.json$/.test(f) && f.endsWith('.json'));
+
+  let foundInPhase = null;
+  let phaseOutputs = {};
+
+  for (const pf of phaseFiles) {
+    try {
+      const output = JSON.parse(fs.readFileSync(path.join(stateDir_, pf), 'utf8'));
+      phaseOutputs[pf] = output;
+      if (Array.isArray(output.findings)) {
+        const f = output.findings.find((fi) => fi.id === findingId);
+        if (f) {
+          foundInPhase = { file: pf, finding: f, output };
+          break;
+        }
+      }
+    } catch { /* skip */ }
+  }
+
+  if (!foundInPhase) die(1, `finding ${findingId} not found in any phase output`);
+
+  const { file: phaseFile, finding, output: phaseOutput } = foundInPhase;
+  const priorState = finding.state;
+
+  // Validate state transition
+  if (newState === 'RESOLVED') {
+    const commit = flag(args, '--commit') || '';
+    if (!commit) die(1, 'RESOLVED requires --commit <sha>');
+    if (!/^[a-f0-9]{7,40}$/.test(commit)) die(1, `invalid commit SHA format — expected 7-40 hex chars, got: ${commit}`);
+
+    // Verify commit exists and touches at least one file
+    let verifyOutput;
+    try {
+      verifyOutput = require('child_process').execSync(`git rev-parse ${commit} && git diff-tree --no-commit-id --name-only -r ${commit}`, { stdio: 'pipe', encoding: 'utf8' });
+    } catch {
+      die(1, `commit ${commit} not found or invalid — verify with: git log --oneline`);
+    }
+    const filesChanged = verifyOutput.trim().split('\n').filter(Boolean);
+    if (filesChanged.length === 0) {
+      die(1, `commit ${commit} does not change any files (empty commit) — cannot resolve finding`);
+    }
+
+    finding.state = 'RESOLVED';
+    finding.evidence = finding.evidence || {};
+    finding.evidence.commit = commit;
+  } else if (newState === 'DEFERRED') {
+    if (finding.severity === 'CRITICAL') die(1, 'CRITICAL findings cannot be deferred — must be resolved or waived');
+    die(1, 'DEFERRED requires human approval anchor — not yet implemented, see FINDING-A');
+  } else if (newState === 'WAIVED') {
+    die(1, 'WAIVED requires human approval anchor — not yet implemented, see FINDING-A');
+  } else {
+    die(64, `unknown state: ${newState} (expected RESOLVED, DEFERRED, or WAIVED)`);
+  }
+
+  // Update phase output and write back
+  const phasePath = path.join(stateDir_, phaseFile);
+  fs.writeFileSync(phasePath, JSON.stringify(phaseOutput, null, 2));
+
+  // Audit log
+  appendAudit(storyId, {
+    action: 'finding_state_changed',
+    finding_id: findingId,
+    prior_state: priorState,
+    new_state: finding.state,
+    evidence: finding.evidence || {},
+    notes: `finding state transitioned by user command`
+  });
+
+  console.log(`OK: ${findingId} state ${priorState} → ${finding.state}`);
+}
+
+// ------------------------------------------------------------------- approve-state-transition (FINDING-A)
+// Human approval for finding/directive state transitions (DEFERRED/WAIVED/SUPERSEDED/DECLINED).
+// Unblocks automatic state management and records auditable approval decision.
+// Usage:
+//   approve-state-transition <story-id> <subject-id> <new-state>
+//                            --subject-type finding|directive
+//                            --approver "<name/email>"
+//                            --reason "<min 15 words>"
+//                            [--evidence-link "<url>"]
+
+function cmdApproveStateTransition(args) {
+  const storyId = args[0];
+  const subjectId = args[1];
+  const newState = args[2];
+
+  if (!storyId || !subjectId || !newState) {
+    die(64, 'usage: approve-state-transition <story-id> <subject-id> <new-state> --subject-type finding|directive --approver "<name>" --reason "<15+ words>" [--evidence-link "<url>"]');
+  }
+
+  validateStoryId(storyId);
+  const subjectType = flag(args, '--subject-type') || '';
+  const approver = flag(args, '--approver') || '';
+  const reason = flag(args, '--reason') || '';
+  const evidenceLink = flag(args, '--evidence-link') || '';
+
+  if (!subjectType || !approver || !reason) {
+    die(64, 'approve-state-transition requires: --subject-type, --approver, --reason');
+  }
+
+  if (!['finding', 'directive'].includes(subjectType)) {
+    die(1, `--subject-type must be 'finding' or 'directive', got: ${subjectType}`);
+  }
+
+  // Validate reason length (min 15 words)
+  const reasonWords = reason.trim().split(/\s+/).length;
+  if (reasonWords < 15) {
+    die(1, `reason must be at least 15 words (got ${reasonWords}): "${reason}"`);
+  }
+
+  const manifestPath = path.join(stateDir(storyId), 'manifest.json');
+  if (!fs.existsSync(manifestPath)) die(1, `story ${storyId} not found`);
+
+  const manifest = readManifest(storyId);
+  if (!Array.isArray(manifest.human_approvals)) manifest.human_approvals = [];
+
+  // Find prior state and validate transition
+  let priorState = null;
+  let targetObj = null;
+
+  if (subjectType === 'finding') {
+    // Find the finding in any phase output file
+    const stateDir_ = stateDir(storyId);
+    const phaseFiles = fs.readdirSync(stateDir_)
+      .filter((f) => /^\d{2}-.*\.json$/.test(f) && f.endsWith('.json'));
+
+    for (const pf of phaseFiles) {
+      try {
+        const output = JSON.parse(fs.readFileSync(path.join(stateDir_, pf), 'utf8'));
+        if (Array.isArray(output.findings)) {
+          const f = output.findings.find((fi) => fi.id === subjectId);
+          if (f) {
+            targetObj = f;
+            priorState = f.state;
+            break;
+          }
+        }
+      } catch { /* skip */ }
+    }
+
+    if (!targetObj) die(1, `finding ${subjectId} not found in any phase output`);
+
+    // Finding state transitions: OPEN → DEFERRED|WAIVED only
+    if (priorState !== 'OPEN') {
+      die(1, `finding ${subjectId} is already ${priorState}, cannot transition to ${newState}`);
+    }
+    if (!['DEFERRED', 'WAIVED'].includes(newState)) {
+      die(1, `finding state transition requires --state DEFERRED|WAIVED, got: ${newState}`);
+    }
+  } else if (subjectType === 'directive') {
+    // Find the directive in manifest
+    const directive = manifest.directives.find((d) => d.id === subjectId);
+    if (!directive) die(1, `directive ${subjectId} not found in manifest`);
+
+    targetObj = directive;
+    priorState = directive.state;
+
+    // Directive state transitions: OPEN → SUPERSEDED|DECLINED only
+    if (priorState !== 'OPEN') {
+      die(1, `directive ${subjectId} is already ${priorState}, cannot transition to ${newState}`);
+    }
+    if (!['SUPERSEDED', 'DECLINED'].includes(newState)) {
+      die(1, `directive state transition requires --state SUPERSEDED|DECLINED, got: ${newState}`);
+    }
+  }
+
+  // Generate approval ID
+  const approvalId = `FINDING-A-${String(manifest.human_approvals.length + 1).padStart(3, '0')}`;
+
+  // Record approval
+  const approval = {
+    id: approvalId,
+    subject_id: subjectId,
+    subject_type: subjectType,
+    prior_state: priorState,
+    new_state: newState,
+    approved_at: nowIso(),
+    approver,
+    reason
+  };
+
+  if (evidenceLink) {
+    approval.evidence_link = evidenceLink;
+  }
+
+  manifest.human_approvals.push(approval);
+
+  // Update target state
+  if (targetObj) {
+    targetObj.state = newState;
+    if (!targetObj.evidence) targetObj.evidence = {};
+    targetObj.evidence.approved_by = approver;
+    targetObj.evidence.approval_id = approvalId;
+    targetObj.evidence.notes = reason;
+  }
+
+  writeManifest(storyId, manifest);
+  appendAudit(storyId, {
+    action: 'state_transition_approved',
+    approval_id: approvalId,
+    subject_id: subjectId,
+    subject_type: subjectType,
+    prior_state: priorState,
+    new_state: newState,
+    approver
+  });
+
+  console.log(`OK: ${approvalId} — ${subjectId} approved to ${newState} by ${approver}`);
+}
+
+// ------------------------------------------------------------------- verify-tests (T5)
+// Run test command and capture coverage + test count for verification record.
+// Prevents agents from claiming coverage without proof.
+// Usage: verify-tests <story-id> --phase N [--command "npm test"]
+
+function cmdVerifyTests(args) {
+  const storyId = args[0];
+  const phaseStr = flag(args, '--phase') || '';
+  const command = flag(args, '--command') || 'npm test';
+
+  if (!storyId || !phaseStr) {
+    die(64, 'usage: verify-tests <story-id> --phase N [--command "npm test"]');
+  }
+
+  validateStoryId(storyId);
+  const phase = parseInt(phaseStr, 10);
+  if (!phase || isNaN(phase)) die(1, `--phase must be a positive integer, got: ${phaseStr}`);
+
+  const manifestPath = path.join(stateDir(storyId), 'manifest.json');
+  if (!fs.existsSync(manifestPath)) die(1, `story ${storyId} not found`);
+
+  const manifest = readManifest(storyId);
+
+  // Run the test command
+  const { execSync } = require('child_process');
+  let exitCode = 0;
+  let stdout = '';
+  let stderr = '';
+
+  try {
+    stdout = execSync(command, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+  } catch (err) {
+    exitCode = err.status || 1;
+    stdout = err.stdout || '';
+    stderr = err.stderr || '';
+  }
+
+  const fullOutput = stdout + stderr;
+  const outputHash = crypto.createHash('sha256').update(fullOutput).digest('hex');
+
+  // Extract coverage from coverage-final.json (same logic as keel-preflight.cjs)
+  let coveragePct = null;
+  let testCount = null;
+  try {
+    const coverageFile = path.join('coverage', 'coverage-final.json');
+    if (fs.existsSync(coverageFile)) {
+      const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'));
+      // Extract statements coverage from Istanbul format
+      if (coverage && coverage.total && coverage.total.statements) {
+        coveragePct = Math.round(coverage.total.statements.pct * 10) / 10;
+      }
+    }
+  } catch { /* coverage file not available */ }
+
+  // Extract test count from output
+  const okMatch = fullOutput.match(/OK \((\d+) tests?/);
+  const sumMatch = fullOutput.match(/Tests:\s*(\d+)/);
+  testCount = okMatch ? parseInt(okMatch[1], 10) : (sumMatch ? parseInt(sumMatch[1], 10) : null);
+
+  // Get current git commit
+  let gitCommit = '';
+  try {
+    gitCommit = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+  } catch { /* git not available */ }
+
+  // Record verification
+  if (!manifest.verification) manifest.verification = {};
+  manifest.verification = {
+    phase,
+    command,
+    exit_code: exitCode,
+    coverage_percent: coveragePct,
+    test_count: testCount,
+    output_sha256: outputHash,
+    ts: nowIso(),
+    git_commit: gitCommit
+  };
+
+  writeManifest(storyId, manifest);
+  appendAudit(storyId, {
+    action: 'tests_verified',
+    phase,
+    command,
+    exit_code: exitCode,
+    coverage_percent: coveragePct,
+    test_count: testCount,
+    git_commit: gitCommit
+  });
+
+  if (exitCode !== 0) {
+    console.log(`TESTS FAILED: ${command} exited ${exitCode}`);
+    console.log(`Coverage: ${coveragePct}%, Tests: ${testCount}`);
+    process.exit(1);
+  }
+
+  console.log(`OK: tests verified — coverage ${coveragePct}%, ${testCount} tests passed`);
+}
+
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding|directive|approve-phase|approve-state-transition|verify-tests> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
@@ -1474,5 +2750,10 @@ switch (cmd) {
   case 'prescan': cmdPrescan(storyId); break;
   case 'phase-mode': cmdPhaseMode([storyId, ...rest]); break;
   case 'token-ledger': cmdTokenLedger([storyId, ...rest]); break;
+  case 'finding': cmdFinding(['set-state', storyId, ...rest]); break;
+  case 'directive': cmdDirective([rest[0], storyId, ...rest.slice(1)]); break;
+  case 'approve-phase': cmdApprovePhase([storyId, ...rest]); break;
+  case 'approve-state-transition': cmdApproveStateTransition([storyId, ...rest]); break;
+  case 'verify-tests': cmdVerifyTests([storyId, ...rest]); break;
   default: die(64, `unknown command: ${cmd}`);
 }

@@ -5,14 +5,23 @@
  * front of Anthropic's API, and it's disable-able by anyone who can edit hooks.json.
  * Fails CLOSED (opposite of keel-watch.cjs/keel-init.cjs, which fail open by design): any
  * internal error blocks, never passes through silently.
- * Limits: heuristic name/address matching, not true NER. NCIC_ID (ORI format) and LEID are
- * now detected; HART_CASE_ID + HART_SUBJECT_ID remain coverage gaps until the HART compliance
- * team confirms formats in config/cjis-project-patterns.json. Screenshots (Playwright) aren't
- * scanned — text only. PostToolUse fires AFTER the tool result is returned to the model in the
- * current turn — exit-2 here is alerting/logging control only for CJIS PII (data may already
- * be in model context), not prevention. For hard prevention use PreToolUse. PostToolUse
- * incidents warrant immediate human review. Prompt injection (INJECTION GUARD) is
- * always-blocking at all stages including PostToolUse — see config/injection-patterns.json.
+ *
+ * Pattern coverage:
+ * - Heuristic name/address matching, not true NER.
+ * - NCIC_ID (ORI 9-char format) and LEID (SID/FBN/ORI + ID) patterns are HEURISTIC pending
+ *   Forseti official confirmation of exact formats. May have false positives/negatives.
+ * - HART_CASE_ID + HART_SUBJECT_ID remain in blocked_categories until provided in
+ *   config/cjis-project-patterns.json by the HART compliance team.
+ * - Set KEEL_CJIS_OVERLAY_REQUIRED=1 to enforce project overlay presence (fail-closed if missing).
+ *
+ * Limitations:
+ * - Screenshots (Playwright) aren't scanned — text only.
+ * - PostToolUse fires AFTER the tool result is returned to the model in the current turn —
+ *   exit-2 here is alerting/logging control only for CJIS PII (data may already be in model
+ *   context), not prevention. For hard prevention use PreToolUse.
+ * - PostToolUse incidents warrant immediate human review.
+ * - Prompt injection (INJECTION GUARD) is always-blocking at all stages including PostToolUse.
+ *
  * Exit 0 = CLEAR. Exit 2 = BLOCK (stderr = reason). Usage: --stage=prompt|pre|post, hook JSON on stdin.
  */
 'use strict';
@@ -26,6 +35,11 @@ const https = require('https');
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
 const KEEL_HOME = process.env.KEEL_HOME || path.join(os.homedir(), '.keel');
 const INCIDENT_LOG = path.join(KEEL_HOME, 'security', 'incidents.jsonl');
+
+// TASK T0-CJIS: Fail-closed overlay behavior (recommendation #3)
+// If set, missing cjis-project-patterns.json causes gate to BLOCK rather than warn.
+// Default false: overlay is optional. Set KEEL_CJIS_OVERLAY_REQUIRED=1 to enforce.
+const OVERLAY_REQUIRED = process.env.KEEL_CJIS_OVERLAY_REQUIRED === '1';
 
 // PATTERNS_FILE resolution (fixed 2026-07-20 -- audit finding F-08):
 // This script is invoked two different ways in practice: (1) from its real
@@ -96,6 +110,11 @@ function loadPatterns() {
       if (Array.isArray(overlay.blocked_categories))
         parsed.blocked_categories = (parsed.blocked_categories || []).concat(overlay.blocked_categories);
     } catch (e) { throw new Error(`project overlay parse error (fail-closed): ${e.message}`); }
+  } else if (OVERLAY_REQUIRED) {
+    // TASK T0-CJIS: Fail-closed overlay enforcement (recommendation #3)
+    // When KEEL_CJIS_OVERLAY_REQUIRED=1, gate blocks if overlay is missing.
+    // Use this in compliance-sensitive deployments to ensure project-specific patterns are loaded.
+    throw new Error(`cjis-project-patterns.json required (KEEL_CJIS_OVERLAY_REQUIRED=1) but not found at ${resolveProjectOverlayFile()}`);
   }
 
   // LOW-01: make the coverage-gap warning actionable — name the env var that
