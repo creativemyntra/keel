@@ -1,0 +1,276 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Keel Pipeline Manifest Schema",
+  "description": "State for a single story in the KEEL pipeline",
+  "type": "object",
+  "required": [
+    "story_id",
+    "title",
+    "scope",
+    "expected_phases",
+    "current_phase",
+    "attempts",
+    "phase_modes",
+    "gate_events",
+    "max_gates",
+    "max_hours",
+    "started_at",
+    "updated_at"
+  ],
+  "properties": {
+    "story_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Alphanumeric story ID (path traversal safe)"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 0,
+      "description": "Human-readable story title"
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["feature", "defect"],
+      "description": "Feature (10 phases) or defect (express lane 1→5→6→8)"
+    },
+    "expected_phases": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 10
+      },
+      "minItems": 1,
+      "maxItems": 10,
+      "description": "Phases expected to run for this story scope"
+    },
+    "current_phase": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 11,
+      "description": "Current phase pointer (11 = past final phase)"
+    },
+    "attempts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 3
+      },
+      "description": "Per-phase attempt counters (max 3 attempts)"
+    },
+    "phase_modes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "null"],
+        "enum": ["author", "draft", "execute", "finalize", null]
+      },
+      "description": "Per-phase mode markers for overlapping phases (E2E author-before-QA, docs draft-before-security)"
+    },
+    "gate_events": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total gate events (PASS/FAIL) for this story"
+    },
+    "max_gates": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 40,
+      "description": "Gate event budget (halts if exceeded)"
+    },
+    "max_hours": {
+      "type": "number",
+      "minimum": 0.1,
+      "default": 72,
+      "description": "Wall-clock hours budget (halts if exceeded)"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when story initialized"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of last state update"
+    },
+    "attempt_hashes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Optional: SHA256 hashes of phase files for identical-retry detection"
+    },
+    "halted": {
+      "type": "boolean",
+      "description": "Optional: pipeline halted at attempt limit"
+    },
+    "approved_phases": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["phase", "pr_number", "approved_at", "approver_count", "content_hash"],
+        "properties": {
+          "phase": { "type": "integer", "minimum": 1, "maximum": 10 },
+          "pr_number": { "type": "integer", "minimum": 1 },
+          "approved_at": { "type": "string", "format": "date-time" },
+          "approver_count": { "type": "integer", "minimum": 1 },
+          "content_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "SHA256 hash of approved phase output" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Record of GitHub PR approvals for phase outputs (e.g., design review for phase 3)"
+    },
+    "directives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "verbatim", "captured_at", "applies_to_phases", "state"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^D-[0-9]{3}$",
+            "description": "Directive ID (D-001, D-002, etc.)"
+          },
+          "verbatim": {
+            "type": "string",
+            "description": "User's exact words (never paraphrased or normalized)"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 timestamp when directive was recorded"
+          },
+          "applies_to_phases": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 1, "maximum": 10 },
+            "description": "Which phases this directive applies to (e.g., [5,6,7] for implementation through E2E)"
+          },
+          "state": {
+            "type": "string",
+            "enum": ["OPEN", "SATISFIED", "SUPERSEDED", "DECLINED"],
+            "description": "Terminal state: OPEN (awaiting action), SATISFIED (done), SUPERSEDED (replaced by human), DECLINED (rejected by human)"
+          },
+          "restated_count": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "How many times this directive was restated (auto-incremented on duplicate adds)"
+          },
+          "evidence": {
+            "type": "object",
+            "description": "Evidence for the state transition (populated by directive satisfy|supersede|decline or human_approval)",
+            "properties": {
+              "satisfied_at": { "type": "string", "format": "date-time" },
+              "satisfied_by": { "type": "string" },
+              "approved_by": { "type": "string" },
+              "approval_id": { "type": "string", "pattern": "^FINDING-A-[0-9]{3}$" },
+              "notes": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "User directives: instructions about HOW work is done (distinct from ACs about WHAT is built)"
+    },
+    "human_approvals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "subject_id", "subject_type", "approved_at", "approver"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^FINDING-A-[0-9]{3}$",
+            "description": "Human approval ID (FINDING-A-001, FINDING-A-002, etc.)"
+          },
+          "subject_id": {
+            "type": "string",
+            "description": "ID of the finding or directive being approved (e.g., BUG-1, D-001)"
+          },
+          "subject_type": {
+            "type": "string",
+            "enum": ["finding", "directive"],
+            "description": "Whether this approval is for a finding state transition or directive state transition"
+          },
+          "prior_state": {
+            "type": "string",
+            "description": "State before approval (e.g., OPEN, DEFERRED)"
+          },
+          "new_state": {
+            "type": "string",
+            "description": "State after approval (WAIVED, DEFERRED, SUPERSEDED, DECLINED)"
+          },
+          "approved_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 timestamp of approval"
+          },
+          "approver": {
+            "type": "string",
+            "description": "Name, email, or role of approver (e.g., 'amar.singh@matellio.com' or 'Product Manager')"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Justification for the approval (min 15 words)"
+          },
+          "evidence_link": {
+            "type": "string",
+            "description": "Reference to supporting documentation (URL, ticket, decision log entry)"
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Human approval decisions (FINDING-A) that override automatic state transitions for findings (DEFERRED/WAIVED) and directives (SUPERSEDED/DECLINED)"
+    },
+    "verification": {
+      "type": "object",
+      "description": "Test verification record written by keel-state verify-tests (engine-only, agents cannot write)",
+      "required": ["phase", "command", "exit_code", "ts", "git_commit"],
+      "properties": {
+        "phase": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Phase when tests were verified"
+        },
+        "command": {
+          "type": "string",
+          "description": "Test command that was run (e.g., 'npm test')"
+        },
+        "exit_code": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Exit code from test command (0 = all tests passed)"
+        },
+        "coverage_percent": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Code coverage percentage from coverage-final.json (null if unavailable)"
+        },
+        "test_count": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Number of tests that ran (null if unavailable)"
+        },
+        "output_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA256 hash of full test output"
+        },
+        "ts": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 timestamp when verification ran"
+        },
+        "git_commit": {
+          "type": "string",
+          "description": "Git commit SHA when verification ran"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
