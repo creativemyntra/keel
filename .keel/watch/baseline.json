@@ -1,11 +1,5 @@
 {
-  "generated_at": "2026-07-31T09:26:55.399Z",
-  "source": "coverage/coverage-final.json",
-  "gate": {
-    "statements": 80,
-    "functions": 80,
-    "branches": 80
-  },
+  "tests": 1,
   "coverage": {
     "statements": {
       "pct": 94.4,
@@ -22,5 +16,6 @@
       "covered": 83,
       "total": 87
     }
-  }
+  },
+  "ts": "2026-07-31T12:00:14.151Z"
 }
