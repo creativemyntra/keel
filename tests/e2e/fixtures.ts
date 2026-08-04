@@ -62,21 +62,56 @@ export async function stabilize(page: Page, timeout = 3000): Promise<void> {
 }
 
 /**
- * Auto-fixture: page with pre-stabilized state.
+ * Auto-fixture: page with deterministic state for visual snapshots.
  *
- * Use this fixture instead of test.beforeEach + manual stabilization:
+ * Stabilizes page rendering by:
+ * - Freezing time (page.clock.install) for consistent timestamps
+ * - Waiting for fonts to load (document.fonts.ready)
+ * - Seeding Math.random for deterministic dynamic content
+ *
+ * Use this fixture in visual regression tests:
  *
  * Example:
  *   test('component renders', async ({ stablePage }) => {
- *     const page = stablePage;
- *     await page.goto('...');
- *     // page is already stabilized
+ *     await stablePage.goto('...');
+ *     await stabilize(stablePage);
+ *     await expect(stablePage).toHaveScreenshot('component.png');
  *   });
  */
 export const stablePage = test.extend<{ stablePage: Page }>({
   stablePage: async ({ page }, use) => {
-    // Inject before page is used
+    // Freeze time for deterministic rendering
+    await page.clock.install();
+
+    // Wait for fonts to load (prevent layout shift from font swap)
+    await page.evaluate(() => {
+      if ('fonts' in document) {
+        return (document as any).fonts.ready;
+      }
+      return Promise.resolve();
+    });
+
+    // Seed Math.random for deterministic content (UUIDs, animations, etc)
+    await page.evaluate(() => {
+      let seed = 12345;
+      (window as any).crypto.getRandomValues = function (arr: any) {
+        for (let i = 0; i < arr.length; i++) {
+          seed = (seed * 9301 + 49297) % 233280;
+          arr[i] = (seed / 233280) * 256;
+        }
+        return arr;
+      };
+      Math.random = function () {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      };
+    });
+
+    // Use page with deterministic state
     await use(page);
+
+    // Cleanup: uninstall clock
+    await page.clock.runFor(0); // Flush pending timers
   },
 });
 
