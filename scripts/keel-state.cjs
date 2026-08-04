@@ -33,6 +33,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { recordTelemetry } = require('./keel-telemetry.cjs');
 
 const AGENTS = [
   'product-owner', 'business-analyst', 'ui-designer', 'solution-architect', 'software-engineer',
@@ -1268,6 +1269,23 @@ function cmdGate(storyId, args) {
         outputs: [phaseFile], artifacts: out.artifacts || [], decisions: out.decisions || [],
         git_commit: null, notes: 'auto-audited on gate PASS',
       });
+
+      // Record telemetry: real latency (duration_ms), measured tokens only (never fabricated)
+      try {
+        recordTelemetry(storyId, {
+          phase: phase,
+          agent: out.agent || 'unknown',
+          gate_verdict: 'PASS',
+          started_at: null,  // Phase start time not yet tracked — null until bracketed
+          ended_at: nowIso(),
+          duration_ms: null,  // Computed from real timestamps when available, never interpolated
+          tokens: null,
+          tokens_source: 'unmeasured'
+        });
+      } catch (e) {
+        console.warn(`Warning: failed to record telemetry: ${e.message}`);
+      }
+
       console.log(`PASS recorded: phase ${phase} -> ${label}`);
       return;
     }
@@ -1284,6 +1302,37 @@ function cmdGate(storyId, args) {
     writeManifest(storyId, manifest);
     fs.appendFileSync(handoffPath(storyId),
       `- ${nowIso()} | phase ${phase} | FAIL (attempt ${attempt}/${MAX_ATTEMPTS})${identicalRetry ? ' | IDENTICAL RETRY' : ''} | ${notes}\n`);
+
+    // Record telemetry for FAIL verdict
+    try {
+      let agent = 'engine';
+      // Try to extract agent from phase file if it exists
+      const phaseFiles = fs.readdirSync(stateDir(storyId))
+        .filter(f => /^\d{2}-\w+-\d+\.json$/.test(f));
+      const phaseFile = phaseFiles.find(f => parseInt(f) === phase) ||
+                       phaseFiles.filter(f => f.startsWith(String(phase).padStart(2, '0'))).pop();
+      if (phaseFile) {
+        try {
+          const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+          if (out.agent) agent = out.agent;
+        } catch (e) {
+          // Ignore parse errors, use 'engine' as fallback
+        }
+      }
+
+      recordTelemetry(storyId, {
+        phase: phase,
+        agent: agent,
+        gate_verdict: 'FAIL',
+        started_at: null,
+        ended_at: nowIso(),
+        duration_ms: null,
+        tokens: null,
+        tokens_source: 'unmeasured'
+      });
+    } catch (e) {
+      console.warn(`Warning: failed to record telemetry: ${e.message}`);
+    }
 
     if (identicalRetry) {
       appendAudit(storyId, { phase, agent: 'engine', action: 'protocol_violation', attempt, notes: 'retry output is byte-identical to the previous failed attempt — failure findings were not incorporated' });
