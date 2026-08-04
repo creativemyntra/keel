@@ -2299,19 +2299,35 @@ function cmdTokenLedger(args) {
     try { entries = fs.readFileSync(lPath, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)); }
     catch { /* no ledger yet */ }
     if (!entries.length) { console.log(`token-ledger: no entries for story ${storyId} — orchestrator may not have run or did not append entries`); return; }
+
+    // Load telemetry data to get real Duration(ms)
+    const tPath = path.join(stateDir(storyId), 'telemetry.jsonl');
+    const telemetryMap = {};
+    try {
+      const telemetryLines = fs.readFileSync(tPath, 'utf8').trim().split('\n').filter(Boolean);
+      for (const line of telemetryLines) {
+        const t = JSON.parse(line);
+        telemetryMap[`${t.phase}_${t.agent}`] = t;
+      }
+    } catch { /* no telemetry yet */ }
+
     if (args.includes('--json')) { console.log(JSON.stringify(entries, null, 2)); return; }
     const totIn = entries.reduce((s, e) => s + e.input_k, 0);
     const totOut = entries.reduce((s, e) => s + e.output_k, 0);
     const totCached = entries.reduce((s, e) => s + e.cached_k, 0);
     const totNet = entries.reduce((s, e) => s + e.net_k, 0);
-    const hdr = 'Phase | Agent                | Model      | Est.in  | Est.out | Cached  | Net';
-    const sep = '------+---------------------+-----------+--------+--------+--------+--------';
+    const totDuration = Object.values(telemetryMap).reduce((s, t) => s + (t.duration_ms || 0), 0);
+
+    const hdr = 'Phase | Agent                | Model      | Duration(ms) | Est.in  | Est.out | Cached  | Net';
+    const sep = '------+---------------------+-----------+--------------+--------+--------+--------+--------';
     const shortModel = (m) => (m || '').replace(/^claude-/, '').replace(/-\d{8,}$/, '').slice(0, 10);
-    const rows = entries.map((e) =>
-      `${String(e.phase).padEnd(5)} | ${e.agent.padEnd(20)} | ${shortModel(e.model).padEnd(10)} | ${String(e.input_k + 'k').padStart(7)} | ${String(e.output_k + 'k').padStart(7)} | ${String(e.cached_k + 'k').padStart(7)} | ${String(e.net_k.toFixed(1) + 'k').padStart(7)}`
-    );
-    const tot = `TOTAL |                      |            | ${String(totIn.toFixed(1) + 'k').padStart(7)} | ${String(totOut.toFixed(1) + 'k').padStart(7)} | ${String(totCached.toFixed(1) + 'k').padStart(7)} | ${String(totNet.toFixed(1) + 'k').padStart(7)}`;
-    console.log(['', `=== Keel Token Ledger — ${storyId} ===`, '', hdr, sep, ...rows, sep, tot, ''].join('\n'));
+    const rows = entries.map((e) => {
+      const telemetry = telemetryMap[`${e.phase}_${e.agent}`];
+      const duration = telemetry && telemetry.duration_ms ? String(telemetry.duration_ms).padStart(12) : 'unmeasured'.padStart(12);
+      return `${String(e.phase).padEnd(5)} | ${e.agent.padEnd(20)} | ${shortModel(e.model).padEnd(10)} | ${duration} | ${String(e.input_k + 'k').padStart(7)} | ${String(e.output_k + 'k').padStart(7)} | ${String(e.cached_k + 'k').padStart(7)} | ${String(e.net_k.toFixed(1) + 'k').padStart(7)}`;
+    });
+    const tot = `TOTAL |                      |            | ${String(totDuration).padStart(12)} | ${String(totIn.toFixed(1) + 'k').padStart(7)} | ${String(totOut.toFixed(1) + 'k').padStart(7)} | ${String(totCached.toFixed(1) + 'k').padStart(7)} | ${String(totNet.toFixed(1) + 'k').padStart(7)}`;
+    console.log(['', `=== Token Ledger (ESTIMATES — orchestrator projections, not measured) — ${storyId} ===`, '', hdr, sep, ...rows, sep, tot, ''].join('\n'));
     return;
   }
 

@@ -322,6 +322,8 @@ growth across 16+ agent invocations. Discipline:
     --input <input_k> --output <output_k> --cached <cached_k>
   ```
   Use the values from your `[token-estimate:]` and `[cache-estimate:]` lines.
+  **Important:** This ledger stores ESTIMATES (orchestrator projections), not measured data.
+  Measured latency and token usage are tracked separately in `.keel/state/<story>/telemetry.jsonl`.
   This write is mandatory — without it `[token-estimate:]` lines are lost on
   context compaction and `token-ledger summary` / `/keel:tokens` cannot show
   a final table.
@@ -330,6 +332,10 @@ growth across 16+ agent invocations. Discipline:
   run `node ~/.keel/bin/keel-state.cjs token-ledger summary <story-id>` via
   Bash and append the printed table to your delivery summary. Do NOT reconstruct
   the table from conversation memory — the ledger file is the source of truth.
+  **Note:** The token columns in the ledger are estimates/projections; the Duration(ms)
+  column shows real measured latency from telemetry. Measured token usage (when
+  available from Claude session imports) is kept separate and never derived from
+  this estimate ledger.
 
 ## Pipeline budget (engine-enforced, not yours to manage)
 
