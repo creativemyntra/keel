@@ -21,6 +21,9 @@ jobs:
 
       - run: npm test
 
+      - name: Verify audit log integrity
+        run: node scripts/test-audit-log-integrity.cjs
+
       - name: Rebuild CodeGraph
         run: node scripts/build-codegraph.cjs
 
