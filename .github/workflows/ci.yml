@@ -19,6 +19,12 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Verify package-lock.json is tracked
+        run: git ls-files --error-unmatch package-lock.json
+
+      - name: Install dependencies (from lockfile)
+        run: npm ci
+
       - run: npm test
 
       - name: Verify audit log integrity
