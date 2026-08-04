@@ -30,6 +30,12 @@ jobs:
       - name: Verify audit log integrity
         run: node scripts/test-audit-log-integrity.cjs
 
+      - name: Verify model tiering (feature story)
+        run: node scripts/headless-orchestrator.cjs --story CI-FEATURE-001 --feature "CI model tiering verification" --scope feature
+
+      - name: Verify model tiering (defect story)
+        run: node scripts/headless-orchestrator.cjs --story CI-DEFECT-001 --feature "CI defect express-lane tiering" --scope defect
+
       - name: Rebuild CodeGraph
         run: node scripts/build-codegraph.cjs
 
