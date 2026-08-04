@@ -143,8 +143,7 @@ test.describe('<Feature> -- <STORY-ID>', () => {
    resets).
 2. Test one behavior -- one assertion of the primary outcome, optional secondary
    assertions.
-3. Check `browser_console_messages` for errors -- a flow that "works" while
-   logging JS errors is not passing.
+3. Console errors are automatic test failures. To opt out, annotate: `test.annotate({ type: 'allow-console-errors', description: 'reason (e.g., expected 3rd-party script warning)' })` — reason is required.
 4. Take a screenshot on the final state using a story-scoped path:
    `await page.screenshot({ path: 'docs/e2e-evidence/<story-id>/<test-name>.png' })`.
    Story-scoped paths prevent stale screenshots from prior runs being accepted

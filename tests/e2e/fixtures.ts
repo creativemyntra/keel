@@ -78,7 +78,7 @@ export async function stabilize(page: Page, timeout = 3000): Promise<void> {
  *     await expect(stablePage).toHaveScreenshot('component.png');
  *   });
  */
-export const stablePage = test.extend<{ stablePage: Page }>({
+const stablePageFixture = test.extend<{ stablePage: Page }>({
   stablePage: async ({ page }, use) => {
     // Freeze time for deterministic rendering
     await page.clock.install();
@@ -112,6 +112,46 @@ export const stablePage = test.extend<{ stablePage: Page }>({
 
     // Cleanup: uninstall clock
     await page.clock.runFor(0); // Flush pending timers
+  },
+});
+
+/**
+ * Auto-fixture: collect and fail on console errors.
+ *
+ * Tracks all console 'error' and 'pageerror' events during test.
+ * Fails the test if any errors found, unless annotated with:
+ *   test.annotate({ type: 'allow-console-errors', description: 'reason' })
+ *
+ * Example (opt-out):
+ *   test.annotate({ type: 'allow-console-errors', description: 'expected 3rd-party script warning' });
+ *   test('component handles 3rd-party errors', async ({ page }) => { ... });
+ */
+export const test = stablePageFixture.extend({
+  consoleErrors: async ({ page }, use) => {
+    const errors: string[] = [];
+
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') {
+        errors.push(`console.error: ${msg.text()}`);
+      }
+    });
+
+    page.on('pageerror', (err) => {
+      errors.push(`pageerror: ${err.message}`);
+    });
+
+    await use(errors);
+
+    // Teardown: fail if errors found (unless opt-out annotation)
+    if (errors.length > 0) {
+      const annotation = test.info().annotations?.find((a) => a.type === 'allow-console-errors');
+      if (annotation) {
+        console.log(`✓ console errors allowed: ${annotation.description}`);
+        errors.forEach((e) => console.log(`  - ${e}`));
+      } else {
+        throw new Error(`Console errors detected:\n${errors.join('\n')}`);
+      }
+    }
   },
 });
 
