@@ -239,6 +239,8 @@ function phaseFileHash(storyId, phase) {
     .update(fs.readFileSync(path.join(stateDir(storyId), file))).digest('hex');
 }
 
+const { chainHash, verifyChain } = require('./lib/audit-chain.cjs');
+
 function sha256line(text) {
   return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
 }
@@ -252,7 +254,7 @@ function appendAudit(storyId, entry) {
     const lines = content.trimEnd().split('\n');
     if (lines.length && lines[lines.length - 1].trim()) lastLine = lines[lines.length - 1];
   }
-  entry.prev_hash = sha256line(lastLine);
+  entry.prev_hash = chainHash(lastLine);
   entry.self_hash = sha256line(JSON.stringify(entry));
   fs.appendFileSync(p, JSON.stringify(entry) + '\n');
 }
@@ -1561,7 +1563,7 @@ function cmdVerify(storyId) {
         problems.push(`line ${i + 1}: phase ${e.phase} completed but manifest current_phase is ${manifest.current_phase}`);
       }
       if (e.prev_hash !== undefined) {
-        const expected = sha256line(prevLineText);
+        const expected = chainHash(prevLineText);
         if (e.prev_hash !== expected) {
           problems.push(`line ${i + 1}: hash chain broken — expected ${expected.slice(0, 12)}… got ${String(e.prev_hash).slice(0, 12)}…`);
         }
