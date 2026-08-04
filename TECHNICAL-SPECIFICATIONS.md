@@ -436,12 +436,12 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 
 ## Compliance Standards
 
-### Compliance Evidence Trail
+### Evidence Generation Toward Standards (Does Not Confer Certification)
 
 The Keel audit trail generates evidence that supports a compliance evaluation
-process. It does not constitute certification under any of the standards below.
+process. **It does not confer certification** under any of the standards below.
 For certification, engage a qualified assessor with this audit trail as supporting
-documentation.
+documentation. Keel is an evidence-generation tool, not a certification authority.
 
 | Standard | Relevant Evidence Generated |
 |----------|----------------------------|
