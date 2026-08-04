@@ -18,6 +18,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const crypto = require('crypto');
 const { spawnSync, spawn } = require('child_process');
 
 const ENGINE = path.join(__dirname, 'keel-state.cjs');
@@ -464,6 +465,145 @@ async function main() {
     engine(cwd, 'gate', 'S-PM2', '--phase', '1', '--verdict', 'FAIL', '--notes', 'needs revision');
     const m3 = readManifest(cwd, 'S-PM2');
     assert('gate FAIL preserves phase_modes[1]', m3.phase_modes && m3.phase_modes['1'] === 'draft', JSON.stringify(m3.phase_modes));
+  }
+
+  // ---- visual-baseline-approve ----
+  {
+    const cwd = makeTmpDir('visual');
+    engine(cwd, 'init', 'S-VIS1');
+
+    // Create a mock screenshot baseline
+    const screenshotDir = path.join(cwd, 'tests', 'e2e', '__screenshots__', 'chromium-desktop');
+    fs.mkdirSync(screenshotDir, { recursive: true });
+    fs.writeFileSync(path.join(screenshotDir, 'component.png'), 'fake PNG data');
+
+    // Setup git
+    const git = (args) => {
+      spawnSync('git', args, { cwd, stdio: 'pipe' });
+    };
+    git(['init']);
+    git(['config', 'user.name', 'TestUser']);
+    git(['config', 'user.email', 'test@localhost']);
+    git(['add', 'tests', '.keel']);
+    git(['commit', '-m', 'initial']);
+
+    // Modify the baseline file
+    fs.writeFileSync(path.join(screenshotDir, 'component.png'), 'modified PNG data');
+
+    // Test: approve with clean state (only screenshot changes)
+    const approveR = engine(cwd, 'visual-baseline-approve', 'S-VIS1', '--reviewer', 'reviewer1', '--notes', 'design update');
+    assert('visual-baseline-approve: exits 0 with clean screenshot changes',
+      approveR.code === 0 && /BASELINE APPROVED/.test(approveR.out),
+      `code=${approveR.code} ${approveR.out.slice(0, 160)}`);
+    assert('visual-baseline-approve: prints git commands',
+      /git add/.test(approveR.out) && /git commit/.test(approveR.out),
+      approveR.out.slice(0, 160));
+
+    // Test: refuse when non-screenshot files are dirty
+    const cwd2 = makeTmpDir('visual-dirty');
+    engine(cwd2, 'init', 'S-VIS2');
+    fs.mkdirSync(path.join(cwd2, 'tests', 'e2e', '__screenshots__'), { recursive: true });
+    fs.writeFileSync(path.join(cwd2, 'tests', 'e2e', '__screenshots__', 'test.png'), 'baseline');
+    fs.mkdirSync(path.join(cwd2, '.git'), { recursive: true });
+    const git2 = (args) => {
+      spawnSync('git', args, { cwd: cwd2, stdio: 'pipe' });
+    };
+    git2(['init']);
+    git2(['config', 'user.name', 'User2']);
+    git2(['config', 'user.email', 'user@local']);
+    git2(['add', '.']);
+    git2(['commit', '-m', 'init']);
+    fs.writeFileSync(path.join(cwd2, 'tests', 'e2e', '__screenshots__', 'test.png'), 'changed');
+    fs.writeFileSync(path.join(cwd2, 'app.txt'), 'other');
+    const denyR = engine(cwd2, 'visual-baseline-approve', 'S-VIS2', '--reviewer', 'reviewer2', '--notes', 'test');
+    assert('visual-baseline-approve: rejects non-screenshot changes',
+      denyR.code === 1 && /only screenshot files/.test(denyR.out),
+      `code=${denyR.code} ${denyR.out.slice(0, 160)}`);
+
+    // Test: refuse when nothing changed
+    const cwd3 = makeTmpDir('visual-clean');
+    engine(cwd3, 'init', 'S-VIS3');
+    fs.mkdirSync(path.join(cwd3, '.git'), { recursive: true });
+    const git3 = (args) => {
+      spawnSync('git', args, { cwd: cwd3, stdio: 'pipe' });
+    };
+    git3(['init']);
+    git3(['config', 'user.name', 'User3']);
+    git3(['config', 'user.email', 'user@local']);
+    git3(['add', '.']);
+    git3(['commit', '-m', 'init']);
+    const nothingR = engine(cwd3, 'visual-baseline-approve', 'S-VIS3', '--reviewer', 'reviewer3', '--notes', 'test');
+    assert('visual-baseline-approve: refuses when no screenshots changed',
+      nothingR.code === 1 && /nothing to approve/.test(nothingR.out),
+      `code=${nothingR.code} ${nothingR.out.slice(0, 160)}`);
+  }
+
+  // ---- visual-baseline binary fixture (PNG hash correctness) -----
+  {
+    const cwd = makeTmpDir('visual-binary');
+    engine(cwd, 'init', 'S-VISBINARY');
+    const screenshotDir = path.join(cwd, 'tests', 'e2e', '__screenshots__');
+    fs.mkdirSync(screenshotDir, { recursive: true });
+
+    // Binary fixture: PNG magic bytes
+    const pngBuffer = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0xFF, 0xFE]);
+    const pngPath = path.join(screenshotDir, 'binary.png');
+    fs.writeFileSync(pngPath, pngBuffer);
+
+    // Initialize git
+    fs.mkdirSync(path.join(cwd, '.git'), { recursive: true });
+    const git = (args) => {
+      spawnSync('git', args, { cwd, stdio: 'pipe' });
+    };
+    git(['init']);
+    git(['config', 'user.name', 'TestUser']);
+    git(['config', 'user.email', 'test@localhost']);
+    git(['add', 'tests', '.keel']);
+    git(['commit', '-m', 'initial']);
+
+    // Modify PNG after commit (mark as changed for git diff)
+    const modifiedBuffer = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0xFF, 0xFE, 0xAA]);
+    fs.writeFileSync(pngPath, modifiedBuffer);
+
+    // Run approve and verify
+    const approveR = engine(cwd, 'visual-baseline-approve', 'S-VISBINARY', '--reviewer', 'testuser', '--notes', 'binary');
+    assert('visual-baseline-approve: exits 0 with binary PNG',
+      approveR.code === 0 && /BASELINE APPROVED/.test(approveR.out),
+      `code=${approveR.code}`);
+
+    // Read audit log and verify hash
+    const auditLogPath = path.join(cwd, '.keel', 'state', 'S-VISBINARY', 'audit-log.jsonl');
+    if (fs.existsSync(auditLogPath)) {
+      const auditLines = fs.readFileSync(auditLogPath, 'utf8').trim().split('\n');
+      // Find the visual_baseline entry (may not be the last line if other events added)
+      let visualEntry = null;
+      for (let i = auditLines.length - 1; i >= 0; i--) {
+        const entry = JSON.parse(auditLines[i]);
+        if (entry.action === 'visual_baseline') {
+          visualEntry = entry;
+          break;
+        }
+      }
+      if (!visualEntry) {
+        assert('visual-baseline-approve: records correct binary hash', false, `no visual_baseline entry. all entries: ${auditLines.map(l => JSON.parse(l).action).join(',')}`);
+      } else {
+        const expectedHash = crypto.createHash('sha256').update(modifiedBuffer).digest('hex');
+        // git records relative paths; compare against baselines keys
+        const baselineEntries = Object.entries(visualEntry.baselines || {});
+        let foundMatch = false;
+        for (const [recordedPath, recordedHash] of baselineEntries) {
+          if (recordedPath.includes('binary.png') && recordedHash === expectedHash) {
+            foundMatch = true;
+            break;
+          }
+        }
+        assert('visual-baseline-approve: records correct binary hash',
+          foundMatch,
+          `baselines=${JSON.stringify(visualEntry.baselines)} expected_hash=${expectedHash} reviewer=${visualEntry.reviewer}`);
+      }
+    } else {
+      assert('visual-baseline-approve: records correct binary hash', false, 'audit-log.jsonl not found');
+    }
   }
 
   const failed = results.filter((r) => !r.pass);

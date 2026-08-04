@@ -254,7 +254,12 @@ economy:
 
 **Prompt cache breakpoints (when `prompt_caching: true`):**
 
-Claude's ephemeral cache saves ~90% of cached input-token cost and ~40% latency on cache hits. TTL = 5 min — consecutive phase spawns stay warm; idle gaps re-read cold.
+Prompt caching reuses the stable prompt prefix (system prompt + tool definitions + static context). 
+**Important distinctions:**
+- **Cached input tokens:** prefixes (BP-1, BP-2, BP-3) reduce INPUT token cost only on cache hit
+- **Output tokens:** NEVER cached; always paid in full
+- **Actual savings:** depend on cache-hit rate and are reported by telemetry when session usage is imported — not asserted here
+- **TTL = 5 min:** consecutive phase spawns stay warm; idle gaps cause a cache miss and re-read cold
 
 Place `cache_control: {type: "ephemeral"}` at exactly **3 breakpoints** in every agent call:
 
@@ -269,11 +274,11 @@ Everything after BP-3 (the dynamic per-call instruction) is NOT cached — it ch
 Emit the cache estimate alongside the token estimate:
 ```
 [token-estimate: phase N / <agent> / <model> / ~<input>k input + ~<output>k output ≈ ~<total>k]
-[cache-estimate: BP-1+BP-2 ~<sys>k cached → ~<saved>k tokens saved (~90%); BP-3 ~<ctx>k cached on repeat calls]
+[cache-estimate: BP-1+BP-2 ~<sys>k cached; BP-3 ~<ctx>k cached on repeat calls; output tokens never cached]
 ```
 `sys` = system prompt + tools token count (estimate: haiku ~8k, sonnet ~12k).
-`saved` = `sys × 0.9` (cache hit saves 90% of that prefix cost).
 `ctx` = prior phase file sizes passed as static context.
+Actual savings depend on cache-hit rate and are measured in telemetry, not estimated here.
 
 If `confirm_before_spawn: true`: after emitting both lines, pause and output:
 ```
@@ -322,6 +327,8 @@ growth across 16+ agent invocations. Discipline:
     --input <input_k> --output <output_k> --cached <cached_k>
   ```
   Use the values from your `[token-estimate:]` and `[cache-estimate:]` lines.
+  **Important:** This ledger stores ESTIMATES (orchestrator projections), not measured data.
+  Measured latency and token usage are tracked separately in `.keel/state/<story>/telemetry.jsonl`.
   This write is mandatory — without it `[token-estimate:]` lines are lost on
   context compaction and `token-ledger summary` / `/keel:tokens` cannot show
   a final table.
@@ -330,6 +337,10 @@ growth across 16+ agent invocations. Discipline:
   run `node ~/.keel/bin/keel-state.cjs token-ledger summary <story-id>` via
   Bash and append the printed table to your delivery summary. Do NOT reconstruct
   the table from conversation memory — the ledger file is the source of truth.
+  **Note:** The token columns in the ledger are estimates/projections; the Duration(ms)
+  column shows real measured latency from telemetry. Measured token usage (when
+  available from Claude session imports) is kept separate and never derived from
+  this estimate ledger.
 
 ## Pipeline budget (engine-enforced, not yours to manage)
 

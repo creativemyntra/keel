@@ -2,7 +2,6 @@
 /vendor/
 composer.lock
 node_modules/
-package-lock.json
 yarn.lock
 
 # Environment variables (never commit secrets)
@@ -77,6 +76,10 @@ Thumbs.db
 .playwright-mcp/
 test-results/
 playwright-report/
+
+# E2E visual baselines are COMMITTED — they are the source of truth
+# NOTE: tests/e2e/__screenshots__/ is deliberately NOT ignored
+# It contains baseline PNG snapshots per viewport and project name
 
 # E2E evidence — machine-specific stdout snapshots with absolute tmp paths.
 # Tests themselves are the evidence; these files add noise and stale faster than CI runs.

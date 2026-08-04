@@ -74,16 +74,23 @@ rationale. Do not fabricate a UI test for a non-UI AC.
 ## Step 2 -- Ensure the application is running
 
 ```bash
+# Set your app URL (default from playwright.config.ts baseURL env var)
+export KEEL_APP_URL="http://localhost:YOUR_PORT"
+
 # Check if app is responding
-curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health
+curl -s -o /dev/null -w "%{http_code}" $KEEL_APP_URL/health
 # or the project's equivalent health endpoint
 
-# If not running, start it:
-# CakePHP: php -S localhost:8080 -t webroot/
+# If not running, start it (example for different frameworks):
+# Node/Express:  npm run dev
+# Python/Django: python manage.py runserver
+# CakePHP:       php -S localhost:3000 -t webroot/
 ```
 
-Record the base URL in `APP_URL` for the tests. Never hard-code credentials --
-use environment variables.
+The baseURL is controlled by playwright.config.ts (environment-driven: `KEEL_APP_URL` or
+`BASE_URL` env vars, default http://localhost:8000). Never hard-code the origin in
+tests -- use relative navigation instead. Never hard-code credentials -- use
+environment variables.
 
 ## Step 3 -- Write Playwright tests
 
@@ -94,18 +101,17 @@ File location: `tests/e2e/<story-id>-<feature>.spec.ts` (TypeScript) or
 ```typescript
 import { test, expect } from '@playwright/test';
 
-const APP_URL = process.env.APP_URL ?? 'http://localhost:8080';
-
 test.describe('<Feature> -- <STORY-ID>', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(APP_URL);
+    await page.goto('/');
     // authenticate if required -- use env vars for credentials
   });
 
   test('AC-1: happy path -- <description>', async ({ page }) => {
     // Navigate -> Act -> Assert
-    await page.goto(`${APP_URL}/subscriptions/create`);
+    // baseURL from playwright.config.ts owns the origin (KEEL_APP_URL ?? http://localhost:8000)
+    await page.goto('/subscriptions/create');
     await page.fill('[data-testid="plan-select"]', 'professional');
     await page.click('[data-testid="submit-btn"]');
     await expect(page.locator('[data-testid="success-message"]')).toBeVisible();
@@ -113,13 +119,13 @@ test.describe('<Feature> -- <STORY-ID>', () => {
   });
 
   test('AC-1: error path -- missing required field shows validation', async ({ page }) => {
-    await page.goto(`${APP_URL}/subscriptions/create`);
+    await page.goto('/subscriptions/create');
     await page.click('[data-testid="submit-btn"]'); // submit empty
     await expect(page.locator('[data-testid="plan-error"]')).toBeVisible();
   });
 
   test('AC-2: admin sees new subscription in list', async ({ page }) => {
-    await page.goto(`${APP_URL}/admin/subscriptions`);
+    await page.goto('/admin/subscriptions');
     await expect(page.locator('[data-testid="subscription-row"]').first()).toBeVisible();
   });
 
@@ -137,24 +143,99 @@ test.describe('<Feature> -- <STORY-ID>', () => {
    resets).
 2. Test one behavior -- one assertion of the primary outcome, optional secondary
    assertions.
-3. Check `browser_console_messages` for errors -- a flow that "works" while
-   logging JS errors is not passing.
+3. Console errors are automatic test failures. To opt out, annotate: `test.annotate({ type: 'allow-console-errors', description: 'reason (e.g., expected 3rd-party script warning)' })` — reason is required.
 4. Take a screenshot on the final state using a story-scoped path:
    `await page.screenshot({ path: 'docs/e2e-evidence/<story-id>/<test-name>.png' })`.
    Story-scoped paths prevent stale screenshots from prior runs being accepted
    as evidence for this story by the handshake gate.
 
+## Step 3c -- Add visual regression assertions (if UI-facing)
+
+For every browser-UI AC, add pixel-to-pixel visual assertions at two granularities:
+
+**Page-level visual:** snapshot the full screen state after the test is complete.
+Import `stabilize` and `MASKS` from the fixtures:
+
+```typescript
+import { test, expect } from '@playwright/test';
+import { stabilize, MASKS } from '../fixtures';
+
+test('AC-1: happy path shows confirmation screen', async ({ page }) => {
+  await page.goto('/subscriptions/create');
+  await page.fill('[data-testid="plan-select"]', 'professional');
+  await page.click('[data-testid="submit-btn"]');
+  await expect(page.locator('[data-testid="success-message"]')).toBeVisible();
+
+  // Stabilize the page (freeze time, deterministic RNG, disable animations)
+  await stabilize(page);
+
+  // Snapshot the entire page — baseline lives in tests/e2e/__screenshots__/<project>/<test>.png
+  await expect(page).toHaveScreenshot('subscription-success.png', {
+    fullPage: true,
+    mask: MASKS,  // mask dynamic regions (timestamps, avatars, live values)
+  });
+});
+```
+
+**Component-level visual:** for each component in the phase-3 component inventory,
+snapshot the component to localize failures:
+
+```typescript
+test('AC-2: payment form component renders', async ({ page }) => {
+  await page.goto('/subscriptions/create');
+  // ... interact with the form ...
+  await stabilize(page);
+  await expect(page.getByTestId('payment-form')).toHaveScreenshot(
+    'payment-form-filled.png'
+  );
+});
+```
+
+**Visual assertion rules:**
+- Never loosen `maxDiffPixels` inside a spec. Tolerance lives in
+  `.keel/economy.yml` only. The default is pixel-to-pixel (0 diff tolerance).
+- Never mask a region to hide a legitimate failure. Masks are for content that
+  is CORRECTLY dynamic (timestamps, user avatars, live-updating values), and
+  every mask used must be from the shared `MASKS` constant or added there with
+  a one-line justification in decisions.
+- A visual test failure produces three artifacts (expected/actual/diff) under
+  `playwright-report/test-results/` — ALL THREE must be listed in the phase
+  output's artifacts on failure, so the human sees the diff image.
+- Baselines are per-project per-viewport (desktop-chromium, mobile-375, etc).
+  Local runs compare against local baselines; CI runs compare against committed
+  baselines in `tests/e2e/__screenshots__/`.
+
 ## Step 4 -- Run the tests
 
+**Display preflight (Linux only):** Before invoking the runner, check if the environment
+supports a headed browser. On Linux, if neither `DISPLAY` nor `WAYLAND_DISPLAY` is set and `CI`
+is not set, STOP and tell the developer verbatim:
+
+```
+Headed run requested but no display is available. Options:
+ - WSL: use WSLg (Windows 11) or run an X server
+ - Remote/container: prefix with xvfb-run, or export KEEL_HEADLESS=1 to acknowledge an invisible run.
+```
+
+Never fall back to headless silently.
+
+**Announce the headed run:**
+
+```
+HEADED E2E RUN — a browser window will open and execute each test in slow motion. Watch it. Videos land in playwright-report/.
+```
+
+**Then run (no --reporter flag -- the config owns reporters):**
+
 ```bash
-npx playwright test tests/e2e/<story-id>-*.spec.ts --reporter=list 2>&1
+npx playwright test tests/e2e/<story-id>-*.spec.ts 2>&1
 ```
 
 If Playwright is not installed:
 ```bash
 npm install --save-dev @playwright/test
 npx playwright install chromium
-npx playwright test tests/e2e/<story-id>-*.spec.ts --reporter=list 2>&1
+npx playwright test tests/e2e/<story-id>-*.spec.ts 2>&1
 ```
 
 Record the exact runner output: pass count, fail count, each failing test name
@@ -164,6 +245,17 @@ and its error message.
 
 **Acceptable fix:** Test selector is wrong (UI element has different
 `data-testid` than designed) -> fix selector, re-run.
+
+**Visual baseline mutations:** If a design change intentionally invalidates
+visual baselines:
+1. Report which tests fail with visual diffs (include the diff image paths).
+2. **DO NOT** run `npx playwright test --update-snapshots` yourself — that is
+   forbidden for agents. Baselines are committed to git and require explicit
+   human approval.
+3. Instruct the human: review the diff images in `playwright-report/test-results/`
+   → run `npx playwright test --update-snapshots` → run
+   `node ~/.keel/bin/keel-state.cjs visual-baseline-approve <story-id> --reviewer <name> --notes "<why>"`.
+4. The gate will verify the baseline approval before allowing this phase to pass.
 
 **Blockers (return to phase 5 or 6):**
 - A user flow is broken (the action fails, the UI doesn't respond, the API
@@ -203,7 +295,11 @@ node ~/.keel/bin/keel-state.cjs validate <story-id> 07-e2e-engineer.json
     "tests/e2e/<story-id>-subscriptions.spec.ts",
     "docs/e2e-evidence/ac1-happy-path.png",
     "docs/e2e-evidence/ac1-error-path.png",
-    "docs/e2e-evidence/ac2-admin-list.png"
+    "docs/e2e-evidence/ac2-admin-list.png",
+    "playwright-report/results.json",
+    "playwright-report/test-results/<story-id>-subscriptions-ac1-happy-path.webm",
+    "playwright-report/test-results/<story-id>-subscriptions-ac1-error-path.webm",
+    "playwright-report/test-results/<story-id>-subscriptions-ac2-admin-list.webm"
   ],
   "next_phase": 8,
   "blockers": []
@@ -228,3 +324,11 @@ node ~/.keel/bin/keel-state.cjs validate <story-id> 07-e2e-engineer.json
   of each test.
 - This phase runs against the REAL application, not mocks. If the app cannot
   be started in this environment, that is a blocker -- do not fabricate results.
+- **Headed runs are the default (not invisible).** An invisible/headless run must
+  be an explicit human choice via `KEEL_HEADLESS=1` or in CI. Never fall back to
+  headless silently. If a display is not available in a local environment, halt
+  and guide the developer to either set up a display or opt into headless mode.
+- **Agents are FORBIDDEN from running `--update-snapshots`.** Visual baselines
+  are committed to git and must be approved by a human. If baselines need
+  updating, report the diffs and instruct the human to run the update and
+  approval commands themselves.

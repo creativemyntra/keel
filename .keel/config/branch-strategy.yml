@@ -1,124 +1,143 @@
-# KEEL Branch Strategy Configuration
-# Defines promotion pipeline for environments: dev → qa → stage → preprod → prod
-#
-# Last Updated: 2026-08-03
-# Owner: Amar Singh
+# Keel Branch Promotion Strategy & Enforcement Rules
+# Governs all git workflows - no exceptions
+# Violations block push at pre-push hook stage
+
+version: "3.18.0"
+enforcement: "strict"  # fail-closed: violations block push
+
+# Promotion Pipeline: feat/* → dev → qa → stage → preprod → prod
+# All commits MUST start on feature branch, NEVER directly on protected branches
 
 branch_strategy:
-  # Strategy name (identifier for logs/messages)
-  name: "promotion-pipeline"
-  description: "Multi-environment promotion workflow with gated transitions"
-
-  # Environment promotion order (strict sequence, no skipping allowed)
-  environments:
-    - name: dev
-      description: "Development - feature integration"
-      allow_direct_push: true
-      require_approval: false
-    - name: qa
-      description: "QA - testing & validation"
-      allow_direct_push: false
-      require_approval: false
-    - name: stage
-      description: "Staging - pre-production replica"
-      allow_direct_push: false
-      require_approval: false
-    - name: preprod
-      description: "Pre-production - final validation"
-      allow_direct_push: false
-      require_approval: false
-    - name: prod
-      description: "Production - customer-facing release"
-      allow_direct_push: false
-      require_approval: true
-      approval_count: 2
-
-  # Promotion rules: source → target transitions
   promotion_rules:
-    - source: "feat/*,fix/*,chore/*,docs/*,audit/*"
+    # FEATURE BRANCHES: Direct push allowed
+    # Pattern: feat/*, fix/*, hotfix/*, refactor/*, chore/*, docs/*, ci/*, style/*, build/*, release/*, spike/*
+    # Naming convention: {prefix}/{jira-ticket}-{summary} OR {prefix}/{descriptive-name}
+    # Examples:
+    #   - feat/FEAT-123-user-authentication
+    #   - feat/user-authentication
+    #   - fix/BUG-456-payment-timeout
+    #   - hotfix/critical-security-patch
+
+    - source: "feat/*,fix/*,hotfix/*,refactor/*,chore/*,docs/*,ci/*,style/*,build/*,release/*,spike/*"
       target: "dev"
       allowed: true
-      skip_allowed: false
-      description: "Feature branches merge to dev"
+      description: "Feature branches can push directly to dev"
 
+    # PROTECTED BRANCHES: PR-only, no direct push
+    # dev → qa (requires PR + review)
     - source: "dev"
       target: "qa"
-      allowed: true
-      skip_allowed: false
-      description: "dev promotes to qa (no skipping to stage/preprod/prod)"
+      allowed: false
+      description: "dev → qa requires PR (use gh pr create)"
 
+    # qa → stage (requires PR + review)
     - source: "qa"
       target: "stage"
-      allowed: true
-      skip_allowed: false
-      description: "qa promotes to stage (no skipping)"
+      allowed: false
+      description: "qa → stage requires PR (use gh pr create)"
 
+    # stage → preprod (requires PR + review)
     - source: "stage"
       target: "preprod"
-      allowed: true
-      skip_allowed: false
-      description: "stage promotes to preprod (no skipping)"
+      allowed: false
+      description: "stage → preprod requires PR (use gh pr create)"
 
+    # preprod → prod (requires PR + 2 approvals)
     - source: "preprod"
       target: "prod"
-      allowed: true
-      skip_allowed: false
-      require_approval: 2
-      description: "preprod releases to prod (requires 2 approvals, no skipping)"
+      allowed: false
+      description: "preprod → prod requires PR with 2 approvals (use gh pr create)"
 
-    # Explicit blocks
+    # BLOCKED: Direct pushes to protected branches
     - source: "*"
-      target: "main"
+      target: "dev,qa,stage,preprod,prod"
       allowed: false
-      description: "BLOCK: main is reserved for release merge from preprod only"
+      description: "Cannot push directly to protected branches (use PR workflow)"
 
-    - source: "feat/*"
-      target: "prod"
-      allowed: false
-      description: "BLOCK: features cannot push directly to prod"
+  branch_naming:
+    # Enforce branch naming convention
+    required_prefix:
+      - "feat/"     # New feature
+      - "fix/"      # Bug fix
+      - "hotfix/"   # Emergency production fix
+      - "refactor/" # Code restructure (no behavior change)
+      - "chore/"    # Maintenance, dependency updates
+      - "docs/"     # Documentation only
+      - "ci/"       # CI/CD pipeline changes
+      - "style/"    # Formatting, whitespace (no logic change)
+      - "build/"    # Build system changes
+      - "release/"  # Release preparation
+      - "spike/"    # Experimental/exploration branch
 
-    - source: "feat/*"
-      target: "stage"
-      allowed: false
-      description: "BLOCK: features must go through dev → qa first"
+    naming_pattern: "^(feat|fix|hotfix|refactor|chore|docs|ci|style|build|release|spike)/([A-Z]+-\\d+|[a-z0-9-]+)$"
+    # Matches: feat/FEAT-123-description OR feat/descriptive-name
 
-    - source: "feat/*"
-      target: "qa"
-      allowed: false
-      description: "BLOCK: features cannot skip to qa, must merge to dev first"
+  protected_branches:
+    # Branches that require PR for any changes
+    - "dev"
+    - "qa"
+    - "stage"
+    - "preprod"
+    - "prod"
+    - "main"      # Alias for prod (if used)
+    - "master"    # Legacy - same as main
 
-  # Feature branch patterns (allowed for developers)
-  feature_branch_patterns:
-    - "feat/*"      # new features
-    - "fix/*"       # bug fixes
-    - "chore/*"     # maintenance
-    - "docs/*"      # documentation
-    - "audit/*"     # audits/reviews
-    - "test/*"      # tests
+  gateway_rules:
+    # Require PR approval before merge
+    dev:
+      min_approvals: 1
+      dismiss_stale_reviews: true
+      require_status_checks: true
+      enforce_admins: false  # Admins can still merge without approval (G-2 gate)
 
-  # Enforcement configuration
-  enforcement:
-    pre_push_hook: true           # Block invalid pushes before they reach remote
-    pr_validation: true           # Validate PR target branch against rules
-    branch_delete_protection: true # Prevent accidental deletion of protected branches
-    protected_branches:
-      - dev
-      - qa
-      - stage
-      - preprod
-      - prod
+    qa:
+      min_approvals: 1
+      dismiss_stale_reviews: true
+      require_status_checks: true
 
-  # Git operations that require confirmation
-  require_confirmation:
-    - git push to protected branch
-    - merge to stage/preprod/prod
-    - force push anywhere
-    - branch deletion
+    stage:
+      min_approvals: 1
+      dismiss_stale_reviews: true
+      require_status_checks: true
 
-  # Error messages (shown when rules violated)
-  messages:
-    block_direct_prod: "❌ BLOCKED: Cannot push directly to prod. Use preprod → prod promotion via PR."
-    block_skip_env: "❌ BLOCKED: Cannot skip environments. Expected: dev → qa → stage → preprod → prod"
-    block_feature_to_prod: "❌ BLOCKED: Feature branches cannot target production. Use promotion pipeline."
-    success_allowed: "✅ ALLOWED: This push follows the promotion pipeline rules."
-    approval_required: "⚠️  APPROVAL REQUIRED: This merge to {branch} requires {count} approval(s)."
+    preprod:
+      min_approvals: 1
+      dismiss_stale_reviews: true
+      require_status_checks: true
+
+    prod:
+      min_approvals: 2  # Release requires 2 approvals (G-2)
+      dismiss_stale_reviews: true
+      require_status_checks: true
+      require_code_owner_review: false
+
+  governance_gates:
+    # Enforce Keel governance guardrails
+    G-2_approval_required: true
+    # "Releasing, deploying, committing, pushing, tagging, or merging branches"
+    # requires explicit human approval
+
+    G-13_pr_first_policy: true
+    # "Direct pushes to protected branches are forbidden"
+    # "Every code change reaches protected branch only through reviewed PR"
+
+  enforcement_actions:
+    on_violation: "block_push"
+    # Block push immediately with clear error message
+
+    error_template: |
+      ❌ BLOCKED: Branch strategy violation
+
+      Source: {source_branch}
+      Target: {target_branch}
+      Reason: {rule_description}
+
+      ✅ What to do instead:
+      {guidance}
+
+      📋 See CLAUDE.md G-13 for full policy
+
+# Emergency override (requires explicit human confirmation)
+# override_token: "EMERGENCY_OVERRIDE_TOKEN"
+# NEVER use without explicit written approval from project owner

@@ -1,6 +1,6 @@
 {
   "story_id": "BASELINE-002",
-  "title": "Profile upload feature",
+  "title": "Test fixture for audit chain verification",
   "scope": "feature",
   "expected_phases": [
     1,
@@ -14,13 +14,12 @@
     9,
     10
   ],
-  "current_phase": 7,
+  "current_phase": 1,
   "attempts": {},
   "phase_modes": {},
-  "gate_events": 8,
-  "max_gates": 50,
+  "gate_events": 0,
+  "max_gates": 40,
   "max_hours": 72,
-  "started_at": "2026-07-31T10:34:10.034Z",
-  "updated_at": "2026-07-31T14:19:45.607Z",
-  "attempt_hashes": {}
+  "started_at": "2026-08-04T07:06:15.537Z",
+  "updated_at": "2026-08-04T07:06:15.547Z"
 }

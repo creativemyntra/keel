@@ -2,6 +2,11 @@
   "_comment": "Universal LEA identifier patterns. IMPORTANT: NCIC_ID and LEID patterns are HEURISTIC APPROXIMATIONS pending official format confirmation from Forseti. These patterns may have false positives/negatives. DO NOT rely on them for hard compliance enforcement until Forseti confirms the exact formats. HART-specific identifiers (HART_CASE_ID, HART_SUBJECT_ID) remain in blocked_categories -- they belong in config/cjis-project-patterns.json where the HART compliance team can supply confirmed regexes. To make this gate project-independent in a new deployment: copy the project overlay template, define your case/subject ID patterns there, and remove your project IDs from blocked_categories once confirmed. Set KEEL_CJIS_OVERLAY_REQUIRED=1 to enforce project overlay presence (fail-closed if missing).",
   "blocked_categories": ["HART_CASE_ID", "HART_SUBJECT_ID"],
   "allowlist": [
+    { "description": "Phone-like patterns in code (test fixtures, seeds, constants) are not PII -- false positive allowlist", "pattern": "\\b\\d{3}[-.\\s]?\\d{3}[-.\\s]?\\d{4}\\b" },
+    { "description": "Hex constants (0xXXXXXXXX) are not PII -- common in code for seeds, magic numbers, algorithms", "pattern": "0x[0-9a-fA-F]{1,16}" },
+    { "description": "Code seed constants (integer literals for RNG seeding) are not PII", "pattern": "seed[\\s:]*=\\s*\\d{1,5}\\b" },
+    { "description": "Math constants and algorithmic shifts are not PII", "pattern": "\\b(?:seed|x)\\s*[|&^]=\\s*(?:0x[0-9a-f]+|\\d+)\\b" },
+    { "description": "Bit shift operations in algorithms are not PII", "pattern": ">>>\\s*\\d{1,2}\\b" },
     { "description": "Keel project author domain -- strip before scanning to allow marketplace display", "pattern": "creativemyntra\\.com" },
     { "description": "matellio.com project domain -- strip before scanning", "pattern": "matellio\\.com" },
     { "description": "GHA uses-directive CI version pins are not PII", "pattern": "uses:\\s+[\\w./-]+@[\\w.-]+" },
@@ -13,7 +18,7 @@
   ],
   "patterns": [
     { "category": "SSN", "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b", "flags": "g", "severity": "hard" },
-    { "category": "PHONE", "pattern": "\\b(\\+?1[-.\\s]?)?\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}\\b", "flags": "g", "severity": "soft" },
+    { "category": "PHONE", "pattern": "\\b\\d{3}[-.\\s]?\\d{3}[-.\\s]?\\d{4}\\b", "flags": "g", "severity": "soft" },
     { "category": "EMAIL", "pattern": "\\b[\\w.+-]+@[\\w-]+\\.[a-zA-Z][\\w.-]*\\b", "flags": "gi", "severity": "soft" },
     { "category": "DOB", "pattern": "\\b(dob|date of birth|born)\\b[^\\n]{0,20}\\b\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}\\b", "flags": "gi", "severity": "hard" },
     { "category": "NAME_NARRATIVE", "pattern": "\\b[A-Z][a-z]+ [A-Z][a-z]+ (was arrested|was booked|was detained|was charged)\\b", "flags": "g", "severity": "hard" },

@@ -1,7 +1,7 @@
-# Keel AI-SDLC Framework v3.16.9 - Technical Specifications
+# Keel AI-SDLC Framework v3.18.0 - Technical Specifications
 
 **Document Version:** 2.0  
-**Last Updated:** 2026-07-29  
+**Last Updated:** 2026-08-03  
 **Status:** PRODUCTION  
 **Author:** Amar Singh  
 **Audience:** Development Team, Future Maintainers, Contributors  
@@ -355,26 +355,26 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.16.9
+- Version: v3.18.0
 - Status: LIVE
 
 #### 2. npm Package
 - Package: `@amarsingh/keel`
 - Registry: npmjs.org
-- Installation: `npm install -g @amarsingh/keel@3.16.9`
+- Installation: `npm install -g @amarsingh/keel@3.18.0`
 - Status: coming soon — not yet published
 
 #### 3. Docker Container
-- Image: `amarsingh/keel:3.16.9`
+- Image: `amarsingh/keel:3.18.0`
 - Registry: Docker Hub
-- Pull: `docker pull amarsingh/keel:3.16.9`
+- Pull: `docker pull amarsingh/keel:3.18.0`
 - Status: coming soon — not yet published
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.16.9`
+- Version: `v3.18.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.16.9`
+- Usage: `uses: creativemyntra/keel@v3.18.0`
 
 ---
 
@@ -402,7 +402,7 @@ Record in Audit Trail
 - **DAST:** N/A (CLI tool, no web endpoints)
 - **Secrets Scanning:** git-secrets pre-commit hook
 
-### Infrastructure Scripts (v3.16.9)
+### Infrastructure Scripts (v3.18.0)
 
 | Script | Purpose | Hook Stage(s) |
 |--------|---------|---------------|
@@ -436,12 +436,12 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 
 ## Compliance Standards
 
-### Compliance Evidence Trail
+### Evidence Generation Toward Standards (Does Not Confer Certification)
 
 The Keel audit trail generates evidence that supports a compliance evaluation
-process. It does not constitute certification under any of the standards below.
+process. **It does not confer certification** under any of the standards below.
 For certification, engage a qualified assessor with this audit trail as supporting
-documentation.
+documentation. Keel is an evidence-generation tool, not a certification authority.
 
 | Standard | Relevant Evidence Generated |
 |----------|----------------------------|
@@ -458,8 +458,8 @@ documentation.
 
 | Version | Release Date | Status | Notes |
 |---------|-------------|--------|-------|
-| 3.16.9 | 2026-07-29 | PRODUCTION | Audit release: Part A (21 findings — security, tests, docs, commands) + Part B (10 findings — action.yml injection/auth/output, schema decisions required, engines Node >=18, npm docs packaging, CHANGELOG dead link) |
-| 3.16.8 | 2026-07-29 | PRODUCTION | Framework hardening: CJIS project-independence (universal NCIC_ID/LEID), OWASP LLM01 injection guard, KEEL-R14 zombie-state prevention, defect lessons writeback; keel:implement alias; ui-designer upgrade (Branding Intake + Design System Generator, DFII scoring, dashboard expertise) |
+| 3.18.0 | 2026-08-03 | PRODUCTION | Audit release: Part A (21 findings — security, tests, docs, commands) + Part B (10 findings — action.yml injection/auth/output, schema decisions required, engines Node >=18, npm docs packaging, CHANGELOG dead link) |
+| 3.16.8 | 2026-08-03 | PRODUCTION | Framework hardening: CJIS project-independence (universal NCIC_ID/LEID), OWASP LLM01 injection guard, KEEL-R14 zombie-state prevention, defect lessons writeback; keel:implement alias; ui-designer upgrade (Branding Intake + Design System Generator, DFII scoring, dashboard expertise) |
 | 3.16.7 | 2026-07-27 | PRODUCTION | Forensic engine audit: 14 security + correctness fixes (3 CRIT path-traversal + log-divergence, 4 HIGH SSRF + gate-budget, 4 MED artifact-validation + lock-timeout, 3 LOW CJIS + deprecation) |
 | 3.16.6 | 2026-07-27 | PRODUCTION | G-15 Karpathy Protocol; token-economy observability (confirm_before_spawn, token_summary); prompt-cache breakpoints (3 canonical BPs, ~90% savings on prefix); /keel:tokens command; economy wizard in init + setup |
 | 3.16.5 | 2026-07-23 | PRODUCTION | keel:start-work + keel:finish-work MCP skills; advisory ticket traceability (G-12 warns, never blocks); G-13 next-step reminder after push; BRANCH-PROTECTION.md rewrite |
@@ -519,6 +519,6 @@ documentation.
 ---
 
 **Document Version:** 2.0  
-**Last Updated:** 2026-07-29  
+**Last Updated:** 2026-08-03  
 **Status:** PRODUCTION  
 **Next Review:** 2026-10-20 (quarterly)
