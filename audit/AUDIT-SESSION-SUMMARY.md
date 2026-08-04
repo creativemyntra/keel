@@ -171,7 +171,7 @@ keel/
 3. **Assign P1 tasks** to engineer (start immediately)
 4. **Daily standup** on P1 progress (critical path)
 5. **After P1 complete:** Proceed to P2 (parallel P3 if resources available)
-6. **Before release:** Run final checklist (deployment-checklist-v3.17.0.md from P3-07)
+6. **Before release:** Run final checklist (deployment-checklist-v3.18.0.md from P3-07)
 
 ---
 

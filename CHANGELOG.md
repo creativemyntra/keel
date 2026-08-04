@@ -1,4 +1,24 @@
-## [3.17.0] - 2026-08-03 - P-16 RELEASE: VISUAL REGRESSION TESTING FRAMEWORK
+## [3.18.0] - 2026-08-04 - FIX 9-15 RELEASE: APPEND-ONLY AUDIT LOGS, REAL-DATA TELEMETRY, MODEL TIERING ENFORCEMENT
+
+### Features
+- **Append-Only Audit Logs** — Server-side enforcement in pre-push and CI; blocks modified/deleted lines; verifies hash chain integrity
+- **Real-Data Telemetry System** — Tracks real latency (duration_ms) and measured tokens (never estimated); import-usage merges measured token data from sessions
+- **Model Tiering Conformance** — headless-orchestrator.cjs CI verification fails on mistiered agents; feature + defect express-lane checked
+
+### Fixes
+- **js-yaml Dependency** — Added to production dependencies (was missing, caused production crashes)
+- **Package Lockfile** — Now tracked in git for reproducible installs; CI enforces via npm ci
+- **Token Ledger Clarity** — Removed ~90% cache assertions; documented as estimates, not measured
+- **Compliance Headline** — Clarified "Evidence Generation Toward Standards (Does Not Confer Certification)" to prevent misreading
+
+### Documentation
+- **Cache Savings Honest Mechanism** — Prompt caching reduces cached-INPUT cost only; output tokens never cached; actual savings measured in telemetry
+- **Audit Log Retention Policy** — Git as working copy; archive outside git for CJIS >=1yr compliance
+- **Telemetry Anti-Fabrication** — Duration_ms from real timestamps, tokens from measured import-usage only
+
+---
+
+## [3.18.0] - 2026-08-03 - P-16 RELEASE: VISUAL REGRESSION TESTING FRAMEWORK
 
 ### Features
 - **E2E Testing Framework** — Complete Playwright visual regression testing setup with developer fixtures
@@ -11,7 +31,7 @@
 
 ### Version History
 - Previous: 3.16.9 (2026-07-29)
-- Current: 3.17.0 (2026-08-03)
+- Current: 3.18.0 (2026-08-03)
 
 # Changelog
 

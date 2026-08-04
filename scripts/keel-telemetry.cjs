@@ -27,7 +27,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const SCRIPT_VERSION = '3.17.0';
+const SCRIPT_VERSION = '3.18.0';
 
 function stateDir(storyId) {
   return path.join('.keel', 'state', storyId);
