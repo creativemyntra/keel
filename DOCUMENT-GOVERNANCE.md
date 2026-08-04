@@ -207,7 +207,7 @@ All documentation in the KEEL repository MUST follow this folder hierarchy. End 
 - `HOTFIX-*.md` — Hotfix procedures
 
 **Examples:**
-- `docs/releases/RELEASE-NOTES-3.17.0.md`
+- `docs/releases/RELEASE-NOTES-3.18.0.md`
 - `docs/releases/DEPLOY-STAGING.md`
 
 ---
@@ -330,7 +330,7 @@ All documentation in the KEEL repository MUST follow this folder hierarchy. End 
 4. Update all internal cross-references
 5. Commit as single "refactor: reorganize documentation structure" commit
 
-**Timeline:** Before next release (v3.17.0)
+**Timeline:** Before next release (v3.18.0)
 
 ---
 

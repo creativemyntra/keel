@@ -71,7 +71,7 @@ From the `coverage.xml` (or equivalent) produced in phase 5:
 For each API endpoint introduced or changed by this story:
 
 ```bash
-curl -s -w "\n%{http_code}" -X POST http://localhost:8080/api/subscriptions \
+curl -s -w "\n%{http_code}" -X POST $KEEL_APP_URL/api/subscriptions \
   -H "Authorization: Bearer $TEST_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"plan_id": "professional", "payment_method_id": "pm_test_123"}'

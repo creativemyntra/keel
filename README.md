@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.16.9
+# Keel AI-SDLC Framework v3.18.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -80,7 +80,7 @@ The plugin registers `/keel:*` commands, 15 agents, and 9 skills. `~/.keel` conf
 **Verify:**
 ```bash
 claude plugin list
-# -> keel v3.16.9 [x]
+# -> keel v3.18.0 [x]
 ```
 
 **Quick start — run this immediately after install:**
@@ -124,27 +124,27 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.16.9
+        uses: creativemyntra/keel@v3.18.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
 
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.16.9
+        uses: creativemyntra/keel@v3.18.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
 
       - name: Run Tests
-        uses: creativemyntra/keel@v3.16.9
+        uses: creativemyntra/keel@v3.18.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
 
       - name: Security Scan
-        uses: creativemyntra/keel@v3.16.9
+        uses: creativemyntra/keel@v3.18.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -514,7 +514,7 @@ Standardize workflows with shared conventions and governance.
 Automate governed development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.16.9
+- uses: creativemyntra/keel@v3.18.0
   with:
     phase: 'all'   # Run complete pipeline
 ```
@@ -641,7 +641,7 @@ node bin/keel.js --help
 
 **[View Full Changelog →](CHANGELOG.md)**
 
-### What's New in v3.16.9
+### What's New in v3.18.0
 
 - **Audit release (31 findings)** — Full-spectrum hardening: Part A (21 static findings) + Part B (10 distribution/dynamic findings).
 - **action.yml hardened** — Shell injection closed (env-var quoting), `claude-api-key` wired to `ANTHROPIC_API_KEY`, `collect-outputs` now reports actual pass/fail.
@@ -674,7 +674,7 @@ node bin/keel.js --help
 ### What's New in v3.16.6
 
 - **G-15 Karpathy Protocol** — Four binding rules at every handshake gate: K-1 surface assumptions, K-2 ask-don't-guess (HALT on ambiguity), K-3 minimum code zero speculation, K-4 surgical diff verification.
-- **Token economy observability** — `confirm_before_spawn: true` (default): orchestrator shows `[token-estimate:]` before every spawn. `token_summary: true`: cumulative token table with cache savings appended to final delivery output.
+- **Token economy observability** — `confirm_before_spawn: true` (default): orchestrator shows `[token-estimate:]` before every spawn. `token_summary: true`: cumulative token table (estimates). Measured cache savings reported in telemetry when session usage is imported.
 - **Prompt cache breakpoints** — 3 canonical `cache_control: {type: "ephemeral"}` breakpoints; `[cache-estimate:]` line emitted per spawn.
 - **`/keel:tokens` command** — Live token ledger + cache savings; mid-session `confirm on|off` and `cache on|off` toggles.
 
@@ -703,10 +703,10 @@ node bin/keel.js --help
 
 ---
 
-**Version:** 3.16.9  
-**Released:** 2026-07-29  
+**Version:** 3.18.0  
+**Released:** 2026-08-03  
 **Status:** PRODUCTION READY  
 **Agents:** 15 (10 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.16.9 (https://github.com/creativemyntra/keel/releases/tag/v3.16.9)
+**Tag:** v3.18.0 (https://github.com/creativemyntra/keel/releases/tag/v3.18.0)
