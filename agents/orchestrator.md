@@ -254,7 +254,12 @@ economy:
 
 **Prompt cache breakpoints (when `prompt_caching: true`):**
 
-Claude's ephemeral cache saves ~90% of cached input-token cost and ~40% latency on cache hits. TTL = 5 min — consecutive phase spawns stay warm; idle gaps re-read cold.
+Prompt caching reuses the stable prompt prefix (system prompt + tool definitions + static context). 
+**Important distinctions:**
+- **Cached input tokens:** prefixes (BP-1, BP-2, BP-3) reduce INPUT token cost only on cache hit
+- **Output tokens:** NEVER cached; always paid in full
+- **Actual savings:** depend on cache-hit rate and are reported by telemetry when session usage is imported — not asserted here
+- **TTL = 5 min:** consecutive phase spawns stay warm; idle gaps cause a cache miss and re-read cold
 
 Place `cache_control: {type: "ephemeral"}` at exactly **3 breakpoints** in every agent call:
 
@@ -269,11 +274,11 @@ Everything after BP-3 (the dynamic per-call instruction) is NOT cached — it ch
 Emit the cache estimate alongside the token estimate:
 ```
 [token-estimate: phase N / <agent> / <model> / ~<input>k input + ~<output>k output ≈ ~<total>k]
-[cache-estimate: BP-1+BP-2 ~<sys>k cached → ~<saved>k tokens saved (~90%); BP-3 ~<ctx>k cached on repeat calls]
+[cache-estimate: BP-1+BP-2 ~<sys>k cached; BP-3 ~<ctx>k cached on repeat calls; output tokens never cached]
 ```
 `sys` = system prompt + tools token count (estimate: haiku ~8k, sonnet ~12k).
-`saved` = `sys × 0.9` (cache hit saves 90% of that prefix cost).
 `ctx` = prior phase file sizes passed as static context.
+Actual savings depend on cache-hit rate and are measured in telemetry, not estimated here.
 
 If `confirm_before_spawn: true`: after emitting both lines, pause and output:
 ```

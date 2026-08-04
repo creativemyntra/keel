@@ -674,7 +674,7 @@ node bin/keel.js --help
 ### What's New in v3.16.6
 
 - **G-15 Karpathy Protocol** — Four binding rules at every handshake gate: K-1 surface assumptions, K-2 ask-don't-guess (HALT on ambiguity), K-3 minimum code zero speculation, K-4 surgical diff verification.
-- **Token economy observability** — `confirm_before_spawn: true` (default): orchestrator shows `[token-estimate:]` before every spawn. `token_summary: true`: cumulative token table with cache savings appended to final delivery output.
+- **Token economy observability** — `confirm_before_spawn: true` (default): orchestrator shows `[token-estimate:]` before every spawn. `token_summary: true`: cumulative token table (estimates). Measured cache savings reported in telemetry when session usage is imported.
 - **Prompt cache breakpoints** — 3 canonical `cache_control: {type: "ephemeral"}` breakpoints; `[cache-estimate:]` line emitted per spawn.
 - **`/keel:tokens` command** — Live token ledger + cache savings; mid-session `confirm on|off` and `cache on|off` toggles.
 
