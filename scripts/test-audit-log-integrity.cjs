@@ -19,6 +19,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { chainHash, verifyChain } = require('./lib/audit-chain.cjs');
 
 function sha256line(text) {
   return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
@@ -64,7 +65,7 @@ function main() {
 
     const lines = content.split('\n').filter(l => l.trim());
     const errors = [];
-    let lastHash = 'genesis';
+    let prevLineText = 'genesis';
     let lastTimestamp = null;
 
     for (let i = 0; i < lines.length; i++) {
@@ -73,6 +74,7 @@ function main() {
         entry = JSON.parse(lines[i]);
       } catch (e) {
         errors.push(`Line ${i + 1}: JSON parse error: ${e.message}`);
+        prevLineText = lines[i]; // Advance to next line
         continue;
       }
 
@@ -80,17 +82,22 @@ function main() {
       if (!entry.prev_hash) errors.push(`Line ${i + 1}: missing prev_hash`);
       if (!entry.self_hash) errors.push(`Line ${i + 1}: missing self_hash`);
 
-      // Verify prev_hash chain
-      if (entry.prev_hash !== lastHash) {
-        errors.push(`Line ${i + 1}: prev_hash mismatch — expected ${lastHash.slice(0, 8)}..., got ${entry.prev_hash.slice(0, 8)}...`);
+      // Verify prev_hash chain — must match sha256 of full previous line text (or 'genesis')
+      if (entry.prev_hash !== undefined) {
+        const expected = chainHash(prevLineText);
+        if (entry.prev_hash !== expected) {
+          errors.push(`Line ${i + 1}: hash chain broken — expected ${expected.slice(0, 12)}… got ${String(entry.prev_hash).slice(0, 12)}…`);
+        }
       }
 
       // Verify self_hash (create a copy without self_hash to re-hash)
-      const entryForHash = { ...entry };
-      delete entryForHash.self_hash;
-      const computedHash = sha256line(JSON.stringify(entryForHash));
-      if (entry.self_hash !== computedHash) {
-        errors.push(`Line ${i + 1}: self_hash mismatch — recomputed hash differs`);
+      if (entry.self_hash !== undefined) {
+        const entryForHash = { ...entry };
+        delete entryForHash.self_hash;
+        const computedHash = sha256line(JSON.stringify(entryForHash));
+        if (entry.self_hash !== computedHash) {
+          errors.push(`Line ${i + 1}: self_hash mismatch — recomputed hash differs`);
+        }
       }
 
       // Check chronological order
@@ -101,7 +108,8 @@ function main() {
       }
       if (entry.ts) lastTimestamp = entry.ts;
 
-      lastHash = entry.self_hash;
+      // Update for next iteration (full line text, not self_hash)
+      prevLineText = lines[i];
     }
 
     if (errors.length === 0) {

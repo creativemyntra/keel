@@ -1,4 +1,4 @@
-# Keel v3.17.0 Release Summary
+# Keel v3.18.0 Release Summary
 **P-16: Visual Regression Testing Framework**
 
 **Release Date:** 2026-08-03  
@@ -119,7 +119,7 @@ feat/* → dev → qa → stage → preprod → prod
 - ❌ Blocks: direct pushes to protected branches
 - ✓ Allows: feat/* → dev only
 
-### 2. Version Consistency (3.16.9 → 3.17.0)
+### 2. Version Consistency (3.16.9 → 3.18.0)
 
 **Files Updated:**
 - ✅ package.json
@@ -127,7 +127,7 @@ feat/* → dev → qa → stage → preprod → prod
 - ✅ marketplace.json
 - ✅ branch-strategy.yml
 - ✅ bin/keel.js (VERSION constant)
-- ✅ CHANGELOG.md (3.17.0 entry)
+- ✅ CHANGELOG.md (3.18.0 entry)
 - ✅ README.md
 - ✅ TECHNICAL-SPECIFICATIONS.md
 - ✅ ALL-AGENTS-COMPLETE-GUIDE.md
@@ -176,7 +176,7 @@ feat/* → dev → qa → stage → preprod → prod
 - **Conflict:** HEAD basic config vs feature branch comprehensive config
 - **Resolution:**
   - ✅ Used feature branch version (tested with pre-push hook)
-  - ✅ v3.17.0 version marker set
+  - ✅ v3.18.0 version marker set
   - ✅ Full promotion rules configured
 - **Syntax:** ✅ VALID YAML
 - **No Logic Breaks:** ✅ VERIFIED
@@ -201,8 +201,8 @@ feat/* → dev → qa → stage → preprod → prod
 
 ### Commits:
 1. `729a385` — feat(e2e): P-16 visual regression testing framework + developer guides
-2. `8968233` — chore(release): v3.17.0 version bump for P-16 E2E framework
-3. `a74af4b` — chore(docs): v3.17.0 version consistency across all forward-facing files
+2. `8968233` — chore(release): v3.18.0 version bump for P-16 E2E framework
+3. `a74af4b` — chore(docs): v3.18.0 version consistency across all forward-facing files
 
 ---
 
@@ -237,7 +237,7 @@ feat/* → dev → qa → stage → preprod → prod
 ## 📝 CHANGELOG ENTRY
 
 ```markdown
-## [3.17.0] - 2026-08-03 - P-16 RELEASE: VISUAL REGRESSION TESTING FRAMEWORK
+## [3.18.0] - 2026-08-03 - P-16 RELEASE: VISUAL REGRESSION TESTING FRAMEWORK
 
 ### Features
 - **E2E Testing Framework** — Complete Playwright visual regression testing setup with developer fixtures
@@ -249,7 +249,7 @@ feat/* → dev → qa → stage → preprod → prod
 - **CJIS Gate** — Added missing PHONE pattern to config/cjis-patterns.json
 
 ### Infrastructure
-- Version bumped to 3.17.0 across all configuration files
+- Version bumped to 3.18.0 across all configuration files
 - Branch strategy governance fully enforced
 - Conflict resolutions validated for all files
 ```

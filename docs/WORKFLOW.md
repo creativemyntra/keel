@@ -1,6 +1,6 @@
 # Keel -- Complete Workflow, Cost Model, and Token Economy
 
-**As of v3.17.0.** Numbers marked *measured* come from the first full pipeline
+**As of v3.18.0.** Numbers marked *measured* come from the first full pipeline
 live test (KEEL-101, 2026-07-09 -- see
 [docs/audit/2026-07-09-e2e-pipeline-live-test.md](audit/2026-07-09-e2e-pipeline-live-test.md)).
 Nothing here is estimated where a measurement exists.
@@ -115,11 +115,12 @@ to two days of *team* time.
 6. **Right model for the job.** Mechanical agents (state, audit) pin
    `model: haiku`; the orchestrator requests the fast model for
    transcription-grade spawns. Judgment agents stay on the strong model.
-7. **Cache-friendly structure.** In Claude Code, prompt caching is
-   harness-automatic (cached input is ~90% cheaper) -- the plugin's job is to
-   be cacheable: agent specs and stack profiles stay byte-stable between
-   releases, and a story's phases run back-to-back inside the ~5-minute cache
-   TTL. An idle story re-reads everything cold; a batched one doesn't.
+7. **Cache-friendly structure.** In Claude Code, prompt caching reduces cached
+   input-token cost on cache hits (output tokens never cached; actual savings
+   depend on hit rate and are measured in telemetry). The orchestrator's job is
+   to be cacheable: agent specs and stack profiles stay byte-stable between
+   releases, and a story's phases run back-to-back inside the 5-minute cache TTL.
+   An idle story re-reads everything cold; a batched one hits the cache.
 8. **Static-first security.** The engine's `prescan` runs every applicable
    scanner (composer/npm audit, PHPStan, Snyk, SonarQube) deterministically
    BEFORE the security agent is spawned and records an honest inventory to
