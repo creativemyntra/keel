@@ -1795,9 +1795,19 @@ function cmdVisualBaselineApprove(storyId, args) {
   // Calculate SHA-256 for each modified baseline
   const baselineHashes = {};
   screenshotChanges.forEach(line => {
-    const filePath = line.slice(3).trim(); // Remove status prefix like "M ", "?? "
+    // git status --short format: " XY filename" or "XY filename" (depending on leading space handling)
+    // Extract filename robustly: skip first 1-3 characters of status prefix, then find actual path
+    let filePath = line;
+    // Try to match status prefix: optional leading space, then 1-2 status chars, then spaces before filename
+    const match = line.match(/^[\s]?[\sAMRCDTUX!?]{1,2}\s+(.+)$/);
+    if (match && match[1]) {
+      filePath = match[1];
+    } else {
+      // Fallback: assume first 3 chars are status prefix
+      filePath = line.replace(/^.{3}/, '').trim();
+    }
     if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf8');
+      const content = fs.readFileSync(filePath);          // Buffer — PNGs are binary
       const hash = crypto.createHash('sha256').update(content).digest('hex');
       baselineHashes[filePath] = hash;
     }
@@ -1815,7 +1825,11 @@ function cmdVisualBaselineApprove(storyId, args) {
   // Print the git commands for the human to run
   console.log('\nBASELINE APPROVED. Run these commands to commit:');
   console.log('');
-  console.log('  git add ' + screenshotChanges.map(l => l.slice(3).trim()).join(' '));
+  const filePaths = screenshotChanges.map(line => {
+    const match = line.match(/^[\s]?[\sAMRCDTUX!?]{1,2}\s+(.+)$/);
+    return match && match[1] ? match[1] : line.replace(/^.{3}/, '').trim();
+  });
+  console.log('  git add ' + filePaths.join(' '));
   console.log('  git commit -m "chore(visual): baseline approved by ' + reviewer + '"');
   console.log('');
   console.log(`Approval recorded in audit log with ${Object.keys(baselineHashes).length} baseline(s).`);
