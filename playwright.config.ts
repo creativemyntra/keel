@@ -72,7 +72,7 @@ export default defineConfig({
     ? undefined
     : {
         command: process.env.SERVER_CMD || 'cd tests/fixture-app && php -S localhost:8000',
-        url: 'http://localhost:8000',
+        url: process.env.KEEL_APP_URL ?? 'http://localhost:8000',
         timeout: 120 * 1000,
         reuseExistingServer: !isCI,
       },
