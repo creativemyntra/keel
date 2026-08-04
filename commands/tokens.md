@@ -19,17 +19,23 @@ Run the engine command — do NOT reconstruct the table from conversation memory
 node ~/.keel/bin/keel-state.cjs token-ledger summary <story-id>
 ```
 
-The engine reads `.keel/state/<story-id>/token-ledger.jsonl` and prints:
+The engine reads `.keel/state/<story-id>/token-ledger.jsonl` and `.keel/state/<story-id>/telemetry.jsonl`, then prints:
 
 ```
-=== Keel Token Ledger — <STORY-ID> ===
+=== Token Ledger (ESTIMATES — orchestrator projections, not measured) — <STORY-ID> ===
 
-Phase | Agent                | Model   | Est.in  | Est.out | Cached  | Net
-------+---------------------+--------+--------+--------+--------+--------
-1     | business-analyst     | haiku   |    ~20k |     ~8k |     ~7k |    ~21k
-5     | software-engineer    | sonnet  |    ~60k |    ~50k |    ~11k |    ~99k
+Phase | Agent                | Model   | Duration(ms) | Est.in  | Est.out | Cached  | Net
+------+---------------------+--------+--------------+--------+--------+--------+--------
+1     | business-analyst     | haiku   |         2150 |    ~20k |     ~8k |     ~7k |    ~21k
+5     | software-engineer    | sonnet  |         8900 |    ~60k |    ~50k |    ~11k |    ~99k
 ...
-TOTAL |                      |         |   ~XXXk |   ~XXXk |   ~XXXk |   ~XXXk
+TOTAL |                      |         |        11050 |   ~XXXk |   ~XXXk |   ~XXXk |   ~XXXk
+```
+
+**Important:** 
+- **Token columns** (Est.in, Est.out, Cached, Net) are orchestrator projections/estimates.
+- **Duration(ms)** is real measured latency from telemetry (not estimated).
+- Measured token usage (when available) is tracked separately in telemetry, not derived from this ledger.
 ```
 
 ## Diagnostic — if the ledger is empty

@@ -33,6 +33,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { recordTelemetry } = require('./keel-telemetry.cjs');
 
 const AGENTS = [
   'product-owner', 'business-analyst', 'ui-designer', 'solution-architect', 'software-engineer',
@@ -239,6 +240,8 @@ function phaseFileHash(storyId, phase) {
     .update(fs.readFileSync(path.join(stateDir(storyId), file))).digest('hex');
 }
 
+const { chainHash, verifyChain } = require('./lib/audit-chain.cjs');
+
 function sha256line(text) {
   return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
 }
@@ -252,7 +255,7 @@ function appendAudit(storyId, entry) {
     const lines = content.trimEnd().split('\n');
     if (lines.length && lines[lines.length - 1].trim()) lastLine = lines[lines.length - 1];
   }
-  entry.prev_hash = sha256line(lastLine);
+  entry.prev_hash = chainHash(lastLine);
   entry.self_hash = sha256line(JSON.stringify(entry));
   fs.appendFileSync(p, JSON.stringify(entry) + '\n');
 }
@@ -1266,6 +1269,23 @@ function cmdGate(storyId, args) {
         outputs: [phaseFile], artifacts: out.artifacts || [], decisions: out.decisions || [],
         git_commit: null, notes: 'auto-audited on gate PASS',
       });
+
+      // Record telemetry: real latency (duration_ms), measured tokens only (never fabricated)
+      try {
+        recordTelemetry(storyId, {
+          phase: phase,
+          agent: out.agent || 'unknown',
+          gate_verdict: 'PASS',
+          started_at: null,  // Phase start time not yet tracked — null until bracketed
+          ended_at: nowIso(),
+          duration_ms: null,  // Computed from real timestamps when available, never interpolated
+          tokens: null,
+          tokens_source: 'unmeasured'
+        });
+      } catch (e) {
+        console.warn(`Warning: failed to record telemetry: ${e.message}`);
+      }
+
       console.log(`PASS recorded: phase ${phase} -> ${label}`);
       return;
     }
@@ -1282,6 +1302,37 @@ function cmdGate(storyId, args) {
     writeManifest(storyId, manifest);
     fs.appendFileSync(handoffPath(storyId),
       `- ${nowIso()} | phase ${phase} | FAIL (attempt ${attempt}/${MAX_ATTEMPTS})${identicalRetry ? ' | IDENTICAL RETRY' : ''} | ${notes}\n`);
+
+    // Record telemetry for FAIL verdict
+    try {
+      let agent = 'engine';
+      // Try to extract agent from phase file if it exists
+      const phaseFiles = fs.readdirSync(stateDir(storyId))
+        .filter(f => /^\d{2}-\w+-\d+\.json$/.test(f));
+      const phaseFile = phaseFiles.find(f => parseInt(f) === phase) ||
+                       phaseFiles.filter(f => f.startsWith(String(phase).padStart(2, '0'))).pop();
+      if (phaseFile) {
+        try {
+          const out = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phaseFile), 'utf8'));
+          if (out.agent) agent = out.agent;
+        } catch (e) {
+          // Ignore parse errors, use 'engine' as fallback
+        }
+      }
+
+      recordTelemetry(storyId, {
+        phase: phase,
+        agent: agent,
+        gate_verdict: 'FAIL',
+        started_at: null,
+        ended_at: nowIso(),
+        duration_ms: null,
+        tokens: null,
+        tokens_source: 'unmeasured'
+      });
+    } catch (e) {
+      console.warn(`Warning: failed to record telemetry: ${e.message}`);
+    }
 
     if (identicalRetry) {
       appendAudit(storyId, { phase, agent: 'engine', action: 'protocol_violation', attempt, notes: 'retry output is byte-identical to the previous failed attempt — failure findings were not incorporated' });
@@ -1561,7 +1612,7 @@ function cmdVerify(storyId) {
         problems.push(`line ${i + 1}: phase ${e.phase} completed but manifest current_phase is ${manifest.current_phase}`);
       }
       if (e.prev_hash !== undefined) {
-        const expected = sha256line(prevLineText);
+        const expected = chainHash(prevLineText);
         if (e.prev_hash !== expected) {
           problems.push(`line ${i + 1}: hash chain broken — expected ${expected.slice(0, 12)}… got ${String(e.prev_hash).slice(0, 12)}…`);
         }
@@ -1795,9 +1846,19 @@ function cmdVisualBaselineApprove(storyId, args) {
   // Calculate SHA-256 for each modified baseline
   const baselineHashes = {};
   screenshotChanges.forEach(line => {
-    const filePath = line.slice(3).trim(); // Remove status prefix like "M ", "?? "
+    // git status --short format: " XY filename" or "XY filename" (depending on leading space handling)
+    // Extract filename robustly: skip first 1-3 characters of status prefix, then find actual path
+    let filePath = line;
+    // Try to match status prefix: optional leading space, then 1-2 status chars, then spaces before filename
+    const match = line.match(/^[\s]?[\sAMRCDTUX!?]{1,2}\s+(.+)$/);
+    if (match && match[1]) {
+      filePath = match[1];
+    } else {
+      // Fallback: assume first 3 chars are status prefix
+      filePath = line.replace(/^.{3}/, '').trim();
+    }
     if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf8');
+      const content = fs.readFileSync(filePath);          // Buffer — PNGs are binary
       const hash = crypto.createHash('sha256').update(content).digest('hex');
       baselineHashes[filePath] = hash;
     }
@@ -1815,7 +1876,11 @@ function cmdVisualBaselineApprove(storyId, args) {
   // Print the git commands for the human to run
   console.log('\nBASELINE APPROVED. Run these commands to commit:');
   console.log('');
-  console.log('  git add ' + screenshotChanges.map(l => l.slice(3).trim()).join(' '));
+  const filePaths = screenshotChanges.map(line => {
+    const match = line.match(/^[\s]?[\sAMRCDTUX!?]{1,2}\s+(.+)$/);
+    return match && match[1] ? match[1] : line.replace(/^.{3}/, '').trim();
+  });
+  console.log('  git add ' + filePaths.join(' '));
   console.log('  git commit -m "chore(visual): baseline approved by ' + reviewer + '"');
   console.log('');
   console.log(`Approval recorded in audit log with ${Object.keys(baselineHashes).length} baseline(s).`);
@@ -2234,19 +2299,35 @@ function cmdTokenLedger(args) {
     try { entries = fs.readFileSync(lPath, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)); }
     catch { /* no ledger yet */ }
     if (!entries.length) { console.log(`token-ledger: no entries for story ${storyId} — orchestrator may not have run or did not append entries`); return; }
+
+    // Load telemetry data to get real Duration(ms)
+    const tPath = path.join(stateDir(storyId), 'telemetry.jsonl');
+    const telemetryMap = {};
+    try {
+      const telemetryLines = fs.readFileSync(tPath, 'utf8').trim().split('\n').filter(Boolean);
+      for (const line of telemetryLines) {
+        const t = JSON.parse(line);
+        telemetryMap[`${t.phase}_${t.agent}`] = t;
+      }
+    } catch { /* no telemetry yet */ }
+
     if (args.includes('--json')) { console.log(JSON.stringify(entries, null, 2)); return; }
     const totIn = entries.reduce((s, e) => s + e.input_k, 0);
     const totOut = entries.reduce((s, e) => s + e.output_k, 0);
     const totCached = entries.reduce((s, e) => s + e.cached_k, 0);
     const totNet = entries.reduce((s, e) => s + e.net_k, 0);
-    const hdr = 'Phase | Agent                | Model      | Est.in  | Est.out | Cached  | Net';
-    const sep = '------+---------------------+-----------+--------+--------+--------+--------';
+    const totDuration = Object.values(telemetryMap).reduce((s, t) => s + (t.duration_ms || 0), 0);
+
+    const hdr = 'Phase | Agent                | Model      | Duration(ms) | Est.in  | Est.out | Cached  | Net';
+    const sep = '------+---------------------+-----------+--------------+--------+--------+--------+--------';
     const shortModel = (m) => (m || '').replace(/^claude-/, '').replace(/-\d{8,}$/, '').slice(0, 10);
-    const rows = entries.map((e) =>
-      `${String(e.phase).padEnd(5)} | ${e.agent.padEnd(20)} | ${shortModel(e.model).padEnd(10)} | ${String(e.input_k + 'k').padStart(7)} | ${String(e.output_k + 'k').padStart(7)} | ${String(e.cached_k + 'k').padStart(7)} | ${String(e.net_k.toFixed(1) + 'k').padStart(7)}`
-    );
-    const tot = `TOTAL |                      |            | ${String(totIn.toFixed(1) + 'k').padStart(7)} | ${String(totOut.toFixed(1) + 'k').padStart(7)} | ${String(totCached.toFixed(1) + 'k').padStart(7)} | ${String(totNet.toFixed(1) + 'k').padStart(7)}`;
-    console.log(['', `=== Keel Token Ledger — ${storyId} ===`, '', hdr, sep, ...rows, sep, tot, ''].join('\n'));
+    const rows = entries.map((e) => {
+      const telemetry = telemetryMap[`${e.phase}_${e.agent}`];
+      const duration = telemetry && telemetry.duration_ms ? String(telemetry.duration_ms).padStart(12) : 'unmeasured'.padStart(12);
+      return `${String(e.phase).padEnd(5)} | ${e.agent.padEnd(20)} | ${shortModel(e.model).padEnd(10)} | ${duration} | ${String(e.input_k + 'k').padStart(7)} | ${String(e.output_k + 'k').padStart(7)} | ${String(e.cached_k + 'k').padStart(7)} | ${String(e.net_k.toFixed(1) + 'k').padStart(7)}`;
+    });
+    const tot = `TOTAL |                      |            | ${String(totDuration).padStart(12)} | ${String(totIn.toFixed(1) + 'k').padStart(7)} | ${String(totOut.toFixed(1) + 'k').padStart(7)} | ${String(totCached.toFixed(1) + 'k').padStart(7)} | ${String(totNet.toFixed(1) + 'k').padStart(7)}`;
+    console.log(['', `=== Token Ledger (ESTIMATES — orchestrator projections, not measured) — ${storyId} ===`, '', hdr, sep, ...rows, sep, tot, ''].join('\n'));
     return;
   }
 

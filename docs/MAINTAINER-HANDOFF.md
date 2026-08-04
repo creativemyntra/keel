@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.17.0 - Maintainer Handoff
+# Keel AI-SDLC Framework v3.18.0 - Maintainer Handoff
 
 **Document Version:** 2.0  
 **Last Updated:** 2026-08-03  
@@ -38,7 +38,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 ### Key Facts
 
 - **Language:** JavaScript (Node.js)
-- **Current Version:** 3.17.0
+- **Current Version:** 3.18.0
 - **Status:** Production-ready
 - **Release Date:** 2026-07-22
 - **Platforms Supported:** CakePHP 4.4/PHP 8.1 (multi-stack in future release)

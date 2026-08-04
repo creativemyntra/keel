@@ -194,5 +194,5 @@ docs/guides/E2E-VISUAL-REGRESSION.md  (add a11y section)
 ---
 
 **Last updated:** 2026-08-03  
-**Keel version:** 3.17.0+  
+**Keel version:** 3.18.0+  
 **Owner:** E2E Engineering Team

@@ -20,11 +20,19 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const PREFLIGHT = path.join(__dirname, 'keel-preflight.cjs');
+const AUDIT_GUARD = path.join(__dirname, 'keel-audit-guard.cjs');
 
 function runPreflight() {
   process.stderr.write('\nPreflight:\n');
   const r = spawnSync(process.execPath, [PREFLIGHT], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   process.stderr.write(r.stderr || r.stdout || '');
+}
+
+function runAuditGuard(stdinData) {
+  process.stderr.write('\nAudit Guard:\n');
+  const r = spawnSync(process.execPath, [AUDIT_GUARD], { encoding: 'utf8', input: stdinData, stdio: ['pipe', 'pipe', 'pipe'] });
+  process.stderr.write(r.stderr || r.stdout || '');
+  return r.status === 0; // true if audit guard passed
 }
 
 const PROTECTED = new Set([
@@ -56,6 +64,11 @@ async function main() {
 
   const lines = raw.trim().split('\n').filter(Boolean);
   if (!lines.length) process.exit(0); // nothing being pushed (e.g. delete)
+
+  // Check audit logs on all pushes (append-only enforcement)
+  if (!runAuditGuard(raw)) {
+    process.exit(1);
+  }
 
   const blocked = [];
   for (const line of lines) {
