@@ -142,14 +142,24 @@ rules are hard boundaries, not suggestions:
         If the file is not COMMITTED (git ls-files returns empty), gate FAILS
         "baseline not committed — snapshots must be part of the git history".
      b. Baseline mutations: if any baseline file in `tests/e2e/__screenshots__/`
-        is modified or new in this story's diff (`git diff --name-only HEAD...
-        tests/e2e/__screenshots__/`), check the audit log:
-        `node ~/.keel/bin/keel-state.cjs audit --phase-file 07-e2e-engineer.json --json`.
-        The audit log MUST contain a `visual_baseline` action with type
-        `visual_baseline` whose timestamp is NEWER than the changed baseline's
-        modification time, and whose `paths` field includes matching SHA-256
-        hashes. If no such action exists or the timestamp is older, gate FAILS
-        "unapproved baseline mutation".
+        is modified or new in this story's diff, gate FAILS "unapproved baseline mutation".
+        Procedure:
+        1. Detect changed baselines:
+           ```
+           git diff --name-only HEAD -- tests/e2e/__screenshots__/
+           ```
+        2. If none changed, baseline mutations check is complete (PASS).
+        3. Read the audit log and find the newest `visual_baseline` approval:
+           ```
+           node -e "const es=require('fs').readFileSync('.keel/state/<story>/audit-log.jsonl','utf8').trim().split('\n').map(JSON.parse).filter(e=>e.action==='visual_baseline');const l=es.pop();if(!l){console.log('NONE');process.exit(1)}console.log(JSON.stringify(l))"
+           ```
+           Replace `<story>` with the story ID. Exit code 1 = no entry found → gate FAILS.
+        4. For each changed baseline file, verify three conditions:
+           - Entry's `ts` field is NEWER than the file's modification time (mtime).
+           - Entry has a `baselines` object (not `paths`).
+           - For the changed file's path, `sha256(binary file contents) === entry.baselines[path]`.
+             (Compute sha256 on raw bytes, not decoded text.)
+           If any condition fails, gate FAILS "unapproved baseline mutation".
      c. Visual diffs: grep the findings or runner output for references to
         `playwright-report/test-results/` diff images (e.g., `...actual.png`,
         `...diff.png`). For each diff image in artifacts, verify the file

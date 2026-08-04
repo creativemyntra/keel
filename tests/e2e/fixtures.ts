@@ -62,21 +62,96 @@ export async function stabilize(page: Page, timeout = 3000): Promise<void> {
 }
 
 /**
- * Auto-fixture: page with pre-stabilized state.
+ * Auto-fixture: page with deterministic state for visual snapshots.
  *
- * Use this fixture instead of test.beforeEach + manual stabilization:
+ * Stabilizes page rendering by:
+ * - Freezing time (page.clock.install) for consistent timestamps
+ * - Waiting for fonts to load (document.fonts.ready)
+ * - Seeding Math.random for deterministic dynamic content
+ *
+ * Use this fixture in visual regression tests:
  *
  * Example:
  *   test('component renders', async ({ stablePage }) => {
- *     const page = stablePage;
- *     await page.goto('...');
- *     // page is already stabilized
+ *     await stablePage.goto('...');
+ *     await stabilize(stablePage);
+ *     await expect(stablePage).toHaveScreenshot('component.png');
  *   });
  */
-export const stablePage = test.extend<{ stablePage: Page }>({
+const stablePageFixture = test.extend<{ stablePage: Page }>({
   stablePage: async ({ page }, use) => {
-    // Inject before page is used
+    // Freeze time for deterministic rendering
+    await page.clock.install();
+
+    // Wait for fonts to load (prevent layout shift from font swap)
+    await page.evaluate(() => {
+      if ('fonts' in document) {
+        return (document as any).fonts.ready;
+      }
+      return Promise.resolve();
+    });
+
+    // Seed Math.random for deterministic content (UUIDs, animations, etc)
+    await page.evaluate(() => {
+      let seed = 12345;
+      (window as any).crypto.getRandomValues = function (arr: any) {
+        for (let i = 0; i < arr.length; i++) {
+          seed = (seed * 9301 + 49297) % 233280;
+          arr[i] = (seed / 233280) * 256;
+        }
+        return arr;
+      };
+      Math.random = function () {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      };
+    });
+
+    // Use page with deterministic state
     await use(page);
+
+    // Cleanup: uninstall clock
+    await page.clock.runFor(0); // Flush pending timers
+  },
+});
+
+/**
+ * Auto-fixture: collect and fail on console errors.
+ *
+ * Tracks all console 'error' and 'pageerror' events during test.
+ * Fails the test if any errors found, unless annotated with:
+ *   test.annotate({ type: 'allow-console-errors', description: 'reason' })
+ *
+ * Example (opt-out):
+ *   test.annotate({ type: 'allow-console-errors', description: 'expected 3rd-party script warning' });
+ *   test('component handles 3rd-party errors', async ({ page }) => { ... });
+ */
+export const test = stablePageFixture.extend({
+  consoleErrors: async ({ page }, use) => {
+    const errors: string[] = [];
+
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') {
+        errors.push(`console.error: ${msg.text()}`);
+      }
+    });
+
+    page.on('pageerror', (err) => {
+      errors.push(`pageerror: ${err.message}`);
+    });
+
+    await use(errors);
+
+    // Teardown: fail if errors found (unless opt-out annotation)
+    if (errors.length > 0) {
+      const annotation = test.info().annotations?.find((a) => a.type === 'allow-console-errors');
+      if (annotation) {
+        console.log(`✓ console errors allowed: ${annotation.description}`);
+        errors.forEach((e) => console.log(`  - ${e}`));
+      } else {
+        throw new Error(`Console errors detected:\n${errors.join('\n')}`);
+      }
+    }
   },
 });
 

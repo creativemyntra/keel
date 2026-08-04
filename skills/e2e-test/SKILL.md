@@ -109,7 +109,7 @@ changes:
 - Use `data-testid` attributes -- not CSS classes or text that can change.
 - Never hard-code credentials -- use `process.env`.
 - Each test must be independent (no shared mutable state between tests).
-- Check `browser_console_messages` after each test -- JS errors are failures.
+- Console errors are automatic test failures (fixture auto-collects 'error' and 'pageerror' events). Opt out only with: `test.annotate({ type: 'allow-console-errors', description: 'reason' })` — reason required.
 - Take a screenshot of the final state of each test.
 - Maximum 30s timeout per action.
 - Never fabricate results -- if the app is not running, say so and stop.

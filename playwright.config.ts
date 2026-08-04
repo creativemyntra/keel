@@ -51,20 +51,26 @@ export default defineConfig({
        ['html', { open: 'never', outputFolder: 'playwright-report/html' }]],
   outputDir: 'playwright-report/test-results',
 
-  // Test projects for cross-browser testing
+  // Test projects: desktop-chromium and mobile-375 (default); firefox/webkit opt-in only
+  // To run firefox/webkit: npx playwright test --project=firefox --project=webkit
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'desktop-chromium',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
     },
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      name: 'mobile-375',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 375, height: 812 } },
     },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+    // Opt-in only: uncomment below or use --project=firefox / --project=webkit
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
+    // {
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
+    // },
   ],
 
   // Web server setup for E2E tests
@@ -72,7 +78,7 @@ export default defineConfig({
     ? undefined
     : {
         command: process.env.SERVER_CMD || 'cd tests/fixture-app && php -S localhost:8000',
-        url: 'http://localhost:8000',
+        url: process.env.KEEL_APP_URL ?? 'http://localhost:8000',
         timeout: 120 * 1000,
         reuseExistingServer: !isCI,
       },

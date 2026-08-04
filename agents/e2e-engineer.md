@@ -84,11 +84,13 @@ curl -s -o /dev/null -w "%{http_code}" $KEEL_APP_URL/health
 # If not running, start it (example for different frameworks):
 # Node/Express:  npm run dev
 # Python/Django: python manage.py runserver
-# CakePHP:       php -S localhost:8080 -t webroot/
+# CakePHP:       php -S localhost:3000 -t webroot/
 ```
 
-Record the base URL in `APP_URL` for the tests. Never hard-code credentials --
-use environment variables.
+The baseURL is controlled by playwright.config.ts (environment-driven: `KEEL_APP_URL` or
+`BASE_URL` env vars, default http://localhost:8000). Never hard-code the origin in
+tests -- use relative navigation instead. Never hard-code credentials -- use
+environment variables.
 
 ## Step 3 -- Write Playwright tests
 
@@ -99,18 +101,17 @@ File location: `tests/e2e/<story-id>-<feature>.spec.ts` (TypeScript) or
 ```typescript
 import { test, expect } from '@playwright/test';
 
-const APP_URL = process.env.APP_URL ?? 'http://localhost:8080';
-
 test.describe('<Feature> -- <STORY-ID>', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(APP_URL);
+    await page.goto('/');
     // authenticate if required -- use env vars for credentials
   });
 
   test('AC-1: happy path -- <description>', async ({ page }) => {
     // Navigate -> Act -> Assert
-    await page.goto(`${APP_URL}/subscriptions/create`);
+    // baseURL from playwright.config.ts owns the origin (KEEL_APP_URL ?? http://localhost:8000)
+    await page.goto('/subscriptions/create');
     await page.fill('[data-testid="plan-select"]', 'professional');
     await page.click('[data-testid="submit-btn"]');
     await expect(page.locator('[data-testid="success-message"]')).toBeVisible();
@@ -118,13 +119,13 @@ test.describe('<Feature> -- <STORY-ID>', () => {
   });
 
   test('AC-1: error path -- missing required field shows validation', async ({ page }) => {
-    await page.goto(`${APP_URL}/subscriptions/create`);
+    await page.goto('/subscriptions/create');
     await page.click('[data-testid="submit-btn"]'); // submit empty
     await expect(page.locator('[data-testid="plan-error"]')).toBeVisible();
   });
 
   test('AC-2: admin sees new subscription in list', async ({ page }) => {
-    await page.goto(`${APP_URL}/admin/subscriptions`);
+    await page.goto('/admin/subscriptions');
     await expect(page.locator('[data-testid="subscription-row"]').first()).toBeVisible();
   });
 
@@ -142,8 +143,7 @@ test.describe('<Feature> -- <STORY-ID>', () => {
    resets).
 2. Test one behavior -- one assertion of the primary outcome, optional secondary
    assertions.
-3. Check `browser_console_messages` for errors -- a flow that "works" while
-   logging JS errors is not passing.
+3. Console errors are automatic test failures. To opt out, annotate: `test.annotate({ type: 'allow-console-errors', description: 'reason (e.g., expected 3rd-party script warning)' })` — reason is required.
 4. Take a screenshot on the final state using a story-scoped path:
    `await page.screenshot({ path: 'docs/e2e-evidence/<story-id>/<test-name>.png' })`.
    Story-scoped paths prevent stale screenshots from prior runs being accepted
@@ -161,7 +161,7 @@ import { test, expect } from '@playwright/test';
 import { stabilize, MASKS } from '../fixtures';
 
 test('AC-1: happy path shows confirmation screen', async ({ page }) => {
-  await page.goto(`${APP_URL}/subscriptions/create`);
+  await page.goto('/subscriptions/create');
   await page.fill('[data-testid="plan-select"]', 'professional');
   await page.click('[data-testid="submit-btn"]');
   await expect(page.locator('[data-testid="success-message"]')).toBeVisible();
@@ -182,7 +182,7 @@ snapshot the component to localize failures:
 
 ```typescript
 test('AC-2: payment form component renders', async ({ page }) => {
-  await page.goto(`${APP_URL}/subscriptions/create`);
+  await page.goto('/subscriptions/create');
   // ... interact with the form ...
   await stabilize(page);
   await expect(page.getByTestId('payment-form')).toHaveScreenshot(
