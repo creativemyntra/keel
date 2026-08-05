@@ -72,9 +72,13 @@ cover in your output's `findings`.
    - E2E scenarios for the phase-7 e2e-engineer to cover
    - Assumptions (from step 3) and Risks
    Save it as `docs/plans/<STORY-ID>-implementation-plan.md` (artifact).
-   K-3 (G-15): The plan is now REQUIRED and will be validated for minimum
-   length (300 words) and required sections (Files to change, Test scenarios).
-   Set `implementation_plan_path` in your output JSON to the full path.
+   K-3 (G-15): The plan is MANDATORY. Gate will validate:
+   - File exists on disk (not just listed in artifacts)
+   - >= 300 words
+   - Contains required sections: "## Files to change", "## Test scenarios", "## Assumptions" or "## Risks"
+   - Every AC appears in the plan (per-AC rationale or test section)
+   Missing any of these → gate FAIL, blocks code handoff.
+   MUST set `implementation_plan_path` in your output JSON to the full path.
 
 ## Production code
 

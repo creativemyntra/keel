@@ -48,7 +48,8 @@ const KNOWN_FIELDS = [
   'phase', 'agent', 'story_id', 'confidence', 'findings', 'acceptance_criteria_ids',
   'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp', 'tokens_used',
   'design_review_checklist',  // T5: Phase 3 (UI designer) review checklist
-  'assumptions', 'interpretations_considered', 'implementation_plan_path',  // G-15: Phase 5 (software-engineer) thinking artifacts
+  'assumptions', 'interpretations_considered', 'implementation_plan_path',  // G-15 K-1/K-2/K-3: Phase 5 (software-engineer) thinking artifacts
+  'phase_ac_rationale', // K-3: Per-AC implementation + test coverage (phase 5 only)
 ];
 const MAX_ATTEMPTS = 3;
 const DEFAULT_MAX_GATES = 40;   // pipeline budget: total gate events per story (10 phases × 3 attempts + overhead)
@@ -556,11 +557,28 @@ function validatePhaseFile(storyId, fileName) {
         // Check for required headings
         const hasFilesHeading = /^#+ Files to change/m.test(planContent) || /^#+ Files to create\/change/m.test(planContent);
         const hasTestHeading = /^#+ Test scenarios/m.test(planContent);
+        const hasAssumptionsHeading = /^#+ Assumptions/m.test(planContent) || /^#+ Risks/m.test(planContent);
         if (!hasFilesHeading) {
           errors.push('K-3 (G-15): implementation plan must include "## Files to change" section');
         }
         if (!hasTestHeading) {
           errors.push('K-3 (G-15): implementation plan must include "## Test scenarios" section');
+        }
+        if (!hasAssumptionsHeading) {
+          errors.push('K-3 (G-15): implementation plan must include "## Assumptions" or "## Risks" section');
+        }
+
+        // Verify every AC is covered in the plan
+        const allACs = out.acceptance_criteria_ids || [];
+        const missingACs = [];
+        for (const ac of allACs) {
+          // Check if AC appears anywhere in the plan (in per-AC rationale, test scenarios, etc.)
+          if (!new RegExp(ac).test(planContent)) {
+            missingACs.push(ac);
+          }
+        }
+        if (missingACs.length > 0) {
+          errors.push(`K-3 (G-15): implementation plan does not cover all ACs — missing: ${missingACs.join(', ')}`);
         }
       } catch (e) {
         errors.push(`K-3 (G-15): cannot read implementation plan: ${e.message}`);

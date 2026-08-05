@@ -420,6 +420,26 @@ enforcement was defect-only; this closes that gap). Feature scope may NOT
 skip the scope-creep check.
 ---
 
+## G-17 - Implementation plan (minimum code, zero speculation)
+
+Every story at phase 5 must produce an implementation plan that exists on disk and covers every AC.
+
+**Requirement:** Software engineer writes `docs/plans/<STORY-ID>-implementation-plan.md` and sets `implementation_plan_path` in phase-5 output.
+
+**Validation (K-3 gate check):**
+- File exists, readable
+- >= 300 words
+- Contains required sections:
+  - `## Files to change` (or `## Files to create/change`)
+  - `## Test scenarios`
+  - `## Assumptions` or `## Risks`
+- Every AC from phase 2 appears somewhere in the plan
+- If any check fails, phase 5 gates with FAIL reason
+
+**Enforcement:** The state engine (validatePhaseFile) blocks `gate --phase 5 --verdict PASS` if plan is missing, too thin, lacks required sections, or drops an AC. This prevents the honor-system state (plan instruction followed, file not written) from reaching code review.
+
+---
+
 ## G-16 - Task breakdown (think-before-design)
 
 Every story must produce a task breakdown before design begins (pre-phase-3 gate).
