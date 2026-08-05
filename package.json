@@ -8,6 +8,7 @@
     "keel": "./bin/keel.js"
   },
   "scripts": {
+    "postinstall": "node scripts/setup-git-safe-dirs.cjs || true",
     "start": "node ./bin/keel.js",
     "test": "npm run test:engine",
     "test:engine": "node scripts/test-keel-state.cjs",
