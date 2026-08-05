@@ -383,24 +383,29 @@ has no standard type prefix. This is informational — no commits are blocked.
 ## G-15 - Karpathy Protocol (Assume Nothing, Change Nothing Extra)
 
 Four binding rules for every agent that reads requirements or writes code.
-Enforcement: the state engine validates K-1 and K-3 mechanically at phase 5
-(software-engineer); the handshake gate verifies all four. Gate FAIL = costs
-one attempt. K-1, K-2, K-3, and K-4 are MANDATORY, not discretionary spot-checks.
+Enforcement: the state engine validates K-1, K-2, and K-3 mechanically at phase 5
+(software-engineer); the handshake gate verifies K-1, K-2, K-3, and K-4 before
+checking tests or code. Gate FAIL = costs one attempt. K-1, K-2, K-3, and K-4 are
+MANDATORY, not discretionary spot-checks.
 
 **K-1 — Surface assumptions before starting (MANDATORY, engine-checked)**
 Before any design or code: list every assumption about scope, data shape,
 behavior, performance, and security. Emit the list into the required
 `assumptions[]` field in the phase-5 output JSON (minItems 1). Each assumption
-must have `area`, `assumption` text, and `risk`. Engine validates K-1 at
-`validate`; gate re-confirms it. An assumption not surfaced is an untested risk.
+must have `area` (scope|data|behavior|performance|security), `assumption` text
+(≥8 chars), and `risk` (≥8 chars). Engine validates K-1 mechanically;
+gate re-confirms it. An assumption not surfaced is an untested risk.
+Phase-5 output with empty assumptions FAILS validation.
 
-**K-2 — Ask, don't guess (MANDATORY, gate-verified)**
+**K-2 — Ask, don't guess (MANDATORY, engine+gate-verified)**
 When a requirement is ambiguous, underspecified, or contradicts a prior ADR:
 HALT. Record the ambiguity + at least two plausible interpretations in
 `blockers`. Emit them into the required `interpretations_considered[]` field
-for each ambiguous AC. Do not pick one silently and proceed. The handshake
-gate verifies every ambiguous AC from phase 1-2 has a corresponding
-interpretation entry. The human owner resolves ambiguity; the agent does not.
+for each ambiguous AC flagged in phase 1-2. Do not pick one silently and proceed.
+Engine validates presence; handshake gate verifies every ambiguous AC from
+phase 1-2 has a corresponding interpretation entry with ≥2 options.
+Missing an interpretation for an ambiguous AC = gate FAIL.
+The human owner resolves ambiguity; the agent does not.
 
 **K-3 — Minimum code, zero speculation (MANDATORY, engine-checked + gate-verified)**
 Write the simplest code that satisfies every AC. No speculative abstractions,

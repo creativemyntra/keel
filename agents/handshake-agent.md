@@ -110,10 +110,10 @@ rules are hard boundaries, not suggestions:
    started_at>`; any incident in this phase's window not acknowledged by the
    phase output = FAIL.
 4. **Phase-specific gates:**
-   - **After software-engineer — K-0: Think-before-code (G-15, MANDATORY first):**
-     Before checking tests or coverage, verify that thinking artifacts are present
-     and valid. This gate runs BEFORE outcome checks so thinking is enforced, not
-     optional:
+   - **After software-engineer — K-0: Think-before-code (G-15, MANDATORY FIRST BLOCK):**
+     Before checking tests, coverage, or implementation, verify thinking artifacts are present
+     and valid. This gate runs BEFORE all outcome checks, so thinking is enforced as a blocker,
+     not optional. K-0 failure = immediate gate FAIL, no tests run:
      a. **K-1 Assumptions:** `assumptions[]` array is present with minItems 1.
         Each assumption has `area` (scope|data|behavior|performance|security),
         `assumption` text (min 8 chars), and `risk` (min 8 chars). A phase-5

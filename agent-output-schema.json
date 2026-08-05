@@ -5,6 +5,19 @@
   "description": "Contract for the output file each Keel phase agent writes to .keel/state/<story-id>/<NN>-<agent>.json. This is how agents pass context to each other.",
   "type": "object",
   "required": ["phase", "agent", "story_id", "confidence", "findings", "acceptance_criteria_ids", "decisions", "next_phase"],
+  "dependentRequired": {
+    "phase": ["assumptions", "interpretations_considered"],
+    "agent": ["assumptions", "interpretations_considered"]
+  },
+  "if": {
+    "properties": {
+      "phase": { "const": 5 },
+      "agent": { "const": "software-engineer" }
+    }
+  },
+  "then": {
+    "required": ["assumptions", "interpretations_considered", "implementation_plan_path"]
+  },
   "properties": {
     "phase": {
       "type": "integer",

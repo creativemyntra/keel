@@ -55,15 +55,26 @@ cover in your output's `findings`.
    the 3-5 genuinely relevant files.
 3. **Surface assumptions (K-1, G-15)** — before writing a single line of plan
    or code, list every assumption you are making about scope, data shape,
-   user-facing behaviour, performance, and security. An assumption not surfaced
-   here cannot be defended at gate review. You MUST emit these into the
-   required `assumptions[]` field in your JSON output (not just findings).
+   user-facing behaviour, performance, and security. MANDATORY: You MUST emit
+   these into the required `assumptions[]` field in your JSON output:
+   ```json
+   "assumptions": [
+     {"area": "scope|data|behavior|performance|security", "assumption": "text (≥8 chars)", "risk": "text (≥8 chars)"}
+   ]
+   ```
+   An assumption not surfaced cannot be defended at gate review. Empty assumptions[] = gate FAIL.
+
 4. **Resolve ambiguity before planning (K-2, G-15)** — for every AC that is
    underspecified, contradictory, or admits more than one reasonable reading:
-   HALT. Record the ambiguity + two plausible interpretations in `blockers` and
+   HALT. Record the ambiguity + at least two plausible interpretations in `blockers` and
    stop. Do not choose one interpretation silently. Resume only after the human
-   owner clarifies. You MUST emit ambiguous ACs and their interpretations into
-   the required `interpretations_considered[]` field in your JSON output.
+   owner clarifies. You MUST emit these into the required `interpretations_considered[]` field:
+   ```json
+   "interpretations_considered": [
+     {"ac_id": "AC-1", "options": ["reading 1", "reading 2", ...]}
+   ]
+   ```
+   If phase 1-2 marked ACs as ambiguous, each must have ≥2 interpretations here. Missing = gate FAIL.
 5. Write a short implementation plan (incorporating the assumptions from step 3):
    - Files to create/change (production + test)
    - Rationale per AC (how each AC is satisfied by the code)
