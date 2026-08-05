@@ -70,6 +70,16 @@ mis-scoped phase-1 cascades through all subsequent phases.
 **Defect scope phases:** 1 -> 5 -> 6 -> 8 (skips UI design, BA elaboration,
 architecture, E2E, docs, release ceremony).
 
+## Pre-phase-3: Task breakdown (mandatory before ui-designer spawn)
+
+Before spawning the ui-designer agent for phase 3, run the task-breakdown skill:
+
+```bash
+/keel:task-breakdown <story-id>
+```
+
+This skill decomposes every AC into ordered, sized tasks with dependencies, producing `docs/plans/<STORY-ID>-task-breakdown.md`. The state engine gates phase 3 on this file's existence and validity (C-0009 check). The designer cannot start without it.
+
 ## Phase sequencing rules
 
 - **Phase 3 before phase 4**: UI designer produces screen specs FIRST; architect designs the API/DB to support them.

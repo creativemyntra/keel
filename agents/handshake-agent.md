@@ -40,6 +40,19 @@ paths exist on disk, and AC continuity against the phase-1 output
 (anti-drift). If it exits non-zero, the phase FAILs -- go straight to gating
 below with the script's error list as your findings.
 
+## Pre-phase-3 gate: Task breakdown validation (MANDATORY)
+
+Before the ui-designer phase runs, the task-breakdown must exist and be valid:
+
+1. **File existence**: `docs/plans/<STORY-ID>-task-breakdown.md` must exist.
+2. **Table format**: Must contain the header row `| # | Task | Size | Depends on | AC |`
+3. **Content**: At least 1 data row (non-header markdown table row).
+4. **AC coverage**: Every AC from phase 2 must appear in at least one task row.
+
+If the file is missing, empty (header-only), has wrong header, or drops an AC, the gate **FAILS** with the missing requirement quoted. The story cannot proceed to ui-designer phase without a complete task breakdown decomposing every AC.
+
+The state engine (C-0009 check) validates this automatically when gating phase 3.
+
 ## Verification depth (decide BEFORE running anything -- cost control)
 
 Full re-execution of everything at every gate measured ~50% of a story's

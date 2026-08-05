@@ -674,6 +674,96 @@ const checkRegistry = {
     return { id: 'C-0003', status: 'PASS', detail: 'test marker not set (normal operation)' };
   },
 
+  // C-0009 (T7): Task breakdown validation — phase 3 blocks unless task breakdown exists and is valid.
+  // Ensures every AC is decomposed into ordered tasks before design begins (K-0 thinking gate).
+  // Task breakdown file: docs/plans/<STORY-ID>-task-breakdown.md with table header and >= 1 data row.
+  // Status: SKIP if phase < 3, FAIL if phase 3 and file missing/invalid, PASS if valid.
+  task_breakdown_required: (storyId, phase, manifest) => {
+    // Only block phase 3 (ui-designer); other phases are not gated on task breakdown
+    if (phase !== 3) {
+      return { id: 'C-0009', status: 'SKIP', detail: 'task breakdown required only for phase 3 (UI design)' };
+    }
+
+    // Load phase 2 output to get AC list
+    const phase2File = fs.readdirSync(stateDir(storyId))
+      .find((f) => f.startsWith('02-') && f.endsWith('.json'));
+    if (!phase2File) {
+      return { id: 'C-0009', status: 'SKIP', detail: 'phase 2 output not found (cannot verify AC coverage)' };
+    }
+
+    let phase2Output;
+    try {
+      phase2Output = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phase2File), 'utf8'));
+    } catch {
+      return { id: 'C-0009', status: 'SKIP', detail: 'phase 2 output unreadable' };
+    }
+
+    const allACs = phase2Output.acceptance_criteria_ids || [];
+    if (allACs.length === 0) {
+      return { id: 'C-0009', status: 'SKIP', detail: 'no ACs in phase 2 output' };
+    }
+
+    // Task breakdown file is required
+    const breakdownFile = path.join('docs', 'plans', `${storyId}-task-breakdown.md`);
+    if (!fs.existsSync(breakdownFile)) {
+      return {
+        id: 'C-0009',
+        status: 'FAIL',
+        detail: `task breakdown required before design — file not found: ${breakdownFile}. Create with table: | # | Task | Size | Depends on | AC |`
+      };
+    }
+
+    // Validate file content: must have table header and >= 1 data row
+    const content = fs.readFileSync(breakdownFile, 'utf8');
+    const hasHeader = /\|\s*#\s*\|\s*Task\s*\|\s*Size\s*\|\s*Depends on\s*\|\s*AC\s*\|/i.test(content);
+    if (!hasHeader) {
+      return {
+        id: 'C-0009',
+        status: 'FAIL',
+        detail: `task breakdown table incomplete — missing required header: | # | Task | Size | Depends on | AC |`
+      };
+    }
+
+    // Count data rows (non-header lines starting with |, containing content)
+    const rows = content.split('\n').filter((line) => {
+      if (!line.includes('|')) return false;
+      // Skip header rows (containing #, Task, Size, Depends on, AC)
+      if (/Task|Size|Depends on|^[\s]*\|[\s]*-/i.test(line)) return false;
+      return line.trim().length > 2; // actual data row
+    });
+
+    if (rows.length === 0) {
+      return {
+        id: 'C-0009',
+        status: 'FAIL',
+        detail: `task breakdown table has no data rows — add >= 1 task with AC reference`
+      };
+    }
+
+    // Verify every AC appears in at least one task row
+    const missingACs = [];
+    for (const ac of allACs) {
+      const found = rows.some((row) => new RegExp(ac).test(row));
+      if (!found) {
+        missingACs.push(ac);
+      }
+    }
+
+    if (missingACs.length > 0) {
+      return {
+        id: 'C-0009',
+        status: 'FAIL',
+        detail: `task breakdown incomplete — these ACs not in task rows: ${missingACs.join(', ')}`
+      };
+    }
+
+    return {
+      id: 'C-0009',
+      status: 'PASS',
+      detail: `task breakdown valid: ${rows.length} task(s), all ${allACs.length} AC(s) covered`
+    };
+  },
+
   // C-0007 (T6): Design approval validation — phase 4 blocks unless phase 3 approved via GitHub PR.
   // Ensures UI/UX design is reviewed by a second human before architecture locks it in.
   // Approval is recorded on GitHub (server-side, unforgeable); hash detects if design changes post-approval.

@@ -420,6 +420,30 @@ enforcement was defect-only; this closes that gap). Feature scope may NOT
 skip the scope-creep check.
 ---
 
+## G-16 - Task breakdown (think-before-design)
+
+Every story must produce a task breakdown before design begins (pre-phase-3 gate).
+
+**Requirement:** Before spawning `keel:ui-designer` (phase 3), run `keel:task-breakdown <story-id>`.
+
+**Output:** `docs/plans/<STORY-ID>-task-breakdown.md` with markdown table:
+```
+| # | Task | Size | Depends on | AC |
+|---|------|------|-----------|-----|
+| 1 | ... | SM/MD/LG | ... | AC-1, AC-2 |
+```
+
+**Validation (C-0009 gate check):**
+- File exists, readable
+- Table has required header: `| # | Task | Size | Depends on | AC |`
+- At least 1 data row (no header-only files)
+- Every AC from phase 2 appears in ≥1 task row
+- If any check fails, phase 3 gates with FAIL reason
+
+**Enforcement:** The state engine (keel-state.cjs C-0009 check) blocks `gate --phase 3 --verdict PASS` if task breakdown is missing or incomplete. This ensures no user-facing story reaches design without decomposing all ACs into ordered, sized work.
+
+---
+
 ## Known Limitations (documented, not fixable mechanically)
 
 The following are acknowledged framework constraints. They are not bugs — each
