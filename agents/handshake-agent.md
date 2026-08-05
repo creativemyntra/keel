@@ -97,6 +97,33 @@ rules are hard boundaries, not suggestions:
    started_at>`; any incident in this phase's window not acknowledged by the
    phase output = FAIL.
 4. **Phase-specific gates:**
+   - **After software-engineer — K-0: Think-before-code (G-15, MANDATORY first):**
+     Before checking tests or coverage, verify that thinking artifacts are present
+     and valid. This gate runs BEFORE outcome checks so thinking is enforced, not
+     optional:
+     a. **K-1 Assumptions:** `assumptions[]` array is present with minItems 1.
+        Each assumption has `area` (scope|data|behavior|performance|security),
+        `assumption` text (min 8 chars), and `risk` (min 8 chars). A phase-5
+        output with empty assumptions = automatic FAIL.
+     b. **K-2 Interpretations:** `interpretations_considered[]` is an array.
+        For every AC that was flagged as ambiguous in phase 1-2 (upstream
+        blockers mentioning ambiguity), there must be a corresponding entry
+        with `ac_id` and `options[]` (minItems 2). Missing an interpretation
+        for an ambiguous AC = FAIL.
+     c. **K-3 Implementation Plan:** `implementation_plan_path` field is set
+        (string matching docs/plans/.*implementation-plan\.md). File must
+        exist, be >= 300 words, and contain required sections: "## Files to
+        change" and "## Test scenarios". Plan file absent, too thin, or
+        missing sections = FAIL.
+     d. **K-4 Scope-creep (for ALL scopes, not just defect):** Run `git diff --stat`.
+        For every changed file, verify it appears in the AC→implementation
+        mapping from the phase output. A file changed but not mapped to an AC
+        = unacknowledged scope. Record it in findings and FAIL the gate — do
+        not allow feature scope to skip this check (that was the v3.18 gap).
+        Procedure: extract all files referenced in findings/mappings; `git diff --stat`
+        should have no files outside that set. If it does, quote them and fail.
+     Any K-0 miss costs one attempt. Resume only after the engineer addresses
+     the thinking gap.
    - After software-engineer: test file(s) must appear in artifacts. Verify
      coverage >= 80% on changed lines is quoted in findings -- no number = FAIL.
      Run the test suite and confirm it passes. If the phase fixed a defect,
@@ -118,7 +145,8 @@ rules are hard boundaries, not suggestions:
      indicator. Surface it to the human and require explicit acknowledgment
      before issuing PASS — unacknowledged scope growth may warrant converting
      the story from defect to feature scope (which triggers the full 10-phase
-     pipeline, not the express lane).
+     pipeline, not the express lane). This check now applies to BOTH feature
+     and defect scope via the K-4 gate above.
    - After qa-engineer: re-confirm coverage >= 80% (software-engineer reported it; QA re-runs), and every AC mapped to a passing test.
    - After e2e-engineer: run `npx playwright test --list 2>&1` from the repo
      root and capture the listed test count. Compare to the finding count in

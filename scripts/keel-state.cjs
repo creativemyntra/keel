@@ -48,6 +48,7 @@ const KNOWN_FIELDS = [
   'phase', 'agent', 'story_id', 'confidence', 'findings', 'acceptance_criteria_ids',
   'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp', 'tokens_used',
   'design_review_checklist',  // T5: Phase 3 (UI designer) review checklist
+  'assumptions', 'interpretations_considered', 'implementation_plan_path',  // G-15: Phase 5 (software-engineer) thinking artifacts
 ];
 const MAX_ATTEMPTS = 3;
 const DEFAULT_MAX_GATES = 40;   // pipeline budget: total gate events per story (10 phases × 3 attempts + overhead)
@@ -517,6 +518,84 @@ function validatePhaseFile(storyId, fileName) {
         }
       });
     } catch (e) { errors.push(`cannot check AC continuity: ${e.message}`); }
+  }
+
+  // G-15: Karpathy Protocol enforcement (phase 5 / software-engineer)
+  // K-1: Surface assumptions before planning. K-2: Resolve ambiguities.
+  // K-3: Write implementation plan. Mandatory for phase 5.
+  if (out.phase === 5 && out.agent === 'software-engineer') {
+    // K-1: Assumptions required
+    if (!Array.isArray(out.assumptions) || out.assumptions.length < 1) {
+      errors.push('K-1 (G-15): assumptions[] required with minItems 1 — must surface assumptions before code');
+    } else {
+      out.assumptions.forEach((a, i) => {
+        if (!a.area || !['scope', 'data', 'behavior', 'performance', 'security'].includes(a.area)) {
+          errors.push(`K-1 assumptions[${i}].area must be one of: scope, data, behavior, performance, security`);
+        }
+        if (typeof a.assumption !== 'string' || a.assumption.length < 8) {
+          errors.push(`K-1 assumptions[${i}].assumption must be a string (min 8 chars)`);
+        }
+        if (typeof a.risk !== 'string' || a.risk.length < 8) {
+          errors.push(`K-1 assumptions[${i}].risk must be a string (min 8 chars)`);
+        }
+      });
+    }
+
+    // K-3: Implementation plan must exist and be substantial
+    if (typeof out.implementation_plan_path !== 'string' || !out.implementation_plan_path) {
+      errors.push('K-3 (G-15): implementation_plan_path required — must set path to docs/plans/<STORY-ID>-implementation-plan.md');
+    } else if (!fs.existsSync(out.implementation_plan_path)) {
+      errors.push(`K-3 (G-15): implementation plan file not found: ${out.implementation_plan_path}`);
+    } else {
+      try {
+        const planContent = fs.readFileSync(out.implementation_plan_path, 'utf8');
+        const wordCount = planContent.trim().split(/\s+/).length;
+        if (wordCount < 300) {
+          errors.push(`K-3 (G-15): implementation plan too thin (${wordCount} words, min 300) — add files to change, AC rationale, test scenarios, risks`);
+        }
+        // Check for required headings
+        const hasFilesHeading = /^#+ Files to change/m.test(planContent) || /^#+ Files to create\/change/m.test(planContent);
+        const hasTestHeading = /^#+ Test scenarios/m.test(planContent);
+        if (!hasFilesHeading) {
+          errors.push('K-3 (G-15): implementation plan must include "## Files to change" section');
+        }
+        if (!hasTestHeading) {
+          errors.push('K-3 (G-15): implementation plan must include "## Test scenarios" section');
+        }
+      } catch (e) {
+        errors.push(`K-3 (G-15): cannot read implementation plan: ${e.message}`);
+      }
+    }
+
+    // K-2: Interpretations for ambiguous ACs
+    if (!Array.isArray(out.interpretations_considered)) {
+      errors.push('K-2 (G-15): interpretations_considered must be an array');
+    } else {
+      out.interpretations_considered.forEach((interp, i) => {
+        if (!/^AC-[0-9]+$/.test(interp.ac_id)) {
+          errors.push(`K-2 interpretations[${i}].ac_id must match AC-<n> format`);
+        }
+        if (!Array.isArray(interp.options) || interp.options.length < 2) {
+          errors.push(`K-2 interpretations[${i}] for ${interp.ac_id} must have options[] with minItems 2`);
+        }
+      });
+      // If phase 1 marked ACs as ambiguous, verify they're in interpretations
+      if (phase1Name) {
+        try {
+          const p1 = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phase1Name), 'utf8'));
+          const ambiguousACs = (p1.blockers || [])
+            .filter(b => /ambiguous|interpretation|reading/i.test(b))
+            .map(b => b.match(/AC-[0-9]+/g) || [])
+            .flat();
+          ambiguousACs.forEach(acId => {
+            const hasInterp = out.interpretations_considered.some(i => i.ac_id === acId);
+            if (!hasInterp) {
+              errors.push(`K-2 (G-15): ${acId} marked ambiguous in phase 1 but no interpretations recorded`);
+            }
+          });
+        } catch (e) { /* phase 1 not readable — skip check */ }
+      }
+    }
   }
 
   return errors;

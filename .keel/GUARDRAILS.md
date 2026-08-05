@@ -383,30 +383,41 @@ has no standard type prefix. This is informational — no commits are blocked.
 ## G-15 - Karpathy Protocol (Assume Nothing, Change Nothing Extra)
 
 Four binding rules for every agent that reads requirements or writes code.
-A violation is a self-review finding; the handshake gate may spot-check any
-of the four rules. Gate FAIL = costs one attempt.
+Enforcement: the state engine validates K-1 and K-3 mechanically at phase 5
+(software-engineer); the handshake gate verifies all four. Gate FAIL = costs
+one attempt. K-1, K-2, K-3, and K-4 are MANDATORY, not discretionary spot-checks.
 
-**K-1 — Surface assumptions before starting**
+**K-1 — Surface assumptions before starting (MANDATORY, engine-checked)**
 Before any design or code: list every assumption about scope, data shape,
-behavior, performance, and security. Include the list in the phase output's
-`findings`. An assumption not surfaced is an untested risk.
+behavior, performance, and security. Emit the list into the required
+`assumptions[]` field in the phase-5 output JSON (minItems 1). Each assumption
+must have `area`, `assumption` text, and `risk`. Engine validates K-1 at
+`validate`; gate re-confirms it. An assumption not surfaced is an untested risk.
 
-**K-2 — Ask, don't guess**
+**K-2 — Ask, don't guess (MANDATORY, gate-verified)**
 When a requirement is ambiguous, underspecified, or contradicts a prior ADR:
 HALT. Record the ambiguity + at least two plausible interpretations in
-`blockers`. Do not pick one silently and proceed. The human owner resolves
-ambiguity; the agent does not.
+`blockers`. Emit them into the required `interpretations_considered[]` field
+for each ambiguous AC. Do not pick one silently and proceed. The handshake
+gate verifies every ambiguous AC from phase 1-2 has a corresponding
+interpretation entry. The human owner resolves ambiguity; the agent does not.
 
-**K-3 — Minimum code, zero speculation**
+**K-3 — Minimum code, zero speculation (MANDATORY, engine-checked + gate-verified)**
 Write the simplest code that satisfies every AC. No speculative abstractions,
 no unrequested generalizations, no "while I'm here" features. Each class,
 method, and parameter must trace to an AC. An element without a tracing AC
 is out-of-scope — remove it or record it as NON-BLOCKING for the human.
+Emit the `implementation_plan_path` field pointing to a 300+ word plan with
+required sections (Files to change, Test scenarios). Engine validates plan
+file exists; gate re-confirms.
 
-**K-4 — Surgical diff verification**
+**K-4 — Surgical diff verification (MANDATORY for ALL scope types, gate-verified)**
 After coding, run `git diff --stat`. For every changed file: confirm it is
 cited in the AC→implementation mapping. A file in the diff but absent from
 the mapping is unrequested scope — revert it or escalate before handoff.
+The handshake gate verifies K-4 for BOTH feature AND defect scope (prior
+enforcement was defect-only; this closes that gap). Feature scope may NOT
+skip the scope-creep check.
 ---
 
 ## Known Limitations (documented, not fixable mechanically)

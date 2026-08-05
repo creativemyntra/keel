@@ -56,12 +56,14 @@ cover in your output's `findings`.
 3. **Surface assumptions (K-1, G-15)** — before writing a single line of plan
    or code, list every assumption you are making about scope, data shape,
    user-facing behaviour, performance, and security. An assumption not surfaced
-   here cannot be defended at gate review.
+   here cannot be defended at gate review. You MUST emit these into the
+   required `assumptions[]` field in your JSON output (not just findings).
 4. **Resolve ambiguity before planning (K-2, G-15)** — for every AC that is
    underspecified, contradictory, or admits more than one reasonable reading:
    HALT. Record the ambiguity + two plausible interpretations in `blockers` and
    stop. Do not choose one interpretation silently. Resume only after the human
-   owner clarifies.
+   owner clarifies. You MUST emit ambiguous ACs and their interpretations into
+   the required `interpretations_considered[]` field in your JSON output.
 5. Write a short implementation plan (incorporating the assumptions from step 3):
    - Files to create/change (production + test)
    - Rationale per AC (how each AC is satisfied by the code)
@@ -70,6 +72,9 @@ cover in your output's `findings`.
    - E2E scenarios for the phase-7 e2e-engineer to cover
    - Assumptions (from step 3) and Risks
    Save it as `docs/plans/<STORY-ID>-implementation-plan.md` (artifact).
+   K-3 (G-15): The plan is now REQUIRED and will be validated for minimum
+   length (300 words) and required sections (Files to change, Test scenarios).
+   Set `implementation_plan_path` in your output JSON to the full path.
 
 ## Production code
 
@@ -131,6 +136,11 @@ Review your own diff (`git diff`) as a hostile reviewer:
   `@`-error-suppression.
 - Check the implementation plan -- every AC has implementation coverage.
 - Check test coverage -- >= 80% on changed lines, quoted in findings.
+- **K-1/K-2/K-3 Check (G-15, MANDATORY):** Before writing your output JSON:
+  verify that `assumptions[]` is non-empty, `interpretations_considered[]`
+  covers any ambiguous ACs, `implementation_plan_path` is set, and the plan
+  file exists with 300+ words and required headings. If any of these are
+  missing, do NOT hand off — the gate will FAIL and cost an attempt.
 
 ## Defect fixes (no patch development)
 
@@ -187,6 +197,28 @@ Before writing your phase output:
   ],
   "acceptance_criteria_ids": ["AC-1", "AC-2"],
   "decisions": ["Used Repository pattern instead of active-record -- better testability"],
+  "assumptions": [
+    {
+      "area": "data",
+      "assumption": "Subscription IDs are immutable UUIDs generated at creation",
+      "risk": "If IDs can change, all lookups and foreign keys become stale"
+    },
+    {
+      "area": "performance",
+      "assumption": "Payment processing API responds within 2 seconds",
+      "risk": "Timeouts on slow networks or API overload will fail the create flow"
+    }
+  ],
+  "interpretations_considered": [
+    {
+      "ac_id": "AC-1",
+      "options": [
+        "create() returns the created subscription resource immediately",
+        "create() returns only the subscription ID, full resource fetched separately"
+      ]
+    }
+  ],
+  "implementation_plan_path": "docs/plans/<STORY-ID>-implementation-plan.md",
   "artifacts": [
     "src/Service/SubscriptionService.php",
     "src/Controller/SubscriptionsController.php",
@@ -207,6 +239,9 @@ Before writing your phase output:
 - Every AC-id has implementation evidence in findings
 - Coverage >= 80% on changed lines quoted in findings
 - `docs/plans/<STORY-ID>-implementation-plan.md` exists
+- K-1 (G-15): `assumptions[]` array with minItems 1 in JSON output
+- K-2 (G-15): `interpretations_considered[]` for any ambiguous ACs
+- K-3 (G-15): `implementation_plan_path` field set + file exists + >= 300 words + has required sections
 
 ## Rules
 
