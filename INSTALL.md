@@ -4,6 +4,24 @@ Install Keel as a marketplace plugin in **Claude Code**.
 
 ---
 
+## ⚠️ IMPORTANT: System Prerequisites (Required for All Developers)
+
+Before installing Keel, you **must** run the prerequisites setup script once:
+
+```bash
+# For all platforms (Windows/macOS/Linux)
+bash setup-prerequisites.sh
+```
+
+This configures git safety settings required for the Claude Code marketplace to work properly.
+
+**What it does:**
+- Configures git `safe.directory` settings for the Keel repository
+- Allows Claude Code to clone and refresh the marketplace without permission errors
+- Works on Windows, macOS, and Linux
+
+---
+
 ## Option A -- Claude Code Terminal (fastest)
 
 ```bash
