@@ -469,6 +469,40 @@ Every story must produce a task breakdown before design begins (pre-phase-3 gate
 
 ---
 
+## G-18 - Red-first TDD for feature scope (feature tests before implementation)
+
+Every feature-scope story must prove tests FAIL before implementation begins (phase 5 red-check gate).
+
+**Requirement:** Software engineer writes unit tests FIRST (before any production code), runs them to confirm they fail, then writes implementation to make them pass.
+
+**Process (in phase 5):**
+1. Write test file(s) with tests that fail initially (describe feature, no implementation yet)
+2. Run red-check to prove tests fail:
+   ```bash
+   node ~/.keel/bin/keel-state.cjs red-check <story-id> --test <filter> --runner "vendor/bin/phpunit"
+   ```
+3. Commit test file(s) with the red-check.json artifact
+4. Write production code to make tests pass
+5. Verify `red-check.json` has `observed_red: true` before handoff
+
+**Exit codes:**
+- 0 = RED confirmed (test fails before implementation) — PASS
+- 1 = test passes without implementation — FAIL (rewrite test)
+- 3 = test runner not found — UNVERIFIABLE (install runner or specify --runner)
+
+**Validation (handshake gate):**
+- For feature-scope stories: `red-check.json` must exist and have `observed_red: true`
+- If missing or false, gate FAILS with requirement to re-run red-check
+- Defect-scope stories use revert-check instead (proves test fails without fix, passes with fix)
+
+**Policy:** Controlled by `.keel/economy.yml` settings:
+- `red_first_tdd.feature_tests_first: true` — enforce red-check (default)
+- `red_first_tdd.allow_waiver: false` — no human waiver without owner approval
+
+**Enforcement:** The handshake gate (phase 5→6 transition) blocks `gate --phase 5 --verdict PASS` if the story is feature-scope but lacks red-check proof. This prevents feature implementation from proceeding without proven test-first discipline.
+
+---
+
 ## Known Limitations (documented, not fixable mechanically)
 
 The following are acknowledged framework constraints. They are not bugs — each

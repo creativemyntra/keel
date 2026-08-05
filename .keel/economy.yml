@@ -19,6 +19,14 @@ economy:
 state_engine:
   lock_stale_seconds: 30
 
+# Red-first TDD (feature-scope enforcement, G-16).
+# feature_tests_first: OWNER DECISION to enforce tests FAIL before implementation.
+# Set true to require red-check observation before code handoff.
+# allow_waiver: if true, tests can be waived by human approval (default false = strict).
+red_first_tdd:
+  feature_tests_first: true
+  allow_waiver: false
+
 # Visual regression testing policy — pixel-to-pixel fidelity
 visual:
   enabled: true

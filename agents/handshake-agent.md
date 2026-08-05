@@ -133,22 +133,35 @@ rules are hard boundaries, not suggestions:
         state before this gate) is caught by the "file not found" check.
         Engine verifies: file exists + has all ACs covered.
      d. **K-4 Scope-creep (for ALL scopes, not just defect):** Run `git diff --stat`.
-        For every changed file, verify it appears in the AC→implementation
-        mapping from the phase output. A file changed but not mapped to an AC
-        = unacknowledged scope. Record it in findings and FAIL the gate — do
-        not allow feature scope to skip this check (that was the v3.18 gap).
-        Procedure: extract all files referenced in findings/mappings; `git diff --stat`
-        should have no files outside that set. If it does, quote them and fail.
+        For every changed file, verify it appears in BOTH:
+        (1) The implementation plan's "## Files to change" section (FIX-2 artifact), AND
+        (2) The AC→implementation mapping from the phase output (findings).
+        A file changed but absent from either list = unacknowledged scope-creep. 
+        FAIL the gate and quote the unlisted file(s). Applies to BOTH feature AND 
+        defect scope (prior versions only enforced defect scope; this closes the gap).
+        Procedure: 
+        - Extract "Files to change" from the implementation plan markdown
+        - Extract all files referenced in findings/AC mappings
+        - Run `git diff --stat` and verify every changed file is in both lists
+        - If any file is missing from either, FAIL with "unlisted change: <file>"
      Any K-0 miss costs one attempt. Resume only after the engineer addresses
      the thinking gap.
    - After software-engineer: test file(s) must appear in artifacts. Verify
      coverage >= 80% on changed lines is quoted in findings -- no number = FAIL.
-     Run the test suite and confirm it passes. If the phase fixed a defect,
-     `findings` must reference an RCA document -- open it and check the root
-     cause it names is what the diff actually changes (an RCA that describes
-     the symptom is not an RCA; best-effort judgment, say so when uncertain).
-     Then run the automated revert check -- the engine stashes the fix, proves
-     the regression test fails without it, and restores it:
+     Run the test suite and confirm it passes. 
+     
+     **Feature scope (red-first TDD gate, G-16):** Check the story's scope. If scope 
+     is feature (not defect), verify:
+     - `red-check.json` exists in `.keel/state/<story-id>/`
+     - `red-check.json` has `observed_red: true`
+     - If absent or false, gate FAILS with "red-check proof missing — tests must fail
+       before implementation. Re-run: `node ~/.keel/bin/keel-state.cjs red-check <story-id> --test <filter>`"
+     
+     **Defect scope:** If the phase fixed a defect, `findings` must reference an RCA 
+     document -- open it and check the root cause it names is what the diff actually 
+     changes (an RCA that describes the symptom is not an RCA; best-effort judgment, 
+     say so when uncertain). Then run the automated revert check -- the engine stashes 
+     the fix, proves the regression test fails without it, and restores it:
      ```
      node ~/.keel/bin/keel-state.cjs revert-check <story-id> --test <filter> --runner "vendor/bin/phpunit"
      ```

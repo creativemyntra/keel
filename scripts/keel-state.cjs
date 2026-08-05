@@ -1300,6 +1300,75 @@ const checkRegistry = {
       detail: `agent coverage claim matches engine measurement`
     };
   },
+
+  // C-0013 (G-18): Red-first TDD enforcement for feature-scope stories.
+  // Blocks PASS on phase 5 (software-engineer) if scope is feature but red-check proof is missing or false.
+  // Ensures tests FAIL before implementation (red-first discipline).
+  // Status: SKIP if defect scope or not phase 5, PASS if feature scope with observed_red: true, FAIL if missing/false.
+  red_check_feature_scope: (storyId, phase, manifest) => {
+    // Only check phase 5 (software-engineer)
+    if (phase !== 5) {
+      return { id: 'C-0013', status: 'SKIP', detail: 'red-check enforcement required for phase 5 only' };
+    }
+
+    // Check if story scope is feature (not defect)
+    if (!manifest.scope || manifest.scope !== 'feature') {
+      return { id: 'C-0013', status: 'SKIP', detail: `defect-scope stories use revert-check instead (scope: ${manifest.scope})` };
+    }
+
+    // Check economy.yml to see if red-first TDD is enabled
+    let economyEnabled = true;
+    try {
+      const economyPath = path.join(process.cwd(), '.keel', 'economy.yml');
+      if (fs.existsSync(economyPath)) {
+        const economyContent = fs.readFileSync(economyPath, 'utf8');
+        // Simple check: if feature_tests_first: true is in the file, it's enabled
+        economyEnabled = /feature_tests_first\s*:\s*true/.test(economyContent);
+      }
+    } catch {
+      // If we can't read economy.yml, assume it's enabled
+      economyEnabled = true;
+    }
+
+    if (!economyEnabled) {
+      return { id: 'C-0013', status: 'SKIP', detail: 'red-check enforcement disabled in economy.yml' };
+    }
+
+    // Check for red-check.json with observed_red: true
+    const redCheckPath = path.join(stateDir(storyId), 'red-check.json');
+    if (!fs.existsSync(redCheckPath)) {
+      return {
+        id: 'C-0013',
+        status: 'FAIL',
+        detail: `red-check proof missing for feature-scope story. Run: node ~/.keel/bin/keel-state.cjs red-check ${storyId} --test <filter> --runner "vendor/bin/phpunit"`
+      };
+    }
+
+    let redCheck;
+    try {
+      redCheck = JSON.parse(fs.readFileSync(redCheckPath, 'utf8'));
+    } catch {
+      return {
+        id: 'C-0013',
+        status: 'FAIL',
+        detail: 'red-check.json exists but is not valid JSON'
+      };
+    }
+
+    if (redCheck.observed_red !== true) {
+      return {
+        id: 'C-0013',
+        status: 'FAIL',
+        detail: `red-check did not observe test failure before implementation. Tests must FAIL before implementation begins. Re-run: node ~/.keel/bin/keel-state.cjs red-check ${storyId} --test <filter>`
+      };
+    }
+
+    return {
+      id: 'C-0013',
+      status: 'PASS',
+      detail: 'red-check confirms tests fail before implementation (red-first TDD verified)'
+    };
+  },
 };
 
 function runChecks(storyId, phase, manifest) {
@@ -1924,6 +1993,53 @@ function cmdRevertCheck(storyId, args) {
     die(1, `FAIL: the regression test fails even WITH the fix applied — the fix is incomplete or the test is broken.`);
   }
   console.log('PASS: regression test fails without the fix and passes with it — the test proves the fix.');
+}
+
+// Red-check: feature-scope red-first TDD enforcement
+// Proves tests FAIL before implementation (red-first development).
+// Exit codes: 0 = RED confirmed, 1 = test passed (bad), 3 = unverifiable (runner not found)
+function cmdRedCheck(storyId, args) {
+  readManifest(storyId);
+  const testArg = flag(args, '--test');
+  const runner = flag(args, '--runner') || 'vendor/bin/phpunit';
+  if (!testArg) die(64, 'usage: red-check <story-id> --test <filter-or-path> [--runner "vendor/bin/phpunit"]');
+  const { execSync } = require('child_process');
+
+  let testsPassed = false;
+  let runnerError = null;
+
+  try {
+    execSync(`${runner} ${testArg}`, { stdio: 'pipe' });
+    testsPassed = true;
+  } catch (e) {
+    // Check if the error is due to runner not found
+    if (e.code === 'ENOENT' || e.status === 127 || e.message.includes('not found') || e.message.includes('No such file')) {
+      runnerError = `${runner}`;
+      die(3, `UNVERIFIABLE: test runner '${runner}' not found on PATH. Install it or specify --runner <path>`);
+    }
+    // Otherwise, it's a test failure (exit code != 0), which is what we want
+    testsPassed = false;
+  }
+
+  const redCheckResult = {
+    ts: nowIso(),
+    runner: runner,
+    test: testArg,
+    observed_red: !testsPassed,  // true if test failed (red), false if passed
+  };
+
+  fs.writeFileSync(path.join(stateDir(storyId), 'red-check.json'),
+    JSON.stringify(redCheckResult, null, 2) + '\n');
+
+  appendAudit(storyId, {
+    agent: 'engine', action: 'red_check',
+    notes: `test="${testArg}" runner="${runner}" observed_red=${!testsPassed}`,
+  });
+
+  if (testsPassed) {
+    die(1, `FAIL: test suite PASSED before implementation — the test does not prove the feature. Rewrite the test so it fails without the feature implementation.`);
+  }
+  console.log('PASS: test suite fails before implementation (RED confirmed) — ready for implementation.');
 }
 
 // Static-first security prescan: run every applicable deterministic scanner
@@ -3070,6 +3186,7 @@ switch (cmd) {
   case 'verify': cmdVerify(storyId); break;
   case 'resume': cmdResume(storyId, rest); break;
   case 'revert-check': cmdRevertCheck(storyId, rest); break;
+  case 'red-check': cmdRedCheck(storyId, rest); break;
   case 'prescan': cmdPrescan(storyId); break;
   case 'phase-mode': cmdPhaseMode([storyId, ...rest]); break;
   case 'token-ledger': cmdTokenLedger([storyId, ...rest]); break;

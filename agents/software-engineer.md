@@ -76,12 +76,15 @@ cover in your output's `findings`.
    ```
    If phase 1-2 marked ACs as ambiguous, each must have ≥2 interpretations here. Missing = gate FAIL.
 5. Write a short implementation plan (incorporating the assumptions from step 3):
-   - Files to create/change (production + test)
+   - **Files to create/change** (production + test) — this is the declared touch-set (K-4, G-15)
+     EVERY file you will edit or create MUST be listed here with rationale. After you 
+     write code, `git diff --stat` must show ONLY files from this list — no surprises.
    - Rationale per AC (how each AC is satisfied by the code)
    - Test scenarios per AC: happy path, error paths, edge cases
    - Impact-analysis retest list
    - E2E scenarios for the phase-7 e2e-engineer to cover
    - Assumptions (from step 3) and Risks
+   
    Save it as `docs/plans/<STORY-ID>-implementation-plan.md` (artifact).
    K-3 (G-15): The plan is MANDATORY. Gate will validate:
    - File exists on disk (not just listed in artifacts)
@@ -90,6 +93,12 @@ cover in your output's `findings`.
    - Every AC appears in the plan (per-AC rationale or test section)
    Missing any of these → gate FAIL, blocks code handoff.
    MUST set `implementation_plan_path` in your output JSON to the full path.
+   
+   **K-4 Scope-creep enforcement:** After implementation, the handshake gate runs 
+   `git diff --stat` and verifies every changed file is in the plan's "## Files to change" 
+   section AND in your AC→implementation mappings. A file changed but not declared 
+   in the plan = FAIL "unlisted change: <file>". This applies to feature-scope 
+   stories too (not just defects). Declare your touch-set BEFORE coding.
 
 ## Production code
 
@@ -157,6 +166,21 @@ Review your own diff (`git diff`) as a hostile reviewer:
   file exists with 300+ words and required headings. If any of these are
   missing, do NOT hand off — the gate will FAIL and cost an attempt.
 
+## Feature implementation (red-first TDD enforcement, G-16)
+
+For feature-scope stories (not defect fixes):
+
+1. Write unit tests FIRST that describe the feature behavior — tests must fail initially.
+2. Run `node ~/.keel/bin/keel-state.cjs red-check <story-id> --test <filter> --runner "vendor/bin/phpunit"` to prove tests fail before implementation.
+3. Commit the test file(s) and the red-check.json artifact proof.
+4. THEN write the production code to make tests pass.
+5. Before handoff, verify `red-check.observed_red: true` in the red-check.json artifact.
+
+Red-check exit codes:
+- 0 (PASS): tests fail before implementation (red confirmed, ready to code)
+- 1 (FAIL): tests pass without implementation (bad test, rewrite it)
+- 3 (UNVERIFIABLE): test runner not found (install or specify --runner)
+
 ## Defect fixes (no patch development)
 
 A bug fix must target the root cause:
@@ -165,7 +189,8 @@ A bug fix must target the root cause:
    if missing. Reference its path in `findings`.
 2. Write a regression test first that **fails** without the fix (proves the fix
    guards the root cause). Then write the fix. Confirm the test now passes.
-3. A change that silences the symptom while leaving the cause is a patch --
+3. Run `node ~/.keel/bin/keel-state.cjs revert-check <story-id> --test <filter> --runner "vendor/bin/phpunit"` to prove the test fails without the fix and passes with it.
+4. A change that silences the symptom while leaving the cause is a patch --
    do not ship it. Gates will fail it.
 
 ## Self-audit (last step, non-negotiable)

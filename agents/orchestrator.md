@@ -80,6 +80,28 @@ Before spawning the ui-designer agent for phase 3, run the task-breakdown skill:
 
 This skill decomposes every AC into ordered, sized tasks with dependencies, producing `docs/plans/<STORY-ID>-task-breakdown.md`. The state engine gates phase 3 on this file's existence and validity (C-0009 check). The designer cannot start without it.
 
+## Pre-phase-5: Think-preflight (mandatory before software-engineer spawn)
+
+Before spawning the software-engineer agent for phase 5, run the think-preflight check:
+
+```bash
+node ~/.keel/bin/keel-state.cjs think-preflight <story-id>
+```
+
+This check validates that all prerequisites for implementation are complete:
+1. **Phase 1 (product-owner)** output exists → spec confirmed
+2. **Phase 2 (business-analyst)** output exists → requirements elaborated
+3. **Task-breakdown artifact** exists and is valid (FIX-1) → all ACs decomposed into tasks
+4. **For vague/ambiguous stories**: phases 3-4 (UI design + architecture) exist → design approved before implementation
+
+Exit codes:
+- 0 = PASS — all prerequisites met, ready to spawn software-engineer
+- 1 = FAIL — missing blocker(s); surface the list and HALT (do not spawn software-engineer)
+
+**Orchestrator enforcement:** If think-preflight exits non-zero, halt the pipeline immediately and surface the missing artifacts to the human. Do NOT proceed to phase 5.
+
+**Anti-fake probe:** A story advanced to phase 5 without task-breakdown → think-preflight blocks (cannot be waived by agents).
+
 ## Phase sequencing rules
 
 - **Phase 3 before phase 4**: UI designer produces screen specs FIRST; architect designs the API/DB to support them.
