@@ -87,3 +87,4 @@ docs/e2e-evidence/
 # Playwright screenshots dropped at repo root by MCP tool (session artifacts only)
 e2e-*.png
 .playwright-mcp/
+.env.mcp

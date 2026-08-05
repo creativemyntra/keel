@@ -703,8 +703,8 @@ node bin/keel.js --help
 
 ---
 
-**Version:** 3.18.0  
-**Released:** 2026-08-03  
+**Version:** 3.18.1  
+**Released:** 2026-08-05  
 **Status:** PRODUCTION READY  
 **Agents:** 15 (10 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  

@@ -45,15 +45,22 @@ jobs:
           echo "tag=v$VERSION"     >> "$GITHUB_OUTPUT"
           echo "Releasing version: $VERSION"
 
-      - name: Validate plugin.json version matches tag
+      - name: RELEASE MANAGER GATE - Comprehensive Version Audit
         run: |
-          PLUGIN_VERSION=$(node -p "require('./.claude-plugin/plugin.json').version")
-          TAG_VERSION="${{ steps.version.outputs.version }}"
-          if [ "$PLUGIN_VERSION" != "$TAG_VERSION" ]; then
-            echo "❌ plugin.json version ($PLUGIN_VERSION) does not match tag ($TAG_VERSION)"
+          echo "═══════════════════════════════════════════════════════"
+          echo "RELEASE MANAGER ENFORCEMENT: Comprehensive Version Audit"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""
+          node scripts/version-audit-comprehensive.cjs
+          if [ $? -ne 0 ]; then
+            echo ""
+            echo "❌ RELEASE BLOCKED: Version audit failed"
+            echo "   Release manager must fix all version mismatches before proceeding"
             exit 1
           fi
-          echo "✅ Version match: $PLUGIN_VERSION"
+          echo ""
+          echo "✅ RELEASE APPROVED: All 11 version files match"
+          echo "   Ready to proceed with build and distribution"
 
   # ─────────────────────────────────────────────
   # 2. Build plugin bundle (.plugin zip)
@@ -112,6 +119,54 @@ jobs:
           name: plugin-bundle
           path: dist/
 
+      - name: TAG CREATION GUARD - Validate All Versions Before Release
+        run: |
+          echo "═══════════════════════════════════════════════════════"
+          echo "TAG VALIDATION: Ensuring all 11 version files match"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""
+          node scripts/validate-tag-creation.cjs ${{ needs.prepare.outputs.tag }}
+          if [ $? -ne 0 ]; then
+            echo ""
+            echo "❌ TAG VALIDATION FAILED"
+            echo "   Release blocked: Version mismatches found"
+            echo "   This is a critical gate - all 11 files must match before release"
+            exit 1
+          fi
+          echo ""
+          echo "✅ TAG VALIDATION PASSED"
+          echo "   All 11 critical files match the release version"
+          echo "   Safe to proceed with GitHub release"
+
+      - name: RELEASE NOTES VALIDATION - Verify CHANGELOG Entry
+        run: |
+          echo "═══════════════════════════════════════════════════════"
+          echo "RELEASE NOTES VALIDATION: Checking CHANGELOG.md"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""
+          VERSION="${{ needs.prepare.outputs.version }}"
+          echo "Looking for: ## [$VERSION]"
+          echo ""
+
+          # Check if CHANGELOG entry exists
+          if grep -q "^## \[$VERSION\]" CHANGELOG.md; then
+            echo "✅ CHANGELOG.md entry found for v$VERSION"
+            echo ""
+          else
+            echo "❌ CHANGELOG.md entry NOT FOUND for v$VERSION"
+            echo ""
+            echo "Release BLOCKED: CHANGELOG.md must have an entry for this version"
+            echo ""
+            echo "Required format in CHANGELOG.md:"
+            echo "## [$VERSION]"
+            echo "### Added"
+            echo "- Feature description"
+            echo "### Fixed"
+            echo "- Bug fix description"
+            echo ""
+            exit 1
+          fi
+
       - name: Extract changelog for this version
         id: changelog
         run: |
@@ -157,20 +212,51 @@ jobs:
           make_latest: ${{ !contains(needs.prepare.outputs.version, '-') }}
 
   # ─────────────────────────────────────────────
-  # 4. Notify on failure
+  # 4. Post-Release Verification
+  # ─────────────────────────────────────────────
+  verify-release:
+    name: Verify Release Artifacts
+    runs-on: ubuntu-latest
+    needs: [prepare, github-release]
+    if: needs.github-release.result == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: POST-RELEASE VERIFICATION - Verify All Artifacts
+        run: |
+          echo "═══════════════════════════════════════════════════════"
+          echo "POST-RELEASE VERIFICATION: Checking distributed artifacts"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""
+          node scripts/verify-release-artifacts.cjs ${{ needs.prepare.outputs.tag }}
+          if [ $? -ne 0 ]; then
+            echo ""
+            echo "⚠️  POST-RELEASE VERIFICATION FAILED"
+            echo "   Some artifacts may have version mismatches"
+            echo "   Manual verification may be needed"
+            exit 1
+          fi
+
+  # ─────────────────────────────────────────────
+  # 5. Notify on failure
   # ─────────────────────────────────────────────
   notify-failure:
     name: Notify on Failure
     runs-on: ubuntu-latest
-    needs: [github-release]
-    if: always() && needs.github-release.result == 'failure'
+    needs: [github-release, verify-release]
+    if: always() && (needs.github-release.result == 'failure' || needs.verify-release.result == 'failure')
     steps:
       - name: Post failure summary
         run: |
           echo "## ❌ Release Failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "GitHub Release job failed. Check the job logs above." >> $GITHUB_STEP_SUMMARY
+          echo "Release workflow encountered failures. Check the job logs above." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| GitHub Release | ${{ needs.github-release.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Post-Release Verification | ${{ needs.verify-release.result }} |" >> $GITHUB_STEP_SUMMARY
