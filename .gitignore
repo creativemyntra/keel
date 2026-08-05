@@ -1,8 +1,7 @@
-# Dependencies
+﻿# Dependencies
 /vendor/
 composer.lock
 node_modules/
-package-lock.json
 yarn.lock
 
 # Environment variables (never commit secrets)
@@ -12,6 +11,17 @@ yarn.lock
 
 # Security scan artifacts (never commit — may contain finding context)
 gitleaks-report.json
+
+# Defect RCAs — security-sensitive, developer-local only
+# Generate locally; store in Jira/Confluence, not in this repo.
+docs/defects/
+
+# CJIS incident log — contains incident IDs + category hashes, never commit
+.keel/security/
+
+# Prescan raw output — may contain CVE names/vulnerability details
+# Findings summary is captured in audit-log.jsonl (committed); raw output stays local
+.keel/**/prescan.json
 
 # IDE & Editor
 .vscode/
@@ -49,7 +59,10 @@ Thumbs.db
 # Project-specific
 # NOTE: .keel/state/ and .keel/memory/ are deliberately COMMITTED — git history
 # is the pipeline's audit trail. Never add them here.
-.keel/watch/
+# .keel/watch/baseline.json is deliberately COMMITTED — shared coverage baseline
+# for trend tracking across the team. All other watch/ artifacts stay local.
+.keel/watch/*
+!.keel/watch/baseline.json
 
 # Generated files (should be committed for framework, but not for user projects)
 # Keep these in keel:
@@ -62,3 +75,15 @@ Thumbs.db
 # Test/browser scratch output
 .playwright-mcp/
 test-results/
+playwright-report/
+
+# E2E visual baselines are COMMITTED — they are the source of truth
+# NOTE: tests/e2e/__screenshots__/ is deliberately NOT ignored
+# It contains baseline PNG snapshots per viewport and project name
+
+# E2E evidence — machine-specific stdout snapshots with absolute tmp paths.
+# Tests themselves are the evidence; these files add noise and stale faster than CI runs.
+docs/e2e-evidence/
+# Playwright screenshots dropped at repo root by MCP tool (session artifacts only)
+e2e-*.png
+.playwright-mcp/

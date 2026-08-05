@@ -21,15 +21,48 @@ const path = require('path');
 const KEEL_HOME = process.env.KEEL_HOME || path.join(os.homedir(), '.keel');
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
 
+const __t0 = Date.now();
+function __logTiming(label) {
+  // Diagnostic for the "agent spawn takes 45-60s" report (remediation plan
+  // follow-up, 2026-07-20): every SessionStart hook fires on EVERY phase
+  // spawn if each phase is a fresh session. This writes elapsed-ms to
+  // ~/.keel/timing.log so a slow run can be attributed to a specific step
+  // instead of guessed at. Safe to ignore/delete the log; adds <1ms overhead.
+  try {
+    fs.appendFileSync(path.join(KEEL_HOME, 'timing.log'),
+      `${new Date().toISOString()} keel-init ${label} +${Date.now() - __t0}ms\n`);
+  } catch { /* never break the session over a timing log */ }
+}
+
 try {
   // 1+2: every session — engine install + plugin-root record
   const binDir = path.join(KEEL_HOME, 'bin');
   fs.mkdirSync(binDir, { recursive: true });
-  for (const script of ['keel-state.cjs', 'keel-watch.cjs', 'build-codegraph.cjs', 'keel-classify-gate.cjs']) {
+  for (const script of ['keel-state.cjs', 'keel-watch.cjs', 'build-codegraph.cjs', 'keel-classify-gate.cjs', 'keel-detect-stack.cjs']) {
     const src = path.join(PLUGIN_ROOT, 'scripts', script);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(binDir, script));
   }
+  // Fix for audit finding F-08: keel-classify-gate.cjs is copied to binDir
+  // above (so agents can invoke it via the same "stable path" convention as
+  // the other engine scripts), but it also needs its pattern-config file
+  // reachable from that copied location -- previously nothing staged it
+  // there, so a copy-path invocation fail-closed-blocked on ENOENT. Stage the
+  // config next to KEEL_HOME (not next to binDir) since that is what the
+  // patched resolvePatternsFile() in keel-classify-gate.cjs now checks.
+  const cfgDir = path.join(KEEL_HOME, 'config');
+  fs.mkdirSync(cfgDir, { recursive: true });
+  const patternsSrc = path.join(PLUGIN_ROOT, 'config', 'cjis-patterns.json');
+  if (fs.existsSync(patternsSrc)) fs.copyFileSync(patternsSrc, path.join(cfgDir, 'cjis-patterns.json'));
+  const injectionSrc = path.join(PLUGIN_ROOT, 'config', 'injection-patterns.json');
+  if (fs.existsSync(injectionSrc)) fs.copyFileSync(injectionSrc, path.join(cfgDir, 'injection-patterns.json'));
+  const projectOverlaySrc = path.join(PLUGIN_ROOT, 'config', 'cjis-project-patterns.json');
+  if (fs.existsSync(projectOverlaySrc)) fs.copyFileSync(projectOverlaySrc, path.join(cfgDir, 'cjis-project-patterns.json'));
+  // Stage agent-output-schema.json so agents can resolve it from KEEL_HOME
+  // without requiring CLAUDE_PLUGIN_ROOT to be set (F-01 from init audit).
+  const schemaSrc = path.join(PLUGIN_ROOT, 'agent-output-schema.json');
+  if (fs.existsSync(schemaSrc)) fs.copyFileSync(schemaSrc, path.join(cfgDir, 'agent-output-schema.json'));
   fs.writeFileSync(path.join(KEEL_HOME, 'plugin-root'), PLUGIN_ROOT + '\n');
+  __logTiming('engine-and-config-staged');
   // CJIS gate health-check — visibility only, cannot block session start.
   try {
     const gateOk = fs.existsSync(path.join(PLUGIN_ROOT, 'scripts', 'keel-classify-gate.cjs'))
@@ -103,6 +136,21 @@ snyk:
     console.log(`Keel: initialized ${KEEL_HOME} (config + secrets + engine installed to ~/.keel/bin)`);
     console.log('Keel: run /keel:setup to configure integrations (Jira, GitHub, Playwright, Slack, SonarQube, Snyk) — or skip it, defaults work out of the box');
   }
+  // Re-seed .keel/memory files every session if absent (agents read them at startup — ENOENT = crash per G-7).
+  try {
+    const memDir = path.join(process.cwd(), '.keel', 'memory');
+    if (fs.existsSync(memDir)) {
+      const ts = new Date().toISOString().slice(0, 10);
+      const ensureMemFile = (file, header) => {
+        if (!fs.existsSync(file)) {
+          fs.writeFileSync(file, `${header}\n\nRecovered ${ts} by keel-init (previous entries lost — check git history).\n`);
+          console.error(`Keel: WARNING: ${path.basename(file)} was missing and has been re-seeded. Recover history from git.`);
+        }
+      };
+      ensureMemFile(path.join(memDir, 'lessons.md'), '# Keel Lessons (incident-derived)');
+      ensureMemFile(path.join(memDir, 'conventions.md'), '# Project Conventions');
+    }
+  } catch { /* never break session start */ }
 } catch (e) {
   // never break session start
   console.error(`keel-init warning: ${e.message}`);

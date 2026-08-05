@@ -1,22 +1,32 @@
 {
   "name": "@amarsingh/keel",
-  "version": "3.16.0",
+  "version": "3.18.0",
   "description": "Keel AI-SDLC Framework - Complete AI-powered software development lifecycle automation",
   "type": "module",
   "main": "bin/keel.js",
   "bin": {
-    "keel": "./bin/keel.js"
+    "keel": "bin/keel.js"
   },
   "scripts": {
     "postinstall": "node scripts/setup-git-safe-dirs.cjs || true",
     "start": "node ./bin/keel.js",
-    "test": "npm run test:engine",
+    "test": "npm run test:engine && npm run test:phase-drift && npm run test:gate && npm run test:watch && npm run test:halt && npm run test:checks && npm run test:audit && npm run test:agent-e2e && npm run test:yaml",
     "test:engine": "node scripts/test-keel-state.cjs",
+    "test:phase-drift": "node scripts/test-phase-drift.cjs",
+    "test:gate": "node scripts/test-classify-gate.cjs",
+    "test:watch": "node scripts/test-keel-watch.cjs",
+    "test:halt": "node scripts/test-halt-message-paths.cjs",
+    "test:checks": "node scripts/test-gate-checks.cjs",
+    "test:audit": "node scripts/test-audit-log-integrity.cjs",
+    "test:agent-e2e": "node scripts/test-agent-e2e.cjs",
+    "test:yaml": "node scripts/test-yaml-parser-correctness.cjs",
+    "test:e2e": "playwright test",
     "test:legacy": "npm run test:unit && npm run test:integration",
     "test:unit": "jest tests/unit --coverage",
     "test:integration": "jest tests/integration",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:e2e": "playwright test"
   },
   "keywords": [
     "ai-sdlc",
@@ -37,13 +47,13 @@
   "homepage": "https://github.com/creativemyntra/keel",
   "repository": {
     "type": "git",
-    "url": "https://github.com/creativemyntra/keel.git"
+    "url": "git+https://github.com/creativemyntra/keel.git"
   },
   "bugs": {
     "url": "https://github.com/creativemyntra/keel/issues"
   },
   "engines": {
-    "node": ">=16.0.0",
+    "node": ">=18.0.0",
     "npm": ">=7.0.0"
   },
   "dependencies": {
@@ -53,6 +63,7 @@
     "dotenv": "^16.3.1",
     "fs-extra": "^11.2.0",
     "inquirer": "^8.2.5",
+    "js-yaml": "^4.1.0",
     "ora": "^7.0.1",
     "path-exists": "^5.0.0",
     "yaml": "^2.3.4"
@@ -72,10 +83,18 @@
     "skills/",
     "hooks/",
     "scripts/",
+    "config/",
+    "stack-profiles/",
+    "docs/",
     ".mcp.json",
     "agent-output-schema.json",
     "setup-integrations.sh",
     "action.yml",
+    "INSTALL.md",
+    "QUICK-START-CLAUDE-CODE.md",
+    "ALL-AGENTS-COMPLETE-GUIDE.md",
+    "TECHNICAL-SPECIFICATIONS.md",
+    "CHANGELOG.md",
     "LICENSE",
     "README.md"
   ],

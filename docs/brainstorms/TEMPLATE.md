@@ -165,14 +165,14 @@ Concepts that pass the gate for Phase 2 requirement elicitation:
 - Tech feasibility acceptable (7/10)
 - Risks resolvable in design phase
 - Estimated effort: 5-8 sprints
-- **Next Step:** Schedule req-agent for detailed requirements (target: KEEL-42)
+- **Next Step:** Schedule req-agent for detailed requirements.
 
 #### 2. Concept 4: [Name] — Score: 7.3/10
 **Recommendation:** ✓ **APPROVED for Phase 2 (req-agent), lower priority**
 - Strong user impact (8/10) + business value (9/10)
 - Tech feasibility concern (5/10) — requires design validation
 - Estimated effort: 8-10 sprints
-- **Next Step:** Queue for Phase 2 after top candidate (target: KEEL-50, Sprint N+2)
+- **Next Step:** Queue for Phase 2 after top candidate (Sprint N+2)
 
 ---
 
@@ -197,17 +197,13 @@ Concepts not recommended for immediate Phase 2 intake:
 
 ---
 
-## Feature Concept Cards (Top Candidates)
+## Handoff Brief: Top Candidate(s)
 
-For each top-candidate concept, sketch a rough feature outline ready for req-agent handoff.
+Sketch a rough feature outline for each approved concept — req-agent picks this up at intake.
 
 ---
 
-### Top Candidate 1: [Concept Name]
-
-**Feature Name:** [Formal name for backlog]
-
-**Feature ID (Placeholder):** [To be assigned by PM: KEEL-XX]
+### [Concept Name]
 
 **User Story (Rough):**
 ```
@@ -216,65 +212,26 @@ I want to [action/capability],
 so that [value/outcome achieved]
 ```
 
-**Problem Solved:**
-[Link back to problem statement and which pain point this addresses]
+**Problem Solved:** [Which pain point from the problem statement this addresses]
 
 **Rough Acceptance Criteria:**
-[High-level feature checklist; req-agent will expand to full BDD scenarios]
 - [ ] AC1: [Happy path outcome]
 - [ ] AC2: [Error handling]
 - [ ] AC3: [Edge case]
 
-**Data Entities Involved:**
-[List 2-4 entities that need creation/modification]
+**Data Entities:**
 - [Entity 1: description]
 - [Entity 2: description]
 
 **External Integrations:**
-- [Service 1: description of integration point]
-- [Service 2: description]
+- [Service 1: integration point]
 
-**Dependencies (Blocking):**
-- [KEEL-10: User Auth System] — must be complete
-- [KEEL-11: Notification Framework] — should be ready, can fall back to manual
-
-**Technical Risks to Resolve in Design Phase (Phase 3):**
-1. [Risk 1: description, why it matters]
-2. [Risk 2: description]
+**Technical Risks for Design Phase:**
+1. [Risk 1: why it needs resolution before coding starts]
+2. [Risk 2]
 
 **Estimated Complexity:** [Small | Medium | Large]
-- Small: <2 sprints, <5 story points, low risk
-- Medium: 2-4 sprints, 5-13 story points, moderate risk
-- Large: 4+ sprints, 13+ story points, high risk or many unknowns
-
-**Estimated Effort (Phase 2+):**
-- Requirement refinement (req-agent): 1-2 days
-- Design & API spec (design-agent): 2-3 days
-- Implementation (dev-agent): [3-10 sprints]
-- Testing (test-agent): 1-2 sprints
-- **Total:** [weeks or sprints]
-
-**Recommended Next Steps:**
-1. ✓ Brainstorm complete (this document)
-2. → Schedule req-agent for detailed requirements (target date: [DATE])
-3. → Create Jira epic + story (PM assigns KEEL-XX)
-4. → Design phase (Phase 3): API contract, database schema, architecture
-5. → Development (Phase 4): implementation + automated tests
-6. → Release (Phase 5): staged rollout + monitoring
-
-**Success Metrics (Phase 5+ Measurement):**
-[Link to problem statement success criteria]
-- [Metric 1: target]
-- [Metric 2: target]
-
-**Notes:**
-[Any additional context, stakeholder requests, open questions]
-
----
-
-### Top Candidate 2: [Concept Name]
-
-[Repeat structure from Top Candidate 1]
+- Small: <2 sprints — Medium: 2–4 sprints — Large: 4+ sprints
 
 ---
 
@@ -313,8 +270,8 @@ Document key assumptions — if any prove false, brainstorm output needs rework.
 ### Recommended Path Forward
 
 1. ✓ **Approve Top Candidates** for Phase 2 requirement elicitation
-   - Concept 1: [Name] — Priority 1 (KEEL-42)
-   - Concept 4: [Name] — Priority 2 (KEEL-50)
+   - Concept 1: [Name] — Priority 1
+   - Concept 4: [Name] — Priority 2
 
 2. → **Defer Concepts** for post-MVP evaluation
    - Concept 2, 3, 5 — revisit Q3/Q4 2026

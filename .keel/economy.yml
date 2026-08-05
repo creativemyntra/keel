@@ -2,8 +2,47 @@
 # Every aggressive lever is a recorded owner decision, not a silent default.
 # See docs/WORKFLOW.md §5b and the orchestrator's Economy decisions section.
 economy:
-  model_tiering: true            # haiku for transcription-grade spawns
+  model_tiering: true            # DOCUMENTATION ONLY — real mechanism is agent frontmatter (model/effort fields in agents/*.md)
   static_first_security: true    # engine prescan runs before the security agent
   security_skip_on_clean: false  # OWNER OPT-IN: clean prescan + TRIVIAL diff replaces the security spawn
   context_budget_files: 6        # max source files any agent loads (CodeGraph-selected)
   output_caps: true              # report length caps enforced
+  confirm_before_spawn: true     # show token estimate + require human OK before each phase agent spawn (set false to skip)
+  token_summary: true            # print cumulative token-usage table in final delivery summary
+  prompt_caching: true           # emit cache_control breakpoints at system-prompt + tools + static-context boundaries
+  cache_ttl_minutes: 5           # Claude ephemeral cache TTL; run phases back-to-back to keep cache warm
+
+# State-engine tuning (MED-03: was hardcoded — now owner-configurable).
+# lock_stale_seconds: how long a .lock directory must exist before it is
+# considered stale (crashed process) and forcibly removed. Increase on slow
+# NFS/Docker mounts where rename() latency exceeds 30s.
+state_engine:
+  lock_stale_seconds: 30
+
+# Visual regression testing policy — pixel-to-pixel fidelity
+visual:
+  enabled: true
+  max_diff_pixels: 0        # pixel-to-pixel default (zero tolerance)
+  threshold: 0.1            # per-pixel color tolerance for anti-aliasing
+  # OWNER DECISION: raising max_diff_pixels above 0 is explicit policy change
+  # to relax visual assertions. Document the reason and owner in the PR description.
+
+# Per-agent token-weight caps (output tokens; input tokens are capped by context_budget_files).
+# total_pipeline_budget is the sum-ceiling across one full pipeline run.
+# weight-budget.test.cjs asserts: each agent <= default_cap AND sum(agents) <= total_pipeline_budget.
+token_weights:
+  default_cap: 50000
+  total_pipeline_budget: 420000
+  agents:
+    product-owner: 30000
+    business-analyst: 40000
+    ui-designer: 40000
+    solution-architect: 50000
+    software-engineer: 50000
+    qa-engineer: 40000
+    e2e-engineer: 35000
+    security-engineer: 40000
+    technical-writer: 30000
+    release-manager: 30000
+    handshake-agent: 10000
+    orchestrator: 20000

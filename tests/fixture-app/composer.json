@@ -1,0 +1,24 @@
+{
+  "name": "keel/fixture-app",
+  "description": "Minimal PHP stub for keel pipeline live tests",
+  "type": "project",
+  "require": {
+    "php": ">=8.1"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10"
+  },
+  "autoload": {
+    "psr-4": {
+      "FixtureApp\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "FixtureApp\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "allow-plugins": {}
+  }
+}

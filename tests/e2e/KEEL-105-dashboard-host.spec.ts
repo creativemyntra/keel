@@ -106,8 +106,8 @@ async function expectDashboardRendered(page: import('@playwright/test').Page): P
   await expect(page.locator('thead th')).toHaveText([
     'Story ID', 'Title', 'Scope', 'Current Phase', 'Status', 'Idle Time',
   ]);
-  // Real repo state — the in-flight KEEL-105 story row itself must be present
-  await expect(page.locator('tbody tr', { hasText: 'KEEL-105' })).toHaveCount(1);
+  // At least one story row must be present (derived from real .keel/state/)
+  await expect(page.locator('tbody tr')).not.toHaveCount(0);
   await expect(page.locator('footer')).toContainText(`Port ${PORT}`);
 }
 

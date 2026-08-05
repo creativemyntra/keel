@@ -375,7 +375,7 @@ function patchManifestUpdatedAt(cwd, storyId, isoTimestamp) {
   const phase1File = path.join(stateDir, '01-product-owner.json');
   fs.writeFileSync(phase1File, JSON.stringify({
     phase: 1, agent: 'product-owner', story_id: 'STORY-K',
-    confidence: 'high', findings: [], acceptance_criteria_ids: [],
+    confidence: 'high', findings: ['AC-1: fixture finding for gate pass test'], acceptance_criteria_ids: [],
     decisions: [], artifacts: [], next_phase: 2, blockers: [],
   }, null, 2));
 
@@ -418,7 +418,7 @@ function patchManifestUpdatedAt(cwd, storyId, isoTimestamp) {
   const phase1File = path.join(stateDir, '01-product-owner.json');
   fs.writeFileSync(phase1File, JSON.stringify({
     phase: 1, agent: 'product-owner', story_id: 'STORY-L',
-    confidence: 'high', findings: [], acceptance_criteria_ids: [],
+    confidence: 'high', findings: ['AC-1: fixture finding for gate pass test'], acceptance_criteria_ids: [],
     decisions: [], artifacts: [], next_phase: 2, blockers: [],
   }, null, 2));
   engine(cwd, 'gate', 'STORY-L', '--phase', '1', '--verdict', 'PASS');
@@ -447,7 +447,7 @@ function patchManifestUpdatedAt(cwd, storyId, isoTimestamp) {
   const stateDir1 = path.join(cwd, '.keel', 'state', 'FLEET-X');
   fs.writeFileSync(path.join(stateDir1, '01-product-owner.json'), JSON.stringify({
     phase: 1, agent: 'product-owner', story_id: 'FLEET-X',
-    confidence: 'high', findings: [], acceptance_criteria_ids: [],
+    confidence: 'high', findings: ['AC-1: fixture finding for gate pass test'], acceptance_criteria_ids: [],
     decisions: [], artifacts: [], next_phase: 2, blockers: [],
   }, null, 2));
   engine(cwd, 'gate', 'FLEET-X', '--phase', '1', '--verdict', 'PASS');
@@ -538,7 +538,7 @@ function patchManifestUpdatedAt(cwd, storyId, isoTimestamp) {
   const stateDir1 = path.join(cwd, '.keel', 'state', 'FLEET-Z');
   fs.writeFileSync(path.join(stateDir1, '01-product-owner.json'), JSON.stringify({
     phase: 1, agent: 'product-owner', story_id: 'FLEET-Z',
-    confidence: 'high', findings: [], acceptance_criteria_ids: [],
+    confidence: 'high', findings: ['AC-1: fixture finding for gate pass test'], acceptance_criteria_ids: [],
     decisions: [], artifacts: [], next_phase: 2, blockers: [],
   }, null, 2));
   engine(cwd, 'gate', 'FLEET-Z', '--phase', '1', '--verdict', 'PASS');

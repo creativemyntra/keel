@@ -1355,6 +1355,296 @@ writeManifest(k105StateDir, {
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Branch-coverage gap — uncovered arms identified by Istanbul/c8 (v3.16.7).
+// Each test targets a specific || / ?? / catch / ternary arm not exercised by
+// the AC tests above. Tests named "BRANCH …" for easy grepping.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// BRANCH 1: badgeHtml — unknown status → fallback color #64748b
+{
+  const story = {
+    story_id:     'BADGE-UNKNOWN',
+    title:        'Unknown badge',
+    scope:        'feature',
+    current_phase: 1,
+    status:       'PENDING',        // not in the colors map
+    phase_label:  'Phase 1 — Product Owner',
+    idle:         '1m 0s',
+    updated_at:   new Date().toISOString(),
+    error:        null,
+  };
+  const html = generateHTML([story], 7772);
+
+  assert(
+    'BRANCH badgeHtml: unknown status uses fallback background color #64748b',
+    html.includes('background:#64748b') && html.includes('PENDING'),
+    `fallback badge color not found in HTML`
+  );
+}
+
+// BRANCH 2: readStories — readdirSync catch branch (stateDirPath is a file, not a dir)
+{
+  const tmpDir = makeTmpDir('branch-readdirfail');
+  // Write a FILE at the stateDir path — existsSync returns true, readdirSync throws ENOTDIR
+  const fakePath = path.join(tmpDir, 'state-is-a-file');
+  fs.writeFileSync(fakePath, 'not a directory');
+
+  const stories = readStories(fakePath);
+
+  assert(
+    'BRANCH readStories: readdirSync on a file returns [] (catch branch)',
+    Array.isArray(stories) && stories.length === 0,
+    `expected [], got ${JSON.stringify(stories)}`
+  );
+}
+
+// BRANCH 3: readStories — skips directory named '--all'
+{
+  const tmpDir   = makeTmpDir('branch-all-skip');
+  const stateDir = makeStateDir(tmpDir);
+
+  const allDir = path.join(stateDir, '--all');
+  fs.mkdirSync(allDir, { recursive: true });
+  fs.writeFileSync(path.join(allDir, 'manifest.json'), JSON.stringify({ story_id: '--all' }));
+
+  writeManifest(stateDir, { story_id: 'REAL-1', updated_at: '2026-07-14T09:00:00.000Z' });
+
+  const stories = readStories(stateDir);
+
+  assert(
+    'BRANCH readStories: directory named "--all" is skipped',
+    stories.every((s) => s.story_id !== '--all') && stories.length === 1,
+    `stories: ${JSON.stringify(stories.map((s) => s.story_id))}`
+  );
+}
+
+// BRANCH 4: readStories — current_phase: null → phaseLabel 'unknown'
+{
+  const tmpDir   = makeTmpDir('branch-phase-null');
+  const stateDir = makeStateDir(tmpDir);
+
+  const storyDir = path.join(stateDir, 'NULL-PHASE');
+  fs.mkdirSync(storyDir, { recursive: true });
+  fs.writeFileSync(path.join(storyDir, 'manifest.json'), JSON.stringify({
+    story_id:      'NULL-PHASE',
+    title:         'Null phase story',
+    scope:         'feature',
+    current_phase: null,
+    updated_at:    '2026-07-14T09:00:00.000Z',
+    halted:        false,
+  }));
+
+  const stories = readStories(stateDir);
+
+  assert(
+    'BRANCH readStories: null current_phase → phase_label is "unknown"',
+    stories.length === 1 && stories[0].phase_label === 'unknown',
+    `phase_label: "${stories[0] && stories[0].phase_label}"`
+  );
+
+  assert(
+    'BRANCH readStories: null current_phase → current_phase field is null',
+    stories.length === 1 && stories[0].current_phase === null,
+    `current_phase: ${stories[0] && stories[0].current_phase}`
+  );
+}
+
+// BRANCH 5: readStories — current_phase > 10 → `Phase ${phase}` (no PHASE_NAMES lookup)
+{
+  const tmpDir   = makeTmpDir('branch-phase-over10');
+  const stateDir = makeStateDir(tmpDir);
+
+  const storyDir = path.join(stateDir, 'PHASE-11');
+  fs.mkdirSync(storyDir, { recursive: true });
+  fs.writeFileSync(path.join(storyDir, 'manifest.json'), JSON.stringify({
+    story_id:      'PHASE-11',
+    title:         'Over 10 phases',
+    scope:         'feature',
+    current_phase: 11,
+    updated_at:    '2026-07-14T09:00:00.000Z',
+    halted:        false,
+  }));
+
+  const stories = readStories(stateDir);
+
+  assert(
+    'BRANCH readStories: phase > 10 → phase_label is "Phase 11" (no PHASE_NAMES entry)',
+    stories.length === 1 && stories[0].phase_label === 'Phase 11',
+    `phase_label: "${stories[0] && stories[0].phase_label}"`
+  );
+}
+
+// BRANCH 6: readStories — missing updated_at → idle 'unknown', updated_at ''
+{
+  const tmpDir   = makeTmpDir('branch-no-updatedat');
+  const stateDir = makeStateDir(tmpDir);
+
+  const storyDir = path.join(stateDir, 'NO-DATE');
+  fs.mkdirSync(storyDir, { recursive: true });
+  fs.writeFileSync(path.join(storyDir, 'manifest.json'), JSON.stringify({
+    story_id:      'NO-DATE',
+    title:         'No date story',
+    scope:         'feature',
+    current_phase: 1,
+    halted:        false,
+    // updated_at intentionally absent
+  }));
+
+  const stories = readStories(stateDir);
+
+  assert(
+    'BRANCH readStories: missing updated_at → idle is "unknown" (idleTime(null))',
+    stories.length === 1 && stories[0].idle === 'unknown',
+    `idle: "${stories[0] && stories[0].idle}"`
+  );
+
+  assert(
+    'BRANCH readStories: missing updated_at → updated_at field is ""',
+    stories.length === 1 && stories[0].updated_at === '',
+    `updated_at: "${stories[0] && stories[0].updated_at}"`
+  );
+}
+
+// BRANCH 7: readStories — missing story_id in manifest → fallback to dir name
+{
+  const tmpDir   = makeTmpDir('branch-storyid-fallback');
+  const stateDir = makeStateDir(tmpDir);
+
+  const storyDir = path.join(stateDir, 'FALLBACK-DIR');
+  fs.mkdirSync(storyDir, { recursive: true });
+  fs.writeFileSync(path.join(storyDir, 'manifest.json'), JSON.stringify({
+    // story_id intentionally absent
+    title:         'Fallback story',
+    scope:         'feature',
+    current_phase: 1,
+    updated_at:    '2026-07-14T09:00:00.000Z',
+    halted:        false,
+  }));
+
+  const stories = readStories(stateDir);
+
+  assert(
+    'BRANCH readStories: absent story_id falls back to directory name "FALLBACK-DIR"',
+    stories.length === 1 && stories[0].story_id === 'FALLBACK-DIR',
+    `story_id: "${stories[0] && stories[0].story_id}"`
+  );
+}
+
+// BRANCH 8: readStories — missing title → title ''
+{
+  const tmpDir   = makeTmpDir('branch-title-missing');
+  const stateDir = makeStateDir(tmpDir);
+
+  const storyDir = path.join(stateDir, 'NO-TITLE');
+  fs.mkdirSync(storyDir, { recursive: true });
+  fs.writeFileSync(path.join(storyDir, 'manifest.json'), JSON.stringify({
+    story_id:      'NO-TITLE',
+    // title intentionally absent
+    scope:         'feature',
+    current_phase: 1,
+    updated_at:    '2026-07-14T09:00:00.000Z',
+    halted:        false,
+  }));
+
+  const stories = readStories(stateDir);
+
+  assert(
+    'BRANCH readStories: missing title falls back to empty string',
+    stories.length === 1 && stories[0].title === '',
+    `title: "${stories[0] && stories[0].title}"`
+  );
+}
+
+// BRANCH 9: readStories — missing scope → scope 'feature'
+{
+  const tmpDir   = makeTmpDir('branch-scope-missing');
+  const stateDir = makeStateDir(tmpDir);
+
+  const storyDir = path.join(stateDir, 'NO-SCOPE');
+  fs.mkdirSync(storyDir, { recursive: true });
+  fs.writeFileSync(path.join(storyDir, 'manifest.json'), JSON.stringify({
+    story_id:      'NO-SCOPE',
+    title:         'No scope story',
+    // scope intentionally absent
+    current_phase: 1,
+    updated_at:    '2026-07-14T09:00:00.000Z',
+    halted:        false,
+  }));
+
+  const stories = readStories(stateDir);
+
+  assert(
+    'BRANCH readStories: missing scope falls back to "feature"',
+    stories.length === 1 && stories[0].scope === 'feature',
+    `scope: "${stories[0] && stories[0].scope}"`
+  );
+}
+
+// BRANCH 10: readStories — two error rows (sort falls through to localeCompare)
+{
+  const tmpDir   = makeTmpDir('branch-two-errors');
+  const stateDir = makeStateDir(tmpDir);
+
+  const d1 = path.join(stateDir, 'BAD-A');
+  const d2 = path.join(stateDir, 'BAD-B');
+  fs.mkdirSync(d1, { recursive: true });
+  fs.mkdirSync(d2, { recursive: true });
+  fs.writeFileSync(path.join(d1, 'manifest.json'), 'not valid json');
+  fs.writeFileSync(path.join(d2, 'manifest.json'), '{ bad json }');
+
+  const stories = readStories(stateDir);
+
+  assert(
+    'BRANCH readStories: two error rows — sort fallthrough does not crash',
+    stories.length === 2 && stories.every((s) => s.error !== null),
+    `stories: ${JSON.stringify(stories.map((s) => ({ id: s.story_id, err: !!s.error })))}`
+  );
+}
+
+// BRANCH 11: generateHTML — error story row renders the error branch (s.error truthy)
+{
+  const errorStory = {
+    story_id: 'ERR-RENDER',
+    error:    'Unexpected token in manifest.json',
+  };
+  const html = generateHTML([errorStory], 7772);
+
+  assert(
+    'BRANCH generateHTML: error story renders error row (not normal row)',
+    html.includes('ERR-RENDER') && html.includes('Unexpected token'),
+    `error row content not found in HTML`
+  );
+
+  assert(
+    'BRANCH generateHTML: error row uses #fef2f2 background',
+    html.includes('#fef2f2'),
+    `error row background color not found`
+  );
+}
+
+// BRANCH 12: generateHTML — story with null title triggers s.title || '' fallback
+{
+  const story = {
+    story_id:     'NULL-TITLE',
+    title:        null,   // falsy — forces the || '' branch in generateHTML
+    scope:        'feature',
+    current_phase: 2,
+    status:       'IN PROGRESS',
+    phase_label:  'Phase 2 — Business Analyst',
+    idle:         '2m 30s',
+    updated_at:   new Date().toISOString(),
+    error:        null,
+  };
+  const html = generateHTML([story], 7772);
+
+  assert(
+    'BRANCH generateHTML: null story title renders without crashing (s.title || "")',
+    html.includes('NULL-TITLE') && !html.includes('>null<'),
+    `unexpected output for null title: "${html.slice(html.indexOf('NULL-TITLE') - 10, html.indexOf('NULL-TITLE') + 80)}"`
+  );
+}
+
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
 const failed = results.filter((r) => !r.pass);

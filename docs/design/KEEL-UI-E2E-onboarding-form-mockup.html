@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en" data-state="default">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KEEL-UI-E2E — Account Onboarding · Precision Technical</title>
+
+  <!-- Aesthetic: Precision Technical — Space Grotesk display + JetBrains Mono for data -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ═══════════════════════════════════════════════════
+       DESIGN TOKENS
+       Direction : Precision Technical
+       DFII Score: 11 (Impact 4, Fit 4, Feasibility 4,
+                       Perf 4 − Consistency 5)
+       Anchor    : Left-edge indigo accent bar on every
+                   card + monospace step counter
+    ══════════════════════════════════════════════════ */
+    :root {
+      /* Brand */
+      --color-primary:          #6366f1;
+      --color-primary-hover:    #4f46e5;
+      --color-primary-active:   #4338ca;
+      --color-accent:           #10b981;
+
+      /* Surfaces */
+      --color-bg:               #0a0a0f;
+      --color-surface:          #111118;
+      --color-surface-elevated: #16161f;
+      --color-surface-sunken:   #0d0d14;
+      --color-surface-overlay:  rgba(0,0,0,0.72);
+
+      /* Text */
+      --color-text-primary:     #f1f5f9;
+      --color-text-secondary:   #94a3b8;
+      --color-text-muted:       #475569;
+      --color-text-inverse:     #0f172a;
+
+      /* Borders */
+      --color-border:           rgba(255,255,255,0.07);
+      --color-border-strong:    rgba(255,255,255,0.14);
+      --color-border-focus:     #6366f1;
+      --color-accent-line:      #6366f1;  /* differentiation anchor */
+
+      /* Semantic */
+      --color-error:            #f87171;  --color-error-surface:    rgba(248,113,113,0.08);
+      --color-success:          #34d399;  --color-success-surface:  rgba(52,211,153,0.08);
+      --color-warning:          #fbbf24;  --color-warning-surface:  rgba(251,191,36,0.08);
+
+      /* State-switcher chrome */
+      --color-sw-bg:            #070710;
+      --color-sw-border:        rgba(255,255,255,0.1);
+      --color-sw-hover:         rgba(255,255,255,0.06);
+      --color-sw-text:          #64748b;
+      --color-sw-active-text:   #6366f1;
+      --color-sw-active-bg:     rgba(99,102,241,0.1);
+
+      /* Typography */
+      --font-display: 'Space Grotesk', -apple-system, sans-serif;
+      --font-body:    'Space Grotesk', -apple-system, sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+
+      --text-xs:   0.6875rem; --text-sm:   0.8125rem; --text-base: 0.9375rem;
+      --text-lg:   1.0625rem; --text-xl:   1.25rem;   --text-2xl:  1.5rem;
+      --text-3xl:  1.875rem;  --text-4xl:  2.5rem;    --text-5xl:  3.5rem;
+      --weight-normal: 400; --weight-medium: 500;
+      --weight-semi: 600;   --weight-bold: 700;
+      --leading-tight: 1.2; --leading-normal: 1.55; --leading-relaxed: 1.65;
+      --tracking-tight: -0.03em; --tracking-normal: -0.01em; --tracking-wide: 0.06em;
+
+      /* Spacing */
+      --s-1:4px;  --s-2:8px;   --s-3:12px;  --s-4:16px;
+      --s-5:20px; --s-6:24px;  --s-8:32px;  --s-10:40px;
+      --s-12:48px; --s-16:64px; --s-20:80px;
+
+      /* Shape */
+      --r-sm:4px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:9999px;
+
+      /* Elevation */
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.2);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.2);
+      --shadow-glow: 0 0 0 1px rgba(99,102,241,0.25), 0 0 20px rgba(99,102,241,0.08);
+
+      /* Motion */
+      --dur-instant: 100ms; --dur-fast: 150ms;  --dur-normal: 200ms;
+      --dur-slow:    300ms; --dur-enter: 250ms; --dur-exit:   180ms;
+      --ease-spring:   cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+      --ease-enter:    cubic-bezier(0.0, 0, 0.2, 1);
+      --ease-exit:     cubic-bezier(0.4, 0, 1, 1);
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+    /* ── Base ── */
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      background: var(--color-bg);
+      min-height: 100vh;
+      letter-spacing: var(--tracking-normal);
+    }
+
+    /* ══════════════════════════════════════
+       STATE SWITCHER (dev tooling chrome)
+    ══════════════════════════════════════ */
+    .switcher {
+      position: sticky; top: 0; z-index: 999;
+      display: flex; align-items: center; gap: var(--s-2);
+      padding: var(--s-2) var(--s-4);
+      background: var(--color-sw-bg);
+      border-bottom: 1px solid var(--color-sw-border);
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .switcher::-webkit-scrollbar { display: none; }
+    .switcher-label {
+      font-family: var(--font-mono); font-size: 10px;
+      color: var(--color-sw-text); letter-spacing: 0.08em;
+      text-transform: uppercase; white-space: nowrap;
+      padding-right: var(--s-2);
+    }
+    .sw-btn {
+      font-family: var(--font-mono); font-size: 11px; font-weight: var(--weight-medium);
+      color: var(--color-sw-text);
+      background: transparent;
+      border: 1px solid var(--color-sw-border);
+      border-radius: var(--r-sm);
+      padding: 3px var(--s-3);
+      cursor: pointer; white-space: nowrap;
+      transition: color var(--dur-fast) var(--ease-standard),
+                  background var(--dur-fast) var(--ease-standard),
+                  border-color var(--dur-fast) var(--ease-standard);
+    }
+    .sw-btn:hover { background: var(--color-sw-hover); color: var(--color-text-secondary); }
+    .sw-btn.active { color: var(--color-sw-active-text); background: var(--color-sw-active-bg); border-color: var(--color-accent-line); }
+
+    /* ══════════════════════════════════════
+       PAGE LAYOUT
+    ══════════════════════════════════════ */
+    .page {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 41px);
+    }
+
+    /* Left — brand panel */
+    .brand-panel {
+      position: relative;
+      background: var(--color-surface);
+      border-right: 1px solid var(--color-border);
+      padding: var(--s-16) var(--s-12);
+      display: flex; flex-direction: column; justify-content: space-between;
+      overflow: hidden;
+    }
+    .brand-panel::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--color-accent-line);  /* differentiation anchor */
+    }
+    /* Noise texture overlay */
+    .brand-panel::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .brand-logo {
+      display: flex; align-items: center; gap: var(--s-3); position: relative; z-index: 1;
+    }
+    .logo-mark {
+      width: 36px; height: 36px;
+      background: var(--color-primary);
+      border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-size: var(--text-sm); font-weight: var(--weight-bold);
+      color: #fff; letter-spacing: 0;
+    }
+    .logo-name {
+      font-size: var(--text-lg); font-weight: var(--weight-bold);
+      letter-spacing: var(--tracking-tight);
+    }
+
+    .brand-content { flex: 1; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1; }
+    .brand-headline {
+      font-size: var(--text-5xl); font-weight: var(--weight-bold);
+      line-height: 1.05; letter-spacing: var(--tracking-tight);
+      margin-bottom: var(--s-5);
+    }
+    .brand-headline em { font-style: normal; color: var(--color-primary); }
+    .brand-sub {
+      font-size: var(--text-base); color: var(--color-text-secondary);
+      line-height: var(--leading-relaxed); max-width: 340px;
+      margin-bottom: var(--s-10);
+    }
+
+    /* Social proof */
+    .social-proof { display: flex; flex-direction: column; gap: var(--s-4); }
+    .proof-item { display: flex; align-items: flex-start; gap: var(--s-3); }
+    .proof-icon {
+      width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;
+      color: var(--color-accent); font-size: var(--text-base);
+    }
+    .proof-text { font-size: var(--text-sm); color: var(--color-text-secondary); line-height: var(--leading-normal); }
+    .proof-text strong { color: var(--color-text-primary); font-weight: var(--weight-medium); }
+
+    /* Stats row */
+    .stats-row {
+      display: flex; gap: var(--s-8);
+      padding-top: var(--s-8);
+      border-top: 1px solid var(--color-border);
+      position: relative; z-index: 1;
+    }
+    .stat-item {}
+    .stat-val {
+      font-family: var(--font-mono); font-size: var(--text-2xl); font-weight: var(--weight-bold);
+      letter-spacing: var(--tracking-tight); color: var(--color-text-primary);
+    }
+    .stat-label { font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: var(--tracking-wide); text-transform: uppercase; margin-top: 2px; }
+
+    /* Right — form panel */
+    .form-panel {
+      display: flex; align-items: center; justify-content: center;
+      padding: var(--s-12) var(--s-10);
+      background: var(--color-bg);
+    }
+    .form-card {
+      width: 100%; max-width: 420px;
+    }
+
+    /* Step indicator */
+    .steps {
+      display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-8);
+    }
+    .step {
+      display: flex; align-items: center; gap: var(--s-2);
+      font-family: var(--font-mono); font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+    .step.active { color: var(--color-text-primary); }
+    .step-num {
+      width: 22px; height: 22px; border-radius: var(--r-full);
+      border: 1px solid currentColor;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: var(--weight-bold);
+    }
+    .step.active .step-num { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+    .step.done .step-num { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+    .step-sep { flex: 1; height: 1px; background: var(--color-border); }
+
+    /* Form header */
+    .form-title {
+      font-size: var(--text-3xl); font-weight: var(--weight-bold);
+      letter-spacing: var(--tracking-tight); line-height: var(--leading-tight);
+      margin-bottom: var(--s-2);
+    }
+    .form-sub {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin-bottom: var(--s-8); line-height: var(--leading-normal);
+    }
+    .form-sub a { color: var(--color-primary); text-decoration: none; }
+    .form-sub a:hover { text-decoration: underline; }
+
+    /* Error banner */
+    .error-banner {
+      display: none; align-items: flex-start; gap: var(--s-3);
+      background: var(--color-error-surface);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: var(--r-md); padding: var(--s-4);
+      margin-bottom: var(--s-5);
+      font-size: var(--text-sm);
+      animation: dropIn var(--dur-fast) var(--ease-enter);
+    }
+    .error-banner-title { font-weight: var(--weight-semi); color: var(--color-error); margin-bottom: 2px; }
+    .error-banner-body { color: var(--color-text-secondary); font-size: var(--text-xs); }
+
+    /* Form fields */
+    .form { display: flex; flex-direction: column; gap: var(--s-4); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+    .field { display: flex; flex-direction: column; gap: var(--s-2); }
+    label {
+      font-size: var(--text-xs); font-weight: var(--weight-medium);
+      color: var(--color-text-secondary); letter-spacing: var(--tracking-wide);
+      text-transform: uppercase;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      font-family: var(--font-body); font-size: var(--text-base);
+      color: var(--color-text-primary);
+      background: var(--color-surface-sunken);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--r-md);
+      padding: var(--s-3) var(--s-4);
+      outline: none; width: 100%;
+      transition: border-color var(--dur-fast) var(--ease-standard),
+                  box-shadow   var(--dur-fast) var(--ease-standard),
+                  background   var(--dur-fast) var(--ease-standard);
+    }
+    input::placeholder { color: var(--color-text-muted); }
+    input:focus {
+      border-color: var(--color-border-focus);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+      background: var(--color-surface);
+    }
+    input.err { border-color: var(--color-error); }
+    input.err:focus { box-shadow: 0 0 0 3px rgba(248,113,113,0.15); border-color: var(--color-error); }
+
+    .field-err {
+      display: none; font-size: var(--text-xs); color: var(--color-error);
+      font-family: var(--font-mono);
+      animation: dropIn var(--dur-fast) var(--ease-enter);
+    }
+    .field-hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+    /* Strength meter */
+    .strength-track {
+      height: 2px; background: var(--color-border-strong);
+      border-radius: var(--r-full); overflow: hidden; margin-top: 2px;
+    }
+    .strength-fill {
+      height: 100%; width: 55%; border-radius: var(--r-full);
+      background: linear-gradient(90deg, var(--color-warning), var(--color-accent));
+      transition: width var(--dur-normal) var(--ease-spring);
+    }
+
+    /* Terms */
+    .terms-row {
+      display: flex; align-items: flex-start; gap: var(--s-3);
+      font-size: var(--text-xs); color: var(--color-text-muted);
+    }
+    .terms-row input[type="checkbox"] { margin-top: 1px; accent-color: var(--color-primary); flex-shrink: 0; }
+    .terms-row a { color: var(--color-primary); text-decoration: none; }
+    .terms-row a:hover { text-decoration: underline; }
+
+    /* Primary CTA button */
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center; gap: var(--s-2);
+      font-family: var(--font-body); font-size: var(--text-base); font-weight: var(--weight-semi);
+      color: #fff;
+      background: var(--color-primary);
+      border: none; border-radius: var(--r-md);
+      padding: 0 var(--s-6); height: 48px; width: 100%;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: background  var(--dur-fast)    var(--ease-standard),
+                  transform   var(--dur-instant) var(--ease-standard),
+                  box-shadow  var(--dur-instant) var(--ease-standard);
+    }
+    .btn-primary::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .btn-primary:hover   { background: var(--color-primary-hover); box-shadow: 0 4px 12px rgba(99,102,241,0.35); transform: scale(1.015); }
+    .btn-primary:active  { background: var(--color-primary-active); transform: scale(0.98); box-shadow: none; }
+    .btn-primary.loading { opacity: 0.7; pointer-events: none; transform: none; }
+
+    .btn-spinner {
+      display: none; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.6s linear infinite;
+    }
+
+    /* Toast */
+    .toast-zone {
+      position: fixed; bottom: var(--s-6); right: var(--s-6);
+      z-index: 500; pointer-events: none;
+    }
+    .toast {
+      display: none;
+      align-items: center; gap: var(--s-3);
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--r-lg);
+      padding: var(--s-4) var(--s-5);
+      box-shadow: var(--shadow-lg), var(--shadow-glow);
+      min-width: 280px; pointer-events: auto;
+      animation: slideUp var(--dur-enter) var(--ease-spring);
+    }
+    .toast-icon { font-size: 18px; }
+    .toast-body {}
+    .toast-title {
+      font-size: var(--text-sm); font-weight: var(--weight-semi);
+      color: var(--color-text-primary); margin-bottom: 2px;
+    }
+    .toast-desc { font-size: var(--text-xs); color: var(--color-text-muted); font-family: var(--font-mono); }
+
+    /* Skeleton */
+    .skeleton-layer { display: none; flex-direction: column; gap: var(--s-4); }
+    .skel {
+      border-radius: var(--r-md);
+      background: linear-gradient(90deg, var(--color-surface) 25%, var(--color-surface-elevated) 50%, var(--color-surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.6s infinite;
+    }
+    .skel-h1  { height: 32px; width: 55%; }
+    .skel-sub { height: 14px; width: 70%; }
+    .skel-inp { height: 46px; }
+    .skel-btn { height: 48px; }
+
+    /* ══════════════════════════════════════
+       STATE MACHINE  (data-state on <html>)
+    ══════════════════════════════════════ */
+
+    /* LOADING */
+    [data-state="loading"] .btn-text    { display: none; }
+    [data-state="loading"] .btn-spinner { display: block; }
+    [data-state="loading"] .btn-primary { opacity: 0.7; pointer-events: none; }
+    [data-state="loading"] input        { opacity: 0.5; pointer-events: none; }
+
+    /* SUCCESS */
+    [data-state="success"] .toast       { display: flex; }
+    [data-state="success"] .form-card   { opacity: 0.35; pointer-events: none; }
+
+    /* ERROR — validation */
+    [data-state="error-validation"] #email-input { border-color: var(--color-error); }
+    [data-state="error-validation"] #pw-input    { border-color: var(--color-error); }
+    [data-state="error-validation"] .field-err   { display: block; }
+
+    /* ERROR — server */
+    [data-state="error-server"] .error-banner   { display: flex; }
+
+    /* SKELETON */
+    [data-state="skeleton"] .form-inner    { display: none; }
+    [data-state="skeleton"] .skeleton-layer { display: flex; }
+
+    /* ══════════════════════════════════════
+       ANIMATIONS
+    ══════════════════════════════════════ */
+    @keyframes spin    { to { transform: rotate(360deg); } }
+    @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes dropIn  { from { transform: translateY(-5px); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+    @keyframes fadeIn  { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .form-card { animation: fadeIn var(--dur-enter) var(--ease-spring); }
+
+    /* ══════════════════════════════════════
+       RESPONSIVE — 640px breakpoint
+    ══════════════════════════════════════ */
+    @media (max-width: 960px) {
+      .page { grid-template-columns: 1fr; }
+      .brand-panel { display: none; }
+      .form-panel { padding: var(--s-8) var(--s-5); align-items: flex-start; padding-top: var(--s-12); }
+    }
+    @media (max-width: 640px) {
+      .field-row { grid-template-columns: 1fr; }
+      .form-panel { padding: var(--s-6) var(--s-4); }
+      .form-card { max-width: 100%; }
+      .toast-zone { left: var(--s-4); right: var(--s-4); bottom: var(--s-4); }
+      .toast { min-width: 0; width: 100%; }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── State switcher (dev tooling) ── -->
+<nav class="switcher" aria-label="Mockup state">
+  <span class="switcher-label">state</span>
+  <button class="sw-btn active" data-state-btn data-state="default">default</button>
+  <button class="sw-btn" data-state-btn data-state="loading">loading</button>
+  <button class="sw-btn" data-state-btn data-state="success">success</button>
+  <button class="sw-btn" data-state-btn data-state="error-validation">error:validation</button>
+  <button class="sw-btn" data-state-btn data-state="error-server">error:server</button>
+  <button class="sw-btn" data-state-btn data-state="skeleton">skeleton</button>
+</nav>
+
+<div class="page">
+
+  <!-- ── Left: Brand panel ── -->
+  <aside class="brand-panel" aria-label="Product overview">
+    <div class="brand-logo">
+      <div class="logo-mark" aria-hidden="true">K</div>
+      <span class="logo-name">Keel</span>
+    </div>
+
+    <div class="brand-content">
+      <h2 class="brand-headline">Ship software<br>with <em>precision.</em></h2>
+      <p class="brand-sub">
+        The AI-SDLC pipeline that takes a Jira ticket from requirements to production
+        through 10 governed phases — no guesswork, no drift.
+      </p>
+
+      <ul class="social-proof" role="list">
+        <li class="proof-item">
+          <span class="proof-icon" aria-hidden="true">✦</span>
+          <span class="proof-text"><strong>14 forensic findings fixed</strong> in v3.16.8 — CJIS gate, injection guard, zombie-state prevention</span>
+        </li>
+        <li class="proof-item">
+          <span class="proof-icon" aria-hidden="true">✦</span>
+          <span class="proof-text"><strong>10-phase deterministic pipeline</strong> — requirements to release, every phase gate-verified</span>
+        </li>
+        <li class="proof-item">
+          <span class="proof-icon" aria-hidden="true">✦</span>
+          <span class="proof-text"><strong>Design-token system</strong> — brand-first tokens, spring motion, hifi mockups</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="stats-row" aria-label="Platform statistics">
+      <div class="stat-item">
+        <div class="stat-val">94.4%</div>
+        <div class="stat-label">Test coverage</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">v3.16.8</div>
+        <div class="stat-label">Current release</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">10</div>
+        <div class="stat-label">Pipeline phases</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Right: Form panel ── -->
+  <main class="form-panel">
+    <div class="form-card" role="main">
+
+      <!-- Step indicator -->
+      <div class="steps" aria-label="Onboarding progress">
+        <div class="step active" aria-current="step">
+          <div class="step-num">1</div>
+          <span>Account</span>
+        </div>
+        <div class="step-sep" role="presentation"></div>
+        <div class="step" aria-label="Step 2: Workspace (upcoming)">
+          <div class="step-num">2</div>
+          <span>Workspace</span>
+        </div>
+        <div class="step-sep" role="presentation"></div>
+        <div class="step" aria-label="Step 3: Integrations (upcoming)">
+          <div class="step-num">3</div>
+          <span>Integrations</span>
+        </div>
+      </div>
+
+      <!-- Skeleton overlay -->
+      <div class="skeleton-layer" aria-hidden="true">
+        <div class="skel skel-h1"></div>
+        <div class="skel skel-sub" style="margin-bottom:var(--s-4)"></div>
+        <div class="skel skel-inp"></div>
+        <div class="skel skel-inp"></div>
+        <div class="skel skel-inp"></div>
+        <div class="skel skel-btn" style="margin-top:var(--s-2)"></div>
+      </div>
+
+      <div class="form-inner">
+        <h1 class="form-title">Create your account</h1>
+        <p class="form-sub">
+          Already have an account? <a href="#" tabindex="-1">Sign in</a>
+        </p>
+
+        <!-- Server error banner -->
+        <div class="error-banner" role="alert" aria-live="assertive">
+          <div>
+            <div class="error-banner-title">Account creation failed</div>
+            <div class="error-banner-body">Our servers are temporarily unavailable. Please try again or <a href="#" style="color:var(--color-primary)">contact support</a>.</div>
+          </div>
+        </div>
+
+        <form class="form" novalidate aria-label="Create account">
+
+          <div class="field-row">
+            <div class="field">
+              <label for="first-name">First name</label>
+              <input type="text" id="first-name" name="first_name"
+                placeholder="Amar" autocomplete="given-name" aria-required="true">
+            </div>
+            <div class="field">
+              <label for="last-name">Last name</label>
+              <input type="text" id="last-name" name="last_name"
+                placeholder="Singh" autocomplete="family-name" aria-required="true">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="email-input">Work email</label>
+            <input type="email" id="email-input" name="email"
+              placeholder="amar.singh@matellio.com" autocomplete="email" aria-required="true"
+              aria-describedby="email-err">
+            <span class="field-err" id="email-err" role="alert">
+              Enter a valid work email address
+            </span>
+          </div>
+
+          <div class="field">
+            <label for="pw-input">Password</label>
+            <input type="password" id="pw-input" name="password"
+              placeholder="Min. 8 characters" autocomplete="new-password" aria-required="true"
+              aria-describedby="pw-err pw-hint">
+            <div class="strength-track" aria-hidden="true">
+              <div class="strength-fill"></div>
+            </div>
+            <span class="field-hint" id="pw-hint">Use letters, numbers and symbols</span>
+            <span class="field-err" id="pw-err" role="alert">
+              Password must be at least 8 characters
+            </span>
+          </div>
+
+          <div class="terms-row">
+            <input type="checkbox" id="terms" aria-required="true">
+            <label for="terms" style="text-transform:none;letter-spacing:0;">
+              I agree to the <a href="#" tabindex="-1">Terms of Service</a> and <a href="#" tabindex="-1">Privacy Policy</a>
+            </label>
+          </div>
+
+          <button type="submit" class="btn-primary">
+            <span class="btn-spinner" role="status" aria-label="Creating account…"></span>
+            <span class="btn-text">Continue to workspace →</span>
+          </button>
+
+        </form>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- Toast -->
+<div class="toast-zone" aria-live="polite">
+  <div class="toast" role="status">
+    <span class="toast-icon" aria-hidden="true">✓</span>
+    <div class="toast-body">
+      <div class="toast-title">Account created</div>
+      <div class="toast-desc">amar.singh@matellio.com</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // State machine — class toggle only, no business logic
+  document.querySelectorAll('[data-state-btn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.documentElement.dataset.state = btn.dataset.state;
+      document.querySelectorAll('[data-state-btn]').forEach(b =>
+        b.classList.toggle('active', b === btn));
+    });
+  });
+</script>
+
+</body>
+</html>

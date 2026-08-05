@@ -1,0 +1,11 @@
+{
+  "_comment": "Prompt injection guard patterns (OWASP LLM Top 10 v1.1 -- LLM01). Loaded by keel-classify-gate.cjs independently of CJIS patterns. Unlike CJIS PII soft-flags (alerting only at PostToolUse because data may already be in model context), injection hits are ALWAYS blocking at all stages including PostToolUse -- the hook exit-2 tells the model 'tool produced an error', which overrides the injected instruction. Add patterns conservatively: false positives block legitimate tickets. Do not add broad phrases that appear in normal engineering text. Sources: OWASP LLM Top 10 v1.1, Lakera AI Prompt Injection Research 2024.",
+  "patterns": [
+    { "category": "PROMPT_INJECTION", "pattern": "(?:ignore|disregard|forget|override)\\s+(?:all\\s+)?(?:previous|prior|above|your)\\s+(?:instructions?|directives?|rules?|guidelines?|prompts?)", "flags": "gi", "severity": "hard" },
+    { "category": "PROMPT_INJECTION", "pattern": "(?:you\\s+are\\s+now|act\\s+as|pretend\\s+to\\s+be|roleplay\\s+as)\\s+\\S", "flags": "gi", "severity": "hard" },
+    { "category": "PROMPT_INJECTION", "pattern": "(?:new|updated?|changed?)\\s+(?:system\\s+)?(?:instructions?|rules?|directives?|prompts?)\\s*:", "flags": "gi", "severity": "hard" },
+    { "category": "PROMPT_INJECTION", "pattern": "<\\s*\\/?\\s*(?:instructions?|system|assistant|user|prompt)\\s*>", "flags": "gi", "severity": "hard" },
+    { "category": "PROMPT_INJECTION", "pattern": "###\\s*(?:NEW|UPDATED|CHANGED|OVERRIDE)\\s*(?:INSTRUCTION|RULE|DIRECTIVE|PROMPT)", "flags": "gi", "severity": "hard" },
+    { "category": "PROMPT_INJECTION", "pattern": "\\[\\s*(?:system|assistant|override)\\s*\\]", "flags": "gi", "severity": "hard" }
+  ]
+}

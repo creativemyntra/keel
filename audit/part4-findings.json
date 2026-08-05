@@ -1,0 +1,74 @@
+[
+  {
+    "id": "P4-01",
+    "severity": "CRITICAL",
+    "component": "keel-state/verify-no-content-integrity",
+    "evidence": "Test: altered audit-log.jsonl line 0 action field from 'pipeline_initialized' to 'TAMPERED_pipeline_initialized'. node keel-state.cjs verify TEST-P4 → 'PASS: audit log chronologically consistent with manifest'. cmdVerify (keel-state.cjs:690-713): checks only timestamp ordering (e.ts < prev) and phase_completed vs manifest.current_phase. No content hash, no action enum, no entry count check.",
+    "root_cause": "verify is documented as an 'integrity' check but only validates timestamp monotonicity. Any action value passes. A fabricated audit log with valid timestamps and reasonable phase numbers is indistinguishable from a real one. This means the P2-35 fabricated-chain attack is undetected by verify — the primary tool offered to release-manager for chain validation provides no content assurance.",
+    "fix": "Add HMAC or SHA-256 hash chain: each entry includes prev_hash (hash of previous entry) and entry_hash (hash of this entry's content). cmdVerify recomputes the chain. Without the secret key or prior hash, entries cannot be forged in a consistent chain. At minimum: add action enum validation against allowed values.",
+    "token_impact": "None — engine change. But false 'PASS' from verify enables the most critical attack on pipeline integrity."
+  },
+  {
+    "id": "P4-02",
+    "severity": "CRITICAL",
+    "component": "keel-state/revert-check-windows-crash",
+    "evidence": "node keel-state.cjs revert-check TEST-P4 --test 'tests/Unit/DummyTest.php' --runner 'vendor/bin/phpunit' → Error: Command failed: git stash push --include-untracked --keep-index. stderr: 'warning: failed to remove .keel/state/: Permission denied' (repeated for all .keel/state/ and docs/ subdirs). Node stack trace: keel-state.cjs:761 sh() → keel-state.cjs:773 cmdRevertCheck. Exit code 1. Stash was created (stash@{0}: On dev: keel-revert-check) but working tree cleanup failed.",
+    "root_cause": "cmdRevertCheck calls execSync('git stash push --include-untracked') with no try-catch. On Windows, git cannot remove directories with open handles (.keel/state/ dirs open by the Node process or antivirus). The stash IS created but fails to clean the working tree. execSync throws, Node propagates as unhandled error. Result: dangling stash (stash@{0}) left permanently. Subsequent git stash pop required manual conflict resolution (codegraph.json merge conflict).",
+    "fix": "(1) Wrap stash push in try/finally: if stash was created, always attempt stash drop on error. (2) Record stash ref: const stashRef = 'keel-revert-check-' + Date.now() and use -m flag; find and drop by message on cleanup. (3) Document Windows limitation in revert-check output. (4) Consider alternative: copy phase files to temp dir rather than git stash for revert simulation.",
+    "token_impact": "None — but crash leaves repo in bad state requiring manual recovery. Blocks CI on Windows."
+  },
+  {
+    "id": "P4-03",
+    "severity": "HIGH",
+    "component": "keel-state/snapshot-omits-docs-artifacts",
+    "evidence": "After init + gate PASS phase 1: snapshot TEST-P4 → ls .keel/state/TEST-P4/snapshots/2026-07-21T11-55-13-343Z/ shows: 01-product-owner.json, audit-log.jsonl, handoff-log.md, manifest.json. No docs/ directory or contents. Phase outputs reference docs/ artifact paths (design.md, coverage.xml, screenshots). These are NOT in snapshot.",
+    "root_cause": "cmdSnapshot copies only .keel/state/<story-id>/ directory. All docs/ artifacts (docs/design/, docs/qa/, docs/e2e-evidence/, docs/security/, docs/plans/) are excluded. If restore is called after phases 3-9 have written docs/ artifacts, the state directory reverts to the snapshot point but docs/ retains the newer files. State says phase 4 completed; docs/design/ has phase-6-era content. The handshake that re-runs after restore reads current docs/ files, not snapshot-era files.",
+    "fix": "Snapshot should record artifact paths from each completed phase file and include them in the snapshot tarball. Alternatively: document that snapshot is state-only and docs/ artifacts are git's responsibility — add a pre-snapshot git add/commit instruction to snapshot output.",
+    "token_impact": "LOW — state/docs divergence causes handshake to re-verify incorrect artifact versions, producing misleading gate results."
+  },
+  {
+    "id": "P4-04",
+    "severity": "HIGH",
+    "component": "keel-state/security-status-no-story-scope",
+    "evidence": "node keel-state.cjs security-status → 66 incidents from all sessions/stories spanning 2026-07-20 to 2026-07-21. No story_id field in incident records. No --story-id filter flag. investigate-defect skill SKILL.md: 'check keel-state.cjs security-status for cjis_violation/cjis_suspect entry from this session.' 66-incident dump makes per-story filtering mechanically impossible.",
+    "root_cause": "appendIncident in keel-classify-gate.cjs writes to ~/.keel/security/incidents.jsonl with no story context. cmdSecurityStatus reads the full file and dumps all records. In a multi-story development environment, a developer following investigate-defect's instruction cannot determine which incidents belong to the current story. The 'from this session' qualifier in the skill has no mechanical support.",
+    "fix": "(1) Pass story_id to appendIncident via env var KEEL_STORY_ID (set by the orchestrator at pipeline start). (2) Add --story-id and --since flags to security-status. (3) Add session_id (timestamp of session start from manifest.started_at) to incidents for cross-referencing.",
+    "token_impact": "LOW — usability gap. Security review depends on per-story incident context."
+  },
+  {
+    "id": "P4-05",
+    "severity": "HIGH",
+    "component": "keel-state/revert-check-dangling-stash",
+    "evidence": "After revert-check crash: git stash list → 'stash@{0}: On dev: keel-revert-check'. git stash pop → 'error: Your local changes to the following files would be overwritten by merge: .keel/graph/codegraph.json'. Required: git checkout .keel/graph/codegraph.json followed by git stash pop to recover. 8 steps to manually recover from one failed revert-check.",
+    "root_cause": "No finally{} block in cmdRevertCheck to pop or drop the stash on failure. The stash stack grows on every failed call. Stash pop fails if any tracked file has concurrent modifications (codegraph.json was modified by build-codegraph during the same session). Recovery requires knowing to look for a keel-specific stash and understanding git stash pop conflict resolution.",
+    "fix": "Use a named stash with a timestamp: git stash push -m keel-revert-check-<ts>. On catch: git stash drop stash@{0} where stash message matches. Include recovery instructions in the error message output.",
+    "token_impact": "None — but permanently broken git stash state blocks all git operations on the working tree."
+  },
+  {
+    "id": "P4-06",
+    "severity": "MED",
+    "component": "build-codegraph/phantom-help-directory",
+    "evidence": "Ran: node ~/.keel/bin/build-codegraph.cjs --help. Output: 'CodeGraph: 0 nodes, 0 edges → .keel/graph/codegraph.json' (no help text shown). ls -- '--help' → EXISTS. powershell Test-Path '.\\--help' → True. git stash warning showed '--help/.keel/graph/codegraph.json' as a tracked file. build-codegraph.cjs:28: const args = process.argv.slice(2) — no flag parsing, no --help check.",
+    "root_cause": "build-codegraph.cjs treats ALL arguments as positional, including '--help'. When called with '--help', it uses '--help' as the output directory root and creates '--help/.keel/graph/codegraph.json'. No guard for flag-like args. The phantom '--help/' directory now exists at the repo root, is tracked by git stash, and will appear in git status if modified.",
+    "fix": "Add to build-codegraph.cjs: if (args.some(a => a === '--help' || a === '-h')) { console.log('Usage: ...'); process.exit(0); } Also add: if (args[0] && args[0].startsWith('--') && args[0] !== '--impact') die with usage error. Add '--help/' to .gitignore. Clean up existing phantom directory.",
+    "token_impact": "None — but phantom directory in git state is confusing and unexpected to developers."
+  },
+  {
+    "id": "P4-07",
+    "severity": "MED",
+    "component": "keel-state/init-title-silent-drop",
+    "evidence": "Ran: node keel-state.cjs init TEST-P4 'Audit state machine walkthrough'. manifest.json → title: ''. cmdInit (keel-state.cjs:218-243): title: flag(args, '--title') || ''. The string 'Audit state machine walkthrough' was passed as rest[0] but flag() only parses --key value pairs. No warning emitted. Usage string (line 15): 'node keel-state.cjs init <story-id> [--title \"...\"]' shows --title but many devs pass positionally.",
+    "root_cause": "Positional title argument is silently discarded. The story is initialized with empty title, making status/describe/report output generic. The usage string mentions --title in brackets, not prominently. Silent data loss at init time is particularly harmful — the developer only discovers the error when they see generic output downstream.",
+    "fix": "In cmdInit: if rest[0] && !rest[0].startsWith('--'), use it as the title (or emit a warning 'Did you mean --title? Positional title argument not supported.'). Title is metadata — silent drop is never correct.",
+    "token_impact": "LOW — but affects all status/report/describe output readability throughout story lifecycle."
+  },
+  {
+    "id": "P4-08",
+    "severity": "LOW",
+    "component": "keel-state/restore-halted-state-opaque",
+    "evidence": "Restored snapshot from HALTED state (snapshots/2026-07-21T11-55-13-343Z/ taken post-HALT). restore output: 'OK: restored snapshot 2026-07-21T11-55-13-343Z'. status after restore: halted:true, attempts:{2:3}. No indication in restore output that restored state was HALTED. Developer runs restore expecting clean state; gets another HALT.",
+    "root_cause": "restore output is minimal ('OK: restored snapshot <ts>'). It does not report the halted flag or attempt count of the restored snapshot. A developer taking a snapshot 'before a risky operation' gets a false expectation of safety — if the snapshot was taken post-halt, the restore returns to halt, not to the pre-halt state.",
+    "fix": "Add to restore output: 'restored to phase N, halted: yes/no, attempts: {N: M}'. Makes restored state immediately visible without requiring a follow-up status call.",
+    "token_impact": "None — informational gap only."
+  }
+]

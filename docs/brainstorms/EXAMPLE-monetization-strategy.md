@@ -453,10 +453,9 @@ Rate each concept on three dimensions (1-10 scale):
 
 **Next Steps:**
 1. ✓ Brainstorm approved (this document)
-2. → Schedule req-agent for detailed requirements (target: KEEL-42, today or tomorrow)
-3. → PM creates Jira epic + story (KEEL-42)
-4. → Design phase (Phase 3): API contracts, Stripe integration plan, schema
-5. → Dev kickoff (Phase 4): Implementation across iOS, Android, Web
+2. → Schedule req-agent for detailed requirements (today or tomorrow)
+3. → Design phase (Phase 3): API contracts, Stripe integration plan, schema
+4. → Dev kickoff (Phase 4): Implementation across iOS, Android, Web
 
 ---
 
@@ -511,87 +510,42 @@ Rate each concept on three dimensions (1-10 scale):
 
 ---
 
-## Feature Concept Card: Top Candidate
+## Handoff Brief: Top Candidate
 
 ### Concept 1: Monthly/Annual Subscription Tiers
-
-**Feature Name:** User Subscription Management System
-
-**Feature ID:** KEEL-42 (to be created in Jira)
 
 **User Story (Rough):**
 ```
 As a power user of the platform,
 I want to subscribe to a paid monthly plan ($29/month),
-so that I can access advanced features (premium analytics, priority support, unlimited API) 
-and support the product I love
+so that I can access advanced features (premium analytics, priority support, unlimited API)
+and support the product I depend on
 ```
 
-**Problem Solved:**
-- Power users (10% of free base) need premium features not available in free tier
-- Platform needs recurring revenue to fund product development + customer support
-- Users expect industry-standard subscription model (not one-time purchases or credits)
+**Problem Solved:** Power users (10% of free base) need premium features not available in the free tier; platform needs recurring revenue to fund development and support.
 
 **Rough Acceptance Criteria:**
-- [ ] AC1: Users can view pricing page with plan options (Free, Monthly $29, Annual $290)
-- [ ] AC2: Users can initiate subscription flow (select plan → enter payment info)
-- [ ] AC3: Payment is processed via Stripe and subscription is created
-- [ ] AC4: User is granted premium features immediately (feature flag set)
-- [ ] AC5: User receives confirmation email with subscription details + next billing date
-- [ ] AC6: Payment failures are handled gracefully (error message + retry option)
-- [ ] AC7: User can view active subscription in account settings
+- [ ] AC1: Users can view a pricing page with plan options (Free, Monthly $29, Annual $290)
+- [ ] AC2: Users can complete a subscription flow and have payment processed via Stripe
+- [ ] AC3: Premium features are granted immediately on successful payment (feature flag)
+- [ ] AC4: User receives a confirmation email with billing details and next renewal date
+- [ ] AC5: Payment failures are handled gracefully with a clear error and retry option
+- [ ] AC6: Users can view and manage their active subscription in account settings
 
-**Data Entities Involved:**
-- **Subscription** (new): stores plan_id, user_id, stripe_subscription_id, status, billing_date
-- **PaymentMethod** (new): stores card_last_four, stripe_payment_method_id, is_default
-- **Invoice** (new): stores subscription charges, payment status, due date
-- **Plan** (lookup): monthly-premium, annual-premium, free (already exists from Phase 1)
+**Data Entities:**
+- **Subscription** (new): plan_id, user_id, stripe_subscription_id, status, billing_date
+- **PaymentMethod** (new): card_last_four, stripe_payment_method_id, is_default
+- **Invoice** (new): subscription charges, payment status, due date
 
 **External Integrations:**
-- **Stripe API:** Payment processing, subscription management, webhook events
-- **Email Service:** Send confirmation + renewal reminder emails
+- **Stripe API:** payment processing, subscription lifecycle, webhook events
+- **Email Service:** confirmation + renewal reminder emails (Sendgrid or AWS SES)
 
-**Dependencies (Blocking):**
-- ✓ KEEL-10: User Auth System (complete)
-- ✓ KEEL-11: Plan Management (complete)
-- ✓ KEEL-12: Feature Flag System (complete)
-- ⏳ KEEL-20: Email Notifications (in-progress, can use mock for MVP testing)
+**Technical Risks for Design Phase:**
+1. **PCI Compliance:** Card data must never be stored locally — Stripe tokenization required; design phase confirms token handling and audit approach
+2. **Webhook Idempotency:** Duplicate webhook delivery must not create duplicate subscriptions; design phase includes signature verification and deduplication strategy
 
-**Technical Risks to Resolve in Design Phase:**
-1. **PCI Compliance:** Card data must never be stored locally; Stripe tokenization required. Design phase confirms token handling + audit approach.
-2. **Webhook Idempotency:** Stripe webhooks (subscription created, payment succeeded) must be processed idempotently (no duplicate subscriptions). Design phase includes webhook signature verification + deduplication strategy.
-
-**Estimated Complexity:** LARGE
-- Large: 4+ sprints, high complexity, multiple integration points (Stripe, email, database)
-- Estimated effort: 5-6 sprints (10-12 weeks) for full implementation + UAT
-
-**Estimated Effort (Phase 2+):**
-- Requirements (req-agent, Phase 2): 2 days
-- Design (design-agent, Phase 3): 3 days
-- Implementation (dev-agent + all platforms, Phase 4): 4-5 sprints
-- Testing (test-agent, Phase 4): 1 sprint
-- UAT + refinement (Phase 4): 1 sprint
-- **Total:** ~5-6 sprints (10-12 weeks) to production release
-
-**Recommended Next Steps:**
-1. ✓ Brainstorm converged (this document, today)
-2. → **Today/Tomorrow:** Schedule req-agent for detailed requirements (KEEL-42)
-3. → **Sprint 69:** req-agent completes requirement document (docs/requirements/KEEL-42.md)
-4. → **Sprint 70:** design-agent completes API contracts + schema design
-5. → **Sprint 71-74:** dev-agent + test-agent implement + test (iOS, Android, Web simultaneous)
-6. → **Sprint 75:** UAT + release staging
-7. → **May 12, 2026:** Production rollout (staged 10% → 50% → 100%)
-
-**Success Metrics (Measured Phase 5+):**
-- Conversion: ≥5% free-to-paid in first 30 days
-- MRR: $50K+ by June 30
-- Churn: <3% MoM for month 1-3 cohort
-- Payment success rate: >99%
-
-**Notes:**
-- PM (Amar Singh) to finalize pricing with finance + sales (monthly $29, annual $290 proposed)
-- Requires legal review of T&Cs + refund policy (Phase 3 design)
-- Marketing team to prepare launch communication (messaging, landing page, email campaign)
+**Estimated Complexity:** Large (4+ sprints — Stripe integration, payment UI, webhook handling, feature flag wiring)
 
 ---
 
@@ -638,7 +592,7 @@ Document key assumptions — if any prove false, concept needs rework:
 ### Recommended Path Forward
 
 1. ✓ **Approve Concept 1 (Subscription Tiers)** for immediate Phase 2 kickoff
-   - Target: KEEL-42 (req-agent requirements, Phase 2)
+   - req-agent requirements, Phase 2
    - Launch target: May 12, 2026
 
 2. ⏸️ **Defer Concepts 2, 3, 5** to Phase 4 post-validation
@@ -660,6 +614,6 @@ Document key assumptions — if any prove false, concept needs rework:
 
 ---
 
-**Document Version:** 1.0 | **Last Updated:** 2026-07-06 | **Next Phase:** 2 (req-agent — requirement elicitation for KEEL-42)
+**Document Version:** 1.0 | **Last Updated:** 2026-07-06 | **Next Phase:** 2 (req-agent — requirement elicitation)
 
 **Next Milestone:** Schedule req-agent for Concept 1 detailed requirements (target: 2026-07-07)

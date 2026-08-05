@@ -18,6 +18,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const crypto = require('crypto');
 const { spawnSync, spawn } = require('child_process');
 
 const ENGINE = path.join(__dirname, 'keel-state.cjs');
@@ -30,7 +31,14 @@ function makeTmpDir(name) {
 }
 
 function engine(cwd, ...cliArgs) {
-  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8' });
+  const env = Object.assign({}, process.env, { KEEL_SKIP_APPROVALS: '1' });
+  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8', env });
+  return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
+}
+
+function engineWithEnv(cwd, env, ...cliArgs) {
+  const mergedEnv = Object.assign({}, process.env, { KEEL_SKIP_APPROVALS: '1' }, env);
+  const r = spawnSync(process.execPath, [ENGINE, ...cliArgs], { cwd, encoding: 'utf8', env: mergedEnv });
   return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
 }
 
@@ -72,6 +80,50 @@ async function main() {
     ]);
     const wins = [a, b].filter((r) => r.code === 0).length;
     assert('concurrent double-init: exactly one wins', wins === 1, `wins=${wins}`);
+  }
+
+  // ---- G-10 CJIS precondition check (wiring validation) ----------------
+  {
+    const cwd = makeTmpDir('cjis');
+    // Test 1: Non-CJIS story should NOT require gate wiring
+    const r1 = engine(cwd, 'init', 'S-CJIS-1', '--title', 'non-CJIS story');
+    assert('non-CJIS init succeeds without gate wiring', r1.code === 0, `code=${r1.code} out=${r1.out.slice(0, 120)}`);
+
+    // Test 2: CJIS story without hooks.json should HALT (exit 2)
+    const r2 = engine(cwd, 'init', 'S-CJIS-2', '--title', 'CJIS story', '--cjis-scope');
+    assert('CJIS init HALTS (exit 2) if hooks.json missing', r2.code === 2 && /hooks.json/.test(r2.out),
+      `code=${r2.code} out=${r2.out.slice(0, 120)}`);
+
+    // Test 3: CJIS story with incomplete hooks.json should HALT
+    fs.mkdirSync(path.join(cwd, 'hooks'), { recursive: true });
+    fs.writeFileSync(path.join(cwd, 'hooks', 'hooks.json'), JSON.stringify({
+      hooks: {
+        UserPromptSubmit: [
+          { hooks: [{ type: 'command', command: 'node keel-classify-gate.cjs --stage=prompt' }] }
+        ],
+        // Missing PreToolUse and PostToolUse
+      }
+    }));
+    const r3 = engine(cwd, 'init', 'S-CJIS-3', '--title', 'incomplete hooks', '--cjis-scope');
+    assert('CJIS init HALTS if gate not wired for all required stages', r3.code === 2 && /PreToolUse/.test(r3.out),
+      `code=${r3.code} out=${r3.out.slice(0, 160)}`);
+
+    // Test 4: CJIS story with complete hooks.json should SUCCEED
+    fs.writeFileSync(path.join(cwd, 'hooks', 'hooks.json'), JSON.stringify({
+      hooks: {
+        UserPromptSubmit: [
+          { hooks: [{ type: 'command', command: 'node keel-classify-gate.cjs --stage=prompt' }] }
+        ],
+        PreToolUse: [
+          { matcher: 'Task', hooks: [{ type: 'command', command: 'node keel-classify-gate.cjs --stage=pre' }] }
+        ],
+        PostToolUse: [
+          { matcher: 'Read', hooks: [{ type: 'command', command: 'node keel-classify-gate.cjs --stage=post' }] }
+        ]
+      }
+    }));
+    const r4 = engine(cwd, 'init', 'S-CJIS-4', '--title', 'complete hooks', '--cjis-scope');
+    assert('CJIS init succeeds with complete gate wiring', r4.code === 0, `code=${r4.code} out=${r4.out.slice(0, 120)}`);
   }
 
   // ---- held lock fails loudly ----------------------------------------
@@ -122,8 +174,11 @@ async function main() {
   {
     const cwd = makeTmpDir('budget');
     engine(cwd, 'init', 'S-5', '--max-gates', '2');
+    writePhaseFile(cwd, 'S-5', 1, 'product-owner', ['intake']);
     engine(cwd, 'gate', 'S-5', '--phase', '1', '--verdict', 'PASS');
+    writePhaseFile(cwd, 'S-5', 2, 'business-analyst', ['spec']);
     engine(cwd, 'gate', 'S-5', '--phase', '2', '--verdict', 'PASS');
+    writePhaseFile(cwd, 'S-5', 3, 'ui-designer', ['design']);
     const r = engine(cwd, 'gate', 'S-5', '--phase', '3', '--verdict', 'PASS');
     const m = readManifest(cwd, 'S-5');
     assert('gate budget exceeded: HALT exit 2 + halted flag',
@@ -139,9 +194,11 @@ async function main() {
   {
     const cwd = makeTmpDir('restore');
     engine(cwd, 'init', 'S-6');
+    writePhaseFile(cwd, 'S-6', 1, 'product-owner', ['intake']);
     engine(cwd, 'gate', 'S-6', '--phase', '1', '--verdict', 'PASS');
     engine(cwd, 'snapshot', 'S-6');
     const snap = fs.readdirSync(path.join(cwd, '.keel', 'state', 'S-6', 'snapshots'))[0];
+    writePhaseFile(cwd, 'S-6', 2, 'business-analyst', ['spec']);
     engine(cwd, 'gate', 'S-6', '--phase', '2', '--verdict', 'PASS');
     const auditFile = path.join(cwd, '.keel', 'state', 'S-6', 'audit-log.jsonl');
     const before = fs.readFileSync(auditFile, 'utf8').split('\n').filter(Boolean).length;
@@ -156,17 +213,24 @@ async function main() {
   {
     const cwd = makeTmpDir('scope');
     engine(cwd, 'init', 'S-8', '--scope', 'defect');
+    writePhaseFile(cwd, 'S-8', 1, 'product-owner', ['intake']);
     const r = engine(cwd, 'gate', 'S-8', '--phase', '1', '--verdict', 'PASS');
     const m = readManifest(cwd, 'S-8');
     assert('defect scope: gate PASS on phase 1 advances to 5, not 2',
       m.current_phase === 5 && /1 -> 5/.test(r.out), `current_phase=${m.current_phase}`);
+    writePhaseFile(cwd, 'S-8', 5, 'software-engineer', ['fix']);
     engine(cwd, 'gate', 'S-8', '--phase', '5', '--verdict', 'PASS');
+    writePhaseFile(cwd, 'S-8', 6, 'qa-engineer', ['validated']);
     engine(cwd, 'gate', 'S-8', '--phase', '6', '--verdict', 'PASS');
-    engine(cwd, 'gate', 'S-8', '--phase', '7', '--verdict', 'PASS');
-    engine(cwd, 'gate', 'S-8', '--phase', '8', '--verdict', 'PASS');
-    const last = engine(cwd, 'gate', 'S-8', '--phase', '10', '--verdict', 'PASS');
+    writePhaseFile(cwd, 'S-8', 8, 'security-engineer', ['0 HIGH']);
+    // defect scope's expected_phases is [1,5,6,8] (orchestrator.md: "Defect
+    // scope phases: 1 -> 5 -> 6 -> 8" -- no phase 7/9/10). Pre-fix, this test
+    // used to gate a bogus phase 10 here and it silently "passed" because
+    // gate never validated anything -- exactly the bug this patch closes.
+    // Phase 8 is genuinely the last phase for a defect-scoped story.
+    const last = engine(cwd, 'gate', 'S-8', '--phase', '8', '--verdict', 'PASS');
     assert('defect scope: final gate reports complete',
-      /10 -> complete/.test(last.out), last.out.slice(0, 120));
+      /8 -> complete/.test(last.out), last.out.slice(0, 120));
   }
 
   // ---- gate PASS auto-audits the phase (KEEL-102 e2e finding) ----------
@@ -179,6 +243,63 @@ async function main() {
     assert('gate PASS auto-appends phase_completed (no separate audit call)',
       /"action":"phase_completed"/.test(log) && /"agent":"business-analyst"/.test(log),
       log.slice(-200));
+  }
+
+  // ---- gate PASS refuses to advance without a valid phase file (2026-07-20 fix) ----
+  // Regression test for the audit finding: gate used to accept --verdict PASS
+  // with no corresponding phase file on disk at all, silently advancing the
+  // pipeline. This must never regress.
+  {
+    const cwd = makeTmpDir('gate-refuse');
+    engine(cwd, 'init', 'S-11');
+    const noFile = engine(cwd, 'gate', 'S-11', '--phase', '1', '--verdict', 'PASS', '--notes', 'no phase file exists');
+    const m1 = readManifest(cwd, 'S-11');
+    assert('gate PASS refuses when no phase file exists on disk',
+      noFile.code === 1 && /GATE REFUSED/.test(noFile.out) && m1.current_phase === 1,
+      `code=${noFile.code} current_phase=${m1.current_phase} out=${noFile.out.slice(0, 100)}`);
+
+    fs.writeFileSync(path.join(cwd, '.keel', 'state', 'S-11', '01-product-owner.json'), JSON.stringify({
+      phase: 1, agent: 'product-owner', story_id: 'S-11', confidence: 'high',
+      findings: ['x'], acceptance_criteria_ids: ['AC-1'], decisions: [],
+      artifacts: ['this-file-does-not-exist.md'], next_phase: 2,
+    }));
+    const badArtifact = engine(cwd, 'gate', 'S-11', '--phase', '1', '--verdict', 'PASS', '--notes', 'artifact does not exist');
+    const m2 = readManifest(cwd, 'S-11');
+    assert('gate PASS refuses when the phase file references a nonexistent artifact',
+      badArtifact.code === 1 && /GATE REFUSED/.test(badArtifact.out) && /does not exist on disk/.test(badArtifact.out) && m2.current_phase === 1,
+      `code=${badArtifact.code} current_phase=${m2.current_phase}`);
+
+    writePhaseFile(cwd, 'S-11', 1, 'product-owner', ['intake, no bogus artifacts this time']);
+    const good = engine(cwd, 'gate', 'S-11', '--phase', '1', '--verdict', 'PASS', '--notes', 'now valid');
+    assert('gate PASS succeeds once the phase file is genuinely valid',
+      good.code === 0 && /PASS recorded/.test(good.out), good.out.slice(0, 100));
+  }
+
+  // ---- gate PASS refuses to skip a phase (KEEL-R18, found via live testing
+  // 2026-07-21) -- reproduces exactly what happened against a real project:
+  // phase N's gate is never successfully recorded (refused or just never
+  // called), yet phase N+1's gate is still accepted because the engine only
+  // checked THAT phase's own file, never that the story was actually AT that
+  // phase. Must never regress. --------------------------------------------
+  {
+    const cwd = makeTmpDir('gate-skip-phase');
+    engine(cwd, 'init', 'S-13');
+    writePhaseFile(cwd, 'S-13', 1, 'product-owner', ['intake']);
+    engine(cwd, 'gate', 'S-13', '--phase', '1', '--verdict', 'PASS', '--notes', 'ok');
+    // current_phase is now 2. Skip writing/gating phase 2 entirely, and try
+    // to jump straight to gating phase 3 (a genuinely valid phase-3 file).
+    writePhaseFile(cwd, 'S-13', 3, 'ui-designer', ['designed without BA ever running']);
+    const skip = engine(cwd, 'gate', 'S-13', '--phase', '3', '--verdict', 'PASS', '--notes', 'skip ahead');
+    const m = readManifest(cwd, 'S-13');
+    assert('gate PASS refuses to skip an un-gated phase, even with a valid file for the later phase',
+      skip.code === 1 && /GATE REFUSED/.test(skip.out) && /out of sequence/.test(skip.out) && m.current_phase === 2,
+      `code=${skip.code} current_phase=${m.current_phase} out=${skip.out.slice(0, 150)}`);
+
+    // The correct, in-sequence phase must still succeed.
+    writePhaseFile(cwd, 'S-13', 2, 'business-analyst', ['elaborated']);
+    const inSeq = engine(cwd, 'gate', 'S-13', '--phase', '2', '--verdict', 'PASS', '--notes', 'in sequence');
+    assert('gate PASS still succeeds for the actual current phase',
+      inSeq.code === 0 && /PASS recorded/.test(inSeq.out), inSeq.out.slice(0, 100));
   }
 
   // ---- prescan: honest inventory even with zero tools available --------
@@ -194,12 +315,41 @@ async function main() {
       `code=${r.code} scanners=${inv ? inv.scanners.length : 'none'}`);
   }
 
+  // ---- prescan: composer-audit honestly skips when composer isn't on
+  // PATH, instead of "running" and reporting a false PRESCAN DIRTY from a
+  // shell-not-found exit code (found via live testing against a real
+  // CakePHP project in a sandbox with no composer binary on PATH -- every
+  // other scanner in this list already checked onPath() before running;
+  // composer-audit was the one exception, 2026-07-21) --------------------
+  {
+    const cwd = makeTmpDir('prescan-composer-no-path');
+    engine(cwd, 'init', 'S-12');
+    fs.writeFileSync(path.join(cwd, 'composer.json'), '{"require":{"php":">=8.1"}}\n');
+    // Strip all non-essential tools from PATH so composer (and snyk, etc.) are
+    // not found — ensures the test is environment-agnostic regardless of what's
+    // installed on the host machine.  node's bin dir is intentionally excluded:
+    // keel-state.cjs is launched via absolute path (process.execPath), and on
+    // many machines npm-global tools like snyk are co-installed there.
+    const sysPathEntries = process.platform === 'win32'
+      ? [(process.env.WINDIR || process.env.SystemRoot || 'C:\\Windows') + '\\System32']
+      : ['/usr/bin', '/bin', '/usr/local/bin'];
+    const strippedPath = sysPathEntries.join(path.delimiter);
+    const r = engineWithEnv(cwd, { ...process.env, PATH: strippedPath }, 'prescan', 'S-12');
+    const file = path.join(cwd, '.keel', 'state', 'S-12', 'prescan.json');
+    const inv = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+    const composerEntry = inv && inv.scanners.find((s) => s.name === 'composer-audit');
+    assert('prescan: composer-audit skips honestly (not a false DIRTY) when composer.json exists but composer is not on PATH',
+      r.code === 0 && composerEntry && composerEntry.status === 'skipped' && /not on PATH/.test(composerEntry.reason || ''),
+      `code=${r.code} entry=${JSON.stringify(composerEntry)}`);
+  }
+
   // ---- status --all: fleet listing (KEEL-102) --------------------------
   {
     // (a) two-story fixture: FLEET-A feature (advanced past phase 1),
     //     FLEET-B defect halted via 3 gate FAILs on the same phase.
     const cwd = makeTmpDir('fleet');
     engine(cwd, 'init', 'FLEET-A', '--title', 'feature story');
+    writePhaseFile(cwd, 'FLEET-A', 1, 'product-owner', ['intake']);
     engine(cwd, 'gate', 'FLEET-A', '--phase', '1', '--verdict', 'PASS');
     engine(cwd, 'init', 'FLEET-B', '--scope', 'defect');
     engine(cwd, 'gate', 'FLEET-B', '--phase', '1', '--verdict', 'FAIL', '--notes', 'f1');
@@ -261,7 +411,7 @@ async function main() {
     const cwd = makeTmpDir('revert');
     const git = (a) => spawnSync('git', a, { cwd, encoding: 'utf8' });
     git(['init', '-q']);
-    git(['config', 'user.email', 'test@keel.local']);
+    git(['config', 'user.email', 'test@example.com']);
     git(['config', 'user.name', 'keel-test']);
     // stub "test runner": exits 0 iff app.txt contains FIXED
     fs.writeFileSync(path.join(cwd, 'check.cjs'),
@@ -284,6 +434,176 @@ async function main() {
     const bad = engine(cwd, 'revert-check', 'S-7', '--test', 'regression', '--runner', `node always-pass.cjs`);
     assert('revert-check REJECTS a test that passes without the fix',
       bad.code === 1 && /does not prove/.test(bad.out), `code=${bad.code} ${bad.out.slice(0, 160)}`);
+  }
+
+  // ---- phase-mode set / get / auto-clear on gate PASS (CRIT-3 KEEL-R14) ----
+  {
+    const cwd = makeTmpDir('phasemode');
+    // Use phase 1 (the current phase after init) for all sub-tests so the gate
+    // sequencing check (phase must equal current_phase on PASS) passes cleanly.
+    engine(cwd, 'init', 'S-PM1');
+
+    const setR = engine(cwd, 'phase-mode', 'set', 'S-PM1', '--phase', '1', '--mode', 'author');
+    assert('phase-mode set: exits 0', setR.code === 0, setR.out.slice(0, 120));
+
+    const getR = engine(cwd, 'phase-mode', 'get', 'S-PM1', '--phase', '1');
+    assert('phase-mode get: returns set value', /author/.test(getR.out), getR.out.slice(0, 120));
+
+    const m = readManifest(cwd, 'S-PM1');
+    assert('phase-mode stored in manifest.phase_modes', m.phase_modes && m.phase_modes['1'] === 'author', JSON.stringify(m.phase_modes));
+
+    // gate PASS on the current phase auto-clears the marker (CRIT-3 keel-state.cjs:498)
+    writePhaseFile(cwd, 'S-PM1', 1, 'product-owner', ['intake done']);
+    engine(cwd, 'gate', 'S-PM1', '--phase', '1', '--verdict', 'PASS');
+    const m2 = readManifest(cwd, 'S-PM1');
+    assert('gate PASS auto-clears phase_modes[1]', !m2.phase_modes || !m2.phase_modes['1'], JSON.stringify(m2.phase_modes));
+
+    // gate FAIL on the current phase leaves marker intact
+    engine(cwd, 'init', 'S-PM2');
+    engine(cwd, 'phase-mode', 'set', 'S-PM2', '--phase', '1', '--mode', 'draft');
+    writePhaseFile(cwd, 'S-PM2', 1, 'product-owner', ['initial attempt']);
+    engine(cwd, 'gate', 'S-PM2', '--phase', '1', '--verdict', 'FAIL', '--notes', 'needs revision');
+    const m3 = readManifest(cwd, 'S-PM2');
+    assert('gate FAIL preserves phase_modes[1]', m3.phase_modes && m3.phase_modes['1'] === 'draft', JSON.stringify(m3.phase_modes));
+  }
+
+  // ---- visual-baseline-approve ----
+  {
+    const cwd = makeTmpDir('visual');
+    engine(cwd, 'init', 'S-VIS1');
+
+    // Create a mock screenshot baseline
+    const screenshotDir = path.join(cwd, 'tests', 'e2e', '__screenshots__', 'chromium-desktop');
+    fs.mkdirSync(screenshotDir, { recursive: true });
+    fs.writeFileSync(path.join(screenshotDir, 'component.png'), 'fake PNG data');
+
+    // Setup git
+    const git = (args) => {
+      spawnSync('git', args, { cwd, stdio: 'pipe' });
+    };
+    git(['init']);
+    git(['config', 'user.name', 'TestUser']);
+    git(['config', 'user.email', 'test@localhost']);
+    git(['add', 'tests', '.keel']);
+    git(['commit', '-m', 'initial']);
+
+    // Modify the baseline file
+    fs.writeFileSync(path.join(screenshotDir, 'component.png'), 'modified PNG data');
+
+    // Test: approve with clean state (only screenshot changes)
+    const approveR = engine(cwd, 'visual-baseline-approve', 'S-VIS1', '--reviewer', 'reviewer1', '--notes', 'design update');
+    assert('visual-baseline-approve: exits 0 with clean screenshot changes',
+      approveR.code === 0 && /BASELINE APPROVED/.test(approveR.out),
+      `code=${approveR.code} ${approveR.out.slice(0, 160)}`);
+    assert('visual-baseline-approve: prints git commands',
+      /git add/.test(approveR.out) && /git commit/.test(approveR.out),
+      approveR.out.slice(0, 160));
+
+    // Test: refuse when non-screenshot files are dirty
+    const cwd2 = makeTmpDir('visual-dirty');
+    engine(cwd2, 'init', 'S-VIS2');
+    fs.mkdirSync(path.join(cwd2, 'tests', 'e2e', '__screenshots__'), { recursive: true });
+    fs.writeFileSync(path.join(cwd2, 'tests', 'e2e', '__screenshots__', 'test.png'), 'baseline');
+    fs.mkdirSync(path.join(cwd2, '.git'), { recursive: true });
+    const git2 = (args) => {
+      spawnSync('git', args, { cwd: cwd2, stdio: 'pipe' });
+    };
+    git2(['init']);
+    git2(['config', 'user.name', 'User2']);
+    git2(['config', 'user.email', 'user@local']);
+    git2(['add', '.']);
+    git2(['commit', '-m', 'init']);
+    fs.writeFileSync(path.join(cwd2, 'tests', 'e2e', '__screenshots__', 'test.png'), 'changed');
+    fs.writeFileSync(path.join(cwd2, 'app.txt'), 'other');
+    const denyR = engine(cwd2, 'visual-baseline-approve', 'S-VIS2', '--reviewer', 'reviewer2', '--notes', 'test');
+    assert('visual-baseline-approve: rejects non-screenshot changes',
+      denyR.code === 1 && /only screenshot files/.test(denyR.out),
+      `code=${denyR.code} ${denyR.out.slice(0, 160)}`);
+
+    // Test: refuse when nothing changed
+    const cwd3 = makeTmpDir('visual-clean');
+    engine(cwd3, 'init', 'S-VIS3');
+    fs.mkdirSync(path.join(cwd3, '.git'), { recursive: true });
+    const git3 = (args) => {
+      spawnSync('git', args, { cwd: cwd3, stdio: 'pipe' });
+    };
+    git3(['init']);
+    git3(['config', 'user.name', 'User3']);
+    git3(['config', 'user.email', 'user@local']);
+    git3(['add', '.']);
+    git3(['commit', '-m', 'init']);
+    const nothingR = engine(cwd3, 'visual-baseline-approve', 'S-VIS3', '--reviewer', 'reviewer3', '--notes', 'test');
+    assert('visual-baseline-approve: refuses when no screenshots changed',
+      nothingR.code === 1 && /nothing to approve/.test(nothingR.out),
+      `code=${nothingR.code} ${nothingR.out.slice(0, 160)}`);
+  }
+
+  // ---- visual-baseline binary fixture (PNG hash correctness) -----
+  {
+    const cwd = makeTmpDir('visual-binary');
+    engine(cwd, 'init', 'S-VISBINARY');
+    const screenshotDir = path.join(cwd, 'tests', 'e2e', '__screenshots__');
+    fs.mkdirSync(screenshotDir, { recursive: true });
+
+    // Binary fixture: PNG magic bytes
+    const pngBuffer = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0xFF, 0xFE]);
+    const pngPath = path.join(screenshotDir, 'binary.png');
+    fs.writeFileSync(pngPath, pngBuffer);
+
+    // Initialize git
+    fs.mkdirSync(path.join(cwd, '.git'), { recursive: true });
+    const git = (args) => {
+      spawnSync('git', args, { cwd, stdio: 'pipe' });
+    };
+    git(['init']);
+    git(['config', 'user.name', 'TestUser']);
+    git(['config', 'user.email', 'test@localhost']);
+    git(['add', 'tests', '.keel']);
+    git(['commit', '-m', 'initial']);
+
+    // Modify PNG after commit (mark as changed for git diff)
+    const modifiedBuffer = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0xFF, 0xFE, 0xAA]);
+    fs.writeFileSync(pngPath, modifiedBuffer);
+
+    // Run approve and verify
+    const approveR = engine(cwd, 'visual-baseline-approve', 'S-VISBINARY', '--reviewer', 'testuser', '--notes', 'binary');
+    assert('visual-baseline-approve: exits 0 with binary PNG',
+      approveR.code === 0 && /BASELINE APPROVED/.test(approveR.out),
+      `code=${approveR.code}`);
+
+    // Read audit log and verify hash
+    const auditLogPath = path.join(cwd, '.keel', 'state', 'S-VISBINARY', 'audit-log.jsonl');
+    if (fs.existsSync(auditLogPath)) {
+      const auditLines = fs.readFileSync(auditLogPath, 'utf8').trim().split('\n');
+      // Find the visual_baseline entry (may not be the last line if other events added)
+      let visualEntry = null;
+      for (let i = auditLines.length - 1; i >= 0; i--) {
+        const entry = JSON.parse(auditLines[i]);
+        if (entry.action === 'visual_baseline') {
+          visualEntry = entry;
+          break;
+        }
+      }
+      if (!visualEntry) {
+        assert('visual-baseline-approve: records correct binary hash', false, `no visual_baseline entry. all entries: ${auditLines.map(l => JSON.parse(l).action).join(',')}`);
+      } else {
+        const expectedHash = crypto.createHash('sha256').update(modifiedBuffer).digest('hex');
+        // git records relative paths; compare against baselines keys
+        const baselineEntries = Object.entries(visualEntry.baselines || {});
+        let foundMatch = false;
+        for (const [recordedPath, recordedHash] of baselineEntries) {
+          if (recordedPath.includes('binary.png') && recordedHash === expectedHash) {
+            foundMatch = true;
+            break;
+          }
+        }
+        assert('visual-baseline-approve: records correct binary hash',
+          foundMatch,
+          `baselines=${JSON.stringify(visualEntry.baselines)} expected_hash=${expectedHash} reviewer=${visualEntry.reviewer}`);
+      }
+    } else {
+      assert('visual-baseline-approve: records correct binary hash', false, 'audit-log.jsonl not found');
+    }
   }
 
   const failed = results.filter((r) => !r.pass);

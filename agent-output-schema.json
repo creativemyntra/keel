@@ -4,7 +4,7 @@
   "title": "Keel Agent Phase Output",
   "description": "Contract for the output file each Keel phase agent writes to .keel/state/<story-id>/<NN>-<agent>.json. This is how agents pass context to each other.",
   "type": "object",
-  "required": ["phase", "agent", "story_id", "confidence", "findings", "acceptance_criteria_ids", "next_phase"],
+  "required": ["phase", "agent", "story_id", "confidence", "findings", "acceptance_criteria_ids", "decisions", "next_phase"],
   "properties": {
     "phase": {
       "type": "integer",
@@ -14,6 +14,7 @@
     },
     "agent": {
       "type": "string",
+      "description": "tdd-red and tdd-green are DEPRECATED (legacy <=v3.12); accepted for validating old state files only, not for new stories.",
       "enum": [
         "product-owner",
         "business-analyst",
@@ -24,7 +25,9 @@
         "e2e-engineer",
         "security-engineer",
         "technical-writer",
-        "release-manager"
+        "release-manager",
+        "tdd-red",
+        "tdd-green"
       ]
     },
     "story_id": {
@@ -39,8 +42,56 @@
       "type": "array",
       "minItems": 1,
       "maxItems": 15,
-      "items": { "type": "string" },
-      "description": "What the phase concluded, decided, or discovered. Reference file paths and identifiers — never inline file contents."
+      "items": {
+        "type": "object",
+        "required": ["id", "text", "severity", "state"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z]+-[0-9]+$",
+            "description": "Finding identifier (e.g., BUG-1, PERF-2, SEC-3)"
+          },
+          "text": {
+            "type": "string",
+            "description": "Human-readable finding description. Reference file paths and identifiers — never inline file contents."
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+            "description": "CRITICAL/HIGH findings block PASS if OPEN. MEDIUM/LOW do not block."
+          },
+          "state": {
+            "type": "string",
+            "enum": ["OPEN", "RESOLVED", "DEFERRED", "WAIVED"],
+            "description": "Terminal state. OPEN blocks PASS if severity CRITICAL/HIGH. RESOLVED requires commit verification. DEFERRED/WAIVED require human approval."
+          },
+          "evidence": {
+            "type": "object",
+            "description": "Evidence for the state transition (optional, populated by keel state finding --set-state)",
+            "properties": {
+              "commit": {
+                "type": "string",
+                "description": "Git commit SHA that resolved this finding"
+              },
+              "deferred_to": {
+                "type": "string",
+                "description": "Phase or future ticket this was deferred to"
+              },
+              "approver": {
+                "type": "string",
+                "description": "Name/email of human approver (for WAIVED)"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Verbatim reason for deferral or waiver (>= 15 words)"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Findings from this phase: defects, performance issues, security concerns, etc. Each finding has severity and state. CRITICAL/HIGH findings at OPEN block pipeline advancement."
     },
     "acceptance_criteria_ids": {
       "type": "array",
@@ -66,9 +117,47 @@
       "items": { "type": "string" },
       "description": "Anything preventing the next phase from starting"
     },
+    "design_review_checklist": {
+      "type": "object",
+      "description": "Phase 3 (UI designer) required review checklist. Must pass all items for gate C-0008 to PASS.",
+      "required": ["story_alignment", "wcag_2_1_aa", "responsive_design", "design_tokens", "palette_typography"],
+      "properties": {
+        "story_alignment": {
+          "type": "boolean",
+          "description": "Design aligns with story requirements and user flows"
+        },
+        "wcag_2_1_aa": {
+          "type": "boolean",
+          "description": "Design meets WCAG 2.1 Level AA accessibility compliance"
+        },
+        "responsive_design": {
+          "type": "boolean",
+          "description": "Layout works on mobile (375px), tablet (768px), desktop (1200px+)"
+        },
+        "design_tokens": {
+          "type": "boolean",
+          "description": "All colors, spacing, typography use design system tokens (not hardcoded values)"
+        },
+        "palette_typography": {
+          "type": "boolean",
+          "description": "Color palette and typography specs documented (min 2 font families, max 5 colors primary)"
+        }
+      },
+      "additionalProperties": false
+    },
     "timestamp": {
       "type": "string",
       "format": "date-time"
+    },
+    "tokens_used": {
+      "type": "object",
+      "description": "Optional token usage self-reported by the agent (for cost-tracking dashboard T1-1)",
+      "properties": {
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "model": { "type": "string" }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

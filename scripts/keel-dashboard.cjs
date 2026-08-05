@@ -198,7 +198,7 @@ function readStories(stateDirPath) {
       const expected     = m.expected_phases || SCOPES[m.scope] || SCOPES.feature;
       const status       = deriveStatus(m, completedCount, expected.length);
       const phase        = m.current_phase ?? null;
-      const phaseLabel   = (phase >= 1 && phase <= 12)
+      const phaseLabel   = (phase >= 1 && phase <= 10)
         ? `Phase ${phase} — ${PHASE_NAMES[phase - 1]}`
         : (phase != null ? `Phase ${phase}` : 'unknown');
       const idle         = idleTime(m.updated_at || null);
@@ -327,6 +327,7 @@ ${rows}
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="refresh" content="30">
   <title>Keel Pipeline Dashboard</title>
+  <link rel="icon" href="data:,">
   <style>
     @keyframes pulse {
       0%, 100% { opacity: 1; }

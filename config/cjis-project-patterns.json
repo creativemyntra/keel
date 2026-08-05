@@ -1,0 +1,9 @@
+{
+  "_comment": "Project-specific CJIS overlay for this repository. Loaded after config/cjis-patterns.json and merged so the base keel CJIS gate stays project-independent. Patterns follow the same schema (category, pattern, flags, severity). IMPORTANT: Replace the placeholder patterns below with actual HART case/subject ID formats confirmed by the HART compliance team, then remove the _note fields and remove HART_CASE_ID + HART_SUBJECT_ID from blocked_categories in config/cjis-patterns.json.",
+  "blocked_categories": [],
+  "allowlist": [],
+  "patterns": [
+    { "category": "HART_CASE_ID",    "pattern": "\\bHC-\\d{4,8}\\b",  "flags": "gi", "severity": "hard", "_note": "PLACEHOLDER -- confirm actual HC-NNNNNN format with HART compliance team before removing from blocked_categories" },
+    { "category": "HART_SUBJECT_ID", "pattern": "\\bHS-\\d{4,8}\\b",  "flags": "gi", "severity": "hard", "_note": "PLACEHOLDER -- confirm actual HS-NNNNNN format with HART compliance team before removing from blocked_categories" }
+  ]
+}

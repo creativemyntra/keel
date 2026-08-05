@@ -10,7 +10,11 @@
       { "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-classify-gate.cjs\" --stage=prompt" }] }
     ],
     "PreToolUse": [
-      { "matcher": "Task|Write|Edit|Bash", "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-classify-gate.cjs\" --stage=pre" }] }
+      { "matcher": "Task|Write|Edit|Bash", "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keel-classify-gate.cjs\" --stage=pre" }] },
+      { "matcher": "mcp__.*__(createJiraIssue|editJiraIssue|addCommentToJiraIssue|transitionJiraIssue|addWorklogToJiraIssue|createIssueLink)", "hooks": [
+        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-jira-write.cjs\"" },
+        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-approve.cjs\"" }
+      ]}
     ],
     "PostToolUse": [
       { "matcher": "Bash", "hooks": [

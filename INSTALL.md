@@ -1,4 +1,4 @@
-# Keel — Installation Guide
+# Keel -- Installation Guide
 
 Install Keel as a marketplace plugin in **Claude Code**.
 
@@ -22,7 +22,7 @@ This configures git safety settings required for the Claude Code marketplace to 
 
 ---
 
-## Option A — Claude Code Terminal (fastest)
+## Option A -- Claude Code Terminal (fastest)
 
 ```bash
 # 1. Add the keel marketplace source
@@ -40,17 +40,17 @@ On the first session after install, Keel initializes `~/.keel` automatically
 
 ---
 
-## Option B — Claude Desktop
+## Option B -- Claude Desktop
 
-1. Open **Claude Desktop → Settings → Capabilities → Plugins**
+1. Open **Claude Desktop -> Settings -> Capabilities -> Plugins**
 2. Click **Add Marketplace Source**
 3. Enter: `https://github.com/creativemyntra/keel`
-4. Find **Keel AI-SDLC** in the list → click **Install**
-5. Open any project folder → type `/keel:init`
+4. Find **Keel AI-SDLC** in the list -> click **Install**
+5. Open any project folder -> type `/keel:init`
 
 ---
 
-## Option C — Local install from cloned repo
+## Option C -- Local install from cloned repo
 
 ```bash
 git clone https://github.com/creativemyntra/keel
@@ -60,10 +60,10 @@ claude plugin install .
 
 ---
 
-## Option D — GitHub Action (CI/CD)
+## Option D -- GitHub Action (CI/CD)
 
 ```yaml
-- uses: creativemyntra/keel@v3.16.0
+- uses: creativemyntra/keel@v3.18.0
   with:
     story: FEAT-1
     phase: full-pipeline
@@ -103,22 +103,27 @@ orchestrator route): `keel:orchestrator`, `keel:product-owner`,
 
 | Skill | Trigger |
 |-------|---------|
-| `keel:sprint-planning` | "plan sprint" |
-| `keel:create-prd` | "create PRD" |
-| `keel:analyze-story` | "analyze story" |
 | `keel:investigate-defect` | "RCA", "investigate bug" |
 | `keel:create-mom` | "minutes of meeting" |
-| `keel:generate-tests` | "generate tests" |
 | `keel:e2e-test` | "e2e test", "playwright" |
 | `keel:review-code` | "review code" |
 | `keel:release-check` | "release check", "go/no-go" |
+
+<!-- Removed 2026-07-20 (dead-code audit): keel:sprint-planning, keel:create-prd,
+     keel:analyze-story, keel:generate-tests, and keel:generate-report were each
+     referenced only by this table (or, for generate-report, nowhere at all) and
+     duplicated an existing agent's or command's job (scrum-master, product-owner
+     + req.md, business-analyst phase 2 + req.md, software-engineer + qa-engineer,
+     and a false self-claimed release-manager integration, respectively). See the
+     Keel remediation plan, item 4, for the full cross-reference. -->
 | `keel:implement-feature` | "implement feature", "build this" |
+| `keel:task-breakdown` | "task breakdown", "break down tasks" |
 
 ---
 
 ## Optional Integrations
 
-After install, run the interactive setup wizard — every integration offers
+After install, run the interactive setup wizard -- every integration offers
 **Configure now / Use default / Skip (set up later)**:
 
 ```
@@ -128,7 +133,7 @@ After install, run the interactive setup wizard — every integration offers
 ```
 
 Defaults that work with zero config: Jira and Playwright ship as bundled MCP
-servers (`.mcp.json`) — Jira prompts OAuth on first use, Playwright runs headless
+servers (`.mcp.json`) -- Jira prompts OAuth on first use, Playwright runs headless
 Chromium via `npx`. GitHub uses the `gh` CLI if present. Slack is off until configured.
 
 Full guide: [docs/MCP-SETUP.md](docs/MCP-SETUP.md). For CI/Docker (non-interactive):
@@ -141,8 +146,8 @@ bash setup-integrations.sh jira|github|slack
 
 ## Requirements
 
-- Claude Code ≥ 1.0.0 **or** Claude Desktop
-- **Node.js ≥ 18 (required)** — the state engine, proactive watchers, and the
+- Claude Code >= 1.0.0 **or** Claude Desktop
+- **Node.js >= 18 (required)** -- the state engine, proactive watchers, and the
   bundled Playwright MCP server all run on Node; without it the governance
   layer cannot operate
 - PHP 8.1 + Composer (for CakePHP projects); `pcov` or `xdebug` for the

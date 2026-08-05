@@ -1,179 +1,96 @@
-# Keel AI-SDLC Framework v3.16.0
+# Keel AI-SDLC Framework v3.18.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
-Automate your entire development lifecycle with 15 specialized AI agents across a 10-phase pipeline.  
-From ideation to production deployment in **2 hours** (vs 2 weeks manually).
+Automate your entire development lifecycle with 15 specialized AI agents across a 10-phase governed pipeline — from requirements intake to staged production deployment.
 
 ---
 
-## ⚡ Quick Start (30 seconds)
+## What is Keel?
 
-```bash
-# 1. Install the plugin (marketplace)
-claude plugin marketplace add https://github.com/creativemyntra/keel
-claude plugin install keel
+**Keel** is a complete AI-SDLC (Artificial Intelligence Software Development Lifecycle) framework integrated with Claude Code as a plugin. It automates the entire software development process using **15 specialized autonomous agents** with deterministic governance gates between every phase.
 
-# 2. Verify installation
-claude plugin list
-# → keel v3.16.0 ✅
+### The 10-Phase Pipeline
 
-# 3. Initialize your project
-/keel:init --mode=new --stack=cakephp
-
-# 4. Run the full 10-phase pipeline (recommended)
-/keel:implement-feature story="FEAT-1" feature="Your feature"
-
-# — or step through phases individually —
-/keel:req --story=FEAT-1 --feature="Your feature"  # Phase 2: BA requirements + ACs
-/keel:design --story=FEAT-1                         # Phases 3-4: UI design + architecture
-# (software-engineer phase 5 runs automatically — code + unit tests)
-/keel:test --story=FEAT-1 --coverage-target=85      # Phase 6: QA + full AC traceability
-/keel:e2e-test --story=FEAT-1                       # Phase 7: Playwright E2E + screenshots
-/keel:sec --story=FEAT-1                            # Phase 8: OWASP + dependency audit
-/keel:release-check --story=FEAT-1                  # Phases 9-10: docs + go/no-go verdict
-/keel:deploy --story=FEAT-1 --rollout=canary        # Deploy after release-manager approval
-```
-
-**Done!** Your feature is in production. ✅
-
----
-
-## 📋 What is Keel?
-
-**Keel** is a complete AI-SDLC (Artificial Intelligence Software Development Lifecycle) framework integrated with Claude Code as a plugin.
-
-It automates the entire software development process using **15 specialized autonomous agents**:
-
-**Pipeline Phase Agents (10):**
 | Phase | Agent | Role |
 |-------|-------|------|
-| 1 | **product-owner** | Requirements intake — proposals only; the human confirms ACs (or `/keel:from-jira` transcribes the ticket) |
-| 2 | **business-analyst** | Functional spec, data flows, edge cases |
-| 3 | **ui-designer** | UI/UX design — screen flows, design spec + HTML mockup for every user-facing AC |
-| 4 | **solution-architect** | Architecture, design, technical risk |
-| 5 | **software-engineer** | Production code + unit tests — coverage ≥ 80% on changed lines |
-| 6 | **qa-engineer** | AC-to-test mapping, integration tests, error paths |
-| 7 | **e2e-engineer** | Playwright browser E2E tests with screenshot evidence |
-| 8 | **security-engineer** | OWASP, threat model, dependency audit |
-| 9 | **technical-writer** | Docs, changelog, runbook |
-| 10 | **release-manager** | Go/no-go decision, deployment plan |
+| 1 | **product-owner** | Requirements intake — proposals only; the human confirms ACs, or `/keel:from-jira` transcribes the Jira ticket verbatim |
+| 2 | **business-analyst** | Functional spec, data flows, edge cases, business rules, API contracts |
+| 3 | **ui-designer** | UX analysis → design direction (DFII-scored) → design token file → HTML mockup for every user-facing AC |
+| 4 | **solution-architect** | Architecture decision records, DB schema, API contracts, component diagram, technical risk |
+| 5 | **software-engineer** | Production code + unit tests in one phase; coverage ≥ 80% on changed lines gated before QA |
+| 6 | **qa-engineer** | AC-to-test mapping, integration tests, error-path validation |
+| 7 | **e2e-engineer** | Playwright browser E2E tests for every user-facing flow; screenshot evidence |
+| 8 | **security-engineer** | OWASP Top 10 review, threat model, layered SAST/SCA; 0 HIGH findings required |
+| 9 | **technical-writer** | CHANGELOG update, README, runbook, API docs, memory writeback |
+| 10 | **release-manager** | Go/no-go decision, version stamp, deployment plan |
 
-**Meta & Support Agents (2):**
+**Defect express lane** — Bug/Defect tickets run phases 1 → 5 → 6 → 8 only (~4 spawns vs ~14 for features). Pass `--scope defect` or start from a Bug-type Jira ticket.
+
+### Meta & Support Agents (2)
+
 | Agent | Role |
 |-------|------|
-| **orchestrator-agent** | Routes work, sequences phases, enforces gates |
-| **scrum-master-agent** | Sprint ceremonies, velocity (human-invoked only, never in the pipeline) |
+| **orchestrator** | Routes work, sequences phases, enforces gates, manages retries |
+| **scrum-master** | Sprint ceremonies, velocity reporting (human-invoked only — never part of the automated pipeline) |
 
-**Infrastructure Agents (3):**
+### Infrastructure Agents (3)
+
 | Agent | Role |
 |-------|------|
-| **handshake-agent** | Adversarial phase gate — verifies claims by *executing* them (runs the tests, checks coverage first-hand) |
+| **handshake-agent** | Adversarial phase gate — verifies claims by *executing* them (runs tests, checks coverage first-hand; never trusts agent self-reports) |
 | **state-management-agent** | Operates the deterministic state engine (init, status, snapshots, restore) |
-| **audit-agent** | Forensics & audit queries over the per-story append-only JSONL log |
+| **audit-agent** | Forensics and audit queries over the per-story append-only JSONL audit log |
 
-Mechanical work (schema validation, gating, attempt counting, audit appends,
-snapshots) is done by a zero-dependency **state engine**
-(`scripts/keel-state.cjs`) — agents spend tokens on judgment only.
+Mechanical work — schema validation, gating, attempt counting, audit appends, snapshots — runs in a zero-dependency **state engine** (`scripts/keel-state.cjs`). Agents spend tokens on judgment only.
 
-### ✨ Key Features
+### Key Features
 
-✅ **15 Specialized Agents** — 10 pipeline phase + 2 meta/support + 3 infrastructure agents  
-✅ **10-Phase Pipeline** — dedicated UI design (3), code + unit tests in one phase (5), and Playwright E2E (7) phases; defect express lane runs 1→5→6→8  
-✅ **Deterministic State Engine** — `keel-state.cjs` owns state, gates, retries, audit; zero tokens on clerk work  
-✅ **File-Based Agent Memory** — phases share context via `.keel/state/`, committed to git  
-✅ **Execution-Verified Gates** — the handshake gate re-runs tests instead of trusting claims (anti-hallucination)  
-✅ **Bounded Retry Loops** — 3 attempts per phase, then HALT + Slack escalation; resume requires a recorded human decision  
-✅ **Cross-Story Memory with Writeback** — every defect RCA becomes a lesson in `.keel/memory/lessons.md` (gated, bounded)  
-✅ **Proactive Watchers** — hooks warn on coverage drops and shrinking test counts; halted/stale stories surface at session start  
-✅ **Pipeline Dashboard** — `keel dashboard` serves a read-only local web view of all stories (loopback-only, auto-refreshing)  
-✅ **Audit Trail** — per-story JSONL log supporting your compliance evidence process  
-✅ **Unit Testing in Phase 5** — software-engineer writes code and unit tests in one phase; coverage ≥ 80% gated before QA  
-✅ **Coverage Gate** — ≥80% enforced before the QA phase  
-✅ **No Patch Development** — defect fixes require an RCA + revert-checked regression test; symptom patches fail the gate  
-✅ **Security Phase** — OWASP Top 10 review + layered SAST/SCA: PHPStan & composer audit always, SonarQube & Snyk when configured  
-✅ **Multi-Stack Support** — CakePHP 4.4 today; Laravel, Django, Rails on the roadmap  
-✅ **Optional Integrations** — Jira (bundled Atlassian MCP), GitHub, Slack, Playwright  
-✅ **Staged Deployment** — canary / blue-green rollout via the release gate  
+[x] **15 Specialized Agents** — 10 pipeline phase + 2 meta/support + 3 infrastructure  
+[x] **10-Phase Pipeline** — UI design (3), code + unit tests (5), Playwright E2E (7); defect express lane runs 1→5→6→8  
+[x] **Deterministic State Engine** — `keel-state.cjs` owns state, gates, retries, audit; zero tokens on clerk work  
+[x] **File-Based Agent Memory** — phases share context via `.keel/state/`, committed to git  
+[x] **Execution-Verified Gates** — handshake gate re-runs tests instead of trusting agent claims (anti-hallucination)  
+[x] **Bounded Retry Loops** — 3 attempts per phase, then HALT + Slack escalation; resume requires a recorded human decision  
+[x] **Cross-Story Memory with Writeback** — every defect RCA becomes a lesson in `.keel/memory/lessons.md` (gated, bounded)  
+[x] **Proactive Watchers** — hooks warn on coverage drops and shrinking test counts; halted/stale stories surface at session start  
+[x] **Pipeline Dashboard** — `keel dashboard` serves a read-only local web view of all stories (loopback-only, auto-refreshing)  
+[x] **Append-Only Audit Trail** — per-story JSONL log supporting your compliance evidence process  
+[x] **Coverage Gate** — ≥ 80% enforced before QA; configurable per-story  
+[x] **No Patch Development** — defect fixes require RCA + revert-checked regression test; symptom patches fail the gate  
+[x] **Security Phase** — OWASP Top 10 + SAST/SCA: PHPStan + composer audit always, SonarQube + Snyk when configured  
+[x] **Stack: CakePHP 4.4 / PHP 8.1** — production-proven; multi-stack support planned  
+[x] **Optional Integrations** — Jira (bundled Atlassian MCP), GitHub, Slack, Playwright  
+[x] **Staged Deployment** — canary / blue-green rollout via the release gate  
+[x] **CJIS Data Classification Gate** — automated prompt-injection guard + data-classification check on every tool call  
 
 ---
 
-## 🆕 What's New in v3.16.0
+## Installation
 
-- **CJIS Data Classification Gate** — `scripts/keel-classify-gate.cjs` + `config/cjis-patterns.json` add an automated data-classification check. The gate runs via `hooks/hooks.json` (wired to `UserPromptSubmit`, `PreToolUse`, and `PostToolUse` stages) and blocks stories that touch CJIS-adjacent data patterns without the required classification annotation. See G-10 in `.keel/GUARDRAILS.md`.
-- **`keel-state.cjs security-status` command** — prints a human-readable summary of the current CJIS gate status for a story: which patterns matched, which were cleared, and whether the gate passed.
-- **All agent specs updated** — security-engineer, orchestrator, audit-agent, and handshake-agent updated to reference the classify gate and route CJIS-flagged stories through the mandatory data-classification check.
-- **Version bump** — 3.15.0 → 3.16.0 across `package.json`, `bin/keel.js`, and plugin files.
-
-## 🆕 What's New in v3.15.0
-
-- **10-phase pipeline** — `tdd-red` and `tdd-green` removed as separate phases. `software-engineer` (phase 5) now writes production code **and** unit tests in one phase; coverage ≥ 80% on changed lines is a hard gate before QA sees the output. Simpler pipeline, fewer spawns, no confusion about who owns tests.
-- **Phase renumbering** — qa-engineer→6, e2e-engineer→7, security-engineer→8, technical-writer→9, release-manager→10. Defect lane updated to phases [1, 5, 6, 8].
-- **Backward-compatible engine** — `keel-state.cjs` retains `LEGACY_AGENTS` and reads `manifest.expected_phases` so stories initialized under the old 12-phase schema continue to validate correctly without needing re-initialization.
-- **Budget** — `DEFAULT_MAX_GATES` reduced from 48 → 40 (10 phases × 3 attempts + overhead).
-
-## 🆕 What's New in v3.14.3
-
-- **G-8: Agent identity integrity** — handshake gate now HALTs immediately on any schema/enum mismatch that looks like framework-version skew. The gate will never advise a phase agent to relabel its output under a different agent identity to pass validation. Enforced in `agents/handshake-agent.md` and `.keel/GUARDRAILS.md`.
-- **G-9: No unverified quantitative baselines in intake** — PO briefs must mark all test counts, coverage figures, and performance numbers carried from prior stories as `[BASELINE: ~N — verify at phase 2]`. Business Analyst (phase 2) resolves every placeholder by running the actual tool before handing off. Enforced in `agents/product-owner.md`, `agents/business-analyst.md`, and `.keel/GUARDRAILS.md`.
-- **Release Manager: framework debt gate** — release-manager checklist now requires all open framework improvement tasks from prior stories to be DONE (with commit reference) or explicitly waived by the human before a GO verdict is issued.
-
-## 🆕 What's New in v3.14.2
-
-- **Documentation: complete 12-phase workflow** — README, TECHNICAL-SPECIFICATIONS.md, ALL-AGENTS-COMPLETE-GUIDE.md, QUICK-START-CLAUDE-CODE.md, and docs/WORKFLOW.md all updated to reflect the full 12-phase/17-agent pipeline (UI Designer, TDD Red/Green, E2E Engineer correctly documented). Stale 8-phase/8-agent references eliminated. Architecture diagram fixed (all Phase Agent columns now show 12). No code or behaviour changes.
-
-## 🆕 What's New in v3.14.1
-
-- **Dashboard Host-header allowlist — DNS-rebinding hardening (KEEL-105, closes KEEL-104 LOW-1)** — `scripts/keel-dashboard.cjs` now validates the `Host` header before any routing. Only the loopback literals `localhost`, `127.0.0.1`, and `[::1]` are accepted (case-insensitive, optional `:port` suffix). Disallowed hosts get `403 Forbidden`; a missing `Host` header gets `400 Bad Request` per RFC 9112 (ADR-004 D-1). Both rejections use a constant plain-text body with `Content-Type: text/plain; charset=utf-8`, `X-Content-Type-Options: nosniff`, and `Cache-Control: no-store` — no request data echoed, zero filesystem I/O on the rejection path. Guard runs before routing so the renderer is structurally unreachable on rejection. All KEEL-104 invariants preserved: loopback-only bind, HTML-escaping, `EADDRINUSE` handling, `keel-state.cjs` and `bin/keel.js` byte-unchanged. See [Security posture (ADR-003, ADR-004)](#security-posture-adr-003-adr-004) below.
-
-## 🆕 What's New in v3.14.0
-
-- **`keel dashboard` — pipeline status web dashboard (KEEL-104)** — `node bin/keel.js dashboard [--port=<N>]` serves a local, read-only web view of every story in `.keel/state/` at `http://localhost:7772` (default): story ID, title, scope, current phase by agent name, status badge (COMPLETE / IN PROGRESS / HALTED), and idle time. Auto-refreshes every 30 seconds. Binds to `127.0.0.1` only, performs zero filesystem writes, zero new dependencies. See [Pipeline Dashboard](#pipeline-dashboard) below.
-- **`describe` command (v3.13.0)** — `node ~/.keel/bin/keel-state.cjs describe <story-id>` prints a human-readable one-page summary of any story: phase names (not numbers), idle time as `Xh Ym` / `Xm Ys`, halted warning, gate-event budget. Exits 0 on success, exits 1 with stderr on missing story. Zero new dependencies. See [State Engine CLI](#state-engine-cli) below.
-- **Dedicated UI design phase — new `ui-designer` agent (phase 3)** — scans existing UI patterns, then produces a Markdown design spec + self-contained HTML mockup for every user-facing AC before architecture begins (no Figma required). The pipeline is now **12 phases**; builds on the v3.13.0 restructure that split development into dedicated code (`software-engineer`), test-authoring (`tdd-red`), test-execution (`tdd-green`), and browser E2E (`e2e-engineer`) phases.
-- **Binding pipeline guardrails (`.keel/GUARDRAILS.md`)** — governance rules the orchestrator, handshake gate, engineer, ui-designer, and release-manager must obey on every run.
-
-v3.4.0 → v3.12.0 turn the pipeline's promises into enforcement:
-
-- **Smart economy (v3.11.0)** — owner-choice file `.keel/economy.yml`, static-first security prescan (clean prescan can replace the security spawn, opt-in), CodeGraph-capped context loading, output caps. See [docs/WORKFLOW.md](docs/WORKFLOW.md).
-- **Token economy (v3.10.0)** — measured cost model ([docs/WORKFLOW.md](docs/WORKFLOW.md)): tiered gate verification (TRIVIAL/NORMAL/FULL — security-sensitive diffs always pay full price), gate-1-lite, and haiku model-tiering for mechanical spawns; trivial defects projected −50–60% tokens.
-- **Human roles stay human (v3.8.0)** — product-owner and scrum-master agents are out of the automated pipeline; `/keel:from-jira <KEY>` starts development straight from a Jira ticket (transcribed as the AC contract, never rewritten); AI-drafted requirements are proposals the human PO confirms.
-
-- **OS-enforced state integrity (v3.7.0)** — atomic manifest writes + OS-level locking (concurrent writes physically can't lose updates), pipeline budgets (gate-event + wall-clock caps with human-resume extension), automated revert-check proving regression tests guard their fixes, byte-identical-retry detection, and an 11-test engine suite (`npm run test:engine`).
-- **Layered SAST/SCA scanner stack (v3.6.0)** — the security phase runs PHPStan + composer/npm audit always, and SonarQube (quality gate) + Snyk (vuln DB) when configured; the engineer runs the same stack during development (shift-left). Every security report carries a scanner inventory — a configured scanner that silently didn't run fails the gate.
-
-- **Deterministic state engine** (`scripts/keel-state.cjs`) — schema validation, grounding checks (artifact paths must exist), AC-drift detection, gate/attempt/halt logic, audit appends, snapshots & restore. Cross-platform, zero dependencies.
-- **Handshake gate executes claims** — "tests pass" is verified by running the suite, not by reading the artifact the audited agent wrote. Adversarial by design.
-- **Halt escalation + human resume** — 3 failed attempts halt the pipeline, notify Slack (if configured), and surface at every session start until a human resumes with a recorded rationale.
-- **Memory writeback loop** — defect RCAs must produce a lesson in `.keel/memory/lessons.md` (gated); architect & engineer read lessons before designing/coding; memory is capped so it never becomes a token leak.
-- **Proactive watchers** — PostToolUse hook warns on coverage drops / shrinking test counts; `/keel:health` sweeps for halted/stale stories, attempt heat-maps, and stale impact graphs.
-- **Plan-first, self-auditing software engineer** — impact analysis before coding, full test pyramid (unit / integration / Playwright E2E), patch-pattern self-review, revert-checked defect fixes.
-
-**[View Complete Release Notes →](CHANGELOG.md)**
-
----
-
-## 📥 Installation
-
-### Method 1: Claude Code Plugin Marketplace (Recommended) ⭐
+### Method 1: Claude Code Plugin Marketplace (Recommended)
 
 ```bash
 claude plugin marketplace add https://github.com/creativemyntra/keel
 claude plugin install keel
 ```
 
-That's it! The plugin will:
-- ✅ Register `/keel:*` commands, 17 agents, and 11 skills
-- ✅ Create `~/.keel` configuration directories on first session
-- ✅ Be ready to use immediately
+The plugin registers `/keel:*` commands, 15 agents, and 9 skills. `~/.keel` configuration directories are created on first session.
 
 **Verify:**
 ```bash
 claude plugin list
-# → keel v3.16.0 ✅
+# -> keel v3.18.0 [x]
 ```
 
-### Method 2: npm Global Package (⏳ not yet published — coming soon)
+**Quick start — run this immediately after install:**
+```bash
+/keel:init --mode=new --stack=cakephp
+/keel:implement-feature story="FEAT-1" feature="Your feature"
+# Orchestrator runs all 10 phases automatically.
+```
+
+### Method 2: npm Global Package (coming soon)
 
 ```bash
 npm install -g @amarsingh/keel
@@ -186,12 +103,10 @@ keel req --story=FEAT-1
 keel deploy --story=FEAT-1
 ```
 
-### Method 3: Docker Container (⏳ not yet published — coming soon)
+### Method 3: Docker Container (coming soon)
 
 ```bash
 docker pull amarsingh/keel:latest
-
-# Run Keel in Docker
 docker run -v $(pwd):/project amarsingh/keel:latest keel init --mode=new --stack=cakephp
 ```
 
@@ -207,29 +122,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.16.0
+        uses: creativemyntra/keel@v3.18.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
-      
+
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.16.0
+        uses: creativemyntra/keel@v3.18.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
-      
+
       - name: Run Tests
-        uses: creativemyntra/keel@v3.16.0
+        uses: creativemyntra/keel@v3.18.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
-      
+
       - name: Security Scan
-        uses: creativemyntra/keel@v3.16.0
+        uses: creativemyntra/keel@v3.18.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -237,251 +152,226 @@ jobs:
 
 ---
 
-## 🚀 Complete Workflow
+## Complete Workflow
 
-### Feature: User Subscription Management
+### Entry points
+
+| Situation | Command |
+|-----------|---------|
+| Jira ticket exists | `/keel:from-jira FEAT-1` — ticket IS the requirements; BA transcribes ACs verbatim, never invents |
+| New idea, no ticket | `/keel:req --story=FEAT-1 --feature="..."` — BA drafts ACs as a proposal; human PO confirms before anything runs |
+| Full pipeline, one command | `/keel:implement-feature story="FEAT-1" feature="..."` — orchestrator sequences all 10 phases |
+| Bug / defect | `/keel:from-jira BUG-42` or `--scope defect` — express lane: phases 1 → 5 → 6 → 8 |
+
+### Full feature example: User Subscription Management
 
 ```bash
-# ─── One-command option (recommended) ───────────────────────────────────────
+# ── Initialize ─────────────────────────────────────────────────────────────
 /keel:init --mode=new --stack=cakephp
+# Scaffolds .keel/memory/, builds CodeGraph, seeds economy.yml
+
+# ── One-command option (recommended) ───────────────────────────────────────
 /keel:implement-feature story="FEAT-1" feature="User subscription management"
-# Orchestrator runs all 10 phases automatically. Done. ✅
+# Orchestrator runs all 10 phases with governance gates between each.
 
-# ─── Step-by-step (all 10 phases) ───────────────────────────────────────────
+# ── Or step through phases individually ────────────────────────────────────
 
-# Phase 1: Product Owner intake (human confirms ACs, or Jira ticket is the source)
-/keel:from-jira FEAT-1            # ← if Jira ticket exists, this is the entry point
-# — or for a new idea:
+# Phase 1 — Product Owner
+/keel:from-jira FEAT-1          # Start from Jira (ticket IS the requirements)
+# -- or for a new idea:
 /keel:req --story=FEAT-1 --feature="User subscription management"
+# Human confirms ACs before phase 2 starts.
 
-# Phase 2: Business Analyst (10 min)
-# (runs inside /keel:req above)
+# Phase 2 — Business Analyst (runs inside /keel:req)
 # Produces: docs/requirements/FEAT-1-requirements.md
-# Includes: functional spec, data flows, edge cases, business rules
+# Includes: functional spec, data flows, edge cases, business rules, API contracts
 
-# Phase 3: UI Designer (10 min)
+# Phase 3 — UI Designer
 /keel:design --story=FEAT-1
-# Scans existing UI patterns → Markdown design spec + self-contained HTML mockup
-# Non-visual stories get a documented no-UI determination (skips mockup)
-# Produces: docs/design/FEAT-1-mockup.html + design spec
+# Step -1: asks for reference designs, brand assets, mood words
+# Step 0: scans existing tokens, Tailwind config, UI components
+# Step 2f: Design System Plan — layout pattern, color palette (hex), typography, CSS effects
+# Produces: docs/design/FEAT-1-tokens.css + FEAT-1-ui-design.md + FEAT-1-mockup.html
+# Non-visual ACs get a documented "no UI surface" determination (no mockup generated)
 
-# Phase 4: Solution Architect (15 min)  ← also invoked by /keel:design
-# ADR, API contracts, DB schema, component diagram, technical risks
+# Phase 4 — Solution Architect (also invoked by /keel:design)
 # Produces: docs/design/FEAT-1-design.md
+# Includes: ADRs, API contracts, DB schema, component diagram, technical risks
 
-# Phase 5: Software Engineer (25 min)
-# (runs via /keel:implement-feature or orchestrator — no standalone CLI command)
-# Reads the approved design; writes production code AND unit tests
-# Gate: all unit tests pass, coverage ≥ 80% on changed lines
-# Produces: src/Services/SubscriptionService.php + tests/Unit/SubscriptionServiceTest.php, etc.
+# Phase 5 — Software Engineer
+# Runs automatically via /keel:implement-feature or orchestrator
+# Reads approved design; writes production code AND unit tests
+# Gate: all unit tests pass + coverage >= 80% on changed lines
+# Produces: src/Services/SubscriptionService.php + tests/Unit/SubscriptionServiceTest.php
 
-# Phase 6: QA — AC traceability + integration gate (10 min)
+# Phase 6 — QA Engineer
 /keel:test --story=FEAT-1 --coverage-target=85
-# Maps every AC to a passing test; integration tests; error-path validation
+# Maps every AC to a passing test; runs integration tests; validates error paths
 # Produces: docs/qa/FEAT-1-qa-report.md
 
-# Phase 7: E2E — Playwright browser tests (10 min)
+# Phase 7 — E2E Engineer
 /keel:e2e-test --story=FEAT-1
 # Playwright tests for every user-facing flow; screenshot evidence captured
 # Blocks release on any E2E failure
 
-# Phase 8: Security (10 min)
+# Phase 8 — Security Engineer
 /keel:sec --story=FEAT-1
-# Consumes prescan.json (composer/npm audit + PHPStan baseline always run)
+# Consumes prescan.json (composer/npm audit + PHPStan always run before spawn)
 # OWASP Top 10 review of changed files; 0 HIGH findings required to proceed
 # Produces: docs/security/FEAT-1-security-report.md
 
-# Phases 9-10: Technical Writer + Release Manager (10 min)
+# Phases 9-10 — Technical Writer + Release Manager
 /keel:release-check --story=FEAT-1
-# Phase 9 — Technical Writer: updates CHANGELOG, README, runbook, memory
-# Phase 10 — Release Manager: G-6 version stamp; issues GO or NO-GO with justification
+# Phase 9: updates CHANGELOG, README, runbook, memory/lessons.md
+# Phase 10: G-6 version stamp check; issues GO or NO-GO with justification
 
-# Deploy (15 min, only after release-manager GO verdict)
+# Deploy (only after release-manager GO verdict)
 /keel:deploy --story=FEAT-1 --rollout=canary
 # Canary: 5% → 25% → 100% with monitoring checkpoints; rollback auto-triggers on error spike
-
-# TOTAL: ~2 hours end-to-end  (vs 2 weeks manually ⚡)
 ```
+
+### Governance loop (every phase)
+
+```
+orchestrator — engine: init <story> --scope <s>   (budget: 40 gates / 72h)
+     |
+     ↓  (per phase in scope)
+phase agent — reads previous output + ACs + conventions/lessons
+     |         does the work; engineer = plan → impact analysis → TDD →
+     |         test pyramid (unit/integration/Playwright) → scanners
+     |         shift-left → revert-check (defects) → self-audit
+     |         writes NN-<agent>.json + artifacts
+     ↓
+handshake gate — picks verification depth:
+     |   TRIVIAL  docs/strings/config, ≤10 lines, nothing sensitive
+     |            → engine validate + regression test only
+     |   NORMAL   other code changes → changed-area tests + regression
+     |   FULL     auth/payments/data/security, >100 lines, new deps
+     |            → re-execute everything
+     ↓
+engine gate — PASS → next phase (attempts reset)
+              FAIL → retry with failure findings (max 3)
+              3× or budget breach → HALT → Slack + surfaced at session start
+                     only a recorded human resume continues
+```
+
+**Human touchpoints (the only ones, by design):** AC confirmation, explicit waivers, halt resumes, deploy approval. Every one is recorded verbatim in the story's append-only `audit-log.jsonl`, committed to git.
 
 ---
 
-## 📊 Results
-
-### Development Metrics
-
-| Metric | Without Keel | With Keel | Improvement |
-|--------|--------------|-----------|-------------|
-| Time to Production | 2 weeks | 2 hours | 97.5% faster ⚡ |
-| Tests Written | ~20 manual | 9+ auto-generated | 45% more coverage |
-| Code Coverage | 60-70% | 87% | +25% |
-| Security Issues | Unknown | 0 verified | 100% safe |
-| Developer Hours | 80 hours | 2 hours | 40x faster |
-
-### Sample Output
-
-**Requirements Generated:**
-```
-✅ 4 user stories
-✅ 4 acceptance criteria (BDD format)
-✅ 4 API endpoints specified
-✅ Database schema designed
-```
-
-**Code Generated:**
-```
-✅ Subscription.php (Model)
-✅ SubscriptionService.php (Service)
-✅ SubscriptionTest.php (Unit Tests)
-✅ SubscriptionIntegrationTest.php (Integration Tests)
-```
-
-**Quality Verified:**
-```
-✅ 9 tests passing (100%)
-✅ 87% code coverage
-✅ 0 OWASP violations
-✅ 0 security vulnerabilities
-✅ PCI DSS compliant
-```
-
----
-
-## 📚 Available Commands
+## Available Commands
 
 ### Project Setup
 
 ```bash
-/keel:init --mode=new --stack=cakephp      # Initialize new project
-/keel:init --mode=existing --stack=laravel # Add Keel to existing project
+/keel:init --mode=new --stack=cakephp       # Initialize new CakePHP project
+/keel:init --mode=existing --stack=cakephp  # Add Keel to an existing project
+/keel:setup                                  # Interactive wizard: Jira, GitHub, Playwright, Slack, SonarQube, Snyk
+/keel:setup jira                             # Set up one integration at a time
+/keel:setup status                           # See what's configured
 ```
 
-### Planning & Design
+### Planning & Requirements
 
 ```bash
-/keel:from-jira HART-287                          # Start straight from a Jira ticket (ticket IS the requirements)
-/keel:brainstorm --goal="Your goal"               # Generate ideas
-/keel:req --story=FEAT-1 --jira=TICKET-KEY        # Phase 2: BA requirements + ACs (or --feature="...")
-/keel:design --story=FEAT-1                       # Phases 3-4: UI designer (mockup) + solution architect
+/keel:from-jira HART-287                           # Start from Jira ticket (ticket IS the requirements)
+/keel:brainstorm --goal="Your goal"                # Generate feature ideas from a business goal
+/keel:req --story=FEAT-1 --feature="Your feature"  # Phases 1-2: PO intake + BA requirements
+/keel:req --story=FEAT-1 --jira=TICKET-KEY         # Phases 1-2 with Jira context
 ```
 
-> **Human roles stay human:** the product-owner and scrum-master agents are
-> never auto-invoked in the delivery pipeline. When a Jira ticket exists, the
-> ticket is the requirements (transcribed, never rewritten); without one, AI
-> drafts are proposals the human PO confirms.
->
-> **UI Designer (phase 3)** runs automatically before architecture — it scans
-> existing UI patterns and produces a Markdown design spec + HTML mockup for
-> every user-facing AC. Non-visual stories get a documented no-UI determination.
+> **Human roles stay human.** The product-owner and scrum-master agents are never auto-invoked in the delivery pipeline. When a Jira ticket exists, the ticket is the requirements (transcribed, never rewritten). Without one, AI drafts are proposals the human PO confirms before anything runs.
 
-### Development
+### Design
 
 ```bash
-# Phase 5 — software-engineer: production code + unit tests (≥ 80% coverage)
-# Runs automatically via /keel:implement-feature or orchestrator
+/keel:design --story=FEAT-1   # Phases 3-4: UI Designer (mockup) + Solution Architect (design doc)
 ```
 
-### Quality
+> **UI Designer (phase 3)** first asks for reference designs, brand assets, and mood words (Step -1), then scans existing tokens and components. It produces a complete Design System Plan (layout pattern, color palette, typography pairing) and a token-driven HTML mockup for every user-facing AC. Non-visual ACs get a documented no-UI determination.
+
+### Implementation
 
 ```bash
-/keel:test --story=FEAT-1 --coverage-target=85  # Phase 6: QA — AC-to-test mapping + integration gate
-/keel:e2e-test --story=FEAT-1                    # Phase 7: Playwright browser E2E + screenshots
-/keel:sec --story=FEAT-1                         # Phase 8: OWASP audit + dependency scan
+/keel:implement-feature story="FEAT-1" feature="..."  # Full 10-phase pipeline
+/keel:implement story="FEAT-1" feature="..."          # Alias — same as above
+/keel:from-jira FEAT-1                                # Full pipeline from Jira ticket
+/keel:from-jira BUG-42 --scope defect                 # Defect express lane: 1→5→6→8
 ```
 
-### Docs & Release
+### Quality & Testing
 
 ```bash
-/keel:release-check --story=FEAT-1              # Phases 9-10: technical-writer + release-manager go/no-go
+/keel:test --story=FEAT-1 --coverage-target=85   # Phase 6: QA — AC-to-test + integration gate
+/keel:e2e-test --story=FEAT-1                     # Phase 7: Playwright browser E2E + screenshots
+/keel:sec --story=FEAT-1                          # Phase 8: OWASP audit + dependency scan
+```
+
+### Documentation & Release
+
+```bash
+/keel:release-check --story=FEAT-1   # Phases 9-10: technical-writer + release-manager go/no-go
 ```
 
 ### Deployment
 
 ```bash
-/keel:deploy --story=FEAT-1 --rollout=canary     # Deploy with canary rollout
-/keel:deploy --story=FEAT-1 --rollout=blue-green  # Blue-green deployment
-/keel:deploy --story=FEAT-1 --rollout=instant     # Instant deployment
+/keel:deploy --story=FEAT-1 --rollout=canary       # Canary: 5% → 25% → 100%
+/keel:deploy --story=FEAT-1 --rollout=blue-green   # Blue-green deployment
+/keel:deploy --story=FEAT-1 --rollout=instant      # Instant deployment
 ```
 
-### Utilities
+### Utilities & Observability
 
 ```bash
-/keel:setup                        # Interactive integration wizard (Jira, GitHub, Playwright, Slack)
-/keel:impact <Class or file>       # CodeGraph impact analysis — blast radius of a change
-/keel:health                       # Pipeline health sweep — halted/stale stories, memory bounds, coverage trend
-/keel dashboard --port=7772        # Read-only pipeline status web dashboard (binds to 127.0.0.1 only)
-/keel --version                    # Show version
-/keel --help                       # Show all commands
+/keel:preview --story=FEAT-1         # Dry-run: stack detection, economy settings, pipeline map, model tiers, CJIS status
+/keel:impact <Class or file>         # CodeGraph impact analysis — blast radius of a change
+/keel:health                         # Pipeline health sweep — halted/stale stories, memory bounds, coverage trend
+/keel:parallel --stories="A,B,C"     # Run independent stories concurrently in separate git worktrees
+keel dashboard --port=7772           # Read-only pipeline status web dashboard (127.0.0.1 only)
+/keel --version                      # Show version
+/keel --help                         # Show all commands
 ```
-
----
 
 ### Pipeline Dashboard
 
-A read-only local web view of every story in `.keel/state/` — it never writes to disk.
+A read-only local web view of every story in `.keel/state/`. Never writes to disk.
 
 ```bash
-node scripts/keel-dashboard.cjs --port 8080   # run the server directly (flag is space-separated: --port <N>)
-
-# or via the CLI wrapper (the wrapper parses the equals form only):
-node bin/keel.js dashboard               # serves http://localhost:7772
-node bin/keel.js dashboard --port=8080   # custom port
+node bin/keel.js dashboard             # serves http://localhost:7772
+node bin/keel.js dashboard --port=8080 # custom port
 ```
 
-> **Flag syntax:** the server script takes the space-separated form `--port <N>`; the
-> `bin/keel.js` wrapper takes `--port=<N>`. Using the wrong form for a surface does not
-> error — the server silently starts on the default port 7772.
-
-On start it prints `Dashboard: http://localhost:<port>`; stop it with Ctrl-C.
-
-- **Columns:** story ID, title, scope, current phase by agent name (e.g. `Phase 9 — Technical Writer`), status badge (COMPLETE / IN PROGRESS / HALTED), idle time — sorted most-recently-active first.
-- **Auto-refresh:** the page reloads every 30 seconds; a corrupt manifest renders as an error row instead of breaking the sweep.
-- **Empty state:** with no stories, the page prompts `Run keel init <story-id> to start.` — the server still runs.
-- **Port in use:** exits with `Error: port <N> is already in use. Use --port to specify a different port.`
-
-#### Security posture (ADR-003, ADR-004)
-
-- **Loopback-only bind:** the server listens on `127.0.0.1` only — it is unreachable from the LAN.
-- **Host-header allowlist (DNS-rebinding guard):** every request's `Host` header must be a loopback literal — `localhost`, `127.0.0.1`, or `[::1]` — matched case-insensitively, with an optional `:port` suffix. A DNS-rebound attacker hostname can never equal a loopback literal, so rebinding requests are rejected before any routing or state read happens.
-- **403 rejection contract:** a disallowed `Host` receives `403 Forbidden` with a constant plain-text body (`Content-Type: text/plain; charset=utf-8`), `X-Content-Type-Options: nosniff`, and `Cache-Control: no-store`. No request data is ever echoed back, and the rejection path performs zero filesystem I/O.
-- **Missing Host is 400:** a request without a `Host` header receives `400 Bad Request` under the same constant-body header contract — it is malformed per RFC 9112, not merely refused (ADR-004 D-1/D-3).
-- **Strictly read-only:** only `GET /` is served (anything else is 404); zero filesystem writes; all state-derived output is HTML-escaped; zero new npm dependencies.
+- **Columns:** story ID, title, scope, current phase by agent name, status badge (COMPLETE / IN PROGRESS / HALTED), idle time — sorted most-recently-active first
+- **Auto-refresh:** page reloads every 30 seconds; corrupt manifests render as an error row
+- **Security:** loopback-only bind (`127.0.0.1`); Host-header allowlist blocks DNS-rebinding; strictly read-only (GET / only); zero filesystem writes
 
 ---
 
-## 🛠️ Supported Tech Stacks
+## Supported Tech Stack
 
-Keel automatically configures conventions for:
+Keel v3.x supports **CakePHP 4.4 / PHP 8.1+** (production-proven).
 
-- **CakePHP 4.4** (PHP 8.1+)
-- **Laravel 10** (PHP 8.1+)
-- **Django 4.0+** (Python 3.9+)
-- **Ruby on Rails 7.0+**
+Multi-stack support (Laravel, Django, Rails, Node) is planned for a future release. Stack conventions live in `stack-profiles/cakephp.md` — additional profiles unlock additional frameworks when added.
 
-**Add more stacks:**
 ```
 stack-profiles/
-├── cakephp.md
-├── laravel.md
-├── django.md
-├── rails.md
-└── your-framework.md
+└── cakephp.md    ← production-ready
 ```
 
 ---
 
-## 🔧 Optional: Configure Integrations
+## Optional: Configure Integrations
 
-Keel works perfectly without any integrations. To configure them, run the
-**interactive setup wizard** inside Claude Code:
+Keel works without any integrations. To configure them:
 
+```bash
+/keel:setup              # Step-by-step wizard: Jira, GitHub, Playwright, Slack, SonarQube, Snyk
+/keel:setup jira         # One integration at a time — set up later, any time
+/keel:setup status       # See what's configured
 ```
-/keel:setup              # step-by-step wizard: Jira, GitHub, Playwright, Slack, SonarQube, Snyk
-/keel:setup jira         # one integration at a time — set up later, any time
-/keel:setup status       # see what's configured
-```
 
-Every step offers **Configure now / Use default / Skip (set up later)**, and each
-decision is recorded in `~/.keel/config/setup-audit.log`.
+Every step offers **Configure now / Use default / Skip (set up later)**. Each decision is recorded in `~/.keel/config/setup-audit.log`.
 
 | Integration | Default (zero config) | Configure for |
 |-------------|----------------------|---------------|
@@ -490,19 +380,18 @@ decision is recorded in `~/.keel/config/setup-audit.log`.
 | **Playwright** | Bundled Playwright MCP server — headless Chromium | Browsers, headed mode, E2E base URL |
 | **Slack** | Disabled | Webhook notifications on phase events + pipeline halts |
 | **SonarQube** | Disabled (PHPStan SAST baseline always runs) | Quality-gate enforcement in the security phase |
-| **Snyk** | Disabled (composer/npm audit SCA baseline always runs) | Vulnerability DB + license checks in the security phase |
+| **Snyk** | Disabled (composer/npm audit SCA baseline always runs) | Vulnerability DB + license checks |
 
-Full step-by-step instructions: **[docs/MCP-SETUP.md](docs/MCP-SETUP.md)**.
+Full instructions: **[docs/MCP-SETUP.md](docs/MCP-SETUP.md)**
 
-For CI/Docker (non-interactive), use the shell fallback:
-
+For CI/Docker (non-interactive):
 ```bash
 bash setup-integrations.sh jira|github|slack
 ```
 
 ---
 
-## 📁 Project Structure Created
+## Project Structure Created
 
 After running `/keel:init`:
 
@@ -510,7 +399,7 @@ After running `/keel:init`:
 your-project/
 ├── .keel/
 │   ├── state/<story-id>/            ← Pipeline state (committed to git)
-│   │   ├── manifest.json            ← Position, attempts, halted flag
+│   │   ├── manifest.json            ← Position, attempts, halted flag, phase_modes
 │   │   ├── NN-<agent>.json          ← One output per phase (agent-output-schema.json)
 │   │   ├── handoff-log.md           ← Gate decisions (append-only)
 │   │   ├── audit-log.jsonl          ← Audit trail (append-only)
@@ -524,13 +413,15 @@ your-project/
 ├── docs/
 │   ├── requirements/                ← Auto-generated requirements
 │   │   ├── FEAT-1-requirements.md
-│   │   ├── FEAT-2-requirements.md
 │   │   └── TEMPLATE.md
 │   ├── design/                      ← Auto-generated designs
-│   │   ├── FEAT-1-design.md
-│   │   ├── FEAT-2-design.md
+│   │   ├── FEAT-1-tokens.css        ← Design token file (6 categories)
+│   │   ├── FEAT-1-ui-design.md      ← Design spec + motion table + ACs
+│   │   ├── FEAT-1-mockup.html       ← Self-contained HTML mockup
 │   │   └── TEMPLATE.md
-│   ├── brainstorms/                 ← Idea generation
+│   ├── qa/                          ← QA reports
+│   ├── security/                    ← Security reports
+│   ├── brainstorms/                 ← Idea generation outputs
 │   └── deployment/                  ← Deployment plans
 ├── src/
 │   ├── Controllers/
@@ -550,180 +441,157 @@ your-project/
 
 ---
 
-## 📖 Documentation
+## Documentation
 
 ### Installation & Setup
 - **[INSTALL.md](INSTALL.md)** — Plugin installation (Claude Code, Claude Desktop, local, GitHub Action)
 - **[QUICK-START-CLAUDE-CODE.md](QUICK-START-CLAUDE-CODE.md)** — Fastest path to a first feature
-- **[docs/MCP-SETUP.md](docs/MCP-SETUP.md)** — Integration & MCP setup wizard guide (Jira, GitHub, Playwright, Slack)
+- **[docs/MCP-SETUP.md](docs/MCP-SETUP.md)** — Integration & MCP setup wizard guide
 
 ### Usage & Workflows
-- **[docs/WORKFLOW.md](docs/WORKFLOW.md)** — Complete workflow, measured cost model (time & tokens), token-economy design
-- **[ALL-AGENTS-COMPLETE-GUIDE.md](ALL-AGENTS-COMPLETE-GUIDE.md)** — All 17 agents reference
+- **[docs/WORKFLOW.md](docs/WORKFLOW.md)** — Complete workflow, cost model (tokens), token-economy design
+- **[ALL-AGENTS-COMPLETE-GUIDE.md](ALL-AGENTS-COMPLETE-GUIDE.md)** — All 15 agents reference
 - **[TECHNICAL-SPECIFICATIONS.md](TECHNICAL-SPECIFICATIONS.md)** — Architecture & state protocol
 - **[docs/demo/HEALTH-1-end-to-end-demo.md](docs/demo/HEALTH-1-end-to-end-demo.md)** — Real end-to-end pipeline walkthrough
-- **[CHANGELOG.md](CHANGELOG.md)** — Release history
+- **[CHANGELOG.md](CHANGELOG.md)** — Full release history
 
-### Infrastructure Agents
-- **[agents/audit-agent.md](agents/audit-agent.md)** — Audit Trail Agent (per-story audit log)
-- **[agents/state-management-agent.md](agents/state-management-agent.md)** — State Management Agent (snapshots, recovery)
-- **[agents/handshake-agent.md](agents/handshake-agent.md)** — Handshake Agent (phase validation)
+### Agent Specifications
+- **[agents/ui-designer.md](agents/ui-designer.md)** — Phase 3 UI Designer (branding intake, design system generator, DFII scoring)
+- **[agents/handshake-agent.md](agents/handshake-agent.md)** — Adversarial phase gate
+- **[agents/audit-agent.md](agents/audit-agent.md)** — Audit trail forensics
+- **[agents/state-management-agent.md](agents/state-management-agent.md)** — State engine operations
 
 ---
 
-## 🔒 Security & Compliance
+## Security & Compliance
 
 ### Compliance Evidence, Honestly Scoped
 
-Keel's audit trail (git history + per-story append-only JSONL logs, with every
-decision and gate event recorded) is **evidence that supports** your
-organization's compliance process — CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX or
-otherwise. Keel does not claim certified compliance on your behalf; no tool
-can. What it gives your auditors:
+Keel's audit trail — git history + per-story append-only JSONL logs with every decision and gate event recorded — is **evidence that supports** your organization's compliance process (CJIS, SOC2, HIPAA, GDPR, PCI-DSS, SOX). Keel does not claim certified compliance on your behalf; no tool can.
 
-✅ **Append-only audit log per story** — who/what/when/why for every phase, gate, retry, halt, and human resume  
-✅ **Decision traceability** — every agent decision recorded verbatim with its rationale  
-✅ **Reconstructable retry loops** — gate failures logged with attempt numbers; restores never rewind history  
-✅ **Human accountability points** — halts require a recorded human rationale to resume; releases require explicit approval  
+[x] **Append-only audit log per story** — who/what/when/why for every phase, gate, retry, halt, and human resume  
+[x] **Decision traceability** — every agent decision recorded verbatim with its rationale  
+[x] **Reconstructable retry loops** — gate failures logged with attempt numbers; restores never rewind history  
+[x] **Human accountability points** — halts require a recorded human rationale to resume; releases require explicit approval  
 
 ### Built-In Security Features
 
-✅ **OWASP Top 10 review** — dedicated security phase per story, HIGH findings block release  
-✅ **Layered SAST** — PHPStan baseline always; SonarQube quality gate when configured (gate ERROR = release blocker)  
-✅ **Layered SCA** — composer/npm audit baseline always; Snyk when configured (high/critical = release blocker)  
-✅ **Scanner inventory honesty** — every security report declares which scanners ran vs were skipped; a configured scanner that silently didn't run fails the gate  
-✅ **Secrets hygiene** — no API keys in git (`~/.keel/secrets/`, gitignored); agents are forbidden from outputting credentials, tokens, or PII
+[x] **CJIS Data Classification Gate** — `scripts/keel-classify-gate.cjs` + `config/cjis-patterns.json`; universal NCIC_ID/LEID patterns; project-specific overlay; fail-closed on parse error  
+[x] **Prompt injection guard (OWASP LLM01)** — 6 regex patterns blocking ignore/override, act-as roleplay, `<system>` tags, `###OVERRIDE`; always-blocking at ALL hook stages (exit 2)  
+[x] **OWASP Top 10 review** — dedicated security phase per story; HIGH findings block release  
+[x] **Layered SAST** — PHPStan baseline always; SonarQube quality gate when configured  
+[x] **Layered SCA** — composer/npm audit baseline always; Snyk when configured  
+[x] **Scanner inventory honesty** — every security report declares which scanners ran vs were skipped; a configured scanner that silently didn't run fails the gate  
+[x] **Secrets hygiene** — no API keys in git (`~/.keel/secrets/`, gitignored); agents forbidden from outputting credentials, tokens, or PII  
+[x] **Pipeline Dashboard Host-header allowlist** — DNS-rebinding guard; loopback literals only; 403 on disallowed hosts, zero request data echoed  
 
 ---
 
-## 🎯 Use Cases
+## Use Cases
 
-### 1. **Individual Developers**
-Build features **10x faster** with complete automation.
+### 1. Individual Developers
 
-```bash
-/keel:init --mode=new --stack=laravel
-/keel:req --story=FEAT-1 --feature="Your idea"
-# 2 hours later: Feature in production ✅
-```
-
-### 2. **Development Teams**
-Standardize workflows across teams with governance.
+Build features with complete automation and governance.
 
 ```bash
 /keel:init --mode=new --stack=cakephp
-# All team members use same agents & conventions
-# Quality gates ensure code quality
-# Integrations keep Jira/GitHub in sync
+/keel:req --story=FEAT-1 --feature="Your idea"
+# All 10 phases run automatically with gates between each.
 ```
 
-### 3. **CI/CD Pipelines**
-Automate development in GitHub Actions.
+### 2. Development Teams
+
+Standardize workflows with shared conventions and governance.
+
+```bash
+/keel:init --mode=new --stack=cakephp
+# All team members use the same agents, conventions, and quality gates.
+# Integrations keep Jira/GitHub in sync automatically.
+```
+
+### 3. CI/CD Pipelines
+
+Automate governed development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.16.0
+- uses: creativemyntra/keel@v3.18.0
   with:
-    phase: 'all'  # Run complete pipeline
+    phase: 'all'   # Run complete pipeline
 ```
 
-### 4. **Rapid Prototyping**
-Validate ideas in hours, not weeks.
+### 4. Rapid Prototyping
+
+Validate ideas quickly with a complete quality-verified output.
 
 ```bash
 /keel:brainstorm --goal="New feature idea"
 /keel:req --story=PROTO-1
 /keel:deploy --story=PROTO-1 --rollout=canary
-# Validate with real users immediately
 ```
 
-### 5. **Legacy Code Modernization**
-Add new features to existing projects.
+### 5. Legacy Code Modernization
+
+Add new features to existing projects with impact analysis.
 
 ```bash
-/keel:init --mode=existing --stack=laravel
-# Keel integrates with your existing codebase
-# New features follow best practices
+/keel:init --mode=existing --stack=cakephp
+# Keel integrates with your existing codebase via CodeGraph impact analysis.
+# New features follow established project conventions.
 ```
 
 ---
 
-## ✨ What's Included
+## What's Included
 
 ### Framework
-- ✅ 17 agent definitions + 11 skills + 15 slash commands
-- ✅ Deterministic state engine + proactive watchers (zero-dependency Node)
-- ✅ Governance gates enforced between every phase
-- ✅ Tech stack profiles (CakePHP today; more on the roadmap)
+- 15 agent definitions (10 pipeline + 2 meta/support + 3 infrastructure)
+- 9 skills (start-work, finish-work, implement-feature, investigate-defect, review-code, release-check, e2e-test, task-breakdown, create-mom)
+- 18 slash commands covering every pipeline phase and utility
+- Deterministic state engine + proactive watchers (zero-dependency Node)
+- Governance gates enforced between every phase
+- Tech stack profiles (CakePHP 4.4 today; more on the roadmap)
 
 ### Documentation
-- ✅ 12+ comprehensive guides
-- ✅ Real-world examples
-- ✅ API reference
-- ✅ Troubleshooting guide
+- Comprehensive guides: WORKFLOW.md, INSTALL.md, QUICK-START, ALL-AGENTS-COMPLETE-GUIDE, TECHNICAL-SPECIFICATIONS
+- Real-world pipeline walkthrough (HEALTH-1 end-to-end demo)
+- Agent specification files for all 15 agents
 
-### Tools
-- ✅ Setup wizard (interactive)
-- ✅ Integration setup scripts
-- ✅ Post-install automation
-- ✅ Health check system
+### Infrastructure Scripts
+- `scripts/keel-state.cjs` — deterministic state engine (schema, gates, retries, audit, snapshots)
+- `scripts/keel-classify-gate.cjs` — CJIS data classification + prompt injection guard
+- `scripts/keel-dashboard.cjs` — pipeline status web dashboard
+- `scripts/keel-watch.cjs` — coverage and test-count baseline watcher
+- `scripts/keel-version-audit.cjs` — stale version reference scanner
 
-### Sample Outputs
-- ✅ Requirements examples
-- ✅ Design examples
-- ✅ Code examples
-- ✅ Deployment examples
-
----
-
-## 🚀 Performance Benchmarks
-
-### Development Speed
-- **Project initialization:** 5 minutes
-- **Requirements creation:** 10 minutes
-- **Architecture design:** 15 minutes
-- **TDD development:** 65 minutes
-- **Testing & verification:** 15 minutes
-- **Security scanning:** 10 minutes
-- **Deployment:** 15 minutes
-
-**Total: 2 hours** (vs 2 weeks manually)
-
-### Code Quality
-- **Test coverage:** 87% automatic
-- **Security issues:** 0 (verified)
-- **Code review:** Automated
-- **Performance:** 145-152ms response time
-
-### Scaling
-- **Concurrent jobs:** 4 agents in parallel
-- **Cache enabled:** 1-hour TTL
-- **Timeout:** 300 seconds per phase
-- **Maximum users:** Unlimited
+### Skills
+- `keel:start-work` — Fetch Jira ticket → create branch → push → transition to In Progress
+- `keel:finish-work` — Create PR to dev → transition Jira to In Review
+- `keel:implement` — Full 10-phase pipeline alias
+- `keel:preview` — Dry-run showing stack detection, economy settings, model tiers
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Keel is open-source under the MIT License.
 
-**Want to contribute?**
 1. Fork on GitHub: https://github.com/creativemyntra/keel
-2. Create feature branch: `git checkout -b feature/improvement`
-3. Commit changes: `git commit -m "Add improvement"`
+2. Create a feature branch: `git checkout -b feature/improvement`
+3. Commit changes: `git commit -m "feat(scope): description"`
 4. Push to branch: `git push origin feature/improvement`
-5. Open Pull Request
+5. Open a Pull Request targeting `dev`
 
 ---
 
-## 📜 License
+## License
 
-**MIT License** — Free for personal & commercial use.
+**MIT License** — Free for personal and commercial use.
 
 See [LICENSE](LICENSE) for details.
 
 ---
 
-## 🔗 Resources
+## Resources
 
 | Resource | Link |
 |----------|------|
@@ -731,67 +599,114 @@ See [LICENSE](LICENSE) for details.
 | **Issue Tracker** | https://github.com/creativemyntra/keel/issues |
 | **Discussions** | https://github.com/creativemyntra/keel/discussions |
 | **Author** | Amar Singh |
-| **Email** | support@creativemyntra.com |
 
 ---
 
-## 🙌 Acknowledgments
+## Acknowledgments
 
 Keel is built with:
-- **Claude AI** — Code generation & analysis
-- **Claude Code** — Plugin platform
-- **Open Source Community** — Best practices
+- **Claude AI** — Code generation, analysis, and reasoning
+- **Claude Code** — Plugin platform and agent orchestration
+- **Anthropic** — Model infrastructure
+- **Open Source Community** — Best practices and tooling
 
 ---
 
-## ⭐ Star Us on GitHub
+## Star Us on GitHub
 
-If Keel helps you build faster, please star the repo!
+If Keel helps you ship better software, please star the repo.
 
-⭐ https://github.com/creativemyntra/keel
+https://github.com/creativemyntra/keel
 
 ---
 
-## 💬 Getting Help
+## Getting Help
 
-### Documentation
 ```bash
-# View all CLI commands and governance rules
+# View all CLI commands
 node bin/keel.js --help
 
-# Key docs (in repo root)
-# ALL-AGENTS-COMPLETE-GUIDE.md  — all 17 agents, phase-by-phase reference
+# Key reference docs
+# ALL-AGENTS-COMPLETE-GUIDE.md  — all 15 agents, phase-by-phase reference
 # TECHNICAL-SPECIFICATIONS.md   — architecture & state protocol
 # docs/WORKFLOW.md               — cost model, token economy, phase loop
 # CHANGELOG.md                   — full release history
 ```
 
-### Reporting Issues
-https://github.com/creativemyntra/keel/issues
+**Report issues:** https://github.com/creativemyntra/keel/issues
 
 ---
 
-## 🎉 Ready to Build 10x Faster?
+## Version History
 
-```bash
-claude plugin marketplace add https://github.com/creativemyntra/keel
-claude plugin install keel
-```
+**[View Full Changelog →](CHANGELOG.md)**
 
-Then:
-```bash
-/keel:init --mode=new --stack=cakephp
-/keel:implement-feature story="FEAT-1" feature="Your first feature"
-```
+### What's New in v3.18.0
 
-**Welcome to the future of software development!** 🚀
+- **Audit release (31 findings)** — Full-spectrum hardening: Part A (21 static findings) + Part B (10 distribution/dynamic findings).
+- **action.yml hardened** — Shell injection closed (env-var quoting), `claude-api-key` wired to `ANTHROPIC_API_KEY`, `collect-outputs` now reports actual pass/fail.
+- **Node >=18 engines** — `package.json` engines field updated to match documented Playwright requirement.
+- **npm package ships docs** — `INSTALL.md`, `QUICK-START-CLAUDE-CODE.md`, `ALL-AGENTS-COMPLETE-GUIDE.md`, `TECHNICAL-SPECIFICATIONS.md`, `CHANGELOG.md`, `docs/` now included.
+- **Schema enforced** — `decisions` added to `agent-output-schema.json` `required[]`.
+
+### What's New in v3.16.8
+
+- **CJIS gate project-independence (CRIT-4)** — Universal NCIC_ID and LEID patterns now block at the framework level; project-specific identifiers moved to overlay (`cjis-project-patterns.json`). Overlay parse failure is fail-closed.
+- **Prompt injection guard (CRIT-1)** — OWASP LLM01 defense: 6 regex patterns (ignore/override, act-as, new-instructions, `<system>` tags, `###OVERRIDE`, `[system]` brackets) always-blocking at ALL hook stages including PostToolUse (exit 2).
+- **KEEL-R14 zombie-state prevention (CRIT-3)** — `phase_modes` manifest field + `phase-mode set/get` engine command tracks author/draft mode. Gate PASS auto-clears the marker; safe for context-compaction recovery.
+- **Defect-scope lessons writeback enforced (CRIT-2)** — Security engineer (last content phase for defects) has explicit obligation to write a `lessons.md` entry when RCA is present; phase-8 handshake gate verifies.
+- **`keel:implement` alias** — `commands/implement.md` routes `/keel:implement` to the orchestrator (all 10 phases); prevents silent fallback to phase-5-only software-engineer.
+- **UI Designer upgrade: Branding Intake + Design System Generator** — Step -1 pauses to ask for reference URLs, brand assets, mood words, and existing UI before any codebase scan. Step 2f produces a full Design System Plan: named layout pattern, complete color palette with hex codes, typography pairing, CSS effects, direction-specific anti-patterns, and a 24-item pre-build checklist. Dashboard expertise, DFII scoring (≥8 gate), and differentiation anchor requirement added.
+- **Coverage baseline format fix (W-2)** — `keel-watch.cjs` normalizes both flat and nested baseline formats; drop detection works correctly after preflight rebuild.
+- **Resume phase guard (HIGH-2)** — `resume --phase N` now rejects if phase N-1 output file is absent.
+- **Defect scope-creep detection (HIGH-4)** — Handshake agent blocks new endpoints, DB columns, non-test dependencies, or UI flows outside the RCA without human acknowledgment.
+
+### What's New in v3.16.7
+
+- **Forensic engine audit: 14 fixes** — Comprehensive self-audit of `keel-state.cjs` and `keel-classify-gate.cjs` resolved 3 CRITICAL, 4 HIGH, 4 MEDIUM, and 3 LOW findings.
+- **Path traversal closed (CRIT-02)** — `story_id` validated with strict `^[A-Za-z0-9_-]+$` regex; arbitrary filesystem access via crafted story IDs blocked (exit 64).
+- **Audit/handoff log consistency (CRIT-01/03)** — Handoff-log initialized eagerly on `init`; `appendAudit()` guaranteed before any async notification; log divergence on halt eliminated.
+- **Slack SSRF closed (HIGH-02)** — Webhook URL hostname validated against `hooks.slack.com`; attacker-controlled redirects rejected.
+- **Gate budget off-by-one fixed (HIGH-03)** — Check-before-increment ensures `max_gates` limit is respected exactly.
+- **Artifact validation hardened (MED-01)** — Rejects symlinks, files > 50 MB, dangerous extensions (`.exe`, `.bat`, `.sh`, `.dll`, `.ps1`).
+- **Configurable lock timeout (MED-03)** — `state_engine.lock_stale_seconds` in `.keel/economy.yml`; no longer hardcoded.
+
+### What's New in v3.16.6
+
+- **G-15 Karpathy Protocol** — Four binding rules at every handshake gate: K-1 surface assumptions, K-2 ask-don't-guess (HALT on ambiguity), K-3 minimum code zero speculation, K-4 surgical diff verification.
+- **Token economy observability** — `confirm_before_spawn: true` (default): orchestrator shows `[token-estimate:]` before every spawn. `token_summary: true`: cumulative token table (estimates). Measured cache savings reported in telemetry when session usage is imported.
+- **Prompt cache breakpoints** — 3 canonical `cache_control: {type: "ephemeral"}` breakpoints; `[cache-estimate:]` line emitted per spawn.
+- **`/keel:tokens` command** — Live token ledger + cache savings; mid-session `confirm on|off` and `cache on|off` toggles.
+
+### What's New in v3.16.5
+
+- **`keel:start-work` skill** — Fetches a Jira ticket via Atlassian Rovo MCP, creates a typed branch, pushes to remote, transitions Jira to "In Progress". Works in description-only mode when no ticket exists.
+- **`keel:finish-work` skill** — Creates an industry-standard PR to `dev` via GitHub REST API (`~/.keel/secrets/github.token`), transitions Jira to "In Review". Handles 422 (PR already exists) gracefully.
+- **Advisory ticket traceability (G-12)** — Ticket reference in commits is advisory-only (warns, never blocks).
+
+### What's New in v3.16.4
+
+- **CakePHP-only packaging** — Removed all Node/Django/Rails/Laravel references; `keel-detect-stack` blocks non-PHP manifests. `package.json` `files` array includes `config/` and `stack-profiles/`.
+- **CJIS gate deadlock fix** — Rewrote `config/cjis-patterns.json` to eliminate description string that matched the EMAIL regex, causing the gate to block reads/writes of its own config file.
+- **Explicit model tiers** — Orchestrator pipeline phases table has a `Model` column; haiku for TRIVIAL-tier handshakes + jira-import, sonnet for all other phase agents and NORMAL/FULL gates.
+- **`/keel:preview` command** — Dry-run: stack detection, story state, economy settings, pipeline map with model tiers, CJIS gate status, CodeGraph freshness.
+
+### What's New in v3.16.0
+
+- **CJIS Data Classification Gate** — `scripts/keel-classify-gate.cjs` + `config/cjis-patterns.json`; runs via `hooks/hooks.json` (UserPromptSubmit, PreToolUse, PostToolUse); blocks stories touching CJIS-adjacent data without required classification annotation.
+- **`keel-state.cjs security-status` command** — Human-readable CJIS gate status for a story.
+
+### What's New in v3.15.0
+
+- **10-phase pipeline** — `tdd-red` and `tdd-green` removed as separate phases. `software-engineer` (phase 5) now writes production code and unit tests in one phase; coverage ≥ 80% is a hard gate. Phase renumbering: qa-engineer→6, e2e-engineer→7, security-engineer→8, technical-writer→9, release-manager→10.
+- **Backward-compatible engine** — `keel-state.cjs` retains `LEGACY_AGENTS` so stories initialized under the old 12-phase schema continue to validate correctly.
 
 ---
 
-**Version:** 3.16.0  
-**Released:** 2026-07-20  
-**Status:** PRODUCTION READY ✅  
-**Agents:** 17 (12 pipeline phase + 2 meta/support + 3 infrastructure)  
+**Version:** 3.18.0  
+**Released:** 2026-08-03  
+**Status:** PRODUCTION READY  
+**Agents:** 15 (10 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.16.0 (https://github.com/creativemyntra/keel/releases/tag/v3.16.0)
+**Tag:** v3.18.0 (https://github.com/creativemyntra/keel/releases/tag/v3.18.0)
