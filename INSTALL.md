@@ -63,7 +63,7 @@ claude plugin install .
 ## Option D -- GitHub Action (CI/CD)
 
 ```yaml
-- uses: creativemyntra/keel@v3.18.0
+- uses: creativemyntra/keel@v3.18.1
   with:
     story: FEAT-1
     phase: full-pipeline
