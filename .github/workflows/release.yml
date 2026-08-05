@@ -45,15 +45,22 @@ jobs:
           echo "tag=v$VERSION"     >> "$GITHUB_OUTPUT"
           echo "Releasing version: $VERSION"
 
-      - name: Validate plugin.json version matches tag
+      - name: RELEASE MANAGER GATE - Comprehensive Version Audit
         run: |
-          PLUGIN_VERSION=$(node -p "require('./.claude-plugin/plugin.json').version")
-          TAG_VERSION="${{ steps.version.outputs.version }}"
-          if [ "$PLUGIN_VERSION" != "$TAG_VERSION" ]; then
-            echo "❌ plugin.json version ($PLUGIN_VERSION) does not match tag ($TAG_VERSION)"
+          echo "═══════════════════════════════════════════════════════"
+          echo "RELEASE MANAGER ENFORCEMENT: Comprehensive Version Audit"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""
+          node scripts/version-audit-comprehensive.cjs
+          if [ $? -ne 0 ]; then
+            echo ""
+            echo "❌ RELEASE BLOCKED: Version audit failed"
+            echo "   Release manager must fix all version mismatches before proceeding"
             exit 1
           fi
-          echo "✅ Version match: $PLUGIN_VERSION"
+          echo ""
+          echo "✅ RELEASE APPROVED: All 11 version files match"
+          echo "   Ready to proceed with build and distribution"
 
   # ─────────────────────────────────────────────
   # 2. Build plugin bundle (.plugin zip)
