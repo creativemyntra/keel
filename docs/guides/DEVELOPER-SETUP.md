@@ -26,7 +26,7 @@ claude plugin install keel
 Verify:
 ```bash
 claude plugin list
-# Should show: keel v3.18.0 [x]
+# Should show: keel v3.18.1 [x]
 ```
 
 ### Initialize Your Project
@@ -366,4 +366,4 @@ Or link manually:
 ---
 
 **Last updated:** 2026-08-03  
-**Keel version:** 3.18.0+
+**Keel version:** .18.1+

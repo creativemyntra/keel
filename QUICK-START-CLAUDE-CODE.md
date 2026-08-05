@@ -207,7 +207,7 @@ Total time: **Hours instead of weeks!**
 
 ---
 
-**Version:** 3.18.0
+**Version:** .18.1
 **Author:** Amar Singh
 **License:** MIT
 **Repository:** https://github.com/creativemyntra/keel

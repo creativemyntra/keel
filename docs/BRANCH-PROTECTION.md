@@ -153,7 +153,7 @@ Manual branches should follow the same pattern where possible.
 | `chore/` | Deps, tooling, tasks | `chore/hart-200-update-deps` |
 | `ci/` | CI/CD pipeline | `ci/hart-225-add-lint-step` |
 | `epic/` | Epic-level branch | `epic/hart-100-payment-overhaul` |
-| `release/` | Release prep | `release/v3.18.0` |
+| `release/` | Release prep | `release/v3.18.1` |
 | `spike/` | Exploratory work | `spike/hart-240-evaluate-sdk` |
 
 Ticket ID in branch name is **recommended**, not mandatory — work may start from

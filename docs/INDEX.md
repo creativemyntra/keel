@@ -54,7 +54,7 @@ By-story documentation from delivery phases:
 ## 🛠️ Operations
 
 Status and deployment info:
-- **[Release Notes](../RELEASE-v3.18.0-FINAL.md)** — Latest version changes
+- **[Release Notes](../RELEASE-v3.18.1-FINAL.md)** — Latest version changes
 - **[Rollout Status](../ROLLOUT-STATUS.md)** — Production deployment status
 - **[Changelog](../CHANGELOG.md)** — Full version history
 
@@ -128,4 +128,4 @@ All work organized by KEEL-NNN or ASW-NNN story ID. Check subdirectories:
 ---
 
 **Last updated:** 2026-08-03  
-**Keel version:** 3.18.0+
+**Keel version:** .18.1+

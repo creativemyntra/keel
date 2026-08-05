@@ -126,7 +126,7 @@ placeholder by running the actual tool at phase 2, recording the measured
 value and the command used. A `[BASELINE: ...]` placeholder that survives past
 phase 2 is an unverified claim and a gate FAIL at the phase-2 handshake.
 
-## G-10 - Data Classification Gate (v3.18.0)
+## G-10 - Data Classification Gate (v3.18.1)
 
 `scripts/keel-classify-gate.cjs` must be wired into `hooks/hooks.json` for
 all stories involving CJIS-adjacent data. The gate runs on `UserPromptSubmit`,
