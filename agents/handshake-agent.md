@@ -127,10 +127,11 @@ rules are hard boundaries, not suggestions:
         (string matching docs/plans/.*implementation-plan\.md). File must
         exist on disk, be >= 300 words, and contain required sections:
         "## Files to change", "## Test scenarios", "## Assumptions" or "## Risks".
-        Every AC from phase 2 must appear in the plan (per-AC rationale or test
-        scenarios section). Plan file absent, too thin, missing sections, or
-        dropping an AC = FAIL. A listed-but-unwritten plan (the honor-system
+        Every AC from phase 2 must appear somewhere in the plan content (per-AC rationale,
+        test scenarios, or assumptions section). Plan file absent, too thin, missing sections, or
+        dropping any AC = FAIL. A listed-but-unwritten plan (the honor-system
         state before this gate) is caught by the "file not found" check.
+        Engine verifies: file exists + has all ACs covered.
      d. **K-4 Scope-creep (for ALL scopes, not just defect):** Run `git diff --stat`.
         For every changed file, verify it appears in the AC→implementation
         mapping from the phase output. A file changed but not mapped to an AC
