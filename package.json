@@ -8,7 +8,7 @@
     "keel": "bin/keel.js"
   },
   "scripts": {
-    "postinstall": "node scripts/setup-git-safe-dirs.cjs || true",
+    "postinstall": "node scripts/setup-git-safe-dirs.cjs && node scripts/install-branch-strategy-hooks.cjs || true",
     "start": "node ./bin/keel.js",
     "test": "npm run test:engine && npm run test:phase-drift && npm run test:gate && npm run test:watch && npm run test:halt && npm run test:checks && npm run test:audit && npm run test:agent-e2e && npm run test:yaml",
     "test:engine": "node scripts/test-keel-state.cjs",
