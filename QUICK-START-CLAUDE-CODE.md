@@ -1,10 +1,10 @@
-# Keel v3.18.0 -- Claude Code Quick Start
+# Keel v3.18.1 -- Claude Code Quick Start
 
 **Status:** [x] Framework is ready to use NOW
 **Date:** 2026-08-03
 **Installation:** Already complete
 
-> **Updated 2026-08-03:** aligned to v3.18.0 -- 10-phase pipeline, 15 agents,
+> **Updated 2026-08-03:** aligned to v3.18.1 -- 10-phase pipeline, 15 agents,
 > full workflow table covering all phases including UI Designer (3), E2E Engineer
 > (7), and Technical Writer (9). References to removed skills and stale counts
 > have been corrected.

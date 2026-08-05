@@ -1,0 +1,167 @@
+name: PR Version Check
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - qa
+      - stage
+      - preprod
+      - prod
+    types: [opened, synchronize]
+
+jobs:
+  version-check:
+    name: Version Consistency Check
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: PR VERSION CHECK - Validate All Files Match
+        id: audit
+        run: |
+          echo "═══════════════════════════════════════════════════════"
+          echo "PR VERSION CHECK: Validating version consistency"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""
+          echo "Target Branch: ${{ github.base_ref }}"
+          echo ""
+
+          # Run comprehensive audit and capture output
+          node scripts/version-audit-comprehensive.cjs > audit_output.txt 2>&1
+          AUDIT_EXIT=$?
+
+          cat audit_output.txt
+          echo ""
+
+          # Save output for comment
+          {
+            echo "audit_output<<EOF"
+            cat audit_output.txt
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ $AUDIT_EXIT -ne 0 ]; then
+            echo "status=FAILED" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          echo "status=PASSED" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on PR - Version Check Passed
+        if: steps.audit.outputs.status == 'PASSED'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ **Version Check PASSED**\n\nAll version files are consistent. Safe to merge.'
+            })
+
+      - name: Comment on PR - Version Check Failed
+        if: steps.audit.outputs.status == 'FAILED'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const auditOutput = `${{ steps.audit.outputs.audit_output }}`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `❌ **Version Check FAILED**
+
+Version files are not consistent. All critical files must match before merging.
+
+\`\`\`
+${auditOutput}
+\`\`\`
+
+**Action Required:**
+1. Update all version files to match
+2. Commit the changes
+3. Push to your branch (this check will re-run automatically)`
+            })
+
+      - name: Block PR if versions mismatch
+        if: steps.audit.outputs.status == 'FAILED'
+        run: |
+          echo "❌ PR blocked: Version files do not match"
+          echo ""
+          echo "This is a required check on promotion branches (dev/qa/stage/preprod/prod)"
+          echo "All version-bearing files must be consistent before merging."
+          exit 1
+
+  # ─────────────────────────────────────────────
+  # Promotion Pipeline Guard
+  # ─────────────────────────────────────────────
+  promotion-check:
+    name: Promotion Pipeline Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Correct Source Branch
+        run: |
+          echo "═══════════════════════════════════════════════════════"
+          echo "PROMOTION PIPELINE GUARD"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""
+          BASE_BRANCH="${{ github.base_ref }}"
+          SOURCE_BRANCH="${{ github.head_ref }}"
+
+          # Map allowed source branches
+          case "$BASE_BRANCH" in
+            dev)
+              ALLOWED_PATTERN="^(feat|fix|chore|docs|audit|test)/"
+              DESCRIPTION="Feature branches: feat/*, fix/*, chore/*, docs/*, audit/*, test/*"
+              ;;
+            qa)
+              ALLOWED_PATTERN="^dev$"
+              DESCRIPTION="dev (when ready to promote to QA)"
+              ;;
+            stage)
+              ALLOWED_PATTERN="^qa$"
+              DESCRIPTION="qa (when QA testing is complete)"
+              ;;
+            preprod)
+              ALLOWED_PATTERN="^stage$"
+              DESCRIPTION="stage (when UAT is complete)"
+              ;;
+            prod)
+              ALLOWED_PATTERN="^preprod$"
+              DESCRIPTION="preprod (when pre-release validation is complete) — requires 2 approvals"
+              ;;
+            *)
+              ALLOWED_PATTERN="^$"
+              DESCRIPTION="unknown branch (should not be releasing from this)"
+              ;;
+          esac
+
+          echo "Target Branch: $BASE_BRANCH"
+          echo "Source Branch: $SOURCE_BRANCH"
+          echo "Expected Pattern: $ALLOWED_PATTERN"
+          echo ""
+
+          if [[ "$SOURCE_BRANCH" =~ $ALLOWED_PATTERN ]]; then
+            echo "✅ Correct promotion path: $SOURCE_BRANCH → $BASE_BRANCH"
+          else
+            echo "❌ Invalid promotion path"
+            echo ""
+            echo "Allowed source for $BASE_BRANCH:"
+            echo "  - $DESCRIPTION"
+            echo ""
+            echo "Current: $SOURCE_BRANCH (NOT ALLOWED)"
+            exit 1
+          fi
