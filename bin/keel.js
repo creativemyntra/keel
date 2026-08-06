@@ -203,6 +203,15 @@ const ROUTES = {
       'Governance: Never merge PR. Human must press deploy. Canary required.',
     ]);
   },
+
+  doctor(c) {
+    const r = spawnSync('node', [resolve(KEEL_DIR, 'scripts', 'keel-doctor.cjs')], {
+      cwd: KEEL_DIR,
+      encoding: 'utf8',
+      stdio: 'inherit',
+    });
+    process.exit(r.status);
+  },
 };
 
 function showHelp() {
