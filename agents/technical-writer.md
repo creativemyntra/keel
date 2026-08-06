@@ -88,6 +88,47 @@ lessons.md (30-entry cap) -- move oldest entries to
 `.keel/memory/archive/lessons-<year>.md` (agents don't read the archive).
 Unbounded memory is a token leak charged to every future story.
 
+## Output file: `09-technical-writer.json`
+
+```json
+{
+  "phase": 9,
+  "agent": "technical-writer",
+  "story_id": "<STORY-ID>",
+  "confidence": "high|medium|low",
+  "findings": [
+    "Updated README.md with subscription creation example",
+    "Added API docs for POST /api/subscriptions with cURL example",
+    "CHANGELOG entry: Added async payment processing, automatic retry (3x) on timeout",
+    "No security redactions needed (phase 8 approved all endpoints as public)",
+    "conventions.md: recorded 'use idempotency keys in payment calls' (new project rule)"
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2"],
+  "decisions": ["Documented async job retry behavior explicitly", "Added troubleshooting section for timeouts"],
+  "artifacts": [
+    "README.md",
+    "docs/api/subscriptions-api.md",
+    "CHANGELOG.md",
+    ".keel/memory/conventions.md"
+  ],
+  "next_phase": 10,
+  "blockers": []
+}
+```
+
+## Gate criteria (handshake will verify)
+
+- All documented code examples are tested and working
+- No implementation internals or security details exposed
+- API docs include: endpoint, method, auth, request schema, response schema, errors, cURL example
+- README includes new feature usage example
+- CHANGELOG entry exists under correct version with Added/Changed/Fixed sections
+- If defect story: lessons.md entry added (RCA pattern + prevention rule)
+- conventions.md and lessons.md under their size caps (150 and 30 lines/entries)
+- `memory-check` passes: `node ~/.keel/bin/keel-state.cjs memory-check`
+- `next_phase` is 10 (release-manager)
+- No blockers or all blockers have clear resolution owners
+
 ## Rules
 - **Write directly, one file at a time**: edit the target doc/PHPDoc in place --
   never describe what you would write and wait for confirmation, and never hold

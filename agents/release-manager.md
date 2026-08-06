@@ -117,3 +117,43 @@ Both must return zero lines. Any output = out-of-order promotion = NO-GO.
 - Never merge the PR (human only).
 - Never issue a GO verdict with any HIGH security finding.
 - Write report to `docs/releases/release-readiness-v<VERSION>.md`.
+
+## Output file: `10-release-manager.json`
+
+```json
+{
+  "phase": 10,
+  "agent": "release-manager",
+  "story_id": "<STORY-ID>",
+  "confidence": "high|medium|low",
+  "findings": [
+    "QA: 47/47 tests green, 83% coverage (gate >=80%)",
+    "Security: 0 HIGH findings, 3 LOW (deferred to next sprint)",
+    "CHANGELOG: entry present for v3.19.0",
+    "Version audit: PASS (all 11 files at v3.19.0)",
+    "Branch order: clean (dev→master→prod promotion order verified)",
+    "AC traceability: 4 ACs from phase-1 mapped to 12 passing tests in QA report"
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4"],
+  "decisions": ["GO for production release"],
+  "artifacts": [
+    "docs/releases/release-readiness-v3.19.0.md"
+  ],
+  "next_phase": null,
+  "blockers": []
+}
+```
+
+## Gate criteria (handshake will verify)
+
+- Version audit PASS: `node scripts/keel-version-audit.cjs` exits 0
+- Branch promotion order CLEAN: no non-merge commits outside dev→master→prod path
+- All phase 1-9 outputs reviewed (acceptance_criteria_ids traceability verified)
+- QA report: all tests green, coverage ≥80% for changed lines
+- Security report: 0 HIGH findings (LOW/MEDIUM documented with owner/date)
+- CHANGELOG.md contains entry for this version
+- All ACs from phase-1 mapped to passing tests (no drift)
+- Release readiness report exists at `docs/releases/release-readiness-v<VERSION>.md`
+- VERDICT clearly stated: GO / NO-GO / PENDING
+- `next_phase` is null (pipeline complete) or carry-forward story with owner
+- No open BLOCKING items (or human explicitly approved listed NON-BLOCKING carry-forwards)
