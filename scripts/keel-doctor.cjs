@@ -201,7 +201,12 @@ console.log('\nCHECK C: Version Consistency');
     }
     try {
       const content = JSON.parse(fs.readFileSync(filepath, 'utf8'));
-      versions[name] = content.version;
+      // marketplace.json has nested structure: plugins[0].version
+      if (name === 'marketplace.json') {
+        versions[name] = content.plugins?.[0]?.version;
+      } else {
+        versions[name] = content.version;
+      }
     } catch (e) {
       versionsFailed.push(`${name} (syntax error)`);
     }
@@ -233,27 +238,32 @@ console.log('\nCHECK D: Gate Logic Smoke Test');
     fail('keel-classify-gate.cjs exists', `Not found at ${gateScript}`,
       'Ensure scripts/keel-classify-gate.cjs is installed');
   } else {
-    // Test: Benign input should process (exit 0 or 1, not 2)
+    // Test: Benign JSON payload should be allowed (exit 0 or 1, not 2)
     let gateResponds = false;
     try {
+      const benignPayload = JSON.stringify({
+        userPromptRaw: 'normal test input without sensitive data',
+        stage: 'pre',
+      });
       execSync(`node "${gateScript}" --stage=pre`, {
-        input: 'this is a normal test input',
+        input: benignPayload,
         stdio: 'pipe',
         encoding: 'utf8',
       });
       gateResponds = true;
     } catch (e) {
-      // exit 2 means gate blocked (incorrect for benign)
-      if (e.status !== 2) {
+      // exit 2 means gate blocked (incorrect for benign JSON)
+      // exit 1 is acceptable (gate ran)
+      if (e.status === 1 || e.status === 0) {
         gateResponds = true;
       }
     }
 
     if (gateResponds) {
-      pass('G-10 gate logic functional', 'Responds to input correctly');
+      pass('G-10 gate logic functional', 'Responds to JSON input correctly');
     } else {
       fail('G-10 gate logic functional',
-        'Gate blocked on benign input (should only block on violations)',
+        'Gate blocked on benign JSON payload (should only block on violations)',
         'Gate may be misconfigured. Check scripts/keel-classify-gate.cjs');
     }
   }
