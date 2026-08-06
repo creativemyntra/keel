@@ -145,7 +145,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - Data flows and domain rules
 - Edge cases and error paths
 
-#### Phase 3: UI Designer Agent (v3.14.0)
+#### Phase 3: UI Designer Agent (v3.18.2)
 - Scans existing UI patterns in the project
 - Produces Markdown design spec + self-contained HTML mockup
 - No-UI determination for non-visual stories
@@ -160,7 +160,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - Coverage >= 80% on changed lines gated before QA
 - PSR-12 / ESLint compliance, CodeGraph impact-scoped implementation
 
-#### Phase 6: QA Engineer Agent (v3.15.0)
+#### Phase 6: QA Engineer Agent (v3.18.2)
 - Maps every AC to a passing test
 - Runs integration tests against live endpoints
 - Full suite gate (once per story)

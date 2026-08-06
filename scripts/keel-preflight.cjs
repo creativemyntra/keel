@@ -7,15 +7,16 @@
  *
  * Steps:
  *   1. Rebuild CodeGraph  → .keel/graph/codegraph.json
- *   2. Update baseline    → .keel/watch/baseline.json (reads coverage-final.json, never re-runs tests)
+ *   2. Validate freshness — if graph stale after rebuild, BLOCK
+ *   3. Update baseline    → .keel/watch/baseline.json (reads coverage-final.json, never re-runs tests)
  *
- * Exit 0 always — preflight is informational, never blocks the push.
+ * Exit 0 = graph fresh. Exit 1 = graph stale or rebuild failed (BLOCKING).
  */
 'use strict';
 
 const fs   = require('fs');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { spawnSync, execSync } = require('child_process');
 
 const ROOT          = path.resolve(__dirname, '..');
 const GRAPH_SCRIPT  = path.join(__dirname, 'build-codegraph.cjs');
@@ -24,16 +25,39 @@ const BASELINE_OUT  = path.join(ROOT, '.keel', 'watch', 'baseline.json');
 const COVERAGE_IN   = path.join(ROOT, 'coverage', 'coverage-final.json');
 const GATE          = { statements: 80, functions: 80, branches: 80 };
 
+// ── 0. CodeGraph Freshness Check ──────────────────────────────────────────────
+
+function getCurrentHeadCommit() {
+  try {
+    return execSync('git rev-parse HEAD', { encoding: 'utf-8', cwd: ROOT }).trim();
+  } catch (e) {
+    return null;
+  }
+}
+
+function isGraphFresh() {
+  if (!fs.existsSync(GRAPH_OUT)) return false;
+  try {
+    const graph = JSON.parse(fs.readFileSync(GRAPH_OUT, 'utf-8'));
+    const currentHeadCommit = getCurrentHeadCommit();
+    if (!currentHeadCommit) return false;
+    return graph.head_commit === currentHeadCommit;
+  } catch (e) {
+    return false;
+  }
+}
+
 // ── 1. CodeGraph ─────────────────────────────────────────────────────────────
 
 function rebuildGraph() {
   const r = spawnSync(process.execPath, [GRAPH_SCRIPT, ROOT], { encoding: 'utf8' });
   if (r.status !== 0) {
-    process.stderr.write(`[WARN] CodeGraph rebuild failed: ${(r.stderr || r.stdout || '').trim()}\n`);
-    return;
+    process.stderr.write(`[ERROR] CodeGraph rebuild failed: ${(r.stderr || r.stdout || '').trim()}\n`);
+    return false;
   }
   const line = (r.stdout || '').trim();
   process.stderr.write(`[OK]   CodeGraph: ${line}\n`);
+  return true;
 }
 
 // ── 2. Coverage baseline ─────────────────────────────────────────────────────
@@ -93,6 +117,22 @@ function updateBaseline() {
 
 // ── main ─────────────────────────────────────────────────────────────────────
 
-rebuildGraph();
+let failed = false;
+
+// Step 1: Rebuild CodeGraph
+if (!rebuildGraph()) {
+  process.stderr.write('[ERROR] CodeGraph rebuild failed — push blocked\n');
+  failed = true;
+} else {
+  // Step 2: Verify freshness
+  if (!isGraphFresh()) {
+    const head = getCurrentHeadCommit();
+    process.stderr.write(`[ERROR] CodeGraph stale after rebuild — HEAD is ${head ? head.substring(0, 7) : '?'}\n`);
+    failed = true;
+  }
+}
+
+// Step 3: Update baseline (always, warnings only)
 updateBaseline();
-process.exit(0);
+
+process.exit(failed ? 1 : 0);

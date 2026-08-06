@@ -37,7 +37,7 @@
 
 All notable changes to Keel AI-SDLC Framework are documented here.
 
-## [3.16.9] - 2026-07-29 - AUDIT RELEASE: FULL-SPECTRUM HARDENING (PART A + PART B, 31 FINDINGS RESOLVED)
+## [3.18.2] - 2026-07-29 - AUDIT RELEASE: FULL-SPECTRUM HARDENING (PART A + PART B, 31 FINDINGS RESOLVED)
 
 ### Security
 - **KEEL-AUDIT-004** (`scripts/keel-init.cjs`) — SessionStart now stages `injection-patterns.json` and `cjis-project-patterns.json` to `~/.keel/config/` on every session, closing the injection-guard bypass on the `~/.keel/bin/` invocation path.

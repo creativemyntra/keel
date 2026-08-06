@@ -24,6 +24,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const args = process.argv.slice(2);
 const impactIdx = args.indexOf('--impact');
@@ -32,6 +33,15 @@ const root = path.resolve(
   args.filter((a, i) => impactIdx < 0 || (i !== impactIdx && i !== impactIdx + 1))[0] || '.'
 );
 const graphPath = path.join(root, '.keel', 'graph', 'codegraph.json');
+
+function getCurrentHeadCommit() {
+  try {
+    return execSync('git rev-parse HEAD', { encoding: 'utf-8', cwd: root }).trim();
+  } catch (e) {
+    console.error('⚠️  Could not determine HEAD commit (not in a git repo?)');
+    return null;
+  }
+}
 
 function phpFiles(dir, out = []) {
   if (!fs.existsSync(dir)) return out;
@@ -125,10 +135,16 @@ function buildGraph() {
     return true;
   });
 
-  const graph = { generated_at: new Date().toISOString(), nodes, edges: unique };
+  const headCommit = getCurrentHeadCommit();
+  const graph = {
+    generated_at: new Date().toISOString(),
+    head_commit: headCommit,
+    nodes,
+    edges: unique
+  };
   fs.mkdirSync(path.dirname(graphPath), { recursive: true });
   fs.writeFileSync(graphPath, JSON.stringify(graph, null, 2));
-  console.log(`CodeGraph: ${Object.keys(nodes).length} nodes, ${unique.length} edges → ${path.relative(root, graphPath)}`);
+  console.log(`CodeGraph: ${Object.keys(nodes).length} nodes, ${unique.length} edges @ ${headCommit ? headCommit.substring(0, 7) : 'unknown'} → ${path.relative(root, graphPath)}`);
   return graph;
 }
 
