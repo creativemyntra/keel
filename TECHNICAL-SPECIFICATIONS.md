@@ -499,10 +499,23 @@ chmod 600 ~/.keel/secrets/github.token
 keel approve-phase STORY-123 3 --via-pr 456
 ```
 
-### Documentation
-- **Init/Config:** scripts/lib/vcs-providers.cjs (provider detection + loading)
-- **Approval Command:** keel-state.cjs cmdApprovePhase (uses vcs.yml exclusively)
-- **Setup Command:** keel-state.cjs cmdSetupVcs (auto-detect + proposal-based)
+### Implementation
+
+**T19 (Initial):** `scripts/lib/vcs-provider-interface.cjs` (monolithic, all providers in one file)
+
+**T19.2 (Refactored):** Modular structure under `scripts/vcs/`:
+- `provider.cjs` — VCSProvider base class
+- `index.cjs` — Factory: createVCSProvider(config)
+- `resolve.cjs` — Config loader, fail-closed validation
+- `providers/github.cjs` — GitHub Cloud/Enterprise
+- `providers/bitbucket-cloud.cjs` — Bitbucket Cloud (MCP-ready)
+- `providers/bitbucket-server.cjs` — Bitbucket Server (stub)
+
+**Commands:**
+- `keel setup-vcs` — Auto-detect + proposal (calls provider.testConnection() before writing config)
+- `keel approve-phase <story> <phase> --via-pr <PR#>` — Uses resolved provider
+
+**For existing installs:** Backward compatible. No migration required.
 
 ---
 
