@@ -818,7 +818,7 @@ Tokens inlined in `<style>`. Font loaded via CDN `<link>`. Works when double-cli
 - Design follows existing patterns OR deviation is justified
 - `next_phase` is 4
 
-**New (v3.18.0+):**
+**New (v3.18.1+):**
 - Branding intake attempted: `brand_intake` field in output JSON with status `provided` or `skipped`
 - Brand audit result in findings
 - UX analysis complete for every browser-UI AC: user goal + happy path + failure modes + information hierarchy

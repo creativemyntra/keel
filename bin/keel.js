@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Keel AI-SDLC Framework v3.18.1 -- CLI Dispatcher (ESM)
+ * Keel AI-SDLC Framework v3.18.2 -- CLI Dispatcher (ESM)
  * Author : Amar Singh (creativemyntra)
  * License: MIT
  */
@@ -9,7 +9,7 @@ import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const VERSION   = '3.18.1';
+const VERSION   = '3.18.2';
 const KEEL_DIR  = resolve(__dirname, '..');
 
 function parseArgs(argv) {
@@ -202,6 +202,15 @@ const ROUTES = {
       '',
       'Governance: Never merge PR. Human must press deploy. Canary required.',
     ]);
+  },
+
+  doctor(c) {
+    const r = spawnSync('node', [resolve(KEEL_DIR, 'scripts', 'keel-doctor.cjs')], {
+      cwd: KEEL_DIR,
+      encoding: 'utf8',
+      stdio: 'inherit',
+    });
+    process.exit(r.status);
   },
 };
 
