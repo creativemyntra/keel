@@ -126,7 +126,7 @@ placeholder by running the actual tool at phase 2, recording the measured
 value and the command used. A `[BASELINE: ...]` placeholder that survives past
 phase 2 is an unverified claim and a gate FAIL at the phase-2 handshake.
 
-## G-10 - Data Classification Gate (v3.18.0)
+## G-10 - Data Classification Gate (v3.18.2)
 
 `scripts/keel-classify-gate.cjs` must be wired into `hooks/hooks.json` for
 all stories involving CJIS-adjacent data. The gate runs on `UserPromptSubmit`,
@@ -383,30 +383,124 @@ has no standard type prefix. This is informational — no commits are blocked.
 ## G-15 - Karpathy Protocol (Assume Nothing, Change Nothing Extra)
 
 Four binding rules for every agent that reads requirements or writes code.
-A violation is a self-review finding; the handshake gate may spot-check any
-of the four rules. Gate FAIL = costs one attempt.
+Enforcement: the state engine validates K-1, K-2, and K-3 mechanically at phase 5
+(software-engineer); the handshake gate verifies K-1, K-2, K-3, and K-4 before
+checking tests or code. Gate FAIL = costs one attempt. K-1, K-2, K-3, and K-4 are
+MANDATORY, not discretionary spot-checks.
 
-**K-1 — Surface assumptions before starting**
+**K-1 — Surface assumptions before starting (MANDATORY, engine-checked)**
 Before any design or code: list every assumption about scope, data shape,
-behavior, performance, and security. Include the list in the phase output's
-`findings`. An assumption not surfaced is an untested risk.
+behavior, performance, and security. Emit the list into the required
+`assumptions[]` field in the phase-5 output JSON (minItems 1). Each assumption
+must have `area` (scope|data|behavior|performance|security), `assumption` text
+(≥8 chars), and `risk` (≥8 chars). Engine validates K-1 mechanically;
+gate re-confirms it. An assumption not surfaced is an untested risk.
+Phase-5 output with empty assumptions FAILS validation.
 
-**K-2 — Ask, don't guess**
+**K-2 — Ask, don't guess (MANDATORY, engine+gate-verified)**
 When a requirement is ambiguous, underspecified, or contradicts a prior ADR:
 HALT. Record the ambiguity + at least two plausible interpretations in
-`blockers`. Do not pick one silently and proceed. The human owner resolves
-ambiguity; the agent does not.
+`blockers`. Emit them into the required `interpretations_considered[]` field
+for each ambiguous AC flagged in phase 1-2. Do not pick one silently and proceed.
+Engine validates presence; handshake gate verifies every ambiguous AC from
+phase 1-2 has a corresponding interpretation entry with ≥2 options.
+Missing an interpretation for an ambiguous AC = gate FAIL.
+The human owner resolves ambiguity; the agent does not.
 
-**K-3 — Minimum code, zero speculation**
+**K-3 — Minimum code, zero speculation (MANDATORY, engine-checked + gate-verified)**
 Write the simplest code that satisfies every AC. No speculative abstractions,
 no unrequested generalizations, no "while I'm here" features. Each class,
 method, and parameter must trace to an AC. An element without a tracing AC
 is out-of-scope — remove it or record it as NON-BLOCKING for the human.
+Emit the `implementation_plan_path` field pointing to a 300+ word plan with
+required sections (Files to change, Test scenarios). Engine validates plan
+file exists; gate re-confirms.
 
-**K-4 — Surgical diff verification**
+**K-4 — Surgical diff verification (MANDATORY for ALL scope types, gate-verified)**
 After coding, run `git diff --stat`. For every changed file: confirm it is
 cited in the AC→implementation mapping. A file in the diff but absent from
 the mapping is unrequested scope — revert it or escalate before handoff.
+The handshake gate verifies K-4 for BOTH feature AND defect scope (prior
+enforcement was defect-only; this closes that gap). Feature scope may NOT
+skip the scope-creep check.
+---
+
+## G-17 - Implementation plan (minimum code, zero speculation)
+
+Every story at phase 5 must produce an implementation plan that exists on disk and covers every AC.
+
+**Requirement:** Software engineer writes `docs/plans/<STORY-ID>-implementation-plan.md` and sets `implementation_plan_path` in phase-5 output.
+
+**Validation (K-3 gate check):**
+- File exists, readable
+- >= 300 words
+- Contains required sections:
+  - `## Files to change` (or `## Files to create/change`)
+  - `## Test scenarios`
+  - `## Assumptions` or `## Risks`
+- Every AC from phase 2 appears somewhere in the plan
+- If any check fails, phase 5 gates with FAIL reason
+
+**Enforcement:** The state engine (validatePhaseFile) blocks `gate --phase 5 --verdict PASS` if plan is missing, too thin, lacks required sections, or drops an AC. This prevents the honor-system state (plan instruction followed, file not written) from reaching code review.
+
+---
+
+## G-16 - Task breakdown (think-before-design)
+
+Every story must produce a task breakdown before design begins (pre-phase-3 gate).
+
+**Requirement:** Before spawning `keel:ui-designer` (phase 3), run `keel:task-breakdown <story-id>`.
+
+**Output:** `docs/plans/<STORY-ID>-task-breakdown.md` with markdown table:
+```
+| # | Task | Size | Depends on | AC |
+|---|------|------|-----------|-----|
+| 1 | ... | SM/MD/LG | ... | AC-1, AC-2 |
+```
+
+**Validation (C-0009 gate check):**
+- File exists, readable
+- Table has required header: `| # | Task | Size | Depends on | AC |`
+- At least 1 data row (no header-only files)
+- Every AC from phase 2 appears in ≥1 task row
+- If any check fails, phase 3 gates with FAIL reason
+
+**Enforcement:** The state engine (keel-state.cjs C-0009 check) blocks `gate --phase 3 --verdict PASS` if task breakdown is missing or incomplete. This ensures no user-facing story reaches design without decomposing all ACs into ordered, sized work.
+
+---
+
+## G-18 - Red-first TDD for feature scope (feature tests before implementation)
+
+Every feature-scope story must prove tests FAIL before implementation begins (phase 5 red-check gate).
+
+**Requirement:** Software engineer writes unit tests FIRST (before any production code), runs them to confirm they fail, then writes implementation to make them pass.
+
+**Process (in phase 5):**
+1. Write test file(s) with tests that fail initially (describe feature, no implementation yet)
+2. Run red-check to prove tests fail:
+   ```bash
+   node ~/.keel/bin/keel-state.cjs red-check <story-id> --test <filter> --runner "vendor/bin/phpunit"
+   ```
+3. Commit test file(s) with the red-check.json artifact
+4. Write production code to make tests pass
+5. Verify `red-check.json` has `observed_red: true` before handoff
+
+**Exit codes:**
+- 0 = RED confirmed (test fails before implementation) — PASS
+- 1 = test passes without implementation — FAIL (rewrite test)
+- 3 = test runner not found — UNVERIFIABLE (install runner or specify --runner)
+
+**Validation (handshake gate):**
+- For feature-scope stories: `red-check.json` must exist and have `observed_red: true`
+- If missing or false, gate FAILS with requirement to re-run red-check
+- Defect-scope stories use revert-check instead (proves test fails without fix, passes with fix)
+
+**Policy:** Controlled by `.keel/economy.yml` settings:
+- `red_first_tdd.feature_tests_first: true` — enforce red-check (default)
+- `red_first_tdd.allow_waiver: false` — no human waiver without owner approval
+
+**Enforcement:** The handshake gate (phase 5→6 transition) blocks `gate --phase 5 --verdict PASS` if the story is feature-scope but lacks red-check proof. This prevents feature implementation from proceeding without proven test-first discipline.
+
 ---
 
 ## Known Limitations (documented, not fixable mechanically)
