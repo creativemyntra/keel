@@ -2075,7 +2075,7 @@ function cmdPrescan(storyId) {
     catch { return false; }
   };
 
-  run('composer-audit', 'composer audit --no-interaction',
+  run('composer-audit', 'composer audit --no-interaction --locked',
     exists('composer.json') && onPath('composer'),
     exists('composer.json') ? 'not applicable — composer not on PATH' : 'not applicable — no composer.json');
   run('phpstan', 'vendor/bin/phpstan analyse --no-progress --error-format=raw',
