@@ -64,10 +64,80 @@ function readManifest(cwd, story) {
 function writePhaseFile(cwd, story, phase, agent, findings, nextPhase) {
   const file = path.join(cwd, '.keel', 'state', story,
     `${String(phase).padStart(2, '0')}-${agent}.json`);
-  fs.writeFileSync(file, JSON.stringify({
+  const docsDir = path.join(cwd, 'docs', 'plans');
+
+  let content = {
     phase, agent, story_id: story, confidence: 'high',
-    findings, acceptance_criteria_ids: [], decisions: [], artifacts: [], next_phase: nextPhase !== undefined ? nextPhase : phase + 1,
-  }));
+    findings, acceptance_criteria_ids: [], decisions: [], artifacts: [],
+    next_phase: nextPhase !== undefined ? nextPhase : phase + 1,
+  };
+
+  // Add Karpathy Protocol fields for phase 5 (software-engineer)
+  if (phase === 5 && agent === 'software-engineer') {
+    // K-1: Assumptions required
+    content.assumptions = [
+      { area: 'scope', assumption: 'Test assumption scope', risk: 'Test risk scope' }
+    ];
+
+    // K-2: Interpretations considered (for ambiguous ACs)
+    content.interpretations_considered = [
+      {
+        ac_id: 'AC-1',
+        options: [
+          'Option A: interpret as happy path only',
+          'Option B: interpret as covering error cases too'
+        ],
+        decision: 'Chose Option A: focus on happy path in phase 5'
+      }
+    ];
+
+    // K-3: Implementation plan required (must exist on disk)
+    const planPath = path.join(docsDir, `${story}-implementation-plan.md`);
+    content.implementation_plan_path = planPath;
+
+    // Create the implementation plan file (must have >= 300 words)
+    fs.mkdirSync(docsDir, { recursive: true });
+    const planContent = `# Implementation Plan for ${story}
+
+## Overview
+This is a test implementation plan with sufficient content for validation purposes in the state engine test suite.
+
+## Files to change
+- File 1: implementation.js - add core logic
+- File 2: utils.js - add helper functions
+- File 3: index.js - export public API
+- File 4: package.json - update version number
+
+## Acceptance Criteria Mapping
+- AC-1: Covered by test scenario 1 verifying happy path
+- AC-2: Covered by test scenario 2 verifying error handling
+
+## Test scenarios
+1. Happy path: system behaves correctly with valid input and produces expected output
+2. Error case: system handles invalid input gracefully without crashing or data loss
+3. Edge case: system handles boundary conditions like empty inputs or maximum values
+4. Performance: system meets latency requirements under normal load conditions
+5. Security: system validates and sanitizes input to prevent injection attacks
+
+## Risks and Mitigations
+- Risk 1: Dependency changes - mitigation: use locked versions in package-lock.json
+- Risk 2: Database migration - mitigation: run migrations in separate job with rollback plan
+- Risk 3: API changes - mitigation: maintain backward compatibility layer for clients
+- Risk 4: Load testing - mitigation: validate performance against production-like datasets
+
+## Integration Points
+- Database schema updates in migration file with rollback safety checks
+- API endpoint changes documented in CHANGELOG with deprecation notices
+- Configuration changes in environment template with validation rules
+
+This implementation plan contains sufficient detail and word count for validation in test environment.
+`.repeat(3); // Repeat to ensure >= 300 words
+
+    fs.writeFileSync(planPath, planContent);
+    content.artifacts = [planPath];
+  }
+
+  fs.writeFileSync(file, JSON.stringify(content));
 }
 
 async function main() {
