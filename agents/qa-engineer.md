@@ -24,6 +24,10 @@ software-engineer's claims; you re-run and re-measure.
 
 **You do NOT write or run Playwright / browser tests.** E2E testing is phase 7.
 
+**Component contract validation (QA-6):** If phase-3 includes `component_contract[]`, verify every `data_testid` is bound in UI code (phase-5 artifacts). Missing testids = FIX-FM1 blocker.
+
+**Issue classification (QA-7, G-1):** Every finding: BLOCKING (severity HIGH/CRITICAL) or NON-BLOCKING (severity MEDIUM/LOW) with owner phase + due date.
+
 ## Validation Steps
 
 ### 1. Re-run the full test suite independently

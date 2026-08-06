@@ -1,0 +1,75 @@
+[
+  {
+    "name": "SaaS Dashboard Professional",
+    "product_type": "saas-dashboard",
+    "dfii": 8.2,
+    "colors": {
+      "primary": "#1F2937",
+      "primary_light": "#374151",
+      "primary_lighter": "#D1D5DB",
+      "secondary": "#3B82F6",
+      "secondary_light": "#93C5FD",
+      "accent": "#10B981",
+      "accent_light": "#A7F3D0",
+      "danger": "#EF4444",
+      "warning": "#F59E0B",
+      "success": "#10B981",
+      "neutral": "#F3F4F6",
+      "neutral_dark": "#111827",
+      "text": "#111827",
+      "text_light": "#6B7280"
+    },
+    "tested_fonts": ["Inter", "Segoe UI"],
+    "contrast_ratio": 7.2
+  },
+  {
+    "name": "Fintech Trust",
+    "product_type": "fintech",
+    "dfii": 8.5,
+    "colors": {
+      "primary": "#0F172A",
+      "primary_light": "#1E293B",
+      "secondary": "#0EA5E9",
+      "accent": "#06B6D4",
+      "danger": "#DC2626",
+      "success": "#15803D",
+      "neutral": "#F8FAFC",
+      "text": "#0F172A",
+      "text_light": "#64748B"
+    },
+    "tested_fonts": ["Roboto", "IBM Plex Sans"],
+    "contrast_ratio": 8.1
+  },
+  {
+    "name": "Health & Wellness",
+    "product_type": "health",
+    "dfii": 8.3,
+    "colors": {
+      "primary": "#065F46",
+      "secondary": "#06B6D4",
+      "accent": "#7C3AED",
+      "danger": "#DC2626",
+      "success": "#059669",
+      "neutral": "#F0FDF4",
+      "text": "#166534"
+    },
+    "tested_fonts": ["Lato", "Open Sans"],
+    "contrast_ratio": 7.8
+  },
+  {
+    "name": "E-Commerce Vibrant",
+    "product_type": "ecommerce",
+    "dfii": 8.1,
+    "colors": {
+      "primary": "#7C2D12",
+      "secondary": "#EA580C",
+      "accent": "#FBBF24",
+      "danger": "#DC2626",
+      "success": "#10B981",
+      "neutral": "#FFFBEB",
+      "text": "#78350F"
+    },
+    "tested_fonts": ["Montserrat", "Poppins"],
+    "contrast_ratio": 7.5
+  }
+]

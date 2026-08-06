@@ -88,6 +88,39 @@ lessons.md (30-entry cap) -- move oldest entries to
 `.keel/memory/archive/lessons-<year>.md` (agents don't read the archive).
 Unbounded memory is a token leak charged to every future story.
 
+## Output file: `09-technical-writer.json`
+
+```json
+{
+  "phase": 9,
+  "agent": "technical-writer",
+  "story_id": "<STORY-ID>",
+  "confidence": "high|medium|low",
+  "findings": [
+    "Updated README.md with subscription creation example",
+    "Added API docs for POST /api/subscriptions",
+    "CHANGELOG entry: Added async payment processing",
+    "conventions.md: recorded 'use idempotency keys'"
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2"],
+  "decisions": [],
+  "artifacts": ["README.md", "CHANGELOG.md", ".keel/memory/conventions.md"],
+  "next_phase": 10,
+  "blockers": []
+}
+```
+
+## Gate Criteria
+
+- All code examples tested and working
+- No security details exposed
+- API docs complete: endpoint, method, auth, schemas, errors, cURL
+- README includes feature usage example
+- CHANGELOG entry with Added/Changed/Fixed sections
+- If defect: lessons.md entry added
+- memory-check passes (conventions ≤150, lessons ≤30)
+- `next_phase` is 10 (release-manager)
+
 ## Rules
 - **Write directly, one file at a time**: edit the target doc/PHPDoc in place --
   never describe what you would write and wait for confirmation, and never hold

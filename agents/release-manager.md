@@ -117,3 +117,40 @@ Both must return zero lines. Any output = out-of-order promotion = NO-GO.
 - Never merge the PR (human only).
 - Never issue a GO verdict with any HIGH security finding.
 - Write report to `docs/releases/release-readiness-v<VERSION>.md`.
+
+## Output file: `10-release-manager.json`
+
+```json
+{
+  "phase": 10,
+  "agent": "release-manager",
+  "story_id": "<STORY-ID>",
+  "confidence": "high|medium|low",
+  "findings": [
+    "QA: 47/47 tests green, 83% coverage",
+    "Security: 0 HIGH findings",
+    "CHANGELOG: entry present for v3.19.0",
+    "Version audit: PASS (all 11 files at v3.19.0)",
+    "Branch order: clean (dev→master→prod verified)",
+    "AC traceability: all 4 ACs mapped to passing tests"
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4"],
+  "decisions": ["GO for production release"],
+  "artifacts": ["docs/releases/release-readiness-v<VERSION>.md"],
+  "next_phase": null,
+  "blockers": []
+}
+```
+
+## Gate Criteria
+
+- Version audit PASS: `node scripts/keel-version-audit.cjs` exits 0
+- Branch order CLEAN: no non-merge commits outside dev→master→prod
+- All phases 1-9 reviewed (AC traceability verified)
+- QA: all tests green, coverage ≥80%
+- Security: 0 HIGH findings
+- CHANGELOG contains version entry
+- All ACs mapped to passing tests
+- Release readiness report exists
+- VERDICT clearly stated: GO / NO-GO / PENDING
+- `next_phase` is null (complete) or carry-forward story

@@ -1,0 +1,45 @@
+[
+  {
+    "name": "Command Center Dashboard",
+    "product_types": ["saas-dashboard", "analytics"],
+    "grid": "12-column",
+    "components": ["sidebar-nav", "header", "kpi-cards", "chart-grid", "table"],
+    "breakpoints": {"mobile": 375, "tablet": 768, "desktop": 1280},
+    "palette": "SaaS Dashboard Professional",
+    "anti_patterns": ["horizontal-scroll", "more-than-3-colors", "no-focus-indicators"]
+  },
+  {
+    "name": "Landing Page Hero",
+    "product_types": ["marketing", "saas-dashboard"],
+    "grid": "12-column",
+    "components": ["hero-banner", "feature-cards", "testimonials", "cta-section"],
+    "breakpoints": {"mobile": 375, "tablet": 768, "desktop": 1280},
+    "palette": "SaaS Dashboard Professional"
+  },
+  {
+    "name": "Checkout Form",
+    "product_types": ["ecommerce", "fintech"],
+    "grid": "8-column",
+    "components": ["form-group", "payment-input", "order-summary", "submit-btn"],
+    "breakpoints": {"mobile": 375, "tablet": 768, "desktop": 1024},
+    "palette": "E-Commerce Vibrant",
+    "anti_patterns": ["auto-submit", "no-error-messages", "unclear-cta"]
+  },
+  {
+    "name": "Data Table",
+    "product_types": ["saas-dashboard", "admin"],
+    "grid": "12-column",
+    "components": ["table-header", "table-body", "pagination", "filter-bar"],
+    "breakpoints": {"tablet": 768, "desktop": 1280},
+    "palette": "SaaS Dashboard Professional"
+  },
+  {
+    "name": "Modal Dialog",
+    "product_types": ["all"],
+    "grid": "flexible",
+    "components": ["modal-header", "modal-body", "modal-footer", "close-button"],
+    "breakpoints": {"mobile": 320, "tablet": 768},
+    "palette": "SaaS Dashboard Professional",
+    "anti_patterns": ["no-close-button", "no-escape-key", "modal-stacking"]
+  }
+]

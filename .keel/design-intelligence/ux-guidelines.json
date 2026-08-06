@@ -1,0 +1,16 @@
+[
+  {"id": "UX-1", "rule": "Text contrast: foreground vs background >= 4.5:1", "critical": true, "wcag": "AA"},
+  {"id": "UX-2", "rule": "Focus ring: visible, outline-offset 2px", "critical": true, "wcag": "AA"},
+  {"id": "UX-3", "rule": "Respect prefers-reduced-motion media query", "critical": true, "wcag": "AAA"},
+  {"id": "UX-4", "rule": "Form labels: associated via <label for=> or aria-labelledby", "critical": true, "wcag": "A"},
+  {"id": "UX-5", "rule": "Images: alt text provided (or aria-hidden if decorative)", "critical": true, "wcag": "A"},
+  {"id": "UX-6", "rule": "HTML: semantic (use <button>, <nav>, <header>, not <div>)", "critical": true, "wcag": "A"},
+  {"id": "UX-7", "rule": "CSS: token-driven (no hardcoded values like #FF5733)", "critical": true, "wcag": "N/A"},
+  {"id": "UX-8", "rule": "Touch targets: minimum 44x44px", "critical": true, "wcag": "AAA"},
+  {"id": "UX-9", "rule": "Spacing: multiples of 8px (8, 16, 24, 32, ...)", "critical": true, "wcag": "N/A"},
+  {"id": "UX-10", "rule": "Icon + text labels: avoid icon-only (except well-known)", "critical": true, "wcag": "A"},
+  {"id": "UX-11", "rule": "Color: not the only signal (use color + icon + text)", "critical": true, "wcag": "A"},
+  {"id": "UX-12", "rule": "Mobile: no horizontal scroll (viewport <= 375px)", "critical": true, "wcag": "AA"},
+  {"id": "UX-13", "rule": "Inputs: visible borders (contrast >= 3:1 UI)", "critical": false, "wcag": "AA"},
+  {"id": "UX-14", "rule": "Error messages: clear, actionable, non-vague", "critical": false, "wcag": "A"}
+]

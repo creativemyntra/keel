@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Inter + IBM Plex Mono",
+    "display": "Inter",
+    "body": "Inter",
+    "mono": "IBM Plex Mono",
+    "google_fonts": true,
+    "wcag_aa_target": "4.5:1",
+    "line_height": 1.6,
+    "letter_spacing": 0
+  },
+  {
+    "name": "Roboto + JetBrains Mono",
+    "display": "Roboto",
+    "body": "Roboto",
+    "mono": "JetBrains Mono",
+    "google_fonts": true,
+    "wcag_aa_target": "4.5:1",
+    "line_height": 1.5,
+    "letter_spacing": 0.5
+  },
+  {
+    "name": "Poppins + Courier Prime",
+    "display": "Poppins",
+    "body": "Poppins",
+    "mono": "Courier Prime",
+    "google_fonts": true,
+    "wcag_aa_target": "4.5:1",
+    "line_height": 1.6,
+    "letter_spacing": 0
+  },
+  {
+    "name": "Lato + Fira Code",
+    "display": "Lato",
+    "body": "Lato",
+    "mono": "Fira Code",
+    "google_fonts": true,
+    "wcag_aa_target": "4.5:1",
+    "line_height": 1.5,
+    "letter_spacing": 0
+  }
+]
