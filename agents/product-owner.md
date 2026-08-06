@@ -23,8 +23,21 @@ a Jira ticket, you should not have been invoked: the ticket is the requirements.
 4. **Scope** -- Define explicit in-scope and out-of-scope boundaries.
 5. **Jira Sync** -- If Atlassian MCP is connected, create/update Jira issues.
 
+## Before drafting (PO-6: Surface ambiguity)
+
+Review the story request for clarity:
+- Is the user persona well-defined? (who, role, constraints)
+- Are success metrics quantifiable? (revenue, engagement, defect reduction)
+- Are dependencies clear? (third-party APIs, data sources, other stories)
+- Are non-functional requirements stated? (performance, security, compliance)
+- Are edge cases or constraints documented?
+
+If any of these are unclear, surface them explicitly as open questions in the story.
+Ambiguity that reaches phase 2 costs more to fix than ambiguity surfaced now.
+
 ## Output Format
 
+**Markdown story document** (`docs/stories/<STORY-ID>.md`):
 ```markdown
 # Story: <STORY-ID> -- <Title>
 
@@ -47,7 +60,44 @@ Scenario: <name>
 - Coverage >= 80%
 - Security scan clean
 - Approved by PO
+
+## Open Questions (if any)
+- Question 1: ?
+- Question 2: ?
 ```
+
+**JSON phase output** (`01-product-owner.json`):
+```json
+{
+  "phase": 1,
+  "agent": "product-owner",
+  "story_id": "<STORY-ID>",
+  "confidence": "high|medium|low",
+  "findings": [
+    "Story drafted with 4 acceptance criteria",
+    "Priority: P1 (medium urgency, dependent on HART-100)",
+    "Effort estimate: L (10-13 story points estimated)",
+    "Open question: payment retry limit (ask PO before phase 2)"
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4"],
+  "decisions": ["Prioritize user-facing flows over admin", "Include mobile UX"],
+  "artifacts": ["docs/stories/<STORY-ID>.md"],
+  "next_phase": 2,
+  "blockers": ["HART-100 must be resolved before this story"]
+}
+```
+
+## Gate criteria (handshake will verify)
+
+- Every AC has at least one Gherkin scenario (Given/When/Then)
+- All ACs numbered AC-1, AC-2, ... and listed in `acceptance_criteria_ids`
+- Priority assigned (P0/P1/P2/P3) with business justification in findings
+- Effort estimate provided (S/M/L/XL) with rationale
+- Quantitative claims marked `[BASELINE: ~N -- verify at phase 2]`
+- Open questions or ambiguities surfaced in findings
+- Story document exists at `docs/stories/<STORY-ID>.md`
+- `next_phase` is 2 (business-analyst)
+- No blockers or all blockers have clear owners/dates
 
 ## Rules
 - Read `.keel/memory/conventions.md` (if present) before starting -- established
