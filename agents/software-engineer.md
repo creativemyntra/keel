@@ -139,6 +139,26 @@ Review your own diff (`git diff`) as a hostile reviewer:
   `@`-error-suppression.
 - Check the implementation plan -- every AC has implementation coverage.
 - Check test coverage -- >= 80% on changed lines, quoted in findings.
+- **K-1/K-2/K-3 Check (G-15, MANDATORY):** Before writing your output JSON:
+  verify that `assumptions[]` is non-empty, `interpretations_considered[]`
+  covers any ambiguous ACs, `implementation_plan_path` is set, and the plan
+  file exists with 300+ words and required headings. If any of these are
+  missing, do NOT hand off — the gate will FAIL and cost an attempt.
+
+## Feature implementation (red-first TDD enforcement, G-16)
+
+For feature-scope stories (not defect fixes):
+
+1. Write unit tests FIRST that describe the feature behavior — tests must fail initially.
+2. Run `node ~/.keel/bin/keel-state.cjs red-check <story-id> --test <filter> --runner "vendor/bin/phpunit"` to prove tests fail before implementation.
+3. Commit the test file(s) and the red-check.json artifact proof.
+4. THEN write the production code to make tests pass.
+5. Before handoff, verify `red-check.observed_red: true` in the red-check.json artifact.
+
+Red-check exit codes:
+- 0 (PASS): tests fail before implementation (red confirmed, ready to code)
+- 1 (FAIL): tests pass without implementation (bad test, rewrite it)
+- 3 (UNVERIFIABLE): test runner not found (install or specify --runner)
 
 ## Defect fixes (no patch development)
 
@@ -195,6 +215,28 @@ Before writing your phase output:
   ],
   "acceptance_criteria_ids": ["AC-1", "AC-2"],
   "decisions": ["Used Repository pattern instead of active-record -- better testability"],
+  "assumptions": [
+    {
+      "area": "data",
+      "assumption": "Subscription IDs are immutable UUIDs generated at creation",
+      "risk": "If IDs can change, all lookups and foreign keys become stale"
+    },
+    {
+      "area": "performance",
+      "assumption": "Payment processing API responds within 2 seconds",
+      "risk": "Timeouts on slow networks or API overload will fail the create flow"
+    }
+  ],
+  "interpretations_considered": [
+    {
+      "ac_id": "AC-1",
+      "options": [
+        "create() returns the created subscription resource immediately",
+        "create() returns only the subscription ID, full resource fetched separately"
+      ]
+    }
+  ],
+  "implementation_plan_path": "docs/plans/<STORY-ID>-implementation-plan.md",
   "artifacts": [
     "src/Service/SubscriptionService.php",
     "src/Controller/SubscriptionsController.php",
@@ -214,7 +256,12 @@ Before writing your phase output:
 - Lint + static analysis passing (or scanner output quoted in findings)
 - Every AC-id has implementation evidence in findings
 - Coverage >= 80% on changed lines quoted in findings
-- `docs/plans/<STORY-ID>-implementation-plan.md` exists
+- K-1 (G-15): `assumptions[]` array with minItems 1 in JSON output
+- K-2 (G-15): `interpretations_considered[]` for any ambiguous ACs
+- K-3 (G-15): `implementation_plan_path` field set + file exists + >= 300 words + has required sections
+- K-4 (G-15): all files in `git diff --stat` appear in AC→implementation mapping (no unlisted changes)
+- Feature stories: `red-check.json` artifact with `observed_red: true`
+- Defect fixes: `revert-check.json` artifact proving regression test fails without fix
 
 ## Rules
 
