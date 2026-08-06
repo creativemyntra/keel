@@ -131,6 +131,16 @@ Review your own diff (`git diff`) as a hostile reviewer:
   `@`-error-suppression.
 - Check the implementation plan -- every AC has implementation coverage.
 - Check test coverage -- >= 80% on changed lines, quoted in findings.
+- **K-1/K-2/K-3 Check (G-15):** Before output: verify `assumptions[]` non-empty, `interpretations_considered[]` covers ambiguous ACs, `implementation_plan_path` set. If missing, gate FAILS.
+
+## Feature Implementation (Red-First TDD, G-16)
+
+For feature stories:
+1. Write tests FIRST (must fail initially)
+2. Run `node ~/.keel/bin/keel-state.cjs red-check <story-id> --test <filter> --runner "vendor/bin/phpunit"`
+3. Commit test files + red-check.json
+4. THEN write production code
+5. Verify `red-check.observed_red: true` before handoff
 
 ## Defect fixes (no patch development)
 

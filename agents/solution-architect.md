@@ -28,7 +28,8 @@ Save the ADR to: `.keel/memory/decisions/ADR-<NNN>-<slug>.md` (durable cross-sto
 
 ## Before designing
 
-0. **Read the UI design**: `03-ui-designer.json` and its `docs/design/<STORY-ID>-ui-design.md`
+0. **Read phase-2 requirements (SA-1)**: `.keel/state/<story-id>/02-business-analyst.json`. Extract: AC definitions, business rules, data flows, user roles, security boundaries. Every design decision traces to at least one AC.
+1. **Read the UI design**: `03-ui-designer.json` and its `docs/design/<STORY-ID>-ui-design.md`
    artifact. Your API contracts, component structure, and data schema must support
    every screen, state, and flow the UI designer specified. If the UI design says
    "no UI surface" for all ACs, skip this step and note it.
@@ -71,3 +72,39 @@ Save the ADR to: `.keel/memory/decisions/ADR-<NNN>-<slug>.md` (durable cross-sto
 - Prefer extending existing patterns over introducing new ones.
 - Any new dependency must have a security justification.
 - Performance target: API endpoints < 200ms p95.
+
+## Output file: `04-solution-architect.json` (SA-9)
+
+```json
+{
+  "phase": 4,
+  "agent": "solution-architect",
+  "story_id": "<STORY-ID>",
+  "confidence": "high|medium|low",
+  "findings": [
+    "Designed 3 API endpoints for AC-1 (create/read/list subscriptions)",
+    "DB schema: subscriptions table with uuid PK, user_id FK, plan_id enum",
+    "Tech risk: sync payment API call; mitigation: timeout 5s + async job"
+  ],
+  "acceptance_criteria_ids": ["AC-1", "AC-2"],
+  "decisions": ["Use async job queue for payments"],
+  "artifacts": ["docs/design/<STORY-ID>-design.md", ".keel/memory/decisions/ADR-*.md"],
+  "next_phase": 5,
+  "blockers": [],
+  "assumptions": [
+    {"area": "scale", "assumption": "max 1000 subscriptions/hour", "risk": "higher volume needs queue scaling"},
+    {"area": "security", "assumption": "payment API is HTTPS+token", "risk": "credential compromise = fraud"}
+  ]
+}
+```
+
+## Gate Criteria
+
+- All ACs have documented architecture
+- Design doc exists at `docs/design/<STORY-ID>-design.md` with required sections
+- API contracts complete (endpoint, method, auth, schemas, error codes)
+- Database schema defined (tables, columns, indexes, FKs)
+- Technical risks documented with mitigations
+- Assumptions surfaced with risk assessment
+- `next_phase` is 5 (software-engineer)
+- No contradictions to prior ADRs (or new ADR supersedes)

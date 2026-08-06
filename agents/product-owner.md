@@ -23,8 +23,13 @@ a Jira ticket, you should not have been invoked: the ticket is the requirements.
 4. **Scope** -- Define explicit in-scope and out-of-scope boundaries.
 5. **Jira Sync** -- If Atlassian MCP is connected, create/update Jira issues.
 
+## Before Drafting: Surface Ambiguity (PO-6)
+
+Review story request for clarity. If unclear on user persona, success metrics, dependencies, NFRs, or edge cases: surface as open questions NOW before phase 2.
+
 ## Output Format
 
+**Markdown story document** (`docs/stories/<STORY-ID>.md`):
 ```markdown
 # Story: <STORY-ID> -- <Title>
 
@@ -47,7 +52,35 @@ Scenario: <name>
 - Coverage >= 80%
 - Security scan clean
 - Approved by PO
+
+## Open Questions (if any)
 ```
+
+**JSON phase output** (`01-product-owner.json` — PO-7):
+```json
+{
+  "phase": 1,
+  "agent": "product-owner",
+  "story_id": "<STORY-ID>",
+  "confidence": "high|medium|low",
+  "findings": ["4 ACs drafted", "Priority P1", "Effort L", "Open: payment retry limit"],
+  "acceptance_criteria_ids": ["AC-1", "AC-2", "AC-3", "AC-4"],
+  "decisions": [],
+  "artifacts": ["docs/stories/<STORY-ID>.md"],
+  "next_phase": 2,
+  "blockers": []
+}
+```
+
+## Gate Criteria (PO-8)
+
+- Every AC has ≥1 Gherkin scenario (Given/When/Then)
+- ACs numbered AC-1, AC-2, ... and in `acceptance_criteria_ids`
+- Priority assigned (P0/P1/P2/P3) with business justification
+- Effort estimate provided (S/M/L/XL) with rationale
+- Quantitative claims marked `[BASELINE: ~N -- verify at phase 2]`
+- Open questions or ambiguities in findings
+- `next_phase` is 2 (business-analyst)
 
 ## Rules
 - Read `.keel/memory/conventions.md` (if present) before starting -- established
