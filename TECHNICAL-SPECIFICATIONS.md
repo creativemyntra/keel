@@ -434,6 +434,78 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 
 ---
 
+## VCS Provider-Agnostic Approval Gate (T19)
+
+### Overview
+Keel's design approval gate (C-0007 / T6) now supports multiple Version Control Systems
+through a provider-agnostic abstraction layer. Eliminates hardcoded GitHub references;
+supports GitHub (Cloud / Enterprise), Bitbucket (Cloud / Server/Data Center), GitLab (future).
+
+### Configuration
+**File:** `.keel/vcs.yml` (auto-detected from git remote, never committed)
+**Populated by:** `keel setup-vcs [--confirm]` (proposal-based, human approval required)
+
+```yaml
+provider: github | bitbucket | github-enterprise | bitbucket-server
+owner: <org/workspace/username>
+repo: <repo_slug>
+base_url: "" | https://self-hosted.example.com  # for self-hosted only
+token_file: ~/.keel/secrets/<provider>.token   # gitignored
+```
+
+### Providers Supported
+
+**GitHub Cloud/Enterprise:**
+- Queries GitHub REST API for PR reviews
+- Requires: GitHub personal access token (repo + pull_request scopes)
+
+**Bitbucket Cloud:**
+- Queries Bitbucket v2.0 REST API for PR reviewers
+- Requires: Bitbucket app password or PAT with repository read scope
+
+**Bitbucket Server/Data Center:**
+- Queries Bitbucket v1.0 REST API (self-hosted)
+- Requires: Bitbucket PAT with repository read scope
+- Configurable base_url for internal instances
+
+### Approval Logic (C-0007)
+1. Load .keel/vcs.yml (fail-closed if missing)
+2. Query configured provider for PR approvals
+3. Require ≥1 approval from configured repository
+4. Hash phase output to detect post-approval changes
+5. Record: PR#, approval count, provider, content hash, timestamp
+
+### Fail-Closed Design
+- ✅ No hardcoded VCS targets (all from config)
+- ✅ Configuration required at setup (never auto-accepted)
+- ✅ Missing .keel/vcs.yml → HALT with diagnostic
+- ✅ Malformed config → HALT with diagnostic
+- ✅ API failures → explicit error, no silent fallback
+- ✅ Token stored in ~/.keel/secrets/ (gitignored, never committed)
+
+### Setup Workflow
+```bash
+# 1. Initialize (auto-detects from git remote, displays proposal)
+keel setup-vcs
+
+# 2. Review proposal, then confirm
+keel setup-vcs --confirm --provider github --owner acme --repo my-app
+
+# 3. Provision auth token (stored locally, gitignored)
+echo "YOUR_GITHUB_TOKEN" > ~/.keel/secrets/github.token
+chmod 600 ~/.keel/secrets/github.token
+
+# 4. Test approval gate
+keel approve-phase STORY-123 3 --via-pr 456
+```
+
+### Documentation
+- **Init/Config:** scripts/lib/vcs-providers.cjs (provider detection + loading)
+- **Approval Command:** keel-state.cjs cmdApprovePhase (uses vcs.yml exclusively)
+- **Setup Command:** keel-state.cjs cmdSetupVcs (auto-detect + proposal-based)
+
+---
+
 ## Compliance Standards
 
 ### Evidence Generation Toward Standards (Does Not Confer Certification)
