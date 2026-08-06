@@ -1,0 +1,259 @@
+{
+  "product_patterns": [
+    {
+      "id": "saas-dashboard-pattern",
+      "product_type": "saas-dashboard",
+      "name": "Command Center Dashboard",
+      "description": "Ops/admin dashboards. Heavy monitoring, quick-scan KPIs, drill-down tables.",
+      "layout_structure": [
+        "Sticky topbar: logo + nav + user menu",
+        "Filter toolbar: date range, status filter, export button (full width)",
+        "KPI grid: 4 cards full-width (desktop) → 2 (tablet) → 1 (mobile)",
+        "Chart row: primary chart 60% + activity feed 40%",
+        "Data table: full-width, sortable, paginated, responsive to 1-column on mobile"
+      ],
+      "grid_system": "12-column, 16px gutter, max-width 1400px (can go wider for data-dense dashboards)",
+      "data_hierarchy": {
+        "P1": "KPI numbers (largest, boldest, full color)",
+        "P2": "Trend indicators, charts, supporting context",
+        "P3": "Table pagination, timestamps, metadata"
+      },
+      "component_inventory": [
+        "KPI card with delta + trend",
+        "Line/bar chart with legend",
+        "Filterable data table with row actions",
+        "Date range picker",
+        "Status badge (color + icon + text)"
+      ],
+      "responsive_breakpoints": {
+        "desktop_1280": "4-column KPI grid, chart 60/40 split, full table",
+        "tablet_768": "2-column KPI grid, full-width chart, scrollable table",
+        "mobile_375": "1-column KPI grid, stacked charts, single-column table"
+      },
+      "state_machine": [
+        "Loading: skeleton cards + shimmer table rows",
+        "Loaded: fade-in stagger",
+        "Empty: 'No data for this period' + optional CTA",
+        "Error: banner with retry + partial data if available"
+      ],
+      "motion_spec": "Staggered KPI entrance (50ms offset), chart SVG path draw on load, table row hover bg transition",
+      "anti_patterns": [
+        "Centered layout (use left-aligned)",
+        "Floating action buttons (use toolbar buttons)",
+        "Infinite scroll (use pagination)",
+        "Mixed time periods in same view (pick one period)"
+      ],
+      "palette_recommendations": ["luxury-minimal-saas", "precision-technical"],
+      "font_recommendations": ["luxury-pairing", "precision-technical-pairing"]
+    },
+    {
+      "id": "landing-page-pattern",
+      "product_type": "landing-page",
+      "name": "Marketing Hero + Features + Social Proof",
+      "description": "Landing pages, growth, conversion-focused. Hero hook, feature cards, testimonials, CTA.",
+      "layout_structure": [
+        "Hero section: full-width background image or gradient, centered headline + subheadline + CTA button (40vh min)",
+        "Features grid: 3–4 cards with icons, headline, description (2 columns on tablet, 1 on mobile)",
+        "Social proof: testimonials carousel or static cards (3–5 quotes)",
+        "CTA section: 'Ready to get started?' + primary button + optional secondary link",
+        "Footer: links, copyright, privacy policy"
+      ],
+      "grid_system": "12-column, 24px gutter, max-width 1200px, generous whitespace",
+      "hero_specifics": {
+        "headline": "Primary font, 3–4× body size, ≤12 words",
+        "subheadline": "Secondary font, 1.5× body size, ≤20 words",
+        "cta": "Primary button, high contrast, 44px+ height",
+        "background": "Hero gradient or image (16:9 aspect, optimize for mobile)"
+      },
+      "component_inventory": [
+        "Hero section with background",
+        "Feature card with icon + headline + description",
+        "Testimonial quote card (quote + author avatar + name + role)",
+        "CTA button (primary color, full-width on mobile)"
+      ],
+      "responsive_breakpoints": {
+        "desktop_1280": "3-column feature grid, 3-column testimonials",
+        "tablet_768": "2-column feature grid, 2-column testimonials, hero text smaller",
+        "mobile_375": "1-column everything, hero headline ≥ 24px, CTA full-width button"
+      },
+      "anti_patterns": [
+        "Blurry hero image (must be sharp)",
+        "Too many CTAs (max 2: primary + secondary)",
+        "Generic 'Lorem ipsum' copy",
+        "Stock photos (use real product screenshots or illustrations)",
+        "Thin light typefaces at small sizes (poor readability)"
+      ],
+      "palette_recommendations": ["refined-modern", "editorial-magazine"],
+      "font_recommendations": ["refined-modern-pairing", "editorial-magazine-pairing"]
+    },
+    {
+      "id": "dashboard-analytics-pattern",
+      "product_type": "analytics-dashboard",
+      "name": "Analytics Dashboard (Period Comparison)",
+      "description": "Reporting dashboards. Period selector, KPIs with comparison, charts, drill-down table.",
+      "layout_structure": [
+        "Toolbar: period selector (Last 7d / Last 30d / Custom), comparison toggle (YoY / MoM), export CSV",
+        "KPI row: 3–4 cards with value + % change + trend sparkline",
+        "Charts: 2×2 grid or 1×3 depending on number of metrics",
+        "Table: transactions/events with full record detail, searchable, sortable, paginated",
+        "Footer: date range in UTC, data last refreshed timestamp"
+      ],
+      "grid_system": "12-column, 16px gutter, max-width 1400px",
+      "data_hierarchy": {
+        "P1": "KPI values (large, bold, primary color)",
+        "P2": "Sparkline trends, chart titles, comparison %",
+        "P3": "Legend labels, table metadata, timestamps"
+      },
+      "comparison_visual": "KPI delta: +12% or -3% with up/down arrow, background tint (green/red)",
+      "component_inventory": [
+        "Period selector dropdown + custom range picker",
+        "KPI card with sparkline",
+        "Multi-series line/bar chart",
+        "Data table with column sort + filter",
+        "Comparison badge (% change)"
+      ],
+      "responsive_breakpoints": {
+        "desktop_1280": "4 KPI cards, 2×2 chart grid, full-width table",
+        "tablet_768": "2 KPI cards, 1×2 chart grid, scrollable table",
+        "mobile_375": "1 KPI per row (stacked), charts full-width, single-column table"
+      },
+      "anti_patterns": [
+        "Same scale for all charts (normalize by metric)",
+        "No comparison context (always show % change)",
+        "Missing zero on axes (distorts perception)",
+        "3+ colors per chart (confusing)"
+      ],
+      "palette_recommendations": ["luxury-minimal-saas", "precision-technical"],
+      "font_recommendations": ["luxury-pairing", "precision-technical-pairing"]
+    },
+    {
+      "id": "form-checkout-pattern",
+      "product_type": "checkout-form",
+      "name": "Multi-Step Form / Checkout",
+      "description": "Conversion forms. Progress indicator, inline validation, error recovery, reassurance.",
+      "layout_structure": [
+        "Progress indicator: steps 1-2-3 with current step highlighted (optional on mobile)",
+        "Form section: single step, headline + description",
+        "Form fields: clear labels above inputs, validation messages inline",
+        "CTA buttons: [Back] [Next] or [Back] [Submit]",
+        "Trust badges: SSL lock, refund guarantee, privacy policy link (bottom)"
+      ],
+      "grid_system": "6-column form column (desktop), full-width (mobile)",
+      "field_layout": {
+        "label": "Above input, required asterisk if needed, 14px",
+        "input": "Full-width, 44px height, clear focus ring",
+        "helper_text": "Below input, 12px, muted color, optional tips",
+        "error_message": "Below input, red + ✕ icon + plain language"
+      },
+      "component_inventory": [
+        "Progress stepper (linear steps)",
+        "Form group (label + input + helper + error)",
+        "Validation message (inline, color + icon + text)",
+        "CTA button (primary full-width on mobile, side-by-side on desktop)",
+        "Trust badge row"
+      ],
+      "responsive_breakpoints": {
+        "desktop_1280": "Form in center column 50%, progress on left or top",
+        "tablet_768": "Full-width form, progress as horizontal steps",
+        "mobile_375": "Full-width form, progress steps stacked or hidden"
+      },
+      "state_transitions": [
+        "Field focus: border-color + box-shadow (primary color)",
+        "Field error: border red + ✕ + message appears",
+        "Field filled: optional checkmark in corner (subtle)",
+        "Button loading: spinner + 'Processing...' text"
+      ],
+      "anti_patterns": [
+        "No progress indicator (user loses confidence)",
+        "All fields on one page (overwhelming)",
+        "Inline validation before user leaves field (annoying)",
+        "No error recovery help (generic error code)"
+      ],
+      "palette_recommendations": ["refined-modern", "warm-utilitarian"],
+      "font_recommendations": ["refined-modern-pairing", "warm-utilitarian-pairing"]
+    },
+    {
+      "id": "data-table-pattern",
+      "product_type": "data-table",
+      "name": "Data Table (Dense, Sortable, Searchable)",
+      "description": "Admin interfaces, analytics. Dense table with sort, filter, pagination, row actions.",
+      "layout_structure": [
+        "Toolbar: search box + column filter + bulk actions",
+        "Table: headers with sort arrows, rows with selection checkbox + row data + action menu",
+        "Pagination: page info (1–20 of 1000) + next/prev + page size selector",
+        "Selection state: highlighted row(s), bulk action button (delete, export, etc.)"
+      ],
+      "grid_system": "Full-width table with fixed columns (checkbox, ID) and scrollable data columns (mobile), max-width 1400px",
+      "column_spec": {
+        "header": "12px uppercase, bold, primary color, sort arrow on hover",
+        "data_cell": "14px, text-left, padding 12px",
+        "action_menu": "Ellipsis icon, dropdown on click"
+      },
+      "component_inventory": [
+        "Sortable table header with up/down arrow",
+        "Row selection checkbox",
+        "Row action menu (duplicate, edit, delete)",
+        "Search box with icon",
+        "Pagination controls",
+        "Bulk action button + selection count"
+      ],
+      "responsive_breakpoints": {
+        "desktop_1280": "Full table, all columns visible, no horizontal scroll",
+        "tablet_768": "Hide tertiary columns, action menu into drawer or tooltip",
+        "mobile_375": "Card view (each row becomes a card), swipe for actions"
+      },
+      "interaction_spec": {
+        "sort": "Click header → sort ASC → click again → sort DESC → 3rd click → clear sort",
+        "select": "Checkbox toggles row highlight + enables bulk actions",
+        "row_hover": "Slight bg-color transition, action menu visible"
+      },
+      "anti_patterns": [
+        "Too many columns (>8 is dense, use card view on mobile)",
+        "Unsortable important columns",
+        "No search (hard to find rows)",
+        "Truncated text with no tooltip"
+      ],
+      "palette_recommendations": ["precision-technical", "luxury-minimal-saas"],
+      "font_recommendations": ["precision-technical-pairing", "luxury-pairing"]
+    },
+    {
+      "id": "modal-dialog-pattern",
+      "product_type": "modal-dialog",
+      "name": "Modal / Dialog (Overlay, Focused Task)",
+      "description": "Confirmation dialogs, forms in overlays. Focused task, clear primary action, escape to close.",
+      "layout_structure": [
+        "Backdrop: semi-transparent overlay, click outside to close (optional)",
+        "Modal card: centered, shadow elevation, max-width 480px or 90vw on mobile",
+        "Header: headline + optional subtext + close button (X)",
+        "Body: content (form, confirmation message, details)",
+        "Footer: action buttons, right-aligned ([Cancel] [Primary Action])"
+      ],
+      "grid_system": "Fixed max-width or 90vw on mobile, centered via flexbox",
+      "animation": "Scale up 0.96→1 + opacity 0→1 (spring, 250ms), Escape key or click outside closes",
+      "component_inventory": [
+        "Modal container with backdrop",
+        "Close button (X icon)",
+        "Headline + subtext",
+        "Form or content area",
+        "Action button pair"
+      ],
+      "sizing": {
+        "small": "300px (confirmation dialogs)",
+        "medium": "480px (forms, messages)",
+        "large": "800px (complex forms, optional)"
+      },
+      "state_machine": [
+        "Open: scale-up animation, focus trap active",
+        "Content: form interactions, button hover/active states",
+        "Close: scale-down animation, focus returned to trigger element"
+      ],
+      "anti_patterns": [
+        "Modal can't close (no X button, no Escape key)",
+        "Scroll inside modal while backdrop scrolls (lock body scroll)",
+        "Modal action buttons outside visible area (cut off on small phones)"
+      ],
+      "palette_recommendations": ["luxury-minimal-saas", "refined-modern"],
+      "font_recommendations": ["luxury-pairing", "refined-modern-pairing"]
+    }
+  ]
+}

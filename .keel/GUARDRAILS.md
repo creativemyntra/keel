@@ -409,6 +409,57 @@ cited in the AC→implementation mapping. A file in the diff but absent from
 the mapping is unrequested scope — revert it or escalate before handoff.
 ---
 
+## G-19 - Design approval before build (human review of rendered mockups)
+
+Every user-facing story must obtain human approval of a chosen design direction before phase-4 architecture (solution-architect) begins.
+
+**Requirement:** UI designer produces ≥2 named design directions, renders both to PNG, and requests human approval via a `design_approval` blocker in phase-3 output. The chosen direction must be approved and recorded in the audit trail before phase-3 gates PASS.
+
+**Process (in phase 3):**
+1. ui-designer produces ≥2 named directions:
+   - Direction A: `docs/design/<story>-direction-a-mockup.html` + rationale + DFII score
+   - Direction B: `docs/design/<story>-direction-b-mockup.html` + rationale + DFII score
+2. Render both to PNG:
+   ```bash
+   node scripts/keel-mockup-render.cjs <story>
+   ```
+   Output: `docs/design/<story>-direction-*.png` + SHA256 hashes (binary)
+3. Emit `design_approval` blocker in phase-3 output with PNG paths and hashes
+4. **HALT** phase 3 output — do NOT finalize chosen direction or tokens until human picks
+
+**Human action:**
+1. Review rendered mockups (desktop 1440×900 + mobile 375×812 viewpoints)
+2. Choose one direction (A or B) based on product strategy fit
+3. Record approval:
+   ```bash
+   node ~/.keel/bin/keel-state.cjs audit <story> design_approval \
+     --direction a \
+     --approver <human-name> \
+     --png-hash-desktop <sha256-from-render> \
+     --png-hash-mobile <sha256-from-render>
+   ```
+
+**Finalization (ui-designer continues, or human reruns):**
+- Lock chosen direction: rename `direction-<a|b>-mockup.html` → `final-mockup.html`
+- Create `docs/design/<story>-tokens.css` from chosen direction
+- Update phase-3 output: `"chosen_direction": "direction-<a|b>"` (must match audit entry)
+
+**Validation (phase-3→4 handshake gate):**
+- File exists: `.keel/state/<story>/audit-log.jsonl`
+- Entry exists: grep `"action":"design_approval"`
+- Direction match: `chosen_direction` in phase-3 output == `chosen_direction` in audit entry
+- PNG integrity: SHA256 hash of render matches hash recorded in audit entry (binary mismatch = FAIL)
+
+**Exit conditions:**
+- PASS: audit entry exists, directions match, PNG hashes valid → advance to phase 4
+- FAIL: missing audit entry, mismatch, or PNG integrity failure → phase 3 gates with G-19 FAIL
+
+**Why:** Prevents building on unapproved designs. Humans are the arbiter of design direction; two rendered options show trade-offs clearly. PNG hashing ensures the design humans approved is the one developers will build.
+
+**Scope:** Applies to all user-facing stories. Backend-only stories set `user_facing: false` in phase-1 and skip phase-3 design entirely.
+
+---
+
 ## Known Limitations (documented, not fixable mechanically)
 
 The following are acknowledged framework constraints. They are not bugs — each

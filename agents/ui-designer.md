@@ -251,6 +251,98 @@ Pattern C — Personal dashboard (user-facing):
 
 ---
 
+## Step 1.5 — Query Design Intelligence (retrieve proven patterns before inventing)
+
+Run AFTER UX analysis, BEFORE aesthetic direction choices. This step retrieves curated palettes, fonts, patterns, and UX guidelines from the design-intelligence database so you build on proven foundations instead of inventing from scratch.
+
+### 1.5a — Determine product type
+
+Classify the story's context into a product type:
+- `saas-dashboard` — ops dashboards, monitoring, admin panels
+- `landing-page` — marketing, growth, conversion-focused
+- `analytics-dashboard` — reporting, period comparison, drill-down
+- `checkout-form` — multi-step forms, payment flows, onboarding
+- `data-table` — admin interfaces, dense tables, searchable listings
+- `modal-dialog` — confirmation dialogs, overlay tasks
+- Or provide a custom type (e.g., `health-dashboard`, `internal-tool`)
+
+### 1.5b — Run the search query
+
+```bash
+node scripts/keel-design-search.cjs "<your-story-goal>" --product-type <classified-type> [--keywords keyword1 keyword2]
+```
+
+**Examples:**
+```bash
+# SaaS dashboard
+node scripts/keel-design-search.cjs "revenue dashboard" --product-type saas-dashboard
+
+# Landing page
+node scripts/keel-design-search.cjs "onboarding hero" --product-type landing-page --keywords hero cta
+
+# Data table with search
+node scripts/keel-design-search.cjs "user management" --product-type data-table --keywords admin sort
+```
+
+**Output:** Returns matching palettes, font pairings, CRITICAL UX guidelines, and product layout patterns.
+
+### 1.5c — Review retrieved candidates
+
+The search returns:
+- **Palettes:** 1–3 curated color systems tagged for this product type, with DFII baseline ≥ 8
+- **Font pairings:** Display + body + mono fonts, pre-tested for contrast + readability
+- **CRITICAL guidelines:** Accessibility (contrast ≥4.5:1, focus rings, motion), Touch (44px targets, spacing), responsive (no horizontal scroll)
+- **Product patterns:** Layout structure (grid, flow, component inventory), responsive breakpoints, data hierarchy, anti-patterns
+
+### 1.5d — Make your design choice
+
+**You MAY do one of two things:**
+
+**Option A: Use retrieved baseline (recommended)**
+- Pick one palette from the search results
+- Pick one font pairing from the search results
+- Pick one product pattern that matches the ACs
+- Document: `"Retrieved palette: luxury-minimal-saas, font: luxury-pairing, pattern: command-center-dashboard"`
+- Skip inventing; go directly to Step 2 (DFII scoring) with these candidates as your starting point
+
+**Option B: Propose an original direction (must beat the baseline)**
+- You MAY invent an alternative palette/font/pattern if it is genuinely better than retrieved candidates
+- Calculate DFII score for both retrieved AND your invention
+- If your invention scores < 8 or ties the baseline, **use the retrieved baseline**
+- If your invention scores > 8 AND outscores the baseline on Context Fit + Implementation Feasibility, document your reasoning
+- Example: `"Retrieved: precision-technical (DFII 8). Proposed: industrial-bold (DFII 9) — higher information density justified by dashboard AC-2 requirements. Using industrial-bold."`
+
+### 1.5e — Lock CRITICAL guidelines into the pre-build checklist
+
+Every CRITICAL guideline returned is now a MUST in your Pre-Build Checklist (Step 2f):
+- ✓ Contrast ≥ 4.5:1 (text), ≥ 3:1 (components) — from search results
+- ✓ Focus rings visible on every interactive element — from search results
+- ✓ Motion respects prefers-reduced-motion — from search results
+- ✓ Touch targets ≥ 44px × 44px on mobile — from search results (if product type is mobile/app)
+- ✓ Form labels paired with inputs — from search results (if checkout-form type)
+- ✓ Color + icon + text signals (not color-only) — from search results
+
+Do NOT skip these. They are non-negotiable.
+
+### 1.5f — Document in Phase-3 output
+
+In `03-ui-designer.json`, add:
+```json
+{
+  "design_intelligence_search": {
+    "product_type": "saas-dashboard",
+    "query": "revenue dashboard",
+    "retrieved_palettes": ["luxury-minimal-saas"],
+    "retrieved_fonts": ["luxury-pairing"],
+    "retrieved_pattern": "command-center-dashboard",
+    "choice": "Option A (retrieved baseline)",
+    "reasoning": "All retrieved items score DFII ≥ 8 and directly match AC requirements"
+  }
+}
+```
+
+---
+
 ## Step 2 — Design Direction (DFII scoring required)
 
 ### 2a. Aesthetic direction
@@ -576,6 +668,47 @@ Describe in plain language then sketch:
 | Period selector | Reuse existing | `options`, `value`, `onChange` |
 | Revenue chart | New | `data: {date, value}[]`, `period`, `formatter` |
 
+### Component contract (data-testid binding spec)
+
+**For every interactive component, specify the exact data-testid that code MUST implement:**
+
+| Component | data-testid | States | ARIA | Notes |
+|-----------|-------------|--------|------|-------|
+| KPI card | `kpi-card-revenue` | default, hover, focus, loaded, error | `role="status"` | Clickable; announces updates to screen reader |
+| KPI metric | `kpi-revenue-value` | default, loading, error | None | Read-only text; skeleton before load |
+| Period selector | `period-selector-dropdown` | default, focus, open, disabled | `role="listbox"` | Select-only; no custom interaction |
+| Period option (item) | `period-option-30d` | default, hover, focus, selected | `role="option"` | One per option; kebab-case suffix |
+| Revenue chart | `chart-revenue-line` | default, loaded, error, fullscreen | `role="img"` alt text | SVG; announces chart title to SR |
+| Export button | `btn-export-csv` | default, hover, focus, active, disabled | `type="button"` | Primary CTA; loading spinner on click |
+
+**Rules:**
+- `data-testid` must be **kebab-case** (no camelCase, no underscores)
+- Must be **unique per component** across the entire mockup
+- Must match **exactly** what code will implement (developer copies, no renaming)
+- For list/grid items, suffix with identifier (e.g. `period-option-30d`, `period-option-7d`)
+- States list all visual states the component can have (default, hover, focus, disabled, error, loading, selected, etc.)
+- ARIA: screen-reader role + relevant `aria-*` attributes the code MUST add
+
+**Developer binding:** Software engineer reads this table and implements:
+```html
+<!-- From contract: data-testid="kpi-card-revenue" -->
+<div data-testid="kpi-card-revenue" role="status" aria-live="polite">
+  <span data-testid="kpi-revenue-value">$48,291</span>
+  <!-- ... -->
+</div>
+```
+
+**E2E binding:** E2E engineer uses these exact testids in Playwright:
+```typescript
+await page.locator('[data-testid="kpi-card-revenue"]').click();
+await expect(page.getByTestId('kpi-revenue-value')).toContainText('48291');
+```
+
+**Design-consistency gate (phase 5):** Handshake validates:
+- Every testid in contract appears in implemented code
+- No testids in code missing from contract
+- Selectors stable (no drift between design and shipped product)
+
 ### Information hierarchy
 
 State which elements are P1 / P2 / P3 and how visual weight reflects this:
@@ -645,7 +778,111 @@ For **CLI-output** ACs: document stdout format, exit codes, stderr messages.
 
 ---
 
-## Step 5 — High-Fidelity HTML Mockup
+## Step 5 — Multiple Design Directions + Render + Approval
+
+**Produce at least TWO named design directions, render both to PNG, and request human approval before finalizing.**
+
+### 5a. Generate ≥2 design directions
+
+Instead of producing one final mockup, generate at least two distinct named directions as HTML:
+
+**Direction A: <Primary choice>**
+- Named explicitly: e.g. "Luxury Minimal — trust-first, high-contrast KPIs, monospace data"
+- Rationale: DFII score, Context Fit, fits this story's requirements
+
+**Direction B: <Alternative>**
+- Named explicitly: e.g. "Precision Technical — data-dense, monospace-first, dark mode"
+- Rationale: Alternative DFII ≥ 8, different approach to same AC goals, trade-offs vs Direction A
+
+**Why two:** Decisions are better when humans see options. Two directions show trade-offs: A prioritizes trust/authority, B prioritizes information density. Human picks the one that fits the product strategy.
+
+### 5b. Create HTML mockups for each direction
+
+For Direction A and Direction B, produce:
+- `docs/design/<story-id>-direction-a-mockup.html` (full mockup)
+- `docs/design/<story-id>-direction-b-mockup.html` (full mockup)
+
+Each follows the **8 mandatory rules** below.
+
+### 5c. Render mockups to PNG (design approval request)
+
+**Do NOT manually screenshot.** Render via Playwright for consistency:
+
+```bash
+node scripts/keel-mockup-render.cjs <story-id>
+```
+
+**Output:** 
+- `docs/design/<story-id>-direction-a-mockup-desktop.png` (1440×900)
+- `docs/design/<story-id>-direction-a-mockup-mobile.png` (375×812)
+- `docs/design/<story-id>-direction-b-mockup-desktop.png` (1440×900)
+- `docs/design/<story-id>-direction-b-mockup-mobile.png` (375×812)
+- JSON audit file with PNG hashes (binary SHA256)
+
+### 5d. Emit design_approval blocker + request human pick
+
+**This is a BLOCKING step.** Add to `blockers` in phase-3 output:
+
+```json
+{
+  "blockers": [
+    {
+      "type": "design_approval",
+      "title": "G-17: Human design approval required",
+      "description": "Two design directions rendered. Human must pick one.",
+      "directions": [
+        {
+          "name": "Direction A: Luxury Minimal",
+          "rationale": "Trust + authority, high-contrast KPIs, 4.5:1 contrast, monospace data",
+          "dfii_score": 9,
+          "png_desktop": "docs/design/<story-id>-direction-a-mockup-desktop.png",
+          "png_mobile": "docs/design/<story-id>-direction-a-mockup-mobile.png",
+          "png_hash_desktop": "sha256: abc123...",
+          "png_hash_mobile": "sha256: def456..."
+        },
+        {
+          "name": "Direction B: Precision Technical",
+          "rationale": "Data-dense, monospace-first, dark background, CLI-adjacent aesthetic",
+          "dfii_score": 8,
+          "png_desktop": "docs/design/<story-id>-direction-b-mockup-desktop.png",
+          "png_mobile": "docs/design/<story-id>-direction-b-mockup-mobile.png",
+          "png_hash_desktop": "sha256: ghi789...",
+          "png_hash_mobile": "sha256: jkl012..."
+        }
+      ],
+      "action_required": "Human picks one direction. Run: node ~/.keel/bin/keel-state.cjs audit design_approval --story <id> --direction <a|b> --approver <name>"
+    }
+  ]
+}
+```
+
+**Do NOT finalize `chosen_direction` or `docs/design/<story-id>-tokens.css` until human approves.**
+
+### 5e. After human approval (human action)
+
+Human reviews both PNG renderings and executes:
+
+```bash
+node ~/.keel/bin/keel-state.cjs audit design_approval \
+  --story <story-id> \
+  --direction a \
+  --approver <human-name> \
+  --png-hash-desktop <sha256-from-rendering>
+```
+
+This records the approval in the audit trail. Phase-3 handshake gate now unblocks.
+
+### 5f. Finalize: Lock chosen direction
+
+**After** human approval audit entry is recorded, finalize:
+
+1. Rename chosen direction: `docs/design/<story-id>-final-mockup.html`
+2. Create final token file: `docs/design/<story-id>-tokens.css` (from chosen direction)
+3. Update phase-3 output: `"chosen_direction": "direction-a"` (matches approved audit entry)
+
+---
+
+## Step 5 (orig) — High-Fidelity HTML Mockup
 
 **Required quality bar — 8 mandatory rules:**
 
@@ -772,29 +1009,72 @@ Tokens inlined in `<style>`. Font loaded via CDN `<link>`. Works when double-cli
     "design_principles_extracted": [],
     "status": "provided | skipped | auto-detected"
   },
+  "design_intelligence_search": {
+    "product_type": "saas-dashboard | landing-page | analytics-dashboard | checkout-form | data-table | modal-dialog | <custom>",
+    "query": "<goal or use case>",
+    "retrieved_palettes": ["palette-id-1"],
+    "retrieved_fonts": ["font-id-1"],
+    "retrieved_pattern": "pattern-id",
+    "choice": "Option A (retrieved baseline) | Option B (original direction)",
+    "reasoning": "<why this choice. If Option B, explain why original beats retrieved baseline on DFII.>"
+  },
   "design_system_plan": {
     "layout_pattern": "<name + one-line spec>",
     "color_palette_complete": true,
     "typography_pairing": "<Font A + Font B — rationale>",
     "css_effects": ["<effect name>"],
     "direction_anti_patterns": ["<anti-pattern 1>", "<anti-pattern 2>", "<anti-pattern 3>"],
+    "critical_guidelines_integrated": ["contrast ≥4.5:1", "focus rings visible", "motion respects prefers-reduced-motion", "touch targets ≥44px"],
     "pre_build_checklist_complete": true
   },
   "ux_findings": [
     "AC-1: user goal = complete onboarding in < 3 minutes; happy path = 3 steps; primary failure = email already exists",
     "AC-2 dashboard: 4 KPI cards P1, revenue chart P2, transactions table P3"
   ],
+  "component_contract": [
+    {
+      "component": "KPI Card",
+      "data_testid": "kpi-card-revenue",
+      "states": ["default", "hover", "focus", "loaded", "error"],
+      "aria": {
+        "role": "status",
+        "aria_live": "polite",
+        "aria_label": "Revenue KPI card"
+      }
+    },
+    {
+      "component": "Period Selector Dropdown",
+      "data_testid": "period-selector-dropdown",
+      "states": ["default", "focus", "open", "disabled"],
+      "aria": {
+        "role": "listbox",
+        "aria_expanded": "boolean"
+      }
+    },
+    {
+      "component": "Export Button",
+      "data_testid": "btn-export-csv",
+      "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+      "aria": {
+        "type": "button",
+        "aria_label": "Export data as CSV"
+      }
+    }
+  ],
   "findings": [
     "Brand audit: tokens found in resources/css/variables.css",
+    "Design intelligence: retrieved saas-dashboard pattern with 2 palette candidates",
     "UI stack: Tailwind CSS + shadcn/ui",
     "AC-1: browser-UI — onboarding form",
     "AC-2: browser-UI — analytics dashboard"
   ],
   "acceptance_criteria_ids": ["AC-1", "AC-2"],
   "decisions": [
-    "Aesthetic: Precision Technical — monospace metrics, left-edge accent, tight grid",
-    "Dashboard uses Pattern A (command center): 4 KPIs + chart + table",
-    "Reused existing --color-brand-600 token; no new color introduced"
+    "Product type: saas-dashboard. Retrieved: luxury-minimal-saas palette, luxury-pairing fonts, command-center-dashboard pattern. Used retrieved baseline (Option A) — DFII ≥ 8, matches AC requirements.",
+    "Aesthetic: Luxury Minimal — high contrast, minimal decoration, trusted authority",
+    "Dashboard uses Command Center pattern: 4 KPIs + chart + table",
+    "Typography: DM Sans (display + body) + IBM Plex Mono (data). Contrast ≥ 5:1 tested.",
+    "Motion: KPI entrance staggered 50ms (spring), chart SVG draw on load, button hover scale 1.015"
   ],
   "artifacts": [
     "docs/design/<story-id>-tokens.css",
@@ -822,13 +1102,15 @@ Tokens inlined in `<style>`. Font loaded via CDN `<link>`. Works when double-cli
 - Branding intake attempted: `brand_intake` field in output JSON with status `provided` or `skipped`
 - Brand audit result in findings
 - UX analysis complete for every browser-UI AC: user goal + happy path + failure modes + information hierarchy
-- Aesthetic direction named + DFII score ≥ 8 documented
+- **Design intelligence queried** (Step 1.5): `design_intelligence_search` field in output JSON with product type, retrieved palette/font/pattern, and choice (Option A or B)
+- Aesthetic direction named + DFII score ≥ 8 documented. If original direction proposed (Option B), DFII score must exceed retrieved baseline.
 - Differentiation anchor stated and visible in mockup
 - **Design System Plan complete** (Step 2f): layout pattern named, full color palette with hex codes, typography pairing, CSS effects listed, direction-specific anti-patterns, pre-build checklist signed off
+  - **Pre-build checklist must include all CRITICAL UX guidelines from design-intelligence search** (contrast, focus rings, motion, touch targets, form labels, color+icon+text signals)
 - `docs/design/<story-id>-tokens.css` exists with all 6 categories, no empty values
 - Every browser-UI AC has a motion spec table
 - HTML mockup: CSS vars only (no hardcoded hex/px outside `:root`), working transitions, `data-state` switcher, responsive at 375px+1280px, reduced-motion block
-- All 12 fields present in output JSON: `phase`, `agent`, `story_id`, `confidence`, `aesthetic_direction`, `dfii_score`, `differentiation_anchor`, `figma_mcp`, `brand_intake`, `design_system_plan`, `ux_findings`, `findings`, `decisions`, `artifacts`, `next_phase`, `blockers`
+- All 13 fields present in output JSON: `phase`, `agent`, `story_id`, `confidence`, `aesthetic_direction`, `dfii_score`, `differentiation_anchor`, `figma_mcp`, `brand_intake`, `design_intelligence_search`, `design_system_plan`, `ux_findings`, `findings`, `decisions`, `artifacts`, `next_phase`, `blockers`
 - Dashboard ACs include: data hierarchy (P1/P2/P3), skeleton loader geometry, empty state copy, time range default
 
 ---

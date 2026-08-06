@@ -133,9 +133,10 @@ test.describe('<Feature> -- <STORY-ID>', () => {
 ```
 
 **Selector rules:**
-- Prefer `data-testid` attributes over CSS classes or text (text changes break tests).
-- If `data-testid` attributes don't exist on the UI, add them in a separate
-  minimal UI change and record it in `decisions`.
+- Use `data-testid` attributes from the component_contract (phase-3 output). These are the binding spec.
+- NEVER invent testids. The testids MUST match exactly what the designer specified in `component_contract[]`.
+- If a component in the implementation lacks a testid that's in the contract, flag it as design/code drift (FIX-FM1 gate failure).
+- If you find a testid in the code that's NOT in the contract, flag it in `findings` — selector not bound by design.
 - Maximum 30s timeout per test action.
 
 **Each test must:**
@@ -286,11 +287,12 @@ node ~/.keel/bin/keel-state.cjs validate <story-id> 07-e2e-engineer.json
     "AC-3 has no UI surface -- E2E not applicable (background job)",
     "Wrote 4 Playwright tests in tests/e2e/<story-id>-subscriptions.spec.ts",
     "All 4 tests PASSED -- playwright output: '4 passed (12s)'",
+    "All testids used in tests match component_contract from phase-3 output",
     "No JS console errors in any flow",
     "Screenshots: docs/e2e-evidence/"
   ],
   "acceptance_criteria_ids": ["AC-1", "AC-2"],
-  "decisions": ["Added data-testid attributes to 3 form elements (minimal UI change, no logic change)"],
+  "decisions": ["Used component_contract testids from phase-3 design spec (no testids invented)"],
   "artifacts": [
     "tests/e2e/<story-id>-subscriptions.spec.ts",
     "docs/e2e-evidence/ac1-happy-path.png",

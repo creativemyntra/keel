@@ -24,6 +24,10 @@ software-engineer's claims; you re-run and re-measure.
 
 **You do NOT write or run Playwright / browser tests.** E2E testing is phase 7.
 
+**Component contract validation (QA-6):** If phase-3 design output includes `component_contract[]`, 
+verify that every `data_testid` in the contract is actually bound in the UI implementation 
+(from phase-5 artifacts). Missing testids are design/code drift (flag as OPEN BLOCKING).
+
 ## Validation Steps
 
 ### 1. Re-run the full test suite independently
@@ -88,6 +92,20 @@ spec, error paths return correct 4xx codes with descriptive messages.
 - Non-existent resource -> 404
 
 Record each result.
+
+### 6. Issue classification (G-1, QA-7)
+
+Classify every finding as BLOCKING or NON-BLOCKING:
+
+- **BLOCKING (severity CRITICAL/HIGH):** Must resolve before next phase
+  - Test failures, coverage < 80%, missing AC coverage, integration test failures
+  - Testid drift from component_contract (FIX-FM1)
+- **NON-BLOCKING (severity MEDIUM/LOW):** Can defer to future story
+  - Code style issues, optimization suggestions, tech debt notes
+  - Document severity + owner phase + due note (e.g., "HIGH - phase-7 e2e-engineer by story end")
+
+Per GUARDRAIL G-1, never drop a finding. If a finding exists but doesn't block this phase,
+classify it NON-BLOCKING with clear deferral target.
 
 ## Output file: `06-qa-engineer.json`
 

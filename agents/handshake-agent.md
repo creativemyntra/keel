@@ -40,6 +40,60 @@ paths exist on disk, and AC continuity against the phase-1 output
 (anti-drift). If it exits non-zero, the phase FAILs -- go straight to gating
 below with the script's error list as your findings.
 
+## Pre-phase-3 gate: Task breakdown validation (MANDATORY)
+
+Before the ui-designer phase runs, the task-breakdown must exist and be valid:
+
+1. **File existence**: `docs/plans/<STORY-ID>-task-breakdown.md` must exist.
+2. **Table format**: Must contain the header row `| # | Task | Size | Depends on | AC |`
+3. **Content**: At least 1 data row (non-header markdown table row).
+4. **AC coverage**: Every AC from phase 2 must appear in at least one task row.
+
+If the file is missing, empty (header-only), has wrong header, or drops an AC, the gate **FAILS** with the missing requirement quoted. The story cannot proceed to ui-designer phase without a complete task breakdown decomposing every AC.
+
+The state engine (C-0009 check) validates this automatically when gating phase 3.
+
+## Gate: Phase-3 output validation (G-19 design approval required)
+
+After phase-3 (ui-designer) completes, verify the output before advancing to phase-4.
+
+**Mandatory checks:**
+
+1. **design_approval audit entry exists** — Check the audit log:
+   ```bash
+   grep -q '"action":"design_approval"' .keel/state/<story-id>/audit-log.jsonl
+   ```
+   If not found → FAIL with: `G-19: Design approval not recorded. Human must review rendered mockups and approve one direction.`
+
+2. **chosen_direction matches approved direction** — Read `03-ui-designer.json`:
+   ```bash
+   CHOSEN=$(jq -r '.chosen_direction' .keel/state/<story-id>/03-ui-designer.json)
+   APPROVED=$(grep '"action":"design_approval"' .keel/state/<story-id>/audit-log.jsonl | tail -1 | jq -r '.chosen_direction')
+   [ "$CHOSEN" = "$APPROVED" ] || FAIL
+   ```
+   If mismatch → FAIL with: `G-19: chosen_direction (${CHOSEN}) does not match approved audit entry (${APPROVED}). Re-run approval.`
+
+3. **PNG hashes match** (integrity check) — Verify rendered PNG hash hasn't changed post-approval:
+   ```bash
+   for png in docs/design/<story>-*.png; do
+     ACTUAL_HASH=$(sha256sum "$png" | awk '{print $1}')
+     EXPECTED_HASH=$(grep -q "$png" .keel/state/<story>/audit-log.jsonl && jq -r '.png_hash_*' ...)
+     # If hashes don't match, PNG was modified post-approval → FAIL
+   done
+   ```
+   If any hash mismatch → FAIL with: `G-19: PNG file was modified after approval (hash mismatch).`
+
+**Gate action:**
+- If all checks PASS: Proceed to phase-4 (solution-architect)
+- If any check FAILS: Report findings, human must re-run approval (ui-designer produces new PNGs, human picks direction again)
+
+**Rationale:**
+- Prevents building on unapproved designs (G-17 guardrail)
+- Ensures human has reviewed rendered mockups (not abstract claims)
+- Locks design in via audit trail + PNG hash integrity
+
+---
+
 ## Verification depth (decide BEFORE running anything -- cost control)
 
 Full re-execution of everything at every gate measured ~50% of a story's
@@ -97,14 +151,58 @@ rules are hard boundaries, not suggestions:
    started_at>`; any incident in this phase's window not acknowledged by the
    phase output = FAIL.
 4. **Phase-specific gates:**
+   - **After software-engineer — K-0: Think-before-code (G-15, MANDATORY FIRST BLOCK):**
+     Before checking tests, coverage, or implementation, verify thinking artifacts are present
+     and valid. This gate runs BEFORE all outcome checks, so thinking is enforced as a blocker,
+     not optional. K-0 failure = immediate gate FAIL, no tests run:
+     a. **K-1 Assumptions:** `assumptions[]` array is present with minItems 1.
+        Each assumption has `area` (scope|data|behavior|performance|security),
+        `assumption` text (min 8 chars), and `risk` (min 8 chars). A phase-5
+        output with empty assumptions = automatic FAIL.
+     b. **K-2 Interpretations:** `interpretations_considered[]` is an array.
+        For every AC that was flagged as ambiguous in phase 1-2 (upstream
+        blockers mentioning ambiguity), there must be a corresponding entry
+        with `ac_id` and `options[]` (minItems 2). Missing an interpretation
+        for an ambiguous AC = FAIL.
+     c. **K-3 Implementation Plan:** `implementation_plan_path` field is set
+        (string matching docs/plans/.*implementation-plan\.md). File must
+        exist on disk, be >= 300 words, and contain required sections:
+        "## Files to change", "## Test scenarios", "## Assumptions" or "## Risks".
+        Every AC from phase 2 must appear somewhere in the plan content (per-AC rationale,
+        test scenarios, or assumptions section). Plan file absent, too thin, missing sections, or
+        dropping any AC = FAIL. A listed-but-unwritten plan (the honor-system
+        state before this gate) is caught by the "file not found" check.
+        Engine verifies: file exists + has all ACs covered.
+     d. **K-4 Scope-creep (for ALL scopes, not just defect):** Run `git diff --stat`.
+        For every changed file, verify it appears in BOTH:
+        (1) The implementation plan's "## Files to change" section (FIX-2 artifact), AND
+        (2) The AC→implementation mapping from the phase output (findings).
+        A file changed but absent from either list = unacknowledged scope-creep. 
+        FAIL the gate and quote the unlisted file(s). Applies to BOTH feature AND 
+        defect scope (prior versions only enforced defect scope; this closes the gap).
+        Procedure: 
+        - Extract "Files to change" from the implementation plan markdown
+        - Extract all files referenced in findings/AC mappings
+        - Run `git diff --stat` and verify every changed file is in both lists
+        - If any file is missing from either, FAIL with "unlisted change: <file>"
+     Any K-0 miss costs one attempt. Resume only after the engineer addresses
+     the thinking gap.
    - After software-engineer: test file(s) must appear in artifacts. Verify
      coverage >= 80% on changed lines is quoted in findings -- no number = FAIL.
-     Run the test suite and confirm it passes. If the phase fixed a defect,
-     `findings` must reference an RCA document -- open it and check the root
-     cause it names is what the diff actually changes (an RCA that describes
-     the symptom is not an RCA; best-effort judgment, say so when uncertain).
-     Then run the automated revert check -- the engine stashes the fix, proves
-     the regression test fails without it, and restores it:
+     Run the test suite and confirm it passes. 
+     
+     **Feature scope (red-first TDD gate, G-16):** Check the story's scope. If scope 
+     is feature (not defect), verify:
+     - `red-check.json` exists in `.keel/state/<story-id>/`
+     - `red-check.json` has `observed_red: true`
+     - If absent or false, gate FAILS with "red-check proof missing — tests must fail
+       before implementation. Re-run: `node ~/.keel/bin/keel-state.cjs red-check <story-id> --test <filter>`"
+     
+     **Defect scope:** If the phase fixed a defect, `findings` must reference an RCA 
+     document -- open it and check the root cause it names is what the diff actually 
+     changes (an RCA that describes the symptom is not an RCA; best-effort judgment, 
+     say so when uncertain). Then run the automated revert check -- the engine stashes 
+     the fix, proves the regression test fails without it, and restores it:
      ```
      node ~/.keel/bin/keel-state.cjs revert-check <story-id> --test <filter> --runner "vendor/bin/phpunit"
      ```
@@ -118,7 +216,8 @@ rules are hard boundaries, not suggestions:
      indicator. Surface it to the human and require explicit acknowledgment
      before issuing PASS — unacknowledged scope growth may warrant converting
      the story from defect to feature scope (which triggers the full 10-phase
-     pipeline, not the express lane).
+     pipeline, not the express lane). This check now applies to BOTH feature
+     and defect scope via the K-4 gate above.
    - After qa-engineer: re-confirm coverage >= 80% (software-engineer reported it; QA re-runs), and every AC mapped to a passing test.
    - After e2e-engineer: run `npx playwright test --list 2>&1` from the repo
      root and capture the listed test count. Compare to the finding count in

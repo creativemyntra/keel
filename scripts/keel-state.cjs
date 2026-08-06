@@ -48,6 +48,9 @@ const KNOWN_FIELDS = [
   'phase', 'agent', 'story_id', 'confidence', 'findings', 'acceptance_criteria_ids',
   'decisions', 'artifacts', 'next_phase', 'blockers', 'timestamp', 'tokens_used',
   'design_review_checklist',  // T5: Phase 3 (UI designer) review checklist
+  'component_contract',  // UI-3: Phase 3 (ui-designer) testid binding spec (developer + E2E contract)
+  'assumptions', 'interpretations_considered', 'implementation_plan_path',  // G-15 K-1/K-2/K-3: Phase 5 (software-engineer) thinking artifacts
+  'phase_ac_rationale', // K-3: Per-AC implementation + test coverage (phase 5 only)
 ];
 const MAX_ATTEMPTS = 3;
 const DEFAULT_MAX_GATES = 40;   // pipeline budget: total gate events per story (10 phases × 3 attempts + overhead)
@@ -519,6 +522,137 @@ function validatePhaseFile(storyId, fileName) {
     } catch (e) { errors.push(`cannot check AC continuity: ${e.message}`); }
   }
 
+  // G-15: Karpathy Protocol enforcement (phase 5 / software-engineer)
+  // K-1: Surface assumptions before planning. K-2: Resolve ambiguities.
+  // K-3: Write implementation plan. Mandatory for phase 5.
+  if (out.phase === 5 && out.agent === 'software-engineer') {
+    // K-1: Assumptions required
+    if (!Array.isArray(out.assumptions) || out.assumptions.length < 1) {
+      errors.push('K-1 (G-15): assumptions[] required with minItems 1 — must surface assumptions before code');
+    } else {
+      out.assumptions.forEach((a, i) => {
+        if (!a.area || !['scope', 'data', 'behavior', 'performance', 'security'].includes(a.area)) {
+          errors.push(`K-1 assumptions[${i}].area must be one of: scope, data, behavior, performance, security`);
+        }
+        if (typeof a.assumption !== 'string' || a.assumption.length < 8) {
+          errors.push(`K-1 assumptions[${i}].assumption must be a string (min 8 chars)`);
+        }
+        if (typeof a.risk !== 'string' || a.risk.length < 8) {
+          errors.push(`K-1 assumptions[${i}].risk must be a string (min 8 chars)`);
+        }
+      });
+    }
+
+    // K-3: Implementation plan must exist and be substantial
+    if (typeof out.implementation_plan_path !== 'string' || !out.implementation_plan_path) {
+      errors.push('K-3 (G-15): implementation_plan_path required — must set path to docs/plans/<STORY-ID>-implementation-plan.md');
+    } else if (!fs.existsSync(out.implementation_plan_path)) {
+      errors.push(`K-3 (G-15): implementation plan file not found: ${out.implementation_plan_path}`);
+    } else {
+      try {
+        const planContent = fs.readFileSync(out.implementation_plan_path, 'utf8');
+        const wordCount = planContent.trim().split(/\s+/).length;
+        if (wordCount < 300) {
+          errors.push(`K-3 (G-15): implementation plan too thin (${wordCount} words, min 300) — add files to change, AC rationale, test scenarios, risks`);
+        }
+        // Check for required headings
+        const hasFilesHeading = /^#+ Files to change/m.test(planContent) || /^#+ Files to create\/change/m.test(planContent);
+        const hasTestHeading = /^#+ Test scenarios/m.test(planContent);
+        const hasAssumptionsHeading = /^#+ Assumptions/m.test(planContent) || /^#+ Risks/m.test(planContent);
+        if (!hasFilesHeading) {
+          errors.push('K-3 (G-15): implementation plan must include "## Files to change" section');
+        }
+        if (!hasTestHeading) {
+          errors.push('K-3 (G-15): implementation plan must include "## Test scenarios" section');
+        }
+        if (!hasAssumptionsHeading) {
+          errors.push('K-3 (G-15): implementation plan must include "## Assumptions" or "## Risks" section');
+        }
+
+        // Verify every AC is covered in the plan
+        const allACs = out.acceptance_criteria_ids || [];
+        const missingACs = [];
+        for (const ac of allACs) {
+          // Check if AC appears anywhere in the plan (in per-AC rationale, test scenarios, etc.)
+          if (!new RegExp(ac).test(planContent)) {
+            missingACs.push(ac);
+          }
+        }
+        if (missingACs.length > 0) {
+          errors.push(`K-3 (G-15): implementation plan does not cover all ACs — missing: ${missingACs.join(', ')}`);
+        }
+      } catch (e) {
+        errors.push(`K-3 (G-15): cannot read implementation plan: ${e.message}`);
+      }
+    }
+
+    // K-2: Interpretations for ambiguous ACs
+    if (!Array.isArray(out.interpretations_considered)) {
+      errors.push('K-2 (G-15): interpretations_considered must be an array');
+    } else {
+      out.interpretations_considered.forEach((interp, i) => {
+        if (!/^AC-[0-9]+$/.test(interp.ac_id)) {
+          errors.push(`K-2 interpretations[${i}].ac_id must match AC-<n> format`);
+        }
+        if (!Array.isArray(interp.options) || interp.options.length < 2) {
+          errors.push(`K-2 interpretations[${i}] for ${interp.ac_id} must have options[] with minItems 2`);
+        }
+      });
+      // If phase 1 marked ACs as ambiguous, verify they're in interpretations
+      if (phase1Name) {
+        try {
+          const p1 = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phase1Name), 'utf8'));
+          const ambiguousACs = (p1.blockers || [])
+            .filter(b => /ambiguous|interpretation|reading/i.test(b))
+            .map(b => b.match(/AC-[0-9]+/g) || [])
+            .flat();
+          ambiguousACs.forEach(acId => {
+            const hasInterp = out.interpretations_considered.some(i => i.ac_id === acId);
+            if (!hasInterp) {
+              errors.push(`K-2 (G-15): ${acId} marked ambiguous in phase 1 but no interpretations recorded`);
+            }
+          });
+        } catch (e) { /* phase 1 not readable — skip check */ }
+      }
+    }
+  }
+
+  // UI-3: Component contract validation (phase 3 / ui-designer)
+  // Testid binding spec: designer specifies exact data-testid values that developer and E2E must use.
+  // Prevents selector drift between design and code.
+  if (out.phase === 3 && out.agent === 'ui-designer') {
+    // For user-facing stories, component_contract is required (minItems 1)
+    if (!Array.isArray(out.component_contract) || out.component_contract.length < 1) {
+      errors.push('UI-3: component_contract[] required with minItems 1 — must specify testid binding for every interactive component');
+    } else {
+      const testidsSeen = new Set();
+      out.component_contract.forEach((comp, i) => {
+        if (typeof comp.component !== 'string' || !comp.component) {
+          errors.push(`UI-3 component_contract[${i}].component must be a non-empty string`);
+        }
+        if (typeof comp.data_testid !== 'string' || !comp.data_testid) {
+          errors.push(`UI-3 component_contract[${i}].data_testid must be a non-empty string`);
+        } else {
+          // Validate kebab-case format (lowercase alphanumeric + dashes only)
+          if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(comp.data_testid)) {
+            errors.push(`UI-3 component_contract[${i}].data_testid "${comp.data_testid}" must be kebab-case (lowercase, digits, dashes only)`);
+          }
+          // Check for duplicate testids (must be unique per component)
+          if (testidsSeen.has(comp.data_testid)) {
+            errors.push(`UI-3 component_contract[${i}].data_testid "${comp.data_testid}" is a duplicate — testids must be unique`);
+          }
+          testidsSeen.add(comp.data_testid);
+        }
+        if (!Array.isArray(comp.states) || comp.states.length < 1) {
+          errors.push(`UI-3 component_contract[${i}].states must be a non-empty array (e.g., ["default", "hover", "focus"])`);
+        }
+        if (typeof comp.aria !== 'object' || comp.aria === null) {
+          errors.push(`UI-3 component_contract[${i}].aria must be an object with accessibility attributes (e.g., {role: "button"})`);
+        }
+      });
+    }
+  }
+
   return errors;
 }
 
@@ -593,6 +727,96 @@ const checkRegistry = {
       return { id: 'C-0003', status: 'FAIL', detail: 'test contradiction marker: this check was intentionally failed to verify contradiction detection' };
     }
     return { id: 'C-0003', status: 'PASS', detail: 'test marker not set (normal operation)' };
+  },
+
+  // C-0009 (T7): Task breakdown validation — phase 3 blocks unless task breakdown exists and is valid.
+  // Ensures every AC is decomposed into ordered tasks before design begins (K-0 thinking gate).
+  // Task breakdown file: docs/plans/<STORY-ID>-task-breakdown.md with table header and >= 1 data row.
+  // Status: SKIP if phase < 3, FAIL if phase 3 and file missing/invalid, PASS if valid.
+  task_breakdown_required: (storyId, phase, manifest) => {
+    // Only block phase 3 (ui-designer); other phases are not gated on task breakdown
+    if (phase !== 3) {
+      return { id: 'C-0009', status: 'SKIP', detail: 'task breakdown required only for phase 3 (UI design)' };
+    }
+
+    // Load phase 2 output to get AC list
+    const phase2File = fs.readdirSync(stateDir(storyId))
+      .find((f) => f.startsWith('02-') && f.endsWith('.json'));
+    if (!phase2File) {
+      return { id: 'C-0009', status: 'SKIP', detail: 'phase 2 output not found (cannot verify AC coverage)' };
+    }
+
+    let phase2Output;
+    try {
+      phase2Output = JSON.parse(fs.readFileSync(path.join(stateDir(storyId), phase2File), 'utf8'));
+    } catch {
+      return { id: 'C-0009', status: 'SKIP', detail: 'phase 2 output unreadable' };
+    }
+
+    const allACs = phase2Output.acceptance_criteria_ids || [];
+    if (allACs.length === 0) {
+      return { id: 'C-0009', status: 'SKIP', detail: 'no ACs in phase 2 output' };
+    }
+
+    // Task breakdown file is required
+    const breakdownFile = path.join('docs', 'plans', `${storyId}-task-breakdown.md`);
+    if (!fs.existsSync(breakdownFile)) {
+      return {
+        id: 'C-0009',
+        status: 'FAIL',
+        detail: `task breakdown required before design — file not found: ${breakdownFile}. Create with table: | # | Task | Size | Depends on | AC |`
+      };
+    }
+
+    // Validate file content: must have table header and >= 1 data row
+    const content = fs.readFileSync(breakdownFile, 'utf8');
+    const hasHeader = /\|\s*#\s*\|\s*Task\s*\|\s*Size\s*\|\s*Depends on\s*\|\s*AC\s*\|/i.test(content);
+    if (!hasHeader) {
+      return {
+        id: 'C-0009',
+        status: 'FAIL',
+        detail: `task breakdown table incomplete — missing required header: | # | Task | Size | Depends on | AC |`
+      };
+    }
+
+    // Count data rows (non-header lines starting with |, containing content)
+    const rows = content.split('\n').filter((line) => {
+      if (!line.includes('|')) return false;
+      // Skip header rows (containing #, Task, Size, Depends on, AC)
+      if (/Task|Size|Depends on|^[\s]*\|[\s]*-/i.test(line)) return false;
+      return line.trim().length > 2; // actual data row
+    });
+
+    if (rows.length === 0) {
+      return {
+        id: 'C-0009',
+        status: 'FAIL',
+        detail: `task breakdown table has no data rows — add >= 1 task with AC reference`
+      };
+    }
+
+    // Verify every AC appears in at least one task row
+    const missingACs = [];
+    for (const ac of allACs) {
+      const found = rows.some((row) => new RegExp(ac).test(row));
+      if (!found) {
+        missingACs.push(ac);
+      }
+    }
+
+    if (missingACs.length > 0) {
+      return {
+        id: 'C-0009',
+        status: 'FAIL',
+        detail: `task breakdown incomplete — these ACs not in task rows: ${missingACs.join(', ')}`
+      };
+    }
+
+    return {
+      id: 'C-0009',
+      status: 'PASS',
+      detail: `task breakdown valid: ${rows.length} task(s), all ${allACs.length} AC(s) covered`
+    };
   },
 
   // C-0007 (T6): Design approval validation — phase 4 blocks unless phase 3 approved via GitHub PR.
@@ -1113,6 +1337,75 @@ const checkRegistry = {
       detail: `agent coverage claim matches engine measurement`
     };
   },
+
+  // C-0013 (G-18): Red-first TDD enforcement for feature-scope stories.
+  // Blocks PASS on phase 5 (software-engineer) if scope is feature but red-check proof is missing or false.
+  // Ensures tests FAIL before implementation (red-first discipline).
+  // Status: SKIP if defect scope or not phase 5, PASS if feature scope with observed_red: true, FAIL if missing/false.
+  red_check_feature_scope: (storyId, phase, manifest) => {
+    // Only check phase 5 (software-engineer)
+    if (phase !== 5) {
+      return { id: 'C-0013', status: 'SKIP', detail: 'red-check enforcement required for phase 5 only' };
+    }
+
+    // Check if story scope is feature (not defect)
+    if (!manifest.scope || manifest.scope !== 'feature') {
+      return { id: 'C-0013', status: 'SKIP', detail: `defect-scope stories use revert-check instead (scope: ${manifest.scope})` };
+    }
+
+    // Check economy.yml to see if red-first TDD is enabled
+    let economyEnabled = true;
+    try {
+      const economyPath = path.join(process.cwd(), '.keel', 'economy.yml');
+      if (fs.existsSync(economyPath)) {
+        const economyContent = fs.readFileSync(economyPath, 'utf8');
+        // Simple check: if feature_tests_first: true is in the file, it's enabled
+        economyEnabled = /feature_tests_first\s*:\s*true/.test(economyContent);
+      }
+    } catch {
+      // If we can't read economy.yml, assume it's enabled
+      economyEnabled = true;
+    }
+
+    if (!economyEnabled) {
+      return { id: 'C-0013', status: 'SKIP', detail: 'red-check enforcement disabled in economy.yml' };
+    }
+
+    // Check for red-check.json with observed_red: true
+    const redCheckPath = path.join(stateDir(storyId), 'red-check.json');
+    if (!fs.existsSync(redCheckPath)) {
+      return {
+        id: 'C-0013',
+        status: 'FAIL',
+        detail: `red-check proof missing for feature-scope story. Run: node ~/.keel/bin/keel-state.cjs red-check ${storyId} --test <filter> --runner "vendor/bin/phpunit"`
+      };
+    }
+
+    let redCheck;
+    try {
+      redCheck = JSON.parse(fs.readFileSync(redCheckPath, 'utf8'));
+    } catch {
+      return {
+        id: 'C-0013',
+        status: 'FAIL',
+        detail: 'red-check.json exists but is not valid JSON'
+      };
+    }
+
+    if (redCheck.observed_red !== true) {
+      return {
+        id: 'C-0013',
+        status: 'FAIL',
+        detail: `red-check did not observe test failure before implementation. Tests must FAIL before implementation begins. Re-run: node ~/.keel/bin/keel-state.cjs red-check ${storyId} --test <filter>`
+      };
+    }
+
+    return {
+      id: 'C-0013',
+      status: 'PASS',
+      detail: 'red-check confirms tests fail before implementation (red-first TDD verified)'
+    };
+  },
 };
 
 function runChecks(storyId, phase, manifest) {
@@ -1351,6 +1644,32 @@ function cmdGate(storyId, args) {
 function cmdAudit(storyId, args) {
   readManifest(storyId);
   const jsonArg = flag(args, '--json');
+  // design_approval action (G-17 gate)
+  if (args.includes('design_approval')) {
+    const crypto = require('crypto');
+    const direction = flag(args, '--direction');
+    const approver = flag(args, '--approver');
+    const pngHashDesktop = flag(args, '--png-hash-desktop');
+    const pngHashMobile = flag(args, '--png-hash-mobile');
+
+    if (!direction || !approver) {
+      die(64, 'usage: audit <story-id> design_approval --direction <a|b> --approver <name> [--png-hash-desktop <hash>] [--png-hash-mobile <hash>]');
+    }
+
+    appendAudit(storyId, {
+      action: 'design_approval',
+      timestamp: new Date().toISOString(),
+      story_id: storyId,
+      chosen_direction: `direction-${direction}`,
+      approver,
+      png_hash_desktop: pngHashDesktop || null,
+      png_hash_mobile: pngHashMobile || null,
+      notes: flag(args, '--notes') || '',
+    });
+    console.log(`OK: design_approval audit entry recorded (approver: ${approver}, direction: ${direction})`);
+    return;
+  }
+
   if (jsonArg) {
     let entry;
     try { entry = JSON.parse(jsonArg); } catch (e) { die(64, `bad --json: ${e.message}`); }
@@ -1359,7 +1678,7 @@ function cmdAudit(storyId, args) {
     return;
   }
   const phaseFile = flag(args, '--phase-file');
-  if (!phaseFile) die(64, 'usage: audit <story-id> --phase-file <NN-agent.json> | --json \'<object>\'');
+  if (!phaseFile) die(64, 'usage: audit <story-id> --phase-file <NN-agent.json> | --json \'<object>\' | design_approval --direction <a|b> --approver <name>');
   const out = readJson(path.join(stateDir(storyId), phaseFile));
   appendAudit(storyId, {
     phase: out.phase,
@@ -1737,6 +2056,53 @@ function cmdRevertCheck(storyId, args) {
     die(1, `FAIL: the regression test fails even WITH the fix applied — the fix is incomplete or the test is broken.`);
   }
   console.log('PASS: regression test fails without the fix and passes with it — the test proves the fix.');
+}
+
+// Red-check: feature-scope red-first TDD enforcement
+// Proves tests FAIL before implementation (red-first development).
+// Exit codes: 0 = RED confirmed, 1 = test passed (bad), 3 = unverifiable (runner not found)
+function cmdRedCheck(storyId, args) {
+  readManifest(storyId);
+  const testArg = flag(args, '--test');
+  const runner = flag(args, '--runner') || 'vendor/bin/phpunit';
+  if (!testArg) die(64, 'usage: red-check <story-id> --test <filter-or-path> [--runner "vendor/bin/phpunit"]');
+  const { execSync } = require('child_process');
+
+  let testsPassed = false;
+  let runnerError = null;
+
+  try {
+    execSync(`${runner} ${testArg}`, { stdio: 'pipe' });
+    testsPassed = true;
+  } catch (e) {
+    // Check if the error is due to runner not found
+    if (e.code === 'ENOENT' || e.status === 127 || e.message.includes('not found') || e.message.includes('No such file')) {
+      runnerError = `${runner}`;
+      die(3, `UNVERIFIABLE: test runner '${runner}' not found on PATH. Install it or specify --runner <path>`);
+    }
+    // Otherwise, it's a test failure (exit code != 0), which is what we want
+    testsPassed = false;
+  }
+
+  const redCheckResult = {
+    ts: nowIso(),
+    runner: runner,
+    test: testArg,
+    observed_red: !testsPassed,  // true if test failed (red), false if passed
+  };
+
+  fs.writeFileSync(path.join(stateDir(storyId), 'red-check.json'),
+    JSON.stringify(redCheckResult, null, 2) + '\n');
+
+  appendAudit(storyId, {
+    agent: 'engine', action: 'red_check',
+    notes: `test="${testArg}" runner="${runner}" observed_red=${!testsPassed}`,
+  });
+
+  if (testsPassed) {
+    die(1, `FAIL: test suite PASSED before implementation — the test does not prove the feature. Rewrite the test so it fails without the feature implementation.`);
+  }
+  console.log('PASS: test suite fails before implementation (RED confirmed) — ready for implementation.');
 }
 
 // Static-first security prescan: run every applicable deterministic scanner
@@ -2883,6 +3249,7 @@ switch (cmd) {
   case 'verify': cmdVerify(storyId); break;
   case 'resume': cmdResume(storyId, rest); break;
   case 'revert-check': cmdRevertCheck(storyId, rest); break;
+  case 'red-check': cmdRedCheck(storyId, rest); break;
   case 'prescan': cmdPrescan(storyId); break;
   case 'phase-mode': cmdPhaseMode([storyId, ...rest]); break;
   case 'token-ledger': cmdTokenLedger([storyId, ...rest]); break;

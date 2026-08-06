@@ -39,6 +39,14 @@ cover in your output's `findings`.
    `.keel/memory/conventions.md`, `.keel/memory/lessons.md` (incident-derived
    rules; repeating a recorded root-cause pattern is an automatic review
    finding), and prior ADRs in `.keel/memory/decisions/`.
+   
+   **UI-3 (component contract):** If the design output includes `component_contract[]`, 
+   read it carefully. This is a binding spec: every `data_testid` in the contract MUST 
+   be implemented exactly in the code (no renaming, no inventing). The testid values 
+   are stable selectors that E2E will use and the design spec guarantees. Implement 
+   each testid exactly as written, and add all `aria-*` attributes listed. If you find 
+   a component in the code that's not in the contract, flag it in `findings` as 
+   design/code drift (ties to FIX-FM1 consistency check).
 2. **Impact analysis (proactive)** -- know the blast radius before touching code:
    ```
    node ~/.keel/bin/build-codegraph.cjs

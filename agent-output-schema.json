@@ -5,6 +5,28 @@
   "description": "Contract for the output file each Keel phase agent writes to .keel/state/<story-id>/<NN>-<agent>.json. This is how agents pass context to each other.",
   "type": "object",
   "required": ["phase", "agent", "story_id", "confidence", "findings", "acceptance_criteria_ids", "decisions", "next_phase"],
+  "dependentRequired": {
+    "phase": ["assumptions", "interpretations_considered"],
+    "agent": ["assumptions", "interpretations_considered"]
+  },
+  "if": {
+    "properties": {
+      "phase": { "const": 3 },
+      "agent": { "const": "ui-designer" }
+    }
+  },
+  "then": {
+    "required": ["component_contract"]
+  },
+  "if": {
+    "properties": {
+      "phase": { "const": 5 },
+      "agent": { "const": "software-engineer" }
+    }
+  },
+  "then": {
+    "required": ["assumptions", "interpretations_considered", "implementation_plan_path"]
+  },
   "properties": {
     "phase": {
       "type": "integer",
@@ -158,6 +180,100 @@
         "model": { "type": "string" }
       },
       "additionalProperties": false
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "required": ["area", "assumption", "risk"],
+        "properties": {
+          "area": {
+            "type": "string",
+            "enum": ["scope", "data", "behavior", "performance", "security"],
+            "description": "Category of assumption: scope, data shape, user behavior, performance target, or security boundary"
+          },
+          "assumption": {
+            "type": "string",
+            "minLength": 8,
+            "description": "The assumption itself (e.g., 'payment processing is fast <2s', 'user IDs are UUIDs')"
+          },
+          "risk": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Risk if the assumption is false (e.g., 'feature fails on slow networks', 'migration needs rewrite')"
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "K-1: Assumptions surfaced before planning (phase 5 software-engineer only). Required: minItems 1 for phase 5."
+    },
+    "interpretations_considered": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ac_id", "options"],
+        "properties": {
+          "ac_id": {
+            "type": "string",
+            "pattern": "^AC-[0-9]+$",
+            "description": "Acceptance criterion ID that was ambiguous"
+          },
+          "options": {
+            "type": "array",
+            "minItems": 2,
+            "items": { "type": "string" },
+            "description": "At least 2 plausible readings of this AC. Phase-1 blockers labeled ambiguous must appear here."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "K-2: Interpretations considered for ambiguous ACs (phase 5 software-engineer only). Required: one entry per ambiguous AC."
+    },
+    "component_contract": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["component", "data_testid", "states", "aria"],
+        "properties": {
+          "component": {
+            "type": "string",
+            "description": "Component name (e.g., 'KPI Card', 'Button', 'Modal')"
+          },
+          "data_testid": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+            "description": "Kebab-case data-testid selector. Must be unique per component. Developer and E2E engineer use this exact value."
+          },
+          "states": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" },
+            "description": "Visual/interaction states: default, hover, focus, active, disabled, error, loading, selected, etc."
+          },
+          "aria": {
+            "type": "object",
+            "description": "Accessibility attributes (role, aria-label, aria-live, etc.)",
+            "properties": {
+              "role": { "type": "string" },
+              "aria_label": { "type": "string" },
+              "aria_labelledby": { "type": "string" },
+              "aria_live": { "type": "string" },
+              "aria_expanded": { "type": "string" },
+              "type": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Component contract: testid binding spec for developer and E2E engineer. Phase 3 (ui-designer) emits this; software-engineer implements exact testids; e2e-engineer uses exact selectors. Uniqueness enforced at gate."
+    },
+    "implementation_plan_path": {
+      "type": "string",
+      "pattern": "^docs/plans/.*implementation-plan\\.md$",
+      "description": "K-3: Path to implementation plan file (phase 5 software-engineer only). Must exist and contain required sections."
     }
   },
   "additionalProperties": false

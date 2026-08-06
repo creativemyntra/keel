@@ -1,0 +1,316 @@
+{
+  "guidelines": [
+    {
+      "id": "a11y-contrast-wcag-aa",
+      "category": "Accessibility",
+      "priority": "CRITICAL",
+      "guideline": "WCAG AA Contrast Ratios",
+      "details": {
+        "text_primary": {
+          "requirement": "≥ 4.5:1",
+          "applies_to": "Normal text, body copy, labels",
+          "test": "Use WebAIM Contrast Checker: https://webaim.org/resources/contrastchecker/"
+        },
+        "ui_components": {
+          "requirement": "≥ 3:1",
+          "applies_to": "Buttons, inputs, borders, interactive elements",
+          "test": "Test button borders, input fields, focus rings against their backgrounds"
+        },
+        "large_text": {
+          "requirement": "≥ 3:1",
+          "applies_to": "Headings ≥ 18pt or ≥ 14pt bold",
+          "note": "Large text has relaxed requirement"
+        }
+      },
+      "failure_examples": [
+        "Medium gray (#a0a0a0) text on light gray (#f5f5f5) background → 2:1 → FAIL",
+        "Blue link (#4040ff) on dark background (#1a1a1a) → 1.8:1 → FAIL"
+      ],
+      "enforcement": "Pre-build checklist (step 2f). Compare every color pair in mockup before phase-4 handoff."
+    },
+    {
+      "id": "a11y-focus-indicators",
+      "category": "Accessibility",
+      "priority": "CRITICAL",
+      "guideline": "Visible Focus Indicators for Keyboard Navigation",
+      "details": {
+        "requirement": "Every interactive element (button, link, input, select) must have a visible focus ring when :focus or :focus-visible is active.",
+        "visible_focus": {
+          "minimum_thickness": "2–3px",
+          "color": "Contrasts ≥ 3:1 against element background",
+          "style": "Can be outline, box-shadow, or border change"
+        },
+        "keyboard_trap": "No element should trap focus (unable to Tab out). Test with Tab key alone.",
+        "focus_order": "Tab order must match visual left-to-right, top-to-bottom flow"
+      },
+      "code_example": ".button:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }",
+      "failure_examples": [
+        "Button with no :focus styles → keyboard users cannot tell where they are",
+        "Focus ring same color as background → invisible → FAIL",
+        "Buttons in arbitrary visual order (right-to-left) but focus tabulates left-to-right → confusing"
+      ],
+      "enforcement": "Pre-build checklist. Mockup must include :focus-visible state for every button/input."
+    },
+    {
+      "id": "a11y-motion-reduced",
+      "category": "Accessibility",
+      "priority": "CRITICAL",
+      "guideline": "Respect prefers-reduced-motion",
+      "details": {
+        "requirement": "When @media (prefers-reduced-motion: reduce) is active, disable all transitions and animations.",
+        "implementation": "@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }",
+        "applies_to": "Page transitions, button hovers, loading spinners, drawer slides, toasts, all CSS animations"
+      },
+      "failure_examples": [
+        "User has 'reduce motion' enabled in OS, page still animates on load → FAIL",
+        "Modal still slides in even though user prefers reduced motion → FAIL"
+      ],
+      "enforcement": "Pre-build checklist. Mockup must include reduced-motion block in <style>."
+    },
+    {
+      "id": "a11y-form-labels",
+      "category": "Accessibility",
+      "priority": "CRITICAL",
+      "guideline": "Form inputs must have associated <label> elements",
+      "details": {
+        "requirement": "Every <input>, <select>, <textarea> must be paired with a <label> via 'for' attribute (explicit) or by nesting the input in the label (implicit).",
+        "screen_reader_impact": "Screen reader users rely on labels to understand what each field is for.",
+        "floating_labels": "If using a floating/placeholder label pattern, still use a <label> element (keep it semantically, hide visually with sr-only class)"
+      },
+      "code_example": "<label for='email'>Email</label>\n<input id='email' type='email'>",
+      "failure_examples": [
+        "Text next to input but no <label> element → Screen reader cannot associate",
+        "Placeholder only, no label → Placeholder disappears on focus, user forgets what the field is"
+      ],
+      "enforcement": "Pre-build checklist. All form fields in mockup must have labels."
+    },
+    {
+      "id": "a11y-alt-text",
+      "category": "Accessibility",
+      "priority": "CRITICAL",
+      "guideline": "Images must have alt text or be marked decorative",
+      "details": {
+        "alt_text": {
+          "requirement": "Functional/content images: alt='description of content'",
+          "example": "<img src='revenue-chart.svg' alt='Revenue increased 12% from May to June'>"
+        },
+        "decorative_images": {
+          "requirement": "alt='' (empty alt attribute, not missing)",
+          "example": "<img src='spacer.svg' alt='' aria-hidden='true'>"
+        },
+        "impact": "Blind/low-vision users hear alt text read aloud. Decorative image with alt text creates clutter."
+      },
+      "failure_examples": [
+        "Chart image with no alt text → Screen reader says nothing → user has no idea what the chart shows",
+        "Decorative bullet-point SVG with alt='bullet' → Clutter in screen reader output"
+      ],
+      "enforcement": "Pre-build checklist. Every image in mockup must have alt text or alt=''."
+    },
+    {
+      "id": "a11y-semantic-html",
+      "category": "Accessibility",
+      "priority": "CRITICAL",
+      "guideline": "Use semantic HTML elements (button, a, nav, main, form) not divs disguised as buttons",
+      "details": {
+        "semantic_elements": {
+          "<button>": "For clickable actions",
+          "<a href>": "For navigation links",
+          "<nav>": "For navigation regions",
+          "<main>": "For primary content",
+          "<form>": "For form containers",
+          "<h1>–<h6>": "For headings (in order, no skipping)"
+        },
+        "why": "Screen readers announce element role + name + state. <div onclick='...'> announces nothing."
+      },
+      "failure_examples": [
+        "<div onclick='submit()' role='button'>Submit</div> → Extra work for screen reader user",
+        "<div onclick=\"window.location.href='/page'\">Link</div> → Not keyboard accessible by default"
+      ],
+      "enforcement": "Pre-build checklist. Mockup HTML must use semantic elements, not styled divs pretending to be interactive."
+    },
+    {
+      "id": "touch-target-size",
+      "category": "Touch & Mobile",
+      "priority": "CRITICAL",
+      "guideline": "Touch targets ≥ 44px × 44px (min, 48px recommended)",
+      "details": {
+        "requirement": "All clickable elements (buttons, links, radio buttons, checkboxes) must be at least 44×44 CSS pixels on mobile.",
+        "applies_on": "Mobile-first design (viewport ≤ 600px). Desktop can be tighter if spacing allows.",
+        "edge_case": "Links in text (paragraph links) can be smaller if underlined and have ::before/::after pseudo-element expanding hitbox."
+      },
+      "rationale": "Thumb + finger size. Too small → misclicks → frustration → abandonment.",
+      "code_pattern": ".button { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }",
+      "failure_examples": [
+        "Small close button (24×24) on mobile modal → Hard to tap → users tap outside modal instead",
+        "Submit button 40px high → Just under spec → users tap it and nearby elements accidentally"
+      ],
+      "enforcement": "Responsive design rule. Measure every interactive element at 375px viewport. Flag any element <44px in phase 3."
+    },
+    {
+      "id": "touch-spacing-between-targets",
+      "category": "Touch & Mobile",
+      "priority": "CRITICAL",
+      "guideline": "Interactive elements must be spaced ≥ 8px apart (min, 12px recommended)",
+      "details": {
+        "requirement": "Distance between touch target centers must be ≥ 8px to prevent accidental activation of adjacent controls.",
+        "applies_on": "Mobile screens and dense dashboards.",
+        "formula": "Distance = outer-edge-to-outer-edge + gutter. Example: 44px button + 8px gap + 44px button = 96px total."
+      },
+      "failure_examples": [
+        "Yes/No buttons side-by-side with 0px gap → thumb touches both → unpredictable behavior",
+        "Radio button options stacked 20px apart vertically but only 4px horizontally → accidental toggle of adjacent option"
+      ],
+      "enforcement": "Responsive design rule. Check spacing at 375px. Flag dense layouts (form buttons, checkbox groups) in phase 3."
+    },
+    {
+      "id": "color-not-only-signal",
+      "category": "Accessibility",
+      "priority": "CRITICAL",
+      "guideline": "Color must not be the only signal for state/error/success",
+      "details": {
+        "requirement": "Use color + icon + text + pattern. Red alone ≠ error. Red + ✕ icon + 'Error: ...' message = clear.",
+        "applies_to": "Error messages, success states, validation feedback, status indicators",
+        "colorblind_perspective": "8% of men cannot distinguish red/green. 1 in 200 people experience achromatopsia (no color at all)."
+      },
+      "code_pattern": "Error: <span style='color: var(--error);'>✕ Email already registered</span>",
+      "failure_examples": [
+        "Form field border turns red on error, but no message → colorblind user sees nothing",
+        "Success confirmation: green highlight but no checkmark or text → unclear what happened"
+      ],
+      "enforcement": "Pre-build checklist. Every error/success/warning state must have: color + icon + text."
+    },
+    {
+      "id": "responsive-no-horizontal-scroll",
+      "category": "Responsiveness",
+      "priority": "CRITICAL",
+      "guideline": "No horizontal scroll at 375px or 1280px viewport",
+      "details": {
+        "mobile_375": "Minimum viewport width for most phones. Content must reflow, not scroll horizontally.",
+        "desktop_1280": "Old small laptops + split-screen. Content must fit or scroll vertically only.",
+        "test": "Use browser DevTools. Set viewport to 375px × 812px. Resize window. No horizontal scrollbar."
+      },
+      "common_issues": [
+        "Wide data tables with 10+ columns → Add horizontal scroll wrapper (vertical scroll inside table only, not page)",
+        "Hero image 150% viewport width → Squash or crop at mobile",
+        "Dashboard grid: 4 KPI cards at desktop → Reflow to 2 at tablet, 1 at mobile"
+      ],
+      "enforcement": "Pre-build checklist. Mockup must be tested at 375px and 1280px. No horizontal page scroll."
+    },
+    {
+      "id": "input-field-contrast",
+      "category": "Accessibility",
+      "priority": "CRITICAL",
+      "guideline": "Input field borders must have ≥ 3:1 contrast against page background",
+      "details": {
+        "requirement": "Input fields, select dropdowns, and textareas must be visually distinct from the page background.",
+        "common_failure": "Light gray (#e0e0e0) input border on white (#ffffff) page = 1:1 = invisible",
+        "fix": "Dark enough gray (#999999) or colored border that contrasts"
+      },
+      "code_pattern": ".input { border: 2px solid var(--color-border-strong); } /* not --color-border (too light) */",
+      "failure_examples": [
+        "Borderless input fields with placeholder-only labels → Users cannot tell if field is clickable",
+        "Input borders same shade as page background → Invisible form"
+      ],
+      "enforcement": "Pre-build checklist. Every input, select, textarea in mockup must have visible border."
+    },
+    {
+      "id": "empty-state-guidance",
+      "category": "UX Pattern",
+      "priority": "HIGH",
+      "guideline": "Empty states must have explanation + CTA (not just blank screen)",
+      "details": {
+        "requirement": "When a list/table is empty, show: icon/illustration + 1-line explanation + optional CTA button",
+        "examples": [
+          "No transactions: 'No transactions yet. After your first sale, they'll appear here. [Create Sale]'",
+          "No projects: 'You haven't created any projects yet. Start building. [+ New Project]'"
+        ],
+        "anti_pattern": "Blank white space with no text → User thinks the page broke"
+      },
+      "enforcement": "Phase 3 design spec. Every data surface (table, list, grid) must have empty-state design."
+    },
+    {
+      "id": "error-handling-clear",
+      "category": "UX Pattern",
+      "priority": "HIGH",
+      "guideline": "Error messages must be clear, actionable, and not just technical",
+      "details": {
+        "bad": "'Error 422 — Validation failed'",
+        "good": "'Email address already registered. Use a different email or reset your password.'",
+        "requirement": "Every error message must: (1) describe what went wrong, (2) suggest how to fix it, (3) use plain language"
+      },
+      "enforcement": "Phase 3 microcopy spec. List exact error message text for each failure scenario."
+    },
+    {
+      "id": "loading-skeleton-match-content",
+      "category": "UX Pattern",
+      "priority": "HIGH",
+      "guideline": "Loading skeletons must match the shape of the actual content",
+      "details": {
+        "requirement": "While content loads, show skeleton shapes that are the exact geometry of what will appear.",
+        "example": "Before 4 KPI cards load, show 4 skeleton blocks (44px tall, full width). After load, fade them out + fade in real cards.",
+        "anti_pattern": "Spinner + 'Loading...' → No preview of what's coming → longer perceived wait time"
+      },
+      "enforcement": "Phase 3 motion spec + mockup. Skeleton states must match final content dimensions."
+    },
+    {
+      "id": "cta-button-prominence",
+      "category": "UX Pattern",
+      "priority": "HIGH",
+      "guideline": "Primary CTA must stand out (color, size, position)",
+      "details": {
+        "requirement": "The main call-to-action (submit, create, buy, sign up) must be: (1) primary color, (2) full-width or 2× button size, (3) top of form or end of flow",
+        "secondary_actions": "Delete, Cancel should be muted (ghost button, lower contrast)"
+      },
+      "enforcement": "Phase 3 component spec. Primary buttons must be visually dominant vs secondary."
+    },
+    {
+      "id": "data-hierarchy-dashboard",
+      "category": "Dashboard Pattern",
+      "priority": "HIGH",
+      "guideline": "Dashboard data must be ranked P1/P2/P3; P1 must be dominant visually",
+      "details": {
+        "requirement": "KPI cards (P1): largest, fullest color, top of page. Charts (P2): medium size, supporting context. Tables (P3): below the fold, drill-down.",
+        "visual_weight": "Size, color saturation, placement, animation all reinforce hierarchy"
+      },
+      "enforcement": "Phase 1 UX analysis + Phase 3 design spec. Every dashboard must have explicit P1/P2/P3 ranking."
+    },
+    {
+      "id": "token-consistency",
+      "category": "Design System",
+      "priority": "CRITICAL",
+      "guideline": "All visual values must come from CSS custom properties (tokens), never hardcoded in component styles",
+      "details": {
+        "requirement": ".button { background: var(--color-primary); padding: var(--s-4); border-radius: var(--r-md); }",
+        "never": ".button { background: #3b82f6; padding: 16px; border-radius: 8px; }",
+        "why": "Tokens allow theming, dark mode, and brand updates without refactoring every component"
+      },
+      "enforcement": "Phase 3 output. Pre-build checklist. `docs/design/<story-id>-tokens.css` must exist with all 6 categories before mockup HTML."
+    },
+    {
+      "id": "a11y-table-structure",
+      "category": "Accessibility",
+      "priority": "HIGH",
+      "guideline": "Data tables must have <thead>, <tbody>, and <caption> (or screen-reader summary)",
+      "details": {
+        "requirement": "<table>\n  <caption>Transaction history for May 2026</caption>\n  <thead><tr><th>Date</th><th>Amount</th>...</tr></thead>\n  <tbody>...",
+        "headers_scope": "<th scope='col'> for column headers, <th scope='row'> for row headers"
+      },
+      "failure_examples": [
+        "Table with no <thead> → Screen reader cannot distinguish headers from data",
+        "No <caption> → User doesn't know what the table represents"
+      ],
+      "enforcement": "Phase 3 output. Every table in mockup must have <caption> and <thead>."
+    },
+    {
+      "id": "font-size-minimum",
+      "category": "Accessibility",
+      "priority": "HIGH",
+      "guideline": "Body text must be ≥ 16px (1rem) on desktop, ≥ 14px on mobile",
+      "details": {
+        "requirement": "Smaller text strains eyes, especially for older users and those with low vision",
+        "exception": "Captions, metadata labels can be 12px if necessary"
+      },
+      "enforcement": "Pre-build checklist. Measure all text sizes in mockup."
+    }
+  ]
+}

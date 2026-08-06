@@ -1,0 +1,220 @@
+{
+  "pairings": [
+    {
+      "id": "luxury-pairing",
+      "name": "Luxury Minimal",
+      "display_font": {
+        "name": "DM Sans",
+        "weights": "600, 700",
+        "url": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@600;700&display=swap",
+        "usage": "H1–H3, hero text, hero headlines"
+      },
+      "body_font": {
+        "name": "DM Sans",
+        "weights": "400, 500",
+        "url": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap",
+        "usage": "Paragraphs, labels, body copy, UI text"
+      },
+      "mono_font": {
+        "name": "IBM Plex Mono",
+        "weights": "400, 600",
+        "url": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap",
+        "usage": "Metrics, data values, timestamps, IDs"
+      },
+      "rationale": "Geometric + humanist = elegant + accessible. Mono reinforces data precision. Minimal family count = consistent.",
+      "product_types": ["saas-dashboard", "enterprise", "b2b", "finance"],
+      "contrast_target": "4.5:1 (WCAG AA)",
+      "line_height": { "heading": 1.2, "body": 1.5 },
+      "letter_spacing": { "heading": "-0.02em", "body": "0em" }
+    },
+    {
+      "id": "precision-technical-pairing",
+      "name": "Precision Technical",
+      "display_font": {
+        "name": "IBM Plex Mono",
+        "weights": "600, 700",
+        "url": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&display=swap",
+        "usage": "H1–H2, command names, code labels"
+      },
+      "body_font": {
+        "name": "IBM Plex Sans",
+        "weights": "400, 500",
+        "url": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&display=swap",
+        "usage": "Body text, UI labels, documentation"
+      },
+      "mono_font": {
+        "name": "Fira Code",
+        "weights": "400, 600",
+        "url": "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap",
+        "usage": "Code snippets, API responses, raw data"
+      },
+      "rationale": "Monospace-first = dev-tool authenticity. Fira Code ligatures = readable code. High x-height = clarity at small sizes.",
+      "product_types": ["dev-tool", "analytics", "monitoring", "api-platform"],
+      "contrast_target": "5:1+ (dark mode)",
+      "line_height": { "heading": 1.1, "body": 1.5 },
+      "letter_spacing": { "heading": "0em", "body": "0.02em" }
+    },
+    {
+      "id": "warm-utilitarian-pairing",
+      "name": "Warm Utilitarian",
+      "display_font": {
+        "name": "Plus Jakarta Sans",
+        "weights": "600, 700",
+        "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&display=swap",
+        "usage": "H1–H3, section headers, CTA text"
+      },
+      "body_font": {
+        "name": "Plus Jakarta Sans",
+        "weights": "400, 500",
+        "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500&display=swap",
+        "usage": "Body, labels, form text, descriptions"
+      },
+      "mono_font": {
+        "name": "JetBrains Mono",
+        "weights": "400, 600",
+        "url": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap",
+        "usage": "Duration values, IDs, reference numbers"
+      },
+      "rationale": "Rounded + geometric = friendly + efficient. Single-family body = minimal choice = faster scanning. Warm note via font weight transitions.",
+      "product_types": ["productivity", "ops-dashboard", "crm", "workflow"],
+      "contrast_target": "4.5:1 (light mode)",
+      "line_height": { "heading": 1.25, "body": 1.6 },
+      "letter_spacing": { "heading": "-0.01em", "body": "0.01em" }
+    },
+    {
+      "id": "refined-modern-pairing",
+      "name": "Refined Modern",
+      "display_font": {
+        "name": "Cal Sans",
+        "weights": "600, 700",
+        "url": "https://fonts.googleapis.com/css2?family=Lexend:wght@600;700&display=swap",
+        "usage": "H1–H2, hero text, hero headlines (note: Cal Sans from Vercel fonts, fallback Lexend)"
+      },
+      "body_font": {
+        "name": "Plus Jakarta Sans",
+        "weights": "400, 500, 600",
+        "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap",
+        "usage": "Body, labels, descriptions, UI copy"
+      },
+      "mono_font": {
+        "name": "JetBrains Mono",
+        "weights": "400",
+        "url": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap",
+        "usage": "Numeric badges, time values, subtle code"
+      },
+      "rationale": "Display font is large + playful (Cal Sans) = delight. Body is warm + humanist = approachable. Contrast via size + weight, not family.",
+      "product_types": ["consumer", "growth", "fintech-consumer", "health"],
+      "contrast_target": "4.5:1 (high-contrast backgrounds)",
+      "line_height": { "heading": 1.15, "body": 1.6 },
+      "letter_spacing": { "heading": "-0.03em", "body": "0em" }
+    },
+    {
+      "id": "industrial-bold-pairing",
+      "name": "Industrial Bold",
+      "display_font": {
+        "name": "Space Grotesk",
+        "weights": "700, 900",
+        "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;900&display=swap",
+        "usage": "H1–H2, data section titles, bold labels"
+      },
+      "body_font": {
+        "name": "DM Sans",
+        "weights": "400, 500",
+        "url": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap",
+        "usage": "Body, UI labels, instructions"
+      },
+      "mono_font": {
+        "name": "IBM Plex Mono",
+        "weights": "400, 700",
+        "url": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap",
+        "usage": "Raw values, command names, dense data"
+      },
+      "rationale": "Space Grotesk = geometric + aggressive. Bold weights only = no light text = maximum legibility. Mono for data = authority.",
+      "product_types": ["internal-tool", "data-warehouse", "automation"],
+      "contrast_target": "7:1+ (dense layouts)",
+      "line_height": { "heading": 1.1, "body": 1.5 },
+      "letter_spacing": { "heading": "0.01em", "body": "-0.01em" }
+    },
+    {
+      "id": "editorial-magazine-pairing",
+      "name": "Editorial / Magazine",
+      "display_font": {
+        "name": "Playfair Display",
+        "weights": "700, 900",
+        "url": "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap",
+        "usage": "H1, hero titles, article headlines"
+      },
+      "body_font": {
+        "name": "DM Sans",
+        "weights": "400, 500, 700",
+        "url": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap",
+        "usage": "Article body, captions, UI text"
+      },
+      "mono_font": {
+        "name": "IBM Plex Mono",
+        "weights": "400",
+        "url": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&display=swap",
+        "usage": "Pull quotes (rare), code snippets"
+      },
+      "rationale": "Serif headline (Playfair) = editorial authority + nostalgia. Sans body = modern readability. Extreme scale justified (H1 3–4× body).",
+      "product_types": ["publishing", "news", "blog", "marketing"],
+      "contrast_target": "5:1+ (long-form text)",
+      "line_height": { "heading": 1.1, "body": 1.75 },
+      "letter_spacing": { "heading": "-0.02em", "body": "0.005em" }
+    },
+    {
+      "id": "fintech-secure-pairing",
+      "name": "Fintech Secure",
+      "display_font": {
+        "name": "DM Sans",
+        "weights": "600, 700",
+        "url": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@600;700&display=swap",
+        "usage": "H1–H2, transaction headers, account labels"
+      },
+      "body_font": {
+        "name": "DM Sans",
+        "weights": "400, 500",
+        "url": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap",
+        "usage": "Body text, form labels, account info"
+      },
+      "mono_font": {
+        "name": "IBM Plex Mono",
+        "weights": "400, 600",
+        "url": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap",
+        "usage": "Account numbers, transaction IDs, amounts"
+      },
+      "rationale": "Single-family body (DM Sans) = trusted consistency. Mono for amounts = precision/security. No decorative fonts = conservatism.",
+      "product_types": ["fintech", "banking", "payments", "crypto"],
+      "contrast_target": "5:1+ (transaction amounts)",
+      "line_height": { "heading": 1.2, "body": 1.6 },
+      "letter_spacing": { "heading": "-0.02em", "body": "0em" }
+    },
+    {
+      "id": "health-wellness-pairing",
+      "name": "Health & Wellness",
+      "display_font": {
+        "name": "DM Sans",
+        "weights": "600, 700",
+        "url": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@600;700&display=swap",
+        "usage": "H1–H2, health metrics titles, wellness milestones"
+      },
+      "body_font": {
+        "name": "Lato",
+        "weights": "400, 500, 700",
+        "url": "https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700&display=swap",
+        "usage": "Body text, form fields, medical information"
+      },
+      "mono_font": {
+        "name": "IBM Plex Mono",
+        "weights": "400",
+        "url": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&display=swap",
+        "usage": "Vital values, lab results, timestamps"
+      },
+      "rationale": "Humanist sans (Lato) = trustworthy but approachable. Readable at small sizes (medical info). Calm character = wellness tone.",
+      "product_types": ["health", "fitness", "medical", "wellness"],
+      "contrast_target": "4.5:1 (medical data)",
+      "line_height": { "heading": 1.25, "body": 1.6 },
+      "letter_spacing": { "heading": "-0.015em", "body": "0.005em" }
+    }
+  ]
+}
