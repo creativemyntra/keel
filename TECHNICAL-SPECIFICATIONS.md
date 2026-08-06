@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.18.2 - Technical Specifications
+# Keel AI-SDLC Framework v3.19.0 - Technical Specifications
 
 **Document Version:** 2.0  
 **Last Updated:** 2026-08-03  
@@ -145,7 +145,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - Data flows and domain rules
 - Edge cases and error paths
 
-#### Phase 3: UI Designer Agent (v3.18.2)
+#### Phase 3: UI Designer Agent (v3.19.0)
 - Scans existing UI patterns in the project
 - Produces Markdown design spec + self-contained HTML mockup
 - No-UI determination for non-visual stories
@@ -160,7 +160,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - Coverage >= 80% on changed lines gated before QA
 - PSR-12 / ESLint compliance, CodeGraph impact-scoped implementation
 
-#### Phase 6: QA Engineer Agent (v3.18.2)
+#### Phase 6: QA Engineer Agent (v3.19.0)
 - Maps every AC to a passing test
 - Runs integration tests against live endpoints
 - Full suite gate (once per story)
@@ -355,7 +355,7 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.18.2
+- Version: v3.19.0
 - Status: LIVE
 
 #### 2. npm Package
@@ -372,9 +372,9 @@ Record in Audit Trail
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.18.2`
+- Version: `v3.19.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.18.2`
+- Usage: `uses: creativemyntra/keel@v3.19.0`
 
 ---
 
@@ -402,7 +402,7 @@ Record in Audit Trail
 - **DAST:** N/A (CLI tool, no web endpoints)
 - **Secrets Scanning:** git-secrets pre-commit hook
 
-### Infrastructure Scripts (v3.18.2)
+### Infrastructure Scripts (v3.19.0)
 
 | Script | Purpose | Hook Stage(s) |
 |--------|---------|---------------|
