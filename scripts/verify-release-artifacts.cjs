@@ -17,7 +17,7 @@
  * - 2: ERROR - could not verify artifacts
  *
  * Usage:
- *   node scripts/verify-release-artifacts.cjs v3.18.1
+ *   node scripts/verify-release-artifacts.cjs v3.18.2
  */
 
 const fs = require('fs');
@@ -34,7 +34,7 @@ const RESET = '\x1b[0m';
 const tagArg = process.argv[2];
 if (!tagArg) {
   console.error(`${RED}❌ ERROR: Tag version required${RESET}`);
-  console.error(`   Usage: node scripts/verify-release-artifacts.cjs v3.18.1`);
+  console.error(`   Usage: node scripts/verify-release-artifacts.cjs v3.18.2`);
   process.exit(2);
 }
 

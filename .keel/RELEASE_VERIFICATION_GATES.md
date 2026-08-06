@@ -1,7 +1,7 @@
 # Release Verification Gates
 
 **Last Updated:** 2026-08-06  
-**Framework Version:** 3.18.1+  
+**Framework Version:** 3.18.2+  
 **Status:** ENFORCED via GitHub Actions
 
 ---
@@ -76,7 +76,7 @@ The doctor verifies (in order):
 
 **What it checks:**
 ```bash
-node scripts/verify-release-artifacts.cjs v3.18.1
+node scripts/verify-release-artifacts.cjs v3.18.2
 ```
 
 **New Check 5: Hook Wiring Integrity**
@@ -134,7 +134,7 @@ keel doctor
 node scripts/keel-doctor.cjs
 
 # Run post-release verification against current checkout
-node scripts/verify-release-artifacts.cjs v3.18.1
+node scripts/verify-release-artifacts.cjs v3.18.2
 
 # Test the gate by simulating broken hooks
 node -e '
@@ -143,7 +143,7 @@ const h=JSON.parse(fs.readFileSync("hooks/hooks.json","utf-8"));
 h.hooks.UserPromptSubmit=[];  // Break the hook
 fs.writeFileSync("hooks/hooks.json",JSON.stringify(h,null,2));
 '
-node scripts/verify-release-artifacts.cjs v3.18.1
+node scripts/verify-release-artifacts.cjs v3.18.2
 # Should FAIL with: "G-10 classify-gate incomplete: missing at UserPromptSubmit"
 ```
 

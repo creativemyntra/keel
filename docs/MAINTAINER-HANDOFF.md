@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.18.1 - Maintainer Handoff
+# Keel AI-SDLC Framework v3.18.2 - Maintainer Handoff
 
 **Document Version:** 2.0  
 **Last Updated:** 2026-08-03  

@@ -54,7 +54,7 @@ By-story documentation from delivery phases:
 ## 🛠️ Operations
 
 Status and deployment info:
-- **[Release Notes](../RELEASE-v3.18.1-FINAL.md)** — Latest version changes
+- **[Release Notes](../RELEASE-v3.18.2-FINAL.md)** — Latest version changes
 - **[Rollout Status](../ROLLOUT-STATUS.md)** — Production deployment status
 - **[Changelog](../CHANGELOG.md)** — Full version history
 

@@ -2,7 +2,7 @@
 
 **Status:** ✓ COMPLETE  
 **Last Updated:** 2026-08-06  
-**Framework Version:** 3.18.1+
+**Framework Version:** 3.18.2+
 
 ---
 
@@ -108,7 +108,7 @@ FAIL  G-10 classify-gate wired at UserPromptSubmit
 
 **When:** After GitHub release is created (final sanity check)  
 **Location:** `.github/workflows/release.yml` line 229-247  
-**Command:** `node scripts/verify-release-artifacts.cjs v3.18.1`
+**Command:** `node scripts/verify-release-artifacts.cjs v3.18.2`
 
 **What it checks:**
 - ✓ Version consistency (local, GitHub Actions, npm, marketplace)
@@ -124,10 +124,10 @@ Check 5: Hook Wiring Integrity
 ✓ G-10 classify-gate: wired at UserPromptSubmit, PreToolUse, PostToolUse
 
 VERIFICATION SUMMARY
-✓ Local Files (3.18.1)
-✓ GitHub Actions (3.18.1)
-✓ npm Registry (3.18.1)
-✓ Marketplace (3.18.1)
+✓ Local Files (3.18.2)
+✓ GitHub Actions (3.18.2)
+✓ npm Registry (3.18.2)
+✓ Marketplace (3.18.2)
 ✓ Hook Wiring (G-10 classify-gate)
 
 ✅ VERIFICATION PASSED
@@ -165,7 +165,7 @@ fs.writeFileSync("hooks/hooks.json",JSON.stringify(h,null,2));
 '
 
 # Run verifier
-node scripts/verify-release-artifacts.cjs v3.18.1
+node scripts/verify-release-artifacts.cjs v3.18.2
 ```
 
 **Result:**
@@ -228,7 +228,7 @@ keel doctor
 npm run test:hooks
 
 # Test post-release verification
-node scripts/verify-release-artifacts.cjs v3.18.1
+node scripts/verify-release-artifacts.cjs v3.18.2
 ```
 
 ---

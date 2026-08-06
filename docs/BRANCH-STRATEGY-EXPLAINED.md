@@ -275,7 +275,7 @@ git push origin feat/user-authentication:dev
 
 ## 🔄 Promotion Pipeline: Step-by-Step
 
-### v3.18.1 Release Example (What We Just Did)
+### v3.18.2 Release Example (What We Just Did)
 
 ```
 Step 1: Development
@@ -327,8 +327,8 @@ preprod (code in pre-release environment)
 Step 6: Production Release (Prod)
 ─────────────────────────────────
 prod (LIVE for all users)
-  ↓ Create release tag: git tag v3.18.1
-  ↓ git push origin v3.18.1
+  ↓ Create release tag: git tag v3.18.2
+  ↓ git push origin v3.18.2
   ↓ GitHub Actions Release Workflow triggers
   ↓ Plugin bundle created
   ↓ Release distributed to marketplaces
@@ -427,7 +427,7 @@ branch_strategy:
 
 ---
 
-## ✅ Checklist: Release v3.18.1 (Real Example)
+## ✅ Checklist: Release v3.18.2 (Real Example)
 
 ```
 ✅ Feature branch created: feat/p16-e2e-framework
@@ -443,8 +443,8 @@ branch_strategy:
 ✅ PR #84 created to prod (2 approvals required)
 ✅ Release Manager approved → Merged to prod
 ✅ VP Engineering approved → Merged to prod
-✅ Release tag created: v3.18.1
-✅ Release pushed: git push origin v3.18.1
+✅ Release tag created: v3.18.2
+✅ Release pushed: git push origin v3.18.2
 ✅ GitHub Actions triggered → Plugin built
 ✅ Release distributed → Users can install
 ```
