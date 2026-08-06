@@ -61,70 +61,24 @@ if (isPromotionBranch) {
   process.exit(1);
 }
 
-// For feature branches, validate version consistency
-const isFeatureBranch = currentBranch.match(/^(feat|fix|chore|docs|test|audit)\//);
-if (isFeatureBranch) {
-  console.log(`📋 Version Guard: Validating "${currentBranch}"...`);
+// For feature branches and any other push, run comprehensive version audit
+const isFeatureBranch = currentBranch.match(/^(feat|fix|chore|docs|test|audit|hotfix|refactor|ci|style|build|release|spike)\//);
 
-  const filesToCheck = [
-    'package.json',
-    '.claude-plugin/plugin.json',
-    '.claude-plugin/marketplace.json',
-    'README.md',
-    'INSTALL.md'
-  ];
+if (isFeatureBranch || !isPromotionBranch) {
+  console.log(`📋 Running comprehensive version audit on "${currentBranch}"...\n`);
 
-  const versions = {};
-  let versionMatch = true;
-
-  for (const file of filesToCheck) {
-    const filePath = path.join(process.cwd(), file);
-    if (!fs.existsSync(filePath)) {
-      console.log(`⚠️  Warning: ${file} not found, skipping`);
-      continue;
-    }
-
-    const content = fs.readFileSync(filePath, 'utf-8');
-
-    // Extract version patterns
-    let version;
-    if (file === 'package.json' || file.endsWith('.json')) {
-      const match = content.match(/"version"\s*:\s*"([^"]+)"/);
-      version = match ? match[1] : null;
-    } else if (file === 'README.md') {
-      const match = content.match(/v(\d+\.\d+\.\d+)/);
-      version = match ? match[1] : null;
-    } else if (file === 'INSTALL.md') {
-      const match = content.match(/v(\d+\.\d+\.\d+)/);
-      version = match ? match[1] : null;
-    }
-
-    if (version) {
-      versions[file] = version;
-      console.log(`  ${file}: ${version}`);
-    }
-  }
-
-  // Check if all versions match
-  const versionValues = Object.values(versions);
-  const allSame = versionValues.every(v => v === versionValues[0]);
-
-  if (!allSame) {
-    console.log('\n❌ VERSION MISMATCH DETECTED - PUSH BLOCKED');
-    console.log('   All files must have matching version numbers');
-    console.log('   Mismatches:');
-    const unique = [...new Set(Object.values(versions))];
-    for (const version of unique) {
-      const files = Object.entries(versions).filter(([, v]) => v === version).map(([f]) => f);
-      console.log(`   - ${version}: ${files.join(', ')}`);
-    }
-    console.log('\n   Action: Update all version references to match before pushing');
-    logPushAttempt(`Version mismatch in files: ${unique.join(', ')}`, currentBranch, 'BLOCKED');
+  try {
+    // Run the comprehensive audit script
+    execSync('node scripts/version-audit-comprehensive.cjs', {
+      stdio: 'inherit',
+      cwd: process.cwd()
+    });
+    logPushAttempt(`Version audit passed`, currentBranch, 'ALLOWED');
+  } catch (e) {
+    // Audit script will exit with non-zero on failure
+    logPushAttempt(`Version audit failed`, currentBranch, 'BLOCKED');
     process.exit(1);
   }
-
-  console.log(`\n✅ Version validation passed: all files at ${versionValues[0]}`);
-  logPushAttempt(`Feature branch validation passed`, currentBranch, 'ALLOWED');
 }
 
 process.exit(0);

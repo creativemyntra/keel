@@ -32,10 +32,10 @@ try {
 console.log(`${YELLOW}🔍 COMPREHENSIVE VERSION AUDIT${RESET}`);
 console.log(`   Target version: ${GREEN}${targetVersion}${RESET}\n`);
 
-// ALL files that must have matching versions
+// ALL files that must have matching versions (CRITICAL - MUST match package.json exactly)
 const CRITICAL_FILES = [
   // Core metadata
-  { path: 'package.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'json' },
+  { path: 'package.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'json', skipCheck: false },
   { path: '.claude-plugin/plugin.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'json' },
   { path: '.claude-plugin/marketplace.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'json' },
 
@@ -44,20 +44,20 @@ const CRITICAL_FILES = [
   { path: 'INSTALL.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'doc' },
   { path: 'TECHNICAL-SPECIFICATIONS.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'doc' },
   { path: 'QUICK-START-CLAUDE-CODE.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'doc' },
+  { path: 'CHANGELOG.md', pattern: /##\s+\[?v?(\d+\.\d+\.\d+)/, type: 'changelog' },
 
   // CLI & scripts
   { path: 'bin/keel.js', pattern: /VERSION\s*=\s*['"]([^'"]+)['"]/, type: 'code' },
-  { path: 'bin/keel.js', pattern: /v(\d+\.\d+\.\d+)\s*--/, type: 'code' },
+
+  // Lock files & package metadata
+  { path: 'package-lock.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'lock' },
 
   // GitHub Actions
   { path: 'action.yml', pattern: /Release:\s*v(\d+\.\d+\.\d+)/, type: 'action' },
 ];
 
 // AUDIT: Additional files to check (warnings only, not blocking)
-const SECONDARY_FILES = [
-  { path: 'CHANGELOG.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'changelog' },
-  { path: 'package-lock.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'lock' },
-];
+const SECONDARY_FILES = [];
 
 let criticalMismatches = [];
 let secondaryMismatches = [];
@@ -88,25 +88,51 @@ for (const file of CRITICAL_FILES) {
   }
 }
 
+// VERTICAL CHECK: If HEAD is tagged, assert branch version == tag version
+console.log(`\n${YELLOW}TAG VALIDATION (Vertical Axis)${RESET}`);
+console.log('─'.repeat(60));
+
+let tagMismatch = null;
+try {
+  const tagMatch = execSync('git describe --exact-match --tags HEAD', { encoding: 'utf-8' }).trim();
+  if (tagMatch) {
+    const tagVersion = tagMatch.replace(/^v/, '');
+    if (tagVersion !== targetVersion) {
+      tagMismatch = { tag: tagMatch, fileVersion: targetVersion };
+      console.log(`${RED}❌ TAG MISMATCH${RESET}: HEAD is at tag ${RED}${tagMatch}${RESET} but package.json says ${RED}${targetVersion}${RESET}`);
+      criticalMismatches.push({ file: 'git-tag', expected: tagVersion, found: targetVersion });
+    } else {
+      console.log(`${GREEN}✓${RESET} HEAD matches tag: ${tagMatch} (${targetVersion})`);
+    }
+  }
+} catch (e) {
+  // Not on a tag, which is normal for feature branches
+  console.log(`${YELLOW}ℹ️  HEAD is not on a tag (normal for feature branches)${RESET}`);
+}
+
 console.log(`\n${YELLOW}SECONDARY FILES (Warnings)${RESET}`);
 console.log('─'.repeat(60));
 
-for (const file of SECONDARY_FILES) {
-  const filePath = path.join(process.cwd(), file.path);
+if (SECONDARY_FILES.length === 0) {
+  console.log(`${GREEN}✓${RESET} No secondary files to check`);
+} else {
+  for (const file of SECONDARY_FILES) {
+    const filePath = path.join(process.cwd(), file.path);
 
-  if (!fs.existsSync(filePath)) {
-    console.log(`${YELLOW}⚠️  MISSING${RESET}: ${file.path}`);
-    continue;
-  }
+    if (!fs.existsSync(filePath)) {
+      console.log(`${YELLOW}⚠️  MISSING${RESET}: ${file.path}`);
+      continue;
+    }
 
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const matches = content.match(file.pattern);
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const matches = content.match(file.pattern);
 
-  if (matches) {
-    const foundVersion = matches[1];
-    if (foundVersion !== targetVersion) {
-      console.log(`${YELLOW}⚠️  OLD${RESET} ${file.path} (${foundVersion}) - should be ${targetVersion}`);
-      secondaryMismatches.push({ file: file.path, expected: targetVersion, found: foundVersion });
+    if (matches) {
+      const foundVersion = matches[1];
+      if (foundVersion !== targetVersion) {
+        console.log(`${YELLOW}⚠️  OLD${RESET} ${file.path} (${foundVersion}) - should be ${targetVersion}`);
+        secondaryMismatches.push({ file: file.path, expected: targetVersion, found: foundVersion });
+      }
     }
   }
 }
@@ -136,13 +162,19 @@ console.log('═'.repeat(60));
 
 if (criticalMismatches.length > 0) {
   console.log(`${RED}❌ BLOCKING: ${criticalMismatches.length} Critical Mismatches Found${RESET}\n`);
-  console.log('Files that MUST be updated before pushing:');
+  console.log('Mismatches that MUST be fixed:');
   for (const mismatch of criticalMismatches) {
-    console.log(`  ${RED}✗${RESET} ${mismatch.file}`);
-    console.log(`     Expected: ${GREEN}${mismatch.expected}${RESET}, Found: ${RED}${mismatch.found}${RESET}`);
+    if (mismatch.file === 'git-tag') {
+      console.log(`  ${RED}✗${RESET} git-tag mismatch`);
+      console.log(`     Expected: ${GREEN}${mismatch.expected}${RESET}, Found: ${RED}${mismatch.found}${RESET}`);
+      console.log(`     Action: This branch is at a tag but claims wrong version`);
+    } else {
+      console.log(`  ${RED}✗${RESET} ${mismatch.file}`);
+      console.log(`     Expected: ${GREEN}${mismatch.expected}${RESET}, Found: ${RED}${mismatch.found}${RESET}`);
+    }
   }
   console.log(`\n${YELLOW}Action Required:${RESET}`);
-  console.log('  1. Update all files listed above to version: ' + GREEN + targetVersion + RESET);
+  console.log(`  1. Update all files above to version: ${GREEN}${targetVersion}${RESET}`);
   console.log('  2. Run this audit again: node scripts/version-audit-comprehensive.cjs');
   console.log('  3. Commit the version updates');
   console.log('  4. Then push\n');
@@ -160,5 +192,6 @@ if (secondaryMismatches.length > 0) {
 }
 
 console.log(`${GREEN}✅ AUDIT PASSED: All critical versions match ${targetVersion}${RESET}`);
+console.log(`${GREEN}   Files checked: ${CRITICAL_FILES.length} critical (no mismatches)${RESET}`);
 console.log(`${GREEN}Ready to push.${RESET}\n`);
 process.exit(0);

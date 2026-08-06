@@ -63,12 +63,50 @@ jobs:
           echo "   Ready to proceed with build and distribution"
 
   # ─────────────────────────────────────────────
+  # 1b. Test Validation (Pre-Release Quality Gate)
+  # ─────────────────────────────────────────────
+  test-validation:
+    name: Test Suite Validation
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: QUALITY GATE - Run Full Test Suite
+        run: |
+          echo "═══════════════════════════════════════════════════════"
+          echo "RELEASE QUALITY GATE: Full Test Suite Validation"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""
+          echo "Version: ${{ needs.prepare.outputs.version }}"
+          echo "Running: npm test"
+          echo ""
+          npm test
+          if [ $? -ne 0 ]; then
+            echo ""
+            echo "❌ RELEASE BLOCKED: Test suite failed"
+            echo "   All tests must PASS before releasing to production"
+            echo ""
+            echo "   Action: Fix failing tests and try release again"
+            exit 1
+          fi
+          echo ""
+          echo "✅ QUALITY GATE PASSED: All tests passing"
+          echo "   Safe to proceed with build and distribution"
+
+  # ─────────────────────────────────────────────
   # 2. Build plugin bundle (.plugin zip)
   # ─────────────────────────────────────────────
   build-plugin:
     name: Build Plugin Bundle
     runs-on: ubuntu-latest
-    needs: prepare
+    needs: [prepare, test-validation]
     steps:
       - uses: actions/checkout@v4
 
