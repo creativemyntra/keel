@@ -1,6 +1,6 @@
 {
   "name": "@amarsingh/keel",
-  "version": "3.18.1",
+  "version": "3.18.2",
   "description": "Keel AI-SDLC Framework - Complete AI-powered software development lifecycle automation",
   "type": "module",
   "main": "bin/keel.js",
@@ -10,7 +10,7 @@
   "scripts": {
     "postinstall": "node scripts/setup-git-safe-dirs.cjs && node scripts/install-branch-strategy-hooks.cjs || true",
     "start": "node ./bin/keel.js",
-    "test": "npm run test:engine && npm run test:phase-drift && npm run test:gate && npm run test:watch && npm run test:halt && npm run test:checks && npm run test:audit && npm run test:agent-e2e && npm run test:yaml",
+    "test": "npm run test:engine && npm run test:phase-drift && npm run test:gate && npm run test:watch && npm run test:halt && npm run test:checks && npm run test:audit && npm run test:agent-e2e && npm run test:yaml && npm run test:hooks",
     "test:engine": "node scripts/test-keel-state.cjs",
     "test:phase-drift": "node scripts/test-phase-drift.cjs",
     "test:gate": "node scripts/test-classify-gate.cjs",
@@ -20,6 +20,7 @@
     "test:audit": "node scripts/test-audit-log-integrity.cjs",
     "test:agent-e2e": "node scripts/test-agent-e2e.cjs",
     "test:yaml": "node scripts/test-yaml-parser-correctness.cjs",
+    "test:hooks": "node scripts/test-hook-wiring.cjs",
     "test:e2e": "playwright test",
     "test:legacy": "npm run test:unit && npm run test:integration",
     "test:unit": "jest tests/unit --coverage",

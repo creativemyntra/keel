@@ -67,7 +67,7 @@ const ticket = await getJiraIssue('H30-1');
 //   key: 'H30-1',
 //   projectKey: 'H30',
 //   projectName: 'Hart 30',
-//   summary: 'Hart 30 Release v3.18.1',
+//   summary: 'Hart 30 Release v3.18.2',
 //   dueDate: '2026-05-12',
 //   description: 'Complete release cycle...'
 // }
@@ -129,7 +129,7 @@ When integrated with Atlassian MCP, workflow becomes:
 
 ```
 1. Create/Update Release Ticket in Jira
-   ├─ Title: "Hart 30 Release v3.18.1"
+   ├─ Title: "Hart 30 Release v3.18.2"
    ├─ Due Date: 2026-05-12
    └─ Description: "Complete release cycle"
 
@@ -334,7 +334,7 @@ Each runbook contains:
 **Step 1: Create Release Ticket in Jira**
 ```
 Project: Hart 30 (H30)
-Title: Hart 30 Release v3.18.1
+Title: Hart 30 Release v3.18.2
 Due Date: 2026-05-12
 Assignee: Sourav Pratap (Release Manager)
 Description: Complete release cycle...

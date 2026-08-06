@@ -2,7 +2,7 @@
 # Governs all git workflows - no exceptions
 # Violations block push at pre-push hook stage
 
-version: "3.18.0"
+version: ".18.1"
 enforcement: "strict"  # fail-closed: violations block push
 
 # Promotion Pipeline: feat/* → dev → qa → stage → preprod → prod
