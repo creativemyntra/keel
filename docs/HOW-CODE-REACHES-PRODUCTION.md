@@ -113,15 +113,15 @@ Developer's Machine          GitHub Repositories            Production Systems
 
 8. CREATE RELEASE TAG:
    ┌──────────────────┐
-   │ git tag v3.18.0  │────┐
+   │ git tag v3.18.2  │────┐
    │ git push --tags  │    │ Tag created
    └──────────────────┘    ↓
-                           [GitHub: Release v3.18.0 created]
+                           [GitHub: Release v3.18.2 created]
                            [Plugin bundle attached]
                            [Release notes published]
                            ↓
                     Users see:
-                    "Keel v3.18.0 available"
+                    "Keel v3.18.2 available"
                     [Download plugin]
 ```
 
@@ -171,13 +171,13 @@ After PR #84 merged (preprod → prod):
 ├─ tests/auth.test.ts
 ├─ src/other/feature1.ts
 ├─ src/other/feature2.ts
-├─ package.json v3.18.0
+├─ package.json v3.18.2
 ├─ docs/DEVELOPER-SETUP.md (P-16)
 ├─ tests/e2e/fixtures.ts   (P-16)
 └─ (ALL production code)
 
 [DEPLOYED TO LIVE]
-[RELEASE TAG: v3.18.0]
+[RELEASE TAG: v3.18.2]
 [AVAILABLE TO USERS]
 ```
 
@@ -221,11 +221,11 @@ PR #84 merged to prod:
   ├─ prod NOW HAS: commit abc123 + ALL merged code
   └─ [PRODUCTION UPDATED - LIVE FOR USERS]
 
-Release tag v3.18.0:
-  ├─ git tag v3.18.0 abc123
+Release tag v3.18.2:
+  ├─ git tag v3.18.2 abc123
   ├─ Tags this exact commit as release
   └─ GitHub Actions distributes
-     (users download keel-3.18.0.plugin)
+     (users download keel-3.18.2.plugin)
 ```
 
 ---
@@ -274,9 +274,9 @@ Step 2: prod branch updated
 
 Step 3: GitHub Actions Release Workflow triggers
         ├─ Validate: plugin.json version = tag version
-        ├─ Build: npm run build → dist/keel-3.18.0.plugin
-        ├─ Create Release: v3.18.0 on GitHub
-        ├─ Upload: keel-3.18.0.plugin to release
+        ├─ Build: npm run build → dist/keel-3.18.2.plugin
+        ├─ Create Release: v3.18.2 on GitHub
+        ├─ Upload: keel-3.18.2.plugin to release
         └─ Distribute:
            ├─ Upload to CDN (cloudflare, fastly, etc)
            ├─ Publish to npm registry
@@ -285,9 +285,9 @@ Step 3: GitHub Actions Release Workflow triggers
 
 Step 4: Users can install
         ├─ Download starts from CDN
-        ├─ Extract keel-3.18.0.plugin
+        ├─ Extract keel-3.18.2.plugin
         └─ Run: /plugin add marketplace keel
-           └─ Gets v3.18.0 with auth feature
+           └─ Gets v3.18.2 with auth feature
 
 Step 5: Code runs in user's environment
         └─ User's Claude Code instance has the auth feature
@@ -345,11 +345,11 @@ CI/CD runs Release Workflow
        ↓
 Build plugin bundle with login.ts + all code
        ↓
-Create Release v3.18.0
+Create Release v3.18.2
        ↓
 Upload plugin to CDN + registries
        ↓
-Users download keel-3.18.0.plugin
+Users download keel-3.18.2.plugin
        ↓
 Users have auth feature running locally
        ↓
@@ -382,7 +382,7 @@ prod branch
 └─ Shows PRODUCTION code
    (what's deployed to production)
    (what users are running)
-   (has version tag v3.18.0)
+   (has version tag v3.18.2)
 
 Each branch = Snapshot of code at that stage
            = What's deployed to that environment
@@ -415,7 +415,7 @@ Each branch = Snapshot of code at that stage
    - prod branch → deployed to production (users)
 
 4. **Release tag marks production release**
-   - `git tag v3.18.0` marks prod branch as official release
+   - `git tag v3.18.2` marks prod branch as official release
    - GitHub Actions builds plugin bundle
    - Distributes to marketplaces
 

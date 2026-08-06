@@ -1,6 +1,6 @@
-# Keel v3.18.0 -- Complete Agent Guide
+# Keel v3.18.2 -- Complete Agent Guide
 
-**Framework Version:** 3.18.0  
+**Framework Version:** .18.1  
 **Total Agents:** 15 (10 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Repository:** https://github.com/creativemyntra/keel  
@@ -1175,7 +1175,7 @@ command.)
 | **Handshake Agent** | Phase-to-phase validation + context passing |
 | **State Management Agent** | Locked state, atomic writes, audit trail, snapshots |
 
-**Infrastructure Scripts (v3.18.0)**
+**Infrastructure Scripts (v3.18.2)**
 
 | Script | Purpose |
 |--------|---------|
@@ -1194,7 +1194,7 @@ command.)
 
 ---
 
-**Framework:** Keel AI-SDLC Framework v3.18.0  
+**Framework:** Keel AI-SDLC Framework v3.18.2  
 **License:** MIT  
 **Author:** Amar Singh  
 **Repository:** https://github.com/creativemyntra/keel  

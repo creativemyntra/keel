@@ -606,6 +606,175 @@ async function main() {
     }
   }
 
+  // ---- G-15 Karpathy Protocol enforcement (phase 5 / software-engineer) -----
+  {
+    const cwd = makeTmpDir('g15');
+    const initR = engine(cwd, 'init', 'G15-TEST', '--title', 'G-15 enforcement');
+    assert('G-15 test: init succeeds', initR.code === 0, initR.out.slice(0, 120));
+
+    // Test 1: phase-5 with empty assumptions -> FAIL validate
+    const phaseDir = path.join(cwd, '.keel', 'state', 'G15-TEST');
+    const thinPlan = path.join(phaseDir, 'test-plan.md');
+    fs.writeFileSync(thinPlan, '# Test\n\nThis is a plan.\n'); // < 300 words
+    const phase5Empty = {
+      phase: 5, agent: 'software-engineer', story_id: 'G15-TEST', confidence: 'high',
+      findings: ['Test finding'], acceptance_criteria_ids: ['AC-1'], decisions: [],
+      artifacts: [thinPlan], next_phase: 6, blockers: [],
+      assumptions: [],  // EMPTY - should fail
+      interpretations_considered: [],
+      implementation_plan_path: thinPlan,
+    };
+    fs.writeFileSync(path.join(phaseDir, '05-software-engineer.json'), JSON.stringify(phase5Empty));
+    const r1 = engine(cwd, 'validate', 'G15-TEST', '05-software-engineer.json');
+    assert('G-15 K-1: empty assumptions[] -> FAIL', r1.code === 1 && /assumptions.*minItems 1/.test(r1.out),
+      `code=${r1.code} msg=${r1.out.slice(0, 160)}`);
+
+    // Test 2: phase-5 with missing implementation_plan_path -> FAIL validate
+    const phase5NoPlan = Object.assign({}, phase5Empty, {
+      assumptions: [{ area: 'data', assumption: 'User IDs are unique', risk: 'Duplicates break queries' }],
+      implementation_plan_path: undefined,  // Missing
+    });
+    fs.writeFileSync(path.join(phaseDir, '05-software-engineer.json'), JSON.stringify(phase5NoPlan));
+    const r2 = engine(cwd, 'validate', 'G15-TEST', '05-software-engineer.json');
+    assert('G-15 K-3: missing implementation_plan_path -> FAIL', r2.code === 1 && /implementation_plan_path required/.test(r2.out),
+      `code=${r2.code} msg=${r2.out.slice(0, 160)}`);
+
+    // Test 3: phase-5 with thin plan file (< 300 words) -> FAIL validate
+    const phase5ThinPlan = Object.assign({}, phase5Empty, {
+      assumptions: [{ area: 'data', assumption: 'User IDs are unique', risk: 'Duplicates break queries' }],
+      implementation_plan_path: thinPlan,
+    });
+    fs.writeFileSync(path.join(phaseDir, '05-software-engineer.json'), JSON.stringify(phase5ThinPlan));
+    const r3 = engine(cwd, 'validate', 'G15-TEST', '05-software-engineer.json');
+    assert('G-15 K-3: thin plan (< 300 words) -> FAIL', r3.code === 1 && /too thin/.test(r3.out),
+      `code=${r3.code} msg=${r3.out.slice(0, 160)}`);
+
+    // Test 4: phase-5 with complete thinking artifacts -> PASS validate
+    const substantialPlan = path.join(phaseDir, 'implementation-plan.md');
+    const planContent = `# Implementation Plan: G15-TEST
+
+## Files to change
+- src/Auth.php (add token validation, modify validateToken method, add RS256 support)
+- tests/AuthTest.php (add token test cases, test expiration, test missing header)
+- src/Security/TokenValidator.php (new file for token validation logic)
+- src/Security/JwtDecoder.php (new file for JWT decoding with RS256)
+
+## AC-1: Validate tokens on authenticated endpoints
+Implementation: AuthService::validate() checks Authorization header for Bearer token.
+Uses TokenValidator::isValid() to verify JWT signature and exp claim.
+All authenticated endpoints call this in middleware.
+
+## AC-2: Reject expired tokens
+Implementation: JwtDecoder::decode() extracts and verifies exp claim.
+Compare exp timestamp to current time; reject if exp < now.
+Returns false on expiration; AuthService::validate() propagates the rejection.
+
+## AC-3: Support RS256 signature verification
+Implementation: JwtDecoder uses openssl_verify() with public key for RS256.
+Keys stored in config/keys/public-key.pem at deployment.
+Falls back gracefully if key is missing (logs error, returns false).
+
+## Test scenarios
+### Happy path
+- Valid token with correct exp and valid RS256 signature -> validates successfully
+- Token with exp far in future -> passes expiration check
+- Multiple tokens in sequence with different exps -> each validated correctly
+
+### Error paths
+- Expired token (exp < now) -> rejected immediately
+- Missing Authorization header -> rejected with 401
+- Bearer token missing -> rejected with 401
+- Invalid JWT format (missing dots) -> rejected with 400
+- Invalid Base64 encoding -> rejected with 400
+- Invalid RS256 signature (wrong key) -> rejected with 403
+- Missing public key file -> rejected with 500, logged
+
+### Edge cases
+- Token with exp exactly equal to current time -> treated as expired (<=)
+- Tokens with whitespace in Base64 sections -> stripped before decoding
+- Very long tokens (>2KB) -> still validated correctly
+- Unicode in JWT claims -> preserved and validated
+
+## Assumptions & Risks
+1. Tokens use RS256 (asymmetric), not HS256 (symmetric)
+   Risk: if HS256 is used, this implementation would fail and requests would be rejected
+   Mitigation: validate environment at startup, log public key path
+
+2. Public key is available at config/keys/public-key.pem at runtime
+   Risk: missing file would cause all auth to fail (DoS)
+   Mitigation: error handling in JwtDecoder, graceful degradation
+
+3. Clock skew between servers is < 60 seconds
+   Risk: large skew could cause false token expirations
+   Mitigation: log skew warnings in production, alert on large discrepancies
+
+4. exp claim uses Unix timestamp in seconds (not milliseconds)
+   Risk: if exp is in milliseconds, all tokens appear invalid
+   Mitigation: validate sample token structure in setup, document format
+
+## E2E scenarios for phase 7
+- User login flow with valid token -> full session works
+- Session timeout (token expires) -> redirected to login
+- Attacker provides expired token -> rejected with 401
+- Attacker provides invalid signature -> rejected with 403
+- Attacker omits Authorization header -> rejected with 401
+- Token refresh flow (if needed) -> new token accepted
+`;
+    fs.writeFileSync(substantialPlan, planContent);
+    const phase5Complete = {
+      phase: 5, agent: 'software-engineer', story_id: 'G15-TEST', confidence: 'high',
+      findings: ['Implemented AC-1: AuthService::validate()', 'Coverage: 84%'],
+      acceptance_criteria_ids: ['AC-1', 'AC-2'], decisions: ['Used RS256 for keys'],
+      artifacts: [substantialPlan], next_phase: 6, blockers: [],
+      assumptions: [
+        { area: 'data', assumption: 'Tokens use RS256, not HS256', risk: 'HS256 tokens would bypass validation' },
+        { area: 'behavior', assumption: 'Clock skew between servers < 60 seconds', risk: 'Large skew causes false exp rejections' },
+      ],
+      interpretations_considered: [
+        { ac_id: 'AC-1', options: ['validate on every request', 'validate on first request only'] },
+      ],
+      implementation_plan_path: substantialPlan,
+    };
+    fs.writeFileSync(path.join(phaseDir, '05-software-engineer.json'), JSON.stringify(phase5Complete));
+    const r4 = engine(cwd, 'validate', 'G15-TEST', '05-software-engineer.json');
+    assert('G-15 K-1/K-2/K-3: complete output -> PASS', r4.code === 0,
+      `code=${r4.code} msg=${r4.out.slice(0, 160)}`);
+
+    // Test 5: phase-5 with ambiguous AC but no interpretation -> FAIL validate
+    // Simulate phase 1 with ambiguous AC in blockers
+    const phase1 = {
+      phase: 1, agent: 'product-owner', story_id: 'G15-TEST', confidence: 'high',
+      findings: ['Requirement clear'], acceptance_criteria_ids: ['AC-1', 'AC-2'],
+      decisions: [], artifacts: [], next_phase: 2, blockers: [
+        'AC-1 is ambiguous: could mean validate on every request or only first request',
+      ],
+    };
+    fs.writeFileSync(path.join(phaseDir, '01-product-owner.json'), JSON.stringify(phase1));
+    const phase5NoInterp = Object.assign({}, phase5Complete, {
+      interpretations_considered: [],  // MISSING interpretation for ambiguous AC-1
+    });
+    fs.writeFileSync(path.join(phaseDir, '05-software-engineer.json'), JSON.stringify(phase5NoInterp));
+    const r5 = engine(cwd, 'validate', 'G15-TEST', '05-software-engineer.json');
+    assert('G-15 K-2: ambiguous AC without interpretation -> FAIL', r5.code === 1 && /AC-1.*interpretation/.test(r5.out),
+      `code=${r5.code} msg=${r5.out.slice(0, 200)}`);
+
+    // Test 6: non-phase-5 output should not require G-15 fields
+    const phase3 = {
+      phase: 3, agent: 'ui-designer', story_id: 'G15-TEST', confidence: 'high',
+      findings: ['Design complete'], acceptance_criteria_ids: ['AC-1', 'AC-2'],
+      decisions: [], artifacts: [], next_phase: 4, blockers: [],
+      design_review_checklist: {
+        story_alignment: true, wcag_2_1_aa: true, responsive_design: true,
+        design_tokens: true, palette_typography: true,
+      },
+      // No assumptions/interpretations/implementation_plan_path required for phase 3
+    };
+    fs.writeFileSync(path.join(phaseDir, '03-ui-designer.json'), JSON.stringify(phase3));
+    const r6 = engine(cwd, 'validate', 'G15-TEST', '03-ui-designer.json');
+    assert('G-15: phase 3 does not require thinking fields', r6.code === 0,
+      `code=${r6.code} msg=${r6.out.slice(0, 160)}`);
+  }
+
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed`);
   process.exit(failed.length ? 1 : 0);

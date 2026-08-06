@@ -14,7 +14,7 @@
  * - 2: ERROR - could not determine version
  *
  * Usage:
- *   node scripts/validate-tag-creation.cjs v3.18.1
+ *   node scripts/validate-tag-creation.cjs v3.18.2
  */
 
 const fs = require('fs');
@@ -30,7 +30,7 @@ const RESET = '\x1b[0m';
 const tagArg = process.argv[2];
 if (!tagArg) {
   console.error(`${RED}❌ ERROR: Tag version required as argument${RESET}`);
-  console.error(`   Usage: node scripts/validate-tag-creation.cjs v3.18.1`);
+  console.error(`   Usage: node scripts/validate-tag-creation.cjs v3.18.2`);
   process.exit(2);
 }
 

@@ -1,7 +1,7 @@
 name: 'Keel AI-SDLC Framework'
 description: 'Complete 10-phase AI-SDLC pipeline: Requirements → UI Design → Architecture → Code+Tests → QA → E2E (Playwright) → Security → Docs → Release'
 author: 'Amar Singh'
-# Release: v3.18.1
+# Release: v3.18.2
 
 branding:
   icon: 'zap'

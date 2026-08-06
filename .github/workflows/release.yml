@@ -119,6 +119,26 @@ jobs:
           name: plugin-bundle
           path: dist/
 
+      - name: INSTALL INTEGRITY GATE - Verify Keel Doctor Passes on Release
+        run: |
+          echo "═══════════════════════════════════════════════════════"
+          echo "INSTALL INTEGRITY CHECK: Verifying released code is healthy"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""
+          echo "Running keel-doctor against release tag..."
+          echo ""
+          node scripts/keel-doctor.cjs
+          if [ $? -ne 0 ]; then
+            echo ""
+            echo "❌ INSTALL INTEGRITY CHECK FAILED"
+            echo "   Released plugin would have broken hooks or missing gates"
+            echo "   Release BLOCKED until install health check passes"
+            exit 1
+          fi
+          echo ""
+          echo "✅ INSTALL INTEGRITY PASSED"
+          echo "   Released code is fully wired and functional"
+
       - name: TAG CREATION GUARD - Validate All Versions Before Release
         run: |
           echo "═══════════════════════════════════════════════════════"
@@ -226,7 +246,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: POST-RELEASE VERIFICATION - Verify All Artifacts
+      - name: POST-RELEASE VERIFICATION - Verify All Artifacts & Hook Wiring
         run: |
           echo "═══════════════════════════════════════════════════════"
           echo "POST-RELEASE VERIFICATION: Checking distributed artifacts"
@@ -235,9 +255,13 @@ jobs:
           node scripts/verify-release-artifacts.cjs ${{ needs.prepare.outputs.tag }}
           if [ $? -ne 0 ]; then
             echo ""
-            echo "⚠️  POST-RELEASE VERIFICATION FAILED"
-            echo "   Some artifacts may have version mismatches"
-            echo "   Manual verification may be needed"
+            echo "❌ POST-RELEASE VERIFICATION FAILED"
+            echo "   Release has critical issues:"
+            echo "   - Version mismatches in distributed artifacts, OR"
+            echo "   - Hook wiring incomplete (G-10 classify-gate not fully wired), OR"
+            echo "   - Missing security gates in released code"
+            echo ""
+            echo "   Manual verification and remediation required immediately"
             exit 1
           fi
 

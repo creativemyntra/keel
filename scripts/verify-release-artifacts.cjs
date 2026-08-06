@@ -17,7 +17,7 @@
  * - 2: ERROR - could not verify artifacts
  *
  * Usage:
- *   node scripts/verify-release-artifacts.cjs v3.18.1
+ *   node scripts/verify-release-artifacts.cjs v3.18.2
  */
 
 const fs = require('fs');
@@ -34,7 +34,7 @@ const RESET = '\x1b[0m';
 const tagArg = process.argv[2];
 if (!tagArg) {
   console.error(`${RED}❌ ERROR: Tag version required${RESET}`);
-  console.error(`   Usage: node scripts/verify-release-artifacts.cjs v3.18.1`);
+  console.error(`   Usage: node scripts/verify-release-artifacts.cjs v3.18.2`);
   process.exit(2);
 }
 
@@ -50,6 +50,7 @@ const artifacts = {
   github: { name: 'GitHub Actions (action.yml)', status: null, version: null },
   npm: { name: 'npm Registry', status: null, version: null },
   marketplace: { name: 'Claude Marketplace', status: null, version: null },
+  hooks: { name: 'Hook Wiring (G-10 classify-gate)', status: null, version: null },
 };
 
 // Check 1: Local files
@@ -142,6 +143,49 @@ try {
 } catch (e) {
   console.log(`${RED}✗${RESET} Could not read plugin.json`);
   artifacts.marketplace.status = 'ERROR';
+}
+console.log('');
+
+// Check 5: Hook Wiring (G-10 classify-gate at all 3 stages)
+console.log(`${BLUE}Check 5: Hook Wiring Integrity${RESET}`);
+{
+  const hooksPath = path.join(process.cwd(), 'hooks', 'hooks.json');
+  if (!fs.existsSync(hooksPath)) {
+    console.log(`${RED}✗${RESET} hooks.json not found — critical security gate missing`);
+    artifacts.hooks.status = 'ERROR';
+  } else {
+    try {
+      const hooks = JSON.parse(fs.readFileSync(hooksPath, 'utf8'));
+      const h = hooks.hooks || {};
+      const missingStages = [];
+
+      // Check G-10 classify-gate wired at all 3 required stages
+      if (!h.UserPromptSubmit?.some(e => e.hooks?.some(hk =>
+        hk.command?.includes('classify-gate.cjs') && hk.command?.includes('--stage=prompt')))) {
+        missingStages.push('UserPromptSubmit');
+      }
+      if (!h.PreToolUse?.some(e => e.hooks?.some(hk =>
+        hk.command?.includes('classify-gate.cjs') && hk.command?.includes('--stage=pre')))) {
+        missingStages.push('PreToolUse');
+      }
+      if (!h.PostToolUse?.some(e => e.hooks?.some(hk =>
+        hk.command?.includes('classify-gate.cjs') && hk.command?.includes('--stage=post')))) {
+        missingStages.push('PostToolUse');
+      }
+
+      if (missingStages.length > 0) {
+        console.log(`${RED}✗${RESET} G-10 classify-gate incomplete: missing at ${missingStages.join(', ')}`);
+        console.log(`   ${RED}SECURITY GATE NOT ENFORCED — Release cannot proceed${RESET}`);
+        artifacts.hooks.status = 'MISMATCH';
+      } else {
+        console.log(`${GREEN}✓${RESET} G-10 classify-gate: wired at UserPromptSubmit, PreToolUse, PostToolUse`);
+        artifacts.hooks.status = 'PASS';
+      }
+    } catch (e) {
+      console.log(`${RED}✗${RESET} Could not parse hooks.json: ${e.message}`);
+      artifacts.hooks.status = 'ERROR';
+    }
+  }
 }
 console.log('');
 
