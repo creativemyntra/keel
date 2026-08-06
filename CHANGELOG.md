@@ -1,4 +1,4 @@
-## [3.18.0] - 2026-08-04 - FIX 9-15 RELEASE: APPEND-ONLY AUDIT LOGS, REAL-DATA TELEMETRY, MODEL TIERING ENFORCEMENT
+## [.18.1] - 2026-08-04 - FIX 9-15 RELEASE: APPEND-ONLY AUDIT LOGS, REAL-DATA TELEMETRY, MODEL TIERING ENFORCEMENT
 
 ### Features
 - **Append-Only Audit Logs** — Server-side enforcement in pre-push and CI; blocks modified/deleted lines; verifies hash chain integrity
@@ -18,7 +18,7 @@
 
 ---
 
-## [3.18.0] - 2026-08-03 - P-16 RELEASE: VISUAL REGRESSION TESTING FRAMEWORK
+## [.18.1] - 2026-08-03 - P-16 RELEASE: VISUAL REGRESSION TESTING FRAMEWORK
 
 ### Features
 - **E2E Testing Framework** — Complete Playwright visual regression testing setup with developer fixtures
@@ -31,7 +31,7 @@
 
 ### Version History
 - Previous: 3.16.9 (2026-07-29)
-- Current: 3.18.0 (2026-08-03)
+- Current: .18.1 (2026-08-03)
 
 # Changelog
 

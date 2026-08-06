@@ -112,7 +112,7 @@ Distribute (npm, Marketplace, Docker, GitHub Actions)
 1. [ ] All 11 version files have matching versions
 2. [ ] CHANGELOG.md entry present and correct
 3. [ ] Release notes include version number
-4. [ ] PR title includes version number (e.g., "chore: release v3.18.1")
+4. [ ] PR title includes version number (e.g., "chore: release v3.18.2")
 
 ### BEFORE Creating GitHub Release:
 1. [ ] Tag validation passes

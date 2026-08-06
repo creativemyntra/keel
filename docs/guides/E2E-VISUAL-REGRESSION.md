@@ -380,4 +380,4 @@ jobs:
 ---
 
 **Last updated:** 2026-08-03  
-**Keel version:** 3.18.0+
+**Keel version:** .18.1+

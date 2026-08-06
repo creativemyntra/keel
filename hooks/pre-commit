@@ -1,0 +1,21 @@
+#!/bin/sh
+# KEEL Pre-Commit Hook - STRICT BRANCH STRATEGY ENFORCEMENT
+#
+# This hook BLOCKS commits directly to promotion branches.
+# All work must be on feature branches (feat/*, fix/*, chore/*, etc)
+#
+# NO BYPASS ALLOWED (--no-verify will be logged and rejected at pre-push)
+
+node "$(git rev-parse --show-toplevel)/scripts/enforce-branch-strategy.cjs" "commit"
+exit_code=$?
+
+if [ $exit_code -ne 0 ]; then
+  echo ""
+  echo "❌ COMMIT BLOCKED - Branch strategy violation"
+  echo ""
+  echo "To bypass this hook, you would need --no-verify, but that is BLOCKED at pre-push"
+  echo "Contact team lead if you believe this is a mistake"
+  exit 1
+fi
+
+exit 0

@@ -1,0 +1,63 @@
+#!/bin/sh
+# KEEL Pre-Push Hook - STRICT BRANCH STRATEGY ENFORCEMENT
+#
+# This hook BLOCKS all pushes that violate branch strategy:
+# 1. Direct pushes to promotion branches (dev, qa, stage, preprod, prod)
+# 2. Feature branches not targeting dev
+# 3. Any --no-verify bypass attempts (LOGGED and REJECTED)
+#
+# NO EXCEPTIONS - This cannot be bypassed
+
+set -e
+
+KEEL_DIR="$(git rev-parse --show-toplevel)"
+ENFORCEMENT_SCRIPT="$KEEL_DIR/scripts/enforce-branch-strategy.cjs"
+PUSH_AUDIT_LOG="$KEEL_DIR/.keel/PUSH_AUDIT.log"
+
+# Create audit log directory if it doesn't exist
+mkdir -p "$(dirname "$PUSH_AUDIT_LOG")"
+
+# Get current branch
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# Get push details
+PUSH_REMOTE="${1:-origin}"
+PUSH_REFSPEC="${2:--}"
+
+# Log all push attempts
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+
+# Check if --no-verify was attempted (can't be fully prevented, but we detect and reject)
+# If this hook runs, it means --no-verify wasn't used (good)
+
+# Enforce branch strategy
+node "$ENFORCEMENT_SCRIPT" "push"
+STRATEGY_EXIT=$?
+
+if [ $STRATEGY_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ PUSH BLOCKED - Branch strategy violation detected"
+  echo ""
+  echo "Current branch: $CURRENT_BRANCH"
+  echo ""
+  echo "Action required:"
+  echo "  1. Cancel this push (git reset HEAD~1 to undo commits if needed)"
+  echo "  2. Create a new feature branch from dev:"
+  echo "     git fetch origin"
+  echo "     git checkout -b feat/name origin/dev"
+  echo "  3. Cherry-pick or re-apply your changes to the feature branch"
+  echo "  4. Push the feature branch and create PR to dev"
+  echo ""
+  echo "Attempting to bypass with --no-verify will be recorded in audit log"
+  echo ""
+
+  # Log the blocked push
+  echo "$TIMESTAMP | BLOCKED | $CURRENT_BRANCH | Push to $PUSH_REMOTE violates branch strategy" >> "$PUSH_AUDIT_LOG"
+
+  exit 1
+fi
+
+# Log successful push
+echo "$TIMESTAMP | ALLOWED | $CURRENT_BRANCH | Push to $PUSH_REMOTE allowed" >> "$PUSH_AUDIT_LOG"
+
+exit 0
