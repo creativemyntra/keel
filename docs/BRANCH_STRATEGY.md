@@ -75,25 +75,88 @@ To make this workflow a **required status check** (which prevents merging if it 
 1. Go to **Settings → Branches → Branch protection rules**
 2. Click **Add rule**
 3. **Branch name pattern:** `dev` (or `qa`, `stage`, etc.)
-4. Under **Require status checks to pass before merging:**
+
+**4. Require pull request (prevents direct pushes):**
+   - ✅ Enable **Require a pull request before merging**
+   - ✅ Enable **Require approvals:** 1 (2 for prod only)
+   - ✅ Enable **Dismiss stale pull request approvals when new commits are pushed** (recommended)
+   - ✅ Enable **Require approval of the most recent reviewable push** (recommended)
+
+**5. Require status checks to pass before merging:**
    - ✅ Enable **Require branches to be up to date before merging**
    - ✅ Add required check: **Validate PR Source Branch** (from `branch-strategy-check.yml`)
-5. (Optional, for prod only) Under **Require reviews:**
-   - ✅ Enable **Require a pull request before merging**
-   - Set **Require number of approvals:** 2
-6. Click **Create**
 
-**Admin-only command (alternative, using GitHub CLI):**
+**6. Restrict who can push (optional, for extra security):**
+   - ✅ Enable **Restrict who can push to matching branches**
+   - Add only: repository admins and release managers
+
+**7. Additional security (recommended):**
+   - ✅ Enable **Require code reviews before merging** (1 for dev/qa/stage, 2 for prod)
+   - ✅ Enable **Require status checks to pass** (enforces branch-strategy-check and version checks)
+   - ✅ Enable **Enforce all the above rules for administrators**
+
+8. Click **Create**
+
+**Admin-only command (using GitHub CLI):**
 ```bash
+# For dev, qa, stage, preprod
 gh api -X PUT repos/creativemyntra/keel/branches/dev/protection \
+  -f required_pull_request_reviews='{"required_approving_review_count":1,"require_code_owner_reviews":false}' \
   -f required_status_checks='{"strict":true,"contexts":["Validate PR Source Branch"]}' \
   -f enforce_admins=true \
-  -f allow_deletions=false
+  -f allow_deletions=false \
+  -f allow_force_pushes=false \
+  -f require_branches_up_to_date=true
+
+# For prod (2 approvals + bypass restricted)
+gh api -X PUT repos/creativemyntra/keel/branches/prod/protection \
+  -f required_pull_request_reviews='{"required_approving_review_count":2,"require_code_owner_reviews":false}' \
+  -f required_status_checks='{"strict":true,"contexts":["Validate PR Source Branch"]}' \
+  -f enforce_admins=true \
+  -f allow_deletions=false \
+  -f allow_force_pushes=false \
+  -f require_branches_up_to_date=true
 ```
+
+### Branch Base Validation (Freshness Check)
+
+In addition to source-branch validation, the workflow also checks that feature branches are **based on the current origin/dev**. This is enforced server-side in CI, so stale branches cannot bypass it even with `git push --no-verify`.
+
+**How it works:**
+1. CI fetches the current `origin/dev` HEAD (always fresh, never stale)
+2. Compares the PR's head branch merge-base with current `origin/dev`
+3. If merge-base ≠ current `origin/dev` HEAD → branch is stale → BLOCKED
+
+**Example stale branch:**
+```bash
+# Developer clones repo (gets dev at commit abc123)
+git clone https://...
+git checkout -b feat/my-feature dev  # based on abc123
+
+# Meanwhile, other code merges to dev (now at def456)
+# Developer's branch is still at abc123 (STALE)
+
+# Developer pushes with --no-verify (skips local hooks)
+git push -f origin feat/my-feature --no-verify
+gh pr create --base dev --head feat/my-feature
+
+# CI runs check-branch-base-ci.cjs
+# Fetches current origin/dev (def456)
+# Checks merge-base of feat/my-feature with origin/dev
+# Finds merge-base = abc123, current = def456
+# ❌ BLOCKED: "Branch is based on old origin/dev"
+# Developer must rebase and force-push
+```
+
+**The anti-fake probe:**
+- Local hooks can be skipped with `--no-verify`
+- But CI checks **cannot** be skipped
+- If the only enforcement is local hooks, this probe fails
+- With server-side CI validation, the probe succeeds (branch still blocked)
 
 ### What Happens When Validation Fails
 
-If a PR violates the branch strategy:
+If a PR violates the branch strategy or base freshness:
 
 1. **GitHub PR:** The "Validate PR Source Branch" check shows ❌ FAILED
 2. **PR Comment:** A bot comment explains:
