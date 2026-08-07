@@ -1,0 +1,152 @@
+{
+  "_schema_version": "1.0",
+  "_description": "Unified control-mapping schema for evidence governance across CJIS, SOC2, HIPAA, NIBRS. Every collected evidence entry carries framework, control ID, policy version, timestamps, and source system.",
+  "_usage": "Each piece of compliance evidence references this schema. Evidence artifacts (prescan.json, compliance-control.json, audit logs) tag their results with control_id + framework + policy_version, enabling automatic expiry, auditor reconstruction, and cross-framework correlation.",
+
+  "evidence_entry": {
+    "type": "object",
+    "required": [
+      "framework",
+      "control_id",
+      "policy_version",
+      "collection_timestamp",
+      "source_system",
+      "content_hash",
+      "status"
+    ],
+    "properties": {
+      "framework": {
+        "type": "string",
+        "enum": ["CJIS", "SOC2", "HIPAA", "NIBRS"],
+        "description": "Compliance framework this evidence belongs to."
+      },
+      "control_id": {
+        "type": "string",
+        "description": "Control ID in framework namespace. Examples: CC6.1 (SOC2 TSC), 164.312(b) (HIPAA), 11.1.1 (CJIS), offense_code_37 (NIBRS)."
+      },
+      "control_description": {
+        "type": "string",
+        "description": "Human-readable control description for auditor reference."
+      },
+      "policy_version": {
+        "type": "string",
+        "description": "Policy/standard version. Examples: 5.9.5 (CJIS), TSC 2024 (SOC2), 45 CFR 164 (HIPAA), FBI UCR 2024 (NIBRS)."
+      },
+      "collection_timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 datetime when evidence was collected."
+      },
+      "expiry_timestamp": {
+        "type": ["string", "null"],
+        "format": "date-time",
+        "description": "ISO 8601 datetime when evidence expires (null = non-expiring)."
+      },
+      "source_system": {
+        "type": "string",
+        "enum": [
+          "keel-gate",
+          "keel-prescan",
+          "github-actions",
+          "cjis-scanner",
+          "soc2-scanner",
+          "hipaa-scanner",
+          "nibrs-scanner",
+          "manual-audit"
+        ],
+        "description": "System that collected this evidence."
+      },
+      "evidence_path": {
+        "type": "string",
+        "description": "Relative path to evidence artifact. Example: .keel/state/HART-287/prescan.json"
+      },
+      "content_hash": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$",
+        "description": "SHA256 hash of evidence content (tamper detection)."
+      },
+      "status": {
+        "type": "string",
+        "enum": ["COLLECTED", "VERIFIED", "EXPIRED", "REVOKED"],
+        "description": "Current status: COLLECTED=new, VERIFIED=validated, EXPIRED=past expiry, REVOKED=invalidated."
+      },
+      "verification_timestamp": {
+        "type": ["string", "null"],
+        "format": "date-time",
+        "description": "ISO 8601 when evidence was verified."
+      },
+      "notes": {
+        "type": "string",
+        "description": "Auditor-facing notes about evidence origin and validation."
+      },
+      "exception": {
+        "type": ["object", "null"],
+        "description": "If control has approved exception, document it here.",
+        "properties": {
+          "approved_by": {
+            "type": "string",
+            "description": "Name/identifier of approver."
+          },
+          "approval_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 date of approval."
+          },
+          "exception_expiry": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 date when exception expires (if time-limited)."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why exception was approved."
+          }
+        }
+      }
+    }
+  },
+
+  "control_status_summary": {
+    "type": "object",
+    "description": "Summary of control status for given framework and policy version.",
+    "properties": {
+      "framework": {
+        "type": "string",
+        "enum": ["CJIS", "SOC2", "HIPAA", "NIBRS"]
+      },
+      "policy_version": {
+        "type": "string"
+      },
+      "control_id": {
+        "type": "string"
+      },
+      "overall_status": {
+        "type": "string",
+        "enum": ["PASS", "FAIL", "NOT_PROVEN", "WAIVED", "NOT_APPLICABLE"],
+        "description": "Computed status based on evidence freshness and exceptions."
+      },
+      "evidence_count": {
+        "type": "integer",
+        "description": "Total evidence entries for this control."
+      },
+      "fresh_evidence_count": {
+        "type": "integer",
+        "description": "Evidence entries still within expiry window."
+      },
+      "stale_evidence_count": {
+        "type": "integer",
+        "description": "Evidence entries past expiry."
+      },
+      "last_evidence_timestamp": {
+        "type": ["string", "null"],
+        "format": "date-time",
+        "description": "Most recent evidence collection timestamp."
+      },
+      "last_verification_timestamp": {
+        "type": ["string", "null"],
+        "format": "date-time",
+        "description": "Most recent evidence verification timestamp."
+      }
+    }
+  }
+}
