@@ -97,7 +97,27 @@ function resolveApplicationProfileFile() {
   return candidates.find((c) => fs.existsSync(c)) || null;
 }
 
+// CJIS data element registry — governance-sourced identifier specifications.
+// Replaces engineer-guessed patterns with cited, approved registry entries.
+function resolveRegistryFile() {
+  const candidates = [
+    path.join(PLUGIN_ROOT, 'config', 'cjis-data-element-registry.json'),
+    path.join(KEEL_HOME, 'config', 'cjis-data-element-registry.json'),
+  ];
+  return candidates.find((c) => fs.existsSync(c)) || null;
+}
+
 function block(reason) { process.stderr.write(`CJIS GATE BLOCK: ${reason}\n`); process.exit(2); }
+
+// Validate pattern entry has governance source + approval (fail-closed if missing).
+// PENDING_CONFIRMATION patterns are allowed but marked for non-blocking treatment.
+function validatePatternGovernance(pattern, registryEntry) {
+  if (!registryEntry) return null; // not in registry, skip validation
+  if (!registryEntry.source) throw new Error(`pattern ${pattern.category} missing 'source' in registry (governance violation — fail-closed)`);
+  if (registryEntry.status === 'ACTIVE' && !registryEntry.approved_by) throw new Error(`pattern ${pattern.category} ACTIVE but missing 'approved_by' (fail-closed)`);
+  if (registryEntry.status === 'PENDING_CONFIRMATION') return 'PENDING'; // mark for warn-only treatment
+  return 'ACTIVE'; // validated, approved
+}
 
 // Check if a file path matches globs in cjis_data_paths (indicates CJI-handling scope).
 // Returns true if path is in scope, false if out-of-scope or not specified.
@@ -113,6 +133,34 @@ function isPathInCJISScope(filePath, profile) {
 function loadPatterns() {
   const parsed = JSON.parse(fs.readFileSync(PATTERNS_FILE, 'utf8')); // throws -> fail-closed
   if (!Array.isArray(parsed.patterns) || !parsed.patterns.length) throw new Error('no patterns');
+
+  // Load CJIS data element registry for governance validation (optional fallback to old system if missing).
+  let registry = null;
+  const registryPath = resolveRegistryFile();
+  if (registryPath) {
+    try {
+      registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+    } catch (e) { throw new Error(`registry parse error (fail-closed): ${e.message}`); }
+  }
+
+  // Validate patterns against registry — fail closed if source or approval missing.
+  // Mark PENDING_CONFIRMATION patterns for non-blocking treatment in classify().
+  const patternStatus = {}; // map of category -> ACTIVE|PENDING
+  if (registry) {
+    const allRegistryPatterns = [
+      ...(registry.general_pii_patterns || []),
+      ...(registry.cjis_specific_patterns || [])
+    ];
+    const registryByCategory = new Map(allRegistryPatterns.map((p) => [p.category, p]));
+
+    for (const p of parsed.patterns) {
+      const registryEntry = registryByCategory.get(p.category);
+      try {
+        const status = validatePatternGovernance(p, registryEntry);
+        if (status) patternStatus[p.category] = status;
+      } catch (e) { throw new Error(e.message); }
+    }
+  }
 
   // Merge project overlay before computing the blocked_categories warning — overlay may add
   // to blocked_categories and those gaps should appear in the same warning message.
@@ -159,6 +207,7 @@ function loadPatterns() {
   return {
     patterns: parsed.patterns.map((p) => ({ ...p, re: new RegExp(p.pattern, p.flags || 'gi') })),
     allowlist: (parsed.allowlist || []).map((a) => ({ ...a, re: new RegExp(a.pattern, 'gi') })),
+    patternStatus, // governance status map (category -> ACTIVE|PENDING)
   };
 }
 
@@ -252,9 +301,16 @@ async function main() {
     }
   } catch (e) { block(`injection patterns load error (fail-closed): ${e.message}`); }
 
-  const { patterns, allowlist } = loadPatterns();
+  const { patterns, allowlist, patternStatus } = loadPatterns();
   let { category, matched } = classify(text, patterns, allowlist);
   if (category === 'CLEAR') process.exit(0);
+
+  // Governance check: if any matched category is PENDING_CONFIRMATION, escalate to warn-only (non-blocking).
+  // This ensures unverified patterns don't enforce as if they were approved hard-blocks.
+  const pendingMatches = matched.filter((m) => patternStatus[m] === 'PENDING');
+  if (pendingMatches.length > 0) {
+    category = 'SUSPECT'; // demote to warn-only, even if originally hard
+  }
 
   // Load application profile for scope-aware escalation of soft matches.
   let profile = null;
@@ -265,9 +321,10 @@ async function main() {
   }
 
   // Scope-aware escalation: soft matches (SUSPECT) in CJI-data paths escalate to hard blocks.
-  // Hard matches (CJIS_VIOLATION) always block, regardless of path.
-  if (category === 'SUSPECT' && profile && hook.path && isPathInCJISScope(hook.path, profile)) {
-    category = 'CJIS_VIOLATION'; // escalate soft → hard due to in-scope path
+  // EXCEPTION: PENDING_CONFIRMATION patterns never escalate to hard-block (always warn-only).
+  // Hard matches (CJIS_VIOLATION) always block, unless they contain PENDING categories.
+  if (category === 'SUSPECT' && !pendingMatches.length && profile && hook.path && isPathInCJISScope(hook.path, profile)) {
+    category = 'CJIS_VIOLATION'; // escalate soft → hard due to in-scope path (only if no PENDING)
   }
 
   const contentHash = crypto.createHash('sha256').update(text).digest('hex');
@@ -279,9 +336,10 @@ async function main() {
   };
 
   if (category === 'SUSPECT') {
-    // soft match, out-of-scope path: log for audit trail, DO NOT block.
+    // soft match, out-of-scope path, or PENDING category: log for audit trail, DO NOT block.
+    const reason = pendingMatches.length > 0 ? `(unconfirmed patterns: ${pendingMatches.join(', ')})` : '(out-of-scope path)';
     appendIncident({ ...incident, blocked: false });
-    process.stderr.write(`CJIS GATE WARN (non-blocking): SUSPECT [${matched.join(', ')}] — incident ${incident.incident_id} logged for review\n`);
+    process.stderr.write(`CJIS GATE WARN (non-blocking): SUSPECT [${matched.join(', ')}] ${reason} — incident ${incident.incident_id} logged for review\n`);
     process.exit(0);
   }
 

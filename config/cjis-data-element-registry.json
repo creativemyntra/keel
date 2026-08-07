@@ -1,0 +1,214 @@
+{
+  "_schema": "1.0",
+  "_description": "CJIS data element registry — all identifier patterns require governance source citation, approval, and policy reference. No engineer-guessed patterns permitted in ACTIVE hard-block mode.",
+  "metadata": {
+    "last_updated": "2026-08-07",
+    "registry_maintainer": "Amar Singh (PM/Security Governance)",
+    "outstanding_requests": [
+      {
+        "identifier_category": "NCIC_ID",
+        "requested_from": "Forseti (ORI/NCIC format confirmation)",
+        "status": "PENDING",
+        "internal_ref": "decision-log: scope-aware-cjis-gate#pending-ncic"
+      },
+      {
+        "identifier_category": "LEID",
+        "requested_from": "Forseti (Law Enforcement Identifier format confirmation)",
+        "status": "PENDING",
+        "internal_ref": "decision-log: scope-aware-cjis-gate#pending-leid"
+      },
+      {
+        "identifier_category": "HART_CASE_ID",
+        "requested_from": "HART compliance team (case ID format confirmation)",
+        "status": "PENDING",
+        "internal_ref": "decision-log: scope-aware-cjis-gate#pending-hart-case"
+      },
+      {
+        "identifier_category": "HART_SUBJECT_ID",
+        "requested_from": "HART compliance team (subject ID format confirmation)",
+        "status": "PENDING",
+        "internal_ref": "decision-log: scope-aware-cjis-gate#pending-hart-subject"
+      }
+    ]
+  },
+  "general_pii_patterns": [
+    {
+      "category": "SSN",
+      "description": "US Social Security Number (XXX-XX-XXXX format)",
+      "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+      "flags": "g",
+      "severity": "hard",
+      "status": "ACTIVE",
+      "source": {
+        "type": "public",
+        "citation": "US Internal Revenue Service (IRS) — Form SSN-1, standard XXX-XX-XXXX format per 42 U.S.C. § 405(c)(2)(C)",
+        "url": "https://www.ssa.gov/history/ssn/index.html"
+      },
+      "approved_by": "Internal Security Team",
+      "approved_date": "2026-07-20",
+      "policy_control_ids": ["OWASP-PII-01", "CJIS-UNIV-001"],
+      "notes": "General US PII, not CJIS-specific. Soft matches do not block unless in declared CJI data paths (severity escalation model)."
+    },
+    {
+      "category": "DOB",
+      "description": "Date of birth (heuristic contextual match)",
+      "pattern": "\\b(dob|date of birth|born)\\b[^\\n]{0,20}\\b\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}\\b",
+      "flags": "gi",
+      "severity": "hard",
+      "status": "ACTIVE",
+      "source": {
+        "type": "public",
+        "citation": "Common PII category per NIST SP 800-122 (Guide to Protecting the Confidentiality of PII) — date of birth is explicitly listed as sensitive PII",
+        "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-122.pdf"
+      },
+      "approved_by": "Internal Security Team",
+      "approved_date": "2026-07-20",
+      "policy_control_ids": ["NIST-PII-01", "CJIS-UNIV-001"],
+      "notes": "Contextual pattern (looks for dob/born keywords). General PII, not CJIS-specific."
+    },
+    {
+      "category": "EMAIL",
+      "description": "Email address (standard format)",
+      "pattern": "\\b[\\w.+-]+@[\\w-]+\\.[a-zA-Z][\\w.-]*\\b",
+      "flags": "gi",
+      "severity": "soft",
+      "status": "ACTIVE",
+      "source": {
+        "type": "public",
+        "citation": "RFC 5322 (Internet Message Format) section 3.4.1 — email address standard format",
+        "url": "https://tools.ietf.org/html/rfc5322"
+      },
+      "approved_by": "Internal Security Team",
+      "approved_date": "2026-07-20",
+      "policy_control_ids": ["RFC-5322", "CJIS-UNIV-001"],
+      "notes": "Soft match (severity: soft). Does not block unless in declared CJI data paths. Allowlisted in out-of-scope paths (auth/*, billing/*, tests/**)."
+    },
+    {
+      "category": "PHONE",
+      "description": "US phone number (NANP format)",
+      "pattern": "\\b\\d{3}[-.\\s]?\\d{3}[-.\\s]?\\d{4}\\b",
+      "flags": "g",
+      "severity": "soft",
+      "status": "ACTIVE",
+      "source": {
+        "type": "public",
+        "citation": "North American Numbering Plan (NANP) — 10-digit format XXX-XXX-XXXX per FCC regulations",
+        "url": "https://www.fcc.gov/general/north-american-numbering-plan-nanp"
+      },
+      "approved_by": "Internal Security Team",
+      "approved_date": "2026-07-20",
+      "policy_control_ids": ["FCC-NANP-01", "CJIS-UNIV-001"],
+      "notes": "Soft match (severity: soft). Does not block unless in declared CJI data paths."
+    },
+    {
+      "category": "ADDRESS",
+      "description": "US postal address (street + directional)",
+      "pattern": "\\b\\d{1,5} [A-Za-z0-9. ]+ (St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Ln|Lane|Dr|Drive)\\b",
+      "flags": "gi",
+      "severity": "soft",
+      "status": "ACTIVE",
+      "source": {
+        "type": "public",
+        "citation": "USPS Postal Addressing Standards (Publication 28) — standard street abbreviations and format",
+        "url": "https://pe.usps.com/text/pub28/28apc.htm"
+      },
+      "approved_by": "Internal Security Team",
+      "approved_date": "2026-07-20",
+      "policy_control_ids": ["USPS-ADDR-01", "CJIS-UNIV-001"],
+      "notes": "Soft match (severity: soft). Does not block unless in declared CJI data paths."
+    },
+    {
+      "category": "NAME_NARRATIVE",
+      "description": "Name in law enforcement narrative (contextual match)",
+      "pattern": "\\b[A-Z][a-z]+ [A-Z][a-z]+ (was arrested|was booked|was detained|was charged)\\b",
+      "flags": "g",
+      "severity": "hard",
+      "status": "ACTIVE",
+      "source": {
+        "type": "public",
+        "citation": "Law enforcement incident report narrative conventions — standard terminology per FBI NIBRS (National Incident-Based Reporting System) UCR guidelines",
+        "url": "https://crime-data-explorer.fbi.gov/pages/about/nibrs"
+      },
+      "approved_by": "Internal Security Team",
+      "approved_date": "2026-07-20",
+      "policy_control_ids": ["FBI-NIBRS-01", "CJIS-UNIV-001"],
+      "notes": "Heuristic contextual pattern. Detects person names in law enforcement narratives."
+    }
+  ],
+  "cjis_specific_patterns": [
+    {
+      "category": "NCIC_ID",
+      "description": "National Crime Information Center identifier (ORI format — heuristic approximation)",
+      "pattern": "\\b[A-Z]{2}[A-Z0-9]{7}\\b",
+      "flags": "g",
+      "severity": "hard",
+      "status": "PENDING_CONFIRMATION",
+      "source": {
+        "type": "pending",
+        "requested_from": "Forseti (National Crime Information Center official documentation)",
+        "request_date": "2026-08-07",
+        "current_pattern_note": "Current pattern is HEURISTIC APPROXIMATION — XX + 7 alphanumeric. Not verified against official ORI format specification."
+      },
+      "approved_by": null,
+      "approved_date": null,
+      "policy_control_ids": ["NCIC-FORMAT-PENDING"],
+      "notes": "PENDING_CONFIRMATION. Gate treats as WARN-level (non-blocking) until approved source is provided. Once Forseti confirms official format, move to ACTIVE + hard-block."
+    },
+    {
+      "category": "LEID",
+      "description": "Law Enforcement Identifier (heuristic approximation)",
+      "pattern": "\\b(?:SID|FBN|ORI|LEID?)[-:#\\s]?[A-Z0-9]{5,12}\\b",
+      "flags": "gi",
+      "severity": "hard",
+      "status": "PENDING_CONFIRMATION",
+      "source": {
+        "type": "pending",
+        "requested_from": "Forseti (Law Enforcement Identifier official specification)",
+        "request_date": "2026-08-07",
+        "current_pattern_note": "Current pattern is HEURISTIC APPROXIMATION — looks for SID/FBN/ORI prefixes. Not verified against official LEID format."
+      },
+      "approved_by": null,
+      "approved_date": null,
+      "policy_control_ids": ["LEID-FORMAT-PENDING"],
+      "notes": "PENDING_CONFIRMATION. Gate treats as WARN-level (non-blocking) until approved source is provided."
+    },
+    {
+      "category": "HART_CASE_ID",
+      "description": "HART case identifier (placeholder — awaiting confirmation)",
+      "pattern": "\\bHC-\\d{4,8}\\b",
+      "flags": "gi",
+      "severity": "hard",
+      "status": "PENDING_CONFIRMATION",
+      "source": {
+        "type": "client-supplied",
+        "client": "HART compliance team",
+        "requested_from": "HART compliance team (case ID format specification)",
+        "request_date": "2026-08-07",
+        "current_pattern_note": "Current pattern is PLACEHOLDER (HC-NNNNNN to HC-NNNNNNNN). Not confirmed by HART compliance."
+      },
+      "approved_by": null,
+      "approved_date": null,
+      "policy_control_ids": ["HART-CASE-ID-PENDING"],
+      "notes": "PENDING_CONFIRMATION. Placeholder pattern HC-NNNNNN. Once HART compliance team confirms actual format, update pattern + move to ACTIVE."
+    },
+    {
+      "category": "HART_SUBJECT_ID",
+      "description": "HART subject identifier (placeholder — awaiting confirmation)",
+      "pattern": "\\bHS-\\d{4,8}\\b",
+      "flags": "gi",
+      "severity": "hard",
+      "status": "PENDING_CONFIRMATION",
+      "source": {
+        "type": "client-supplied",
+        "client": "HART compliance team",
+        "requested_from": "HART compliance team (subject ID format specification)",
+        "request_date": "2026-08-07",
+        "current_pattern_note": "Current pattern is PLACEHOLDER (HS-NNNNNN to HS-NNNNNNNN). Not confirmed by HART compliance."
+      },
+      "approved_by": null,
+      "approved_date": null,
+      "policy_control_ids": ["HART-SUBJECT-ID-PENDING"],
+      "notes": "PENDING_CONFIRMATION. Placeholder pattern HS-NNNNNN. Once HART compliance team confirms actual format, update pattern + move to ACTIVE."
+    }
+  ]
+}
