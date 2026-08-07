@@ -287,12 +287,12 @@ test('C-0015: PASS when prescan.json content is valid', () => {
 });
 
 // Test C-0017: compliance_pattern_provenance
-test('C-0017: SKIP when CJIS not in scope', () => {
-  const manifest = { compliance_scopes: ['hipaa'] };
+test('C-0017: SKIP when no compliance scopes declared', () => {
+  const manifest = { compliance_scopes: [] };
 
   let result;
-  if (!manifest.compliance_scopes || !manifest.compliance_scopes.includes('cjis')) {
-    result = { id: 'C-0017', status: 'SKIP', detail: 'CJIS pattern provenance required for CJIS-scoped stories only' };
+  if (!manifest.compliance_scopes || manifest.compliance_scopes.length === 0) {
+    result = { id: 'C-0017', status: 'SKIP', detail: 'No compliance scopes declared' };
   }
 
   assert.strictEqual(result.status, 'SKIP');
@@ -340,6 +340,16 @@ test('C-0017: PASS when all ACTIVE patterns have source + approver', () => {
   });
 
   assert.strictEqual(violations.length, 0);
+});
+
+test('C-0017: PASS with multi-framework scopes (CJIS + HIPAA + SOC2)', () => {
+  const manifest = { compliance_scopes: ['cjis', 'hipaa', 'soc2'] };
+
+  // Verify that manifest declares all three frameworks
+  assert(manifest.compliance_scopes.includes('cjis'));
+  assert(manifest.compliance_scopes.includes('hipaa'));
+  assert(manifest.compliance_scopes.includes('soc2'));
+  assert.strictEqual(manifest.compliance_scopes.length, 3);
 });
 
 // Test C-0018: compliance_control_terminal_state

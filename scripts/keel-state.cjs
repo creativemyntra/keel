@@ -1604,55 +1604,92 @@ const checkRegistry = {
   // Pattern: Check manifest.compliance_scopes, not phase number. Can be called early for fast-fail governance.
   // Defect lane: Applies if defect is CJIS-scoped (phases 1,5,6,8 all can run this check).
   compliance_pattern_provenance: (storyId, phase, manifest) => {
-    // Scope-based check (like C-0006, C-0010): applies to all phases if CJIS-scoped
-    if (!manifest.compliance_scopes || !manifest.compliance_scopes.includes('cjis')) {
-      return { id: 'C-0017', status: 'SKIP', detail: 'CJIS pattern provenance required for CJIS-scoped stories only' };
+    // Scope-based check (like C-0006, C-0010): applies to all phases for all declared compliance frameworks
+    if (!manifest.compliance_scopes || manifest.compliance_scopes.length === 0) {
+      return { id: 'C-0017', status: 'SKIP', detail: 'No compliance scopes declared' };
     }
 
-    const registryPath = path.join(process.cwd(), 'config', 'cjis-data-element-registry.json');
-    if (!fs.existsSync(registryPath)) {
+    // Map compliance frameworks to their registry files
+    const registryFileMap = {
+      'cjis': 'cjis-data-element-registry.json',
+      'hipaa': 'hipaa-data-element-registry.json',
+      'soc2': 'soc2-control-registry.json',
+      'nibrs': 'nibrs-pattern-registry.json'
+    };
+
+    // For each enabled compliance scope, validate its registry
+    const allViolations = [];
+    let totalActivePatterns = 0;
+
+    for (const scope of manifest.compliance_scopes) {
+      const registryFile = registryFileMap[scope];
+      if (!registryFile) {
+        // Unknown scope, skip it (allow for future framework additions)
+        continue;
+      }
+
+      const registryPath = path.join(process.cwd(), 'config', registryFile);
+      if (!fs.existsSync(registryPath)) {
+        return {
+          id: 'C-0017',
+          status: 'FAIL',
+          detail: `${scope} registry not found: ${registryPath}`
+        };
+      }
+
+      let registry;
+      try {
+        registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+      } catch (e) {
+        return {
+          id: 'C-0017',
+          status: 'FAIL',
+          detail: `${scope} registry parse error: ${e.message}`
+        };
+      }
+
+      // Collect all patterns from this framework's registry
+      const allPatterns = [
+        ...(registry.general_pii_patterns || []),
+        ...(registry.cjis_specific_patterns || []),
+        ...(registry.hipaa_specific_patterns || []),
+        ...(registry.soc2_controls || []),
+        ...(registry.nibrs_patterns || [])
+      ];
+
+      // Check for ACTIVE patterns without governance
+      const scopeViolations = allPatterns.filter((p) => {
+        if (p.status !== 'ACTIVE') return false; // PENDING/BLOCKED are exempt
+        return !p.source || !p.approved_by;
+      });
+
+      if (scopeViolations.length > 0) {
+        allViolations.push({
+          scope,
+          violations: scopeViolations
+        });
+      }
+
+      totalActivePatterns += allPatterns.filter((p) => p.status === 'ACTIVE').length;
+    }
+
+    // If any scope has ungoverned patterns, FAIL
+    if (allViolations.length > 0) {
+      const details = allViolations.map(({ scope, violations }) => {
+        const badPatterns = violations.map((p) => `${p.category} (missing: ${!p.source ? 'source' : ''} ${!p.approved_by ? 'approver' : ''})`).join('; ');
+        return `${scope}: ${violations.length} pattern(s) lack governance: ${badPatterns}`;
+      }).join(' | ');
       return {
         id: 'C-0017',
         status: 'FAIL',
-        detail: `registry not found: ${registryPath}`
-      };
-    }
-
-    let registry;
-    try {
-      registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
-    } catch (e) {
-      return {
-        id: 'C-0017',
-        status: 'FAIL',
-        detail: `registry parse error: ${e.message}`
-      };
-    }
-
-    const allPatterns = [
-      ...(registry.general_pii_patterns || []),
-      ...(registry.cjis_specific_patterns || [])
-    ];
-
-    const violations = allPatterns.filter((p) => {
-      if (p.status !== 'ACTIVE') return false; // PENDING/BLOCKED are exempt
-      return !p.source || !p.approved_by;
-    });
-
-    if (violations.length > 0) {
-      const badPatterns = violations.map((p) => `${p.category} (missing: ${!p.source ? 'source' : ''} ${!p.approved_by ? 'approver' : ''})`).join('; ');
-      return {
-        id: 'C-0017',
-        status: 'FAIL',
-        detail: `${violations.length} ACTIVE pattern(s) lack governance: ${badPatterns}. ` +
-          'All ACTIVE patterns must have source citation and approved_by name.'
+        detail: `All ACTIVE patterns must have source citation and approved_by name. ${details}`
       };
     }
 
     return {
       id: 'C-0017',
       status: 'PASS',
-      detail: `all ${allPatterns.filter((p) => p.status === 'ACTIVE').length} ACTIVE patterns have source + approver`
+      detail: `all ${totalActivePatterns} ACTIVE patterns across ${manifest.compliance_scopes.join(', ')} have source + approver`
     };
   },
 
