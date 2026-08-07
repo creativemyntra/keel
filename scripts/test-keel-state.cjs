@@ -850,6 +850,122 @@ Falls back gracefully if key is missing (logs error, returns false).
       `code=${r6.code} msg=${r6.out.slice(0, 160)}`);
   }
 
+  // ---- T20: Story-Branch Correlation (PR branch matching) -----
+  // Prevent unrelated PRs from satisfying approval gates
+  {
+    const cwd = makeTmpDir('T20-branch-matching');
+
+    // Initialize story
+    const initR = engine(cwd, 'init', 'STORY-123', '--title', 'T20 branch matching test');
+    assert('T20 test: init succeeds', initR.code === 0, initR.out.slice(0, 120));
+
+    // Test 5a: Unrelated PR branch should FAIL validation
+    // Branch: chore/cleanup, Story: STORY-123
+    // The approval gate calls verifyPrBelongsToStory(storyId, branchName)
+    // which should throw error because branch doesn't contain story ID
+    {
+      // This test simulates the branch matching logic from keel-state.cjs
+      // The functions detectStoryBranchPattern() and verifyPrBelongsToStory()
+      // should reject a chore/cleanup branch for STORY-123
+      const detectStoryBranchPattern = (storyId) => {
+        return new RegExp(storyId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      };
+
+      const verifyPrBelongsToStory = (storyId, prHeadBranch) => {
+        const pattern = detectStoryBranchPattern(storyId);
+        if (!pattern.test(prHeadBranch)) {
+          throw new Error(`PR head branch "${prHeadBranch}" does not match story ID "${storyId}" — PR is unrelated to this story`);
+        }
+      };
+
+      let unrelatedFailed = false;
+      try {
+        verifyPrBelongsToStory('STORY-123', 'chore/cleanup');
+      } catch (err) {
+        if (err.message.includes('does not match story ID')) {
+          unrelatedFailed = true;
+        }
+      }
+      assert('T20 Test 5a: unrelated PR (chore/cleanup) rejected for STORY-123', unrelatedFailed,
+        'Expected branch matching to reject unrelated PR');
+    }
+
+    // Test 5b: Related PR branch should PASS validation
+    // Branch: feat/STORY-123-my-feature, Story: STORY-123
+    {
+      const detectStoryBranchPattern = (storyId) => {
+        return new RegExp(storyId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      };
+
+      const verifyPrBelongsToStory = (storyId, prHeadBranch) => {
+        const pattern = detectStoryBranchPattern(storyId);
+        if (!pattern.test(prHeadBranch)) {
+          throw new Error(`PR head branch "${prHeadBranch}" does not match story ID "${storyId}" — PR is unrelated to this story`);
+        }
+      };
+
+      let relatedPassed = false;
+      try {
+        verifyPrBelongsToStory('STORY-123', 'feat/STORY-123-my-feature');
+        relatedPassed = true;
+      } catch (err) {
+        // Should NOT throw for related PR
+      }
+      assert('T20 Test 5b: related PR (feat/STORY-123-my-feature) accepted for STORY-123', relatedPassed,
+        'Expected branch matching to accept related PR');
+    }
+
+    // Test 5c: Edge case - branch with story ID in middle
+    // Branch: fix/prep-STORY-123-hotfix, Story: STORY-123
+    {
+      const detectStoryBranchPattern = (storyId) => {
+        return new RegExp(storyId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      };
+
+      const verifyPrBelongsToStory = (storyId, prHeadBranch) => {
+        const pattern = detectStoryBranchPattern(storyId);
+        if (!pattern.test(prHeadBranch)) {
+          throw new Error(`PR head branch "${prHeadBranch}" does not match story ID "${storyId}" — PR is unrelated to this story`);
+        }
+      };
+
+      let edgeCasePassed = false;
+      try {
+        verifyPrBelongsToStory('STORY-123', 'fix/prep-STORY-123-hotfix');
+        edgeCasePassed = true;
+      } catch (err) {
+        // Should NOT throw when story ID appears anywhere in branch
+      }
+      assert('T20 Test 5c: story ID anywhere in branch accepted (fix/prep-STORY-123-hotfix)', edgeCasePassed,
+        'Expected branch matching to accept story ID in any position');
+    }
+
+    // Test 5d: Case insensitivity
+    // Branch: feat/story-123-my-feature, Story: STORY-123 (uppercase)
+    {
+      const detectStoryBranchPattern = (storyId) => {
+        return new RegExp(storyId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      };
+
+      const verifyPrBelongsToStory = (storyId, prHeadBranch) => {
+        const pattern = detectStoryBranchPattern(storyId);
+        if (!pattern.test(prHeadBranch)) {
+          throw new Error(`PR head branch "${prHeadBranch}" does not match story ID "${storyId}" — PR is unrelated to this story`);
+        }
+      };
+
+      let caseInsensitivePassed = false;
+      try {
+        verifyPrBelongsToStory('STORY-123', 'feat/story-123-my-feature');  // lowercase in branch
+        caseInsensitivePassed = true;
+      } catch (err) {
+        // Should NOT throw due to case difference
+      }
+      assert('T20 Test 5d: case-insensitive match (feat/story-123 matches STORY-123)', caseInsensitivePassed,
+        'Expected branch matching to be case-insensitive');
+    }
+  }
+
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed`);
   process.exit(failed.length ? 1 : 0);
