@@ -1,0 +1,6 @@
+﻿{
+    "path":  "src/case-records/export.ts",
+    "tool_name":  null,
+    "prompt":  "const caseData = { caseId: \u0027CASE-001\u0027, officer_email: \u0027john@dept.gov\u0027 };",
+    "stage":  "prompt"
+}

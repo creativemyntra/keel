@@ -1,0 +1,6 @@
+﻿{
+    "path":  "src/auth/login.ts",
+    "tool_name":  null,
+    "prompt":  "const loginForm = { email: \u0027test@example.com\u0027, password: \u0027secret\u0027 };",
+    "stage":  "prompt"
+}

@@ -1,0 +1,10 @@
+{
+  "scan_timestamp": "2026-08-04T12:00:00Z",
+  "findings": [
+    {
+      "finding_id": "CJIS-001",
+      "severity": "CRITICAL"
+    }
+  ],
+  "control_mappings": []
+}

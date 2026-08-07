@@ -1,0 +1,8 @@
+{
+  "story_id": "TEST-C0014-FAIL",
+  "scope": "feature",
+  "compliance_scopes": [
+    "cjis"
+  ],
+  "current_phase": 1
+}

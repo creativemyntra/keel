@@ -1,0 +1,24 @@
+{
+  "scan_timestamp": "2026-08-07T12:00:00Z",
+  "scan_system": "code-scanner",
+  "findings": [
+    {
+      "finding_id": "CJIS-001",
+      "severity": "CRITICAL",
+      "description": "SSN pattern detected",
+      "file": "src/case-records/export.ts",
+      "line": 42
+    }
+  ],
+  "control_mappings": [
+    {
+      "finding_id": "CJIS-001",
+      "framework": "CJIS",
+      "control_id": "12.1",
+      "control_description": "Data Classification",
+      "evidence": "Finding CJIS-001 proves this control is being tested",
+      "policy_version": "5.9.5",
+      "expiry_days": 365
+    }
+  ]
+}

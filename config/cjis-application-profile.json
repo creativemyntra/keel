@@ -1,0 +1,15 @@
+{
+  "cjis_scope": true,
+  "cjis_data_paths": [
+    "src/case-records/**",
+    "src/warrant-service/**",
+    "src/ncic-integration/**"
+  ],
+  "out_of_scope_paths": [
+    "src/auth/**",
+    "src/billing/**",
+    "tests/**",
+    "**/*.test.*",
+    "**/fixtures/**"
+  ]
+}

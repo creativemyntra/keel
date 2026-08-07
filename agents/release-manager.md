@@ -35,6 +35,8 @@ Both must return zero lines. Any output = out-of-order promotion = NO-GO.
 
 ## Release Gate Checklist
 
+- [ ] **Compliance controls terminal** — `node scripts/keel-state.cjs gate <story> --phase 10 --verdict PASS` (C-0018) — all controls in PASS/WAIVED state
+- [ ] **Artifact digest captured** — Release decision bound to git commit SHA (prevent post-approval code changes from landing)
 - [ ] **Version audit PASS** — `node scripts/keel-version-audit.cjs` exits 0 (G-6) — run first, block on any failure
 - [ ] **Branch order clean** — dev→master→prod has no out-of-order non-merge commits (G-11)
 - [ ] QA report: all tests green, coverage >= 80%
@@ -73,6 +75,104 @@ Both must return zero lines. Any output = out-of-order promotion = NO-GO.
 
 **VERDICT: GO / NO-GO / PENDING**
 ```
+
+## Compliance Control Gate (C-0018 at Phase 10)
+
+### What is C-0018?
+
+C-0018 (Compliance Control Terminal State) blocks release if any compliance control is in FAIL or NOT_PROVEN state without an approved, unexpired exception.
+
+**When it runs:** Phase 10 (release-manager)  
+**What it checks:** `.keel/state/<story>/compliance-control.json`  
+**Valid terminal states:** PASS, WAIVED (with exception), NOT_APPLICABLE  
+**Blocking states:** FAIL, NOT_PROVEN (without valid exception)
+
+### How to Invoke (Phase 10 Gate)
+
+When the release-manager agent runs the phase 10 gate:
+
+```bash
+keel gate <story-id> --phase 10 --verdict PASS
+```
+
+The gate will:
+1. Run C-0018 check
+2. Read compliance-control.json
+3. Verify all controls are in terminal state
+4. Block gate if any control is FAIL without exception
+5. Allow advancement only when all controls resolved
+
+### Artifact Digest Binding (Prevent Post-Approval Code Changes)
+
+**Problem:** Release decision made against commit A, but artifact B deployed — compliance approval is invalid.
+
+**Solution:** Bind compliance decision to commit SHA.
+
+**How it works:**
+
+1. **When creating release decision:**
+   - Capture current commit SHA: `git rev-parse HEAD`
+   - Record in manifest: `compliance_decision.approved_commit_sha`
+   - Record timestamp: `compliance_decision.approved_at`
+
+2. **When deploying (post-release):**
+   - Verify deployed artifact matches approved commit
+   - If deployed code is different: DEPLOYMENT BLOCKED
+   - Error: "Deployed artifact does not match approved compliance decision"
+
+3. **In release log:**
+   ```
+   ## Compliance Decision Binding
+   - Approved commit SHA: abc1234def5678
+   - Approved at: 2026-08-07T14:30:00Z
+   - All controls: PASS
+   - Deploying: xyz9999 (different commit) → ❌ BLOCKED
+   ```
+
+**Implementation status:** The gate check (C-0018) works. Artifact digest binding is a future enhancement to record and enforce the binding.
+
+### If Compliance Check Fails at Phase 10
+
+**Scenario:** Compliance control is FAIL, no valid exception
+
+**Gate command:**
+```bash
+keel gate HART-287 --phase 10 --verdict PASS
+```
+
+**Result:** 
+```
+FAIL: 1 compliance control(s) without approved exception: CJIS-1.1 [FAIL]: Data encryption. Approve exception or resolve control before proceeding.
+```
+
+**Exit code:** 1 (FAIL verdict rejected)  
+**Story advancement:** BLOCKED (cannot proceed to released state)  
+**Resolution:** (a) Fix the control, OR (b) Approve an exception with expiry date
+
+### If GitHub Actions is Unavailable at Release
+
+**Scenario:** Release manager tries to release while GitHub Actions service is down
+
+**What happens:**
+1. Release manager runs phase 10 gate locally
+2. Local Keel gate runs C-0018 check
+3. Local check evaluates compliance-control.json
+4. Local gate result: PASS or FAIL (deterministic)
+5. Release decision is made locally
+
+**Then:**
+6. Release manager creates PR to prod
+7. GitHub Actions workflow CANNOT run (service down)
+8. PR shows: "compliance-check pending" (indefinite)
+9. Merge to prod is BLOCKED by branch protection
+
+**Result:** ✅ SAFE
+- Local gate decision is deterministic (not blocked by outage)
+- But merge to prod is still blocked by Layer 1 (GitHub branch protection)
+- Once Actions is restored, compliance-check runs and either passes or fails
+- Merge allowed only after passing check
+
+**Key point:** Release manager can make a local compliance decision, but deployment to prod is still gated by GitHub's required status check.
 
 ## Rules
 - Read `.keel/memory/conventions.md` and `.keel/GUARDRAILS.md` before starting

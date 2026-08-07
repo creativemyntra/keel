@@ -1,33 +1,64 @@
+﻿## [.18.3] - 2026-08-07 - CJIS GOVERNANCE: ENGINEER-GUESSED PATTERNS REPLACED WITH SOURCED REGISTRY
+
+### Features
+- **CJIS Data Element Registry** — \config/cjis-data-element-registry.json\ centralizes all identifier specifications with mandatory governance source citations (public docs, client-supplied, or explicit PENDING_CONFIRMATION status)
+
+### Fixes
+- **Engineer-Guessed Patterns Eliminated** — NCIC_ID, LEID, HART_CASE_ID, HART_SUBJECT_ID removed from hard-block enforcement. Moved to PENDING_CONFIRMATION status (warn-only, logged, non-blocking) pending governance approval from Forseti and HART compliance team.
+- **Governance Enforcement** — Gate fails closed if pattern entries missing source or approved_by. ACTIVE patterns only enforce if governance metadata complete and valid.
+
+### Changed
+- **General PII Patterns Citeable** — SSN, EMAIL, PHONE, ADDRESS, DOB, NAME_NARRATIVE now include public source citations (RFC, NIST, FCC, USPS, FBI NIBRS) in registry
+- **Unverified Patterns Non-Blocking** — PENDING_CONFIRMATION patterns treated as WARN-level (exit 0) instead of hard-block, ensuring visibility without false-positive enforcement
+
+### Process
+- Outstanding requests filed with Forseti (NCIC_ID, LEID format confirmation) and HART compliance team (case/subject ID formats)
+- Registry documented in decision-log.md with governance request status and next steps
+
+---
+## [.18.2] - 2026-08-07 - CJIS GATE FIX: SCOPE-AWARE SEVERITY ESCALATION
+
+### Features
+- **CJIS Application Profile** — \config/cjis-application-profile.json\ defines scope globs for context-aware severity escalation
+
+### Fixes
+- **CJIS Gate False-Positives** — Soft matches (EMAIL, PHONE) warn-only in out-of-scope paths, escalate to hard-block in cjis_data_paths. Hard matches unchanged (always block). Resolves audit fatigue from benign code.
+- **Module Type Mismatch** — Renamed \lib/classify-severity.js\ to \.cjs\ for CommonJS compatibility
+
+### Testing
+- **Regression Test Harness** — \	ests/test-cjis-gate.cjs\ with 4 passing scenarios (all exit codes verified)
+
+---
 ## [.18.1] - 2026-08-04 - FIX 9-15 RELEASE: APPEND-ONLY AUDIT LOGS, REAL-DATA TELEMETRY, MODEL TIERING ENFORCEMENT
 
 ### Features
-- **Append-Only Audit Logs** — Server-side enforcement in pre-push and CI; blocks modified/deleted lines; verifies hash chain integrity
-- **Real-Data Telemetry System** — Tracks real latency (duration_ms) and measured tokens (never estimated); import-usage merges measured token data from sessions
-- **Model Tiering Conformance** — headless-orchestrator.cjs CI verification fails on mistiered agents; feature + defect express-lane checked
+- **Append-Only Audit Logs** â€” Server-side enforcement in pre-push and CI; blocks modified/deleted lines; verifies hash chain integrity
+- **Real-Data Telemetry System** â€” Tracks real latency (duration_ms) and measured tokens (never estimated); import-usage merges measured token data from sessions
+- **Model Tiering Conformance** â€” headless-orchestrator.cjs CI verification fails on mistiered agents; feature + defect express-lane checked
 
 ### Fixes
-- **js-yaml Dependency** — Added to production dependencies (was missing, caused production crashes)
-- **Package Lockfile** — Now tracked in git for reproducible installs; CI enforces via npm ci
-- **Token Ledger Clarity** — Removed ~90% cache assertions; documented as estimates, not measured
-- **Compliance Headline** — Clarified "Evidence Generation Toward Standards (Does Not Confer Certification)" to prevent misreading
+- **js-yaml Dependency** â€” Added to production dependencies (was missing, caused production crashes)
+- **Package Lockfile** â€” Now tracked in git for reproducible installs; CI enforces via npm ci
+- **Token Ledger Clarity** â€” Removed ~90% cache assertions; documented as estimates, not measured
+- **Compliance Headline** â€” Clarified "Evidence Generation Toward Standards (Does Not Confer Certification)" to prevent misreading
 
 ### Documentation
-- **Cache Savings Honest Mechanism** — Prompt caching reduces cached-INPUT cost only; output tokens never cached; actual savings measured in telemetry
-- **Audit Log Retention Policy** — Git as working copy; archive outside git for CJIS >=1yr compliance
-- **Telemetry Anti-Fabrication** — Duration_ms from real timestamps, tokens from measured import-usage only
+- **Cache Savings Honest Mechanism** â€” Prompt caching reduces cached-INPUT cost only; output tokens never cached; actual savings measured in telemetry
+- **Audit Log Retention Policy** â€” Git as working copy; archive outside git for CJIS >=1yr compliance
+- **Telemetry Anti-Fabrication** â€” Duration_ms from real timestamps, tokens from measured import-usage only
 
 ---
 
 ## [.18.1] - 2026-08-03 - P-16 RELEASE: VISUAL REGRESSION TESTING FRAMEWORK
 
 ### Features
-- **E2E Testing Framework** — Complete Playwright visual regression testing setup with developer fixtures
-- **Developer Guides** — Comprehensive DEVELOPER-SETUP, E2E-VISUAL-REGRESSION, and ROADMAP documentation
-- **Documentation Consolidation** — INDEX.md navigation hub, unified docs/guides directory structure
-- **Governance** — Branch strategy config with pre-push hook enforcement (G-13)
+- **E2E Testing Framework** â€” Complete Playwright visual regression testing setup with developer fixtures
+- **Developer Guides** â€” Comprehensive DEVELOPER-SETUP, E2E-VISUAL-REGRESSION, and ROADMAP documentation
+- **Documentation Consolidation** â€” INDEX.md navigation hub, unified docs/guides directory structure
+- **Governance** â€” Branch strategy config with pre-push hook enforcement (G-13)
 
 ### Fixes
-- **CJIS Gate** — Added missing PHONE pattern to config/cjis-patterns.json
+- **CJIS Gate** â€” Added missing PHONE pattern to config/cjis-patterns.json
 
 ### Version History
 - Previous: 3.16.9 (2026-07-29)
@@ -40,112 +71,112 @@ All notable changes to Keel AI-SDLC Framework are documented here.
 ## [3.19.0] - 2026-07-29 - AUDIT RELEASE: FULL-SPECTRUM HARDENING (PART A + PART B, 31 FINDINGS RESOLVED)
 
 ### Security
-- **KEEL-AUDIT-004** (`scripts/keel-init.cjs`) — SessionStart now stages `injection-patterns.json` and `cjis-project-patterns.json` to `~/.keel/config/` on every session, closing the injection-guard bypass on the `~/.keel/bin/` invocation path.
-- **KEEL-AUDIT-006** (`config/injection-patterns.json`) — Pattern 5 flags `g` → `gi`; `### new instruction:` lowercase bypass closed.
-- **KEEL-AUDIT-026** (`action.yml`) — All `${{ inputs.* }}` interpolations in run blocks moved to env vars; shell metacharacter injection via workflow inputs closed.
+- **KEEL-AUDIT-004** (`scripts/keel-init.cjs`) â€” SessionStart now stages `injection-patterns.json` and `cjis-project-patterns.json` to `~/.keel/config/` on every session, closing the injection-guard bypass on the `~/.keel/bin/` invocation path.
+- **KEEL-AUDIT-006** (`config/injection-patterns.json`) â€” Pattern 5 flags `g` â†’ `gi`; `### new instruction:` lowercase bypass closed.
+- **KEEL-AUDIT-026** (`action.yml`) â€” All `${{ inputs.* }}` interpolations in run blocks moved to env vars; shell metacharacter injection via workflow inputs closed.
 
 ### Fixed
-- **KEEL-AUDIT-001..003** (`scripts/test-classify-gate.cjs`, `scripts/test-keel-watch.cjs`, `scripts/test-keel-state.cjs`) — Gate, watch, and phase-mode tests added (were zero); 50/50 now passing.
-- **KEEL-AUDIT-024** (`action.yml`) — `collect-outputs` step now reflects actual keel.js exit: writes `result=failed / confidence=low / lane2-ready=false` on non-zero exit instead of unconditionally hardcoding success.
-- **KEEL-AUDIT-025** (`action.yml`) — `claude-api-key` input wired to `ANTHROPIC_API_KEY` env var in every phase step (was declared but silently discarded).
-- **KEEL-AUDIT-027** (`agent-output-schema.json`) — `decisions` added to `required[]` (was in properties but not enforced).
-- **KEEL-AUDIT-M001** (`package.json`) — `engines.node` `>=16.0.0` → `>=18.0.0`; matches documented requirement for Playwright E2E.
-- **KEEL-AUDIT-M002** (`package.json`) — `files` array now includes `docs/`, `INSTALL.md`, `QUICK-START-CLAUDE-CODE.md`, `ALL-AGENTS-COMPLETE-GUIDE.md`, `TECHNICAL-SPECIFICATIONS.md`, `CHANGELOG.md`; README relative links resolve after npm install.
-- **KEEL-AUDIT-M004** (`CHANGELOG.md`) — Dead link `docs/defects/KEEL-101-rca.md` corrected to `dev-history/docs/defects/KEEL-101-rca.md`.
+- **KEEL-AUDIT-001..003** (`scripts/test-classify-gate.cjs`, `scripts/test-keel-watch.cjs`, `scripts/test-keel-state.cjs`) â€” Gate, watch, and phase-mode tests added (were zero); 50/50 now passing.
+- **KEEL-AUDIT-024** (`action.yml`) â€” `collect-outputs` step now reflects actual keel.js exit: writes `result=failed / confidence=low / lane2-ready=false` on non-zero exit instead of unconditionally hardcoding success.
+- **KEEL-AUDIT-025** (`action.yml`) â€” `claude-api-key` input wired to `ANTHROPIC_API_KEY` env var in every phase step (was declared but silently discarded).
+- **KEEL-AUDIT-027** (`agent-output-schema.json`) â€” `decisions` added to `required[]` (was in properties but not enforced).
+- **KEEL-AUDIT-M001** (`package.json`) â€” `engines.node` `>=16.0.0` â†’ `>=18.0.0`; matches documented requirement for Playwright E2E.
+- **KEEL-AUDIT-M002** (`package.json`) â€” `files` array now includes `docs/`, `INSTALL.md`, `QUICK-START-CLAUDE-CODE.md`, `ALL-AGENTS-COMPLETE-GUIDE.md`, `TECHNICAL-SPECIFICATIONS.md`, `CHANGELOG.md`; README relative links resolve after npm install.
+- **KEEL-AUDIT-M004** (`CHANGELOG.md`) â€” Dead link `docs/defects/KEEL-101-rca.md` corrected to `dev-history/docs/defects/KEEL-101-rca.md`.
 
 ### Documentation
-- **KEEL-AUDIT-005..021** (multiple doc files) — Compliance checklists replaced with evidence trail table; phase counts corrected (12→10); skill counts corrected (11→9); Node version clarified; coverage target corrected; G-15 duplicate removed; command surface gaps filled (describe, review-code, release-check).
-- **TECHNICAL-SPECIFICATIONS.md** — Version history table updated; 3.16.9 row added.
+- **KEEL-AUDIT-005..021** (multiple doc files) â€” Compliance checklists replaced with evidence trail table; phase counts corrected (12â†’10); skill counts corrected (11â†’9); Node version clarified; coverage target corrected; G-15 duplicate removed; command surface gaps filled (describe, review-code, release-check).
+- **TECHNICAL-SPECIFICATIONS.md** â€” Version history table updated; 3.16.9 row added.
 
 ---
 ## [3.16.8] - 2026-07-29 - AI-SDLC FRAMEWORK HARDENING: CJIS INDEPENDENCE, INJECTION GUARD, KEEL-R14 TRACKING, LESSONS GOVERNANCE
 
 ### Security
-- **CRIT-4** (`config/cjis-patterns.json`, `config/cjis-project-patterns.json`, `scripts/keel-classify-gate.cjs`) — Gate made project-independent: NCIC_ID (ORI 9-char format) and LEID (SID/FBN/ORI keyword patterns) added as universal hard-block patterns. HART-specific identifiers moved to project overlay with placeholder patterns. Overlay merge removes covered categories from the blocked_categories warning; fail-closed on overlay parse error.
-- **CRIT-1** (`config/injection-patterns.json`, `scripts/keel-classify-gate.cjs`) — Prompt injection guard added (OWASP LLM01): 6 regex patterns covering ignore/override directives, act-as roleplay, new-instructions headers, `<system>` tags, `###OVERRIDE` headers, `[system]` brackets. Always-blocking at ALL stages including PostToolUse — exit-2 overrides any injected instruction the model may have already seen.
-- **CRIT-3** (`scripts/keel-state.cjs`) — KEEL-R14 zombie state prevention: `phase_modes` manifest field + `phase-mode` engine command (`set`/`get`) tracks author/draft mode completion. Gate PASS auto-clears the marker. Orchestrator and agents updated to record and read markers for safe context-compaction recovery.
-- **CRIT-2** (`agents/security-engineer.md`, `agents/handshake-agent.md`) — Defect-scope lessons.md writeback enforced: security-engineer (last content phase for defects) now has explicit obligation to write a lessons entry when RCA is present; phase-8 handshake gate verifies the entry exists and runs memory-check.
+- **CRIT-4** (`config/cjis-patterns.json`, `config/cjis-project-patterns.json`, `scripts/keel-classify-gate.cjs`) â€” Gate made project-independent: NCIC_ID (ORI 9-char format) and LEID (SID/FBN/ORI keyword patterns) added as universal hard-block patterns. HART-specific identifiers moved to project overlay with placeholder patterns. Overlay merge removes covered categories from the blocked_categories warning; fail-closed on overlay parse error.
+- **CRIT-1** (`config/injection-patterns.json`, `scripts/keel-classify-gate.cjs`) â€” Prompt injection guard added (OWASP LLM01): 6 regex patterns covering ignore/override directives, act-as roleplay, new-instructions headers, `<system>` tags, `###OVERRIDE` headers, `[system]` brackets. Always-blocking at ALL stages including PostToolUse â€” exit-2 overrides any injected instruction the model may have already seen.
+- **CRIT-3** (`scripts/keel-state.cjs`) â€” KEEL-R14 zombie state prevention: `phase_modes` manifest field + `phase-mode` engine command (`set`/`get`) tracks author/draft mode completion. Gate PASS auto-clears the marker. Orchestrator and agents updated to record and read markers for safe context-compaction recovery.
+- **CRIT-2** (`agents/security-engineer.md`, `agents/handshake-agent.md`) â€” Defect-scope lessons.md writeback enforced: security-engineer (last content phase for defects) now has explicit obligation to write a lessons entry when RCA is present; phase-8 handshake gate verifies the entry exists and runs memory-check.
 
 ### Fixed
-- **W-2** (`scripts/keel-watch.cjs`) — Coverage drop detection repaired: baseline.coverage was read as a scalar but new preflight format writes a nested object (`{ statements: { pct: N } }`). Added `baselineCoveragePct()` helper normalizing both formats; green-run writes now emit the new nested format.
-- **HIGH-1** (`agents/orchestrator.md`) — Phase-1 self-gate compensating controls documented: jira-entry mode requires verbatim AC match against the Jira ticket; full-pipeline mode requires explicit human approval before phase 2.
-- **HIGH-2** (`scripts/keel-state.cjs`) — `resume --phase N` now rejects if no phase N-1 output file exists in the story state directory.
-- **HIGH-3/LOW-1** (`.keel/GUARDRAILS.md`, `agents/release-manager.md`) — G-11 code block opening fixed (backtick+backspace+ash corruption → ```bash); remote names corrected (`origin/` → `marketplace/`).
-- **HIGH-4** (`agents/handshake-agent.md`) — Defect scope-creep detection: new endpoints, DB columns, non-test dependencies, or UI flows beyond the RCA require human acknowledgment before PASS.
-- **HIGH-5** (`commands/parallel.md`) — Halt escalation: when `describe` returns `halted: true` for a worktree story, polling stops and halt surfaces to human immediately.
-- **MED-2** (`agents/handshake-agent.md`) — Coverage waiver format made explicit: must include name, date, and verbatim human words.
-- **MED-3** (`agents/handshake-agent.md`, `agents/e2e-engineer.md`) — Screenshots must use story-scoped paths; handshake checks mtime > story started_at to reject stale evidence.
-- **MED-4** (`commands/setup.md`) — Secrets never echoed: explicit rule added that any received secret is acknowledged only, never printed.
-- **MED-5** (`agents/e2e-engineer.md`) — Execute-mode verifies author-mode spec files exist before running tests.
-- **LOW-3** (`scripts/test-halt-message-paths.cjs`, `scripts/keel-state.cjs`) — KEEL-101 AC-2: Slack halt text now hardcodes installed path; test updated to verify invariant suffix.
+- **W-2** (`scripts/keel-watch.cjs`) â€” Coverage drop detection repaired: baseline.coverage was read as a scalar but new preflight format writes a nested object (`{ statements: { pct: N } }`). Added `baselineCoveragePct()` helper normalizing both formats; green-run writes now emit the new nested format.
+- **HIGH-1** (`agents/orchestrator.md`) â€” Phase-1 self-gate compensating controls documented: jira-entry mode requires verbatim AC match against the Jira ticket; full-pipeline mode requires explicit human approval before phase 2.
+- **HIGH-2** (`scripts/keel-state.cjs`) â€” `resume --phase N` now rejects if no phase N-1 output file exists in the story state directory.
+- **HIGH-3/LOW-1** (`.keel/GUARDRAILS.md`, `agents/release-manager.md`) â€” G-11 code block opening fixed (backtick+backspace+ash corruption â†’ ```bash); remote names corrected (`origin/` â†’ `marketplace/`).
+- **HIGH-4** (`agents/handshake-agent.md`) â€” Defect scope-creep detection: new endpoints, DB columns, non-test dependencies, or UI flows beyond the RCA require human acknowledgment before PASS.
+- **HIGH-5** (`commands/parallel.md`) â€” Halt escalation: when `describe` returns `halted: true` for a worktree story, polling stops and halt surfaces to human immediately.
+- **MED-2** (`agents/handshake-agent.md`) â€” Coverage waiver format made explicit: must include name, date, and verbatim human words.
+- **MED-3** (`agents/handshake-agent.md`, `agents/e2e-engineer.md`) â€” Screenshots must use story-scoped paths; handshake checks mtime > story started_at to reject stale evidence.
+- **MED-4** (`commands/setup.md`) â€” Secrets never echoed: explicit rule added that any received secret is acknowledged only, never printed.
+- **MED-5** (`agents/e2e-engineer.md`) â€” Execute-mode verifies author-mode spec files exist before running tests.
+- **LOW-3** (`scripts/test-halt-message-paths.cjs`, `scripts/keel-state.cjs`) â€” KEEL-101 AC-2: Slack halt text now hardcodes installed path; test updated to verify invariant suffix.
 
 ### Documentation
-- **MED-1/LOW-2** (`.keel/GUARDRAILS.md`) — G-3 cross-story isolation and output caps documented as known mechanical limitations in new "Known Limitations" section.
+- **MED-1/LOW-2** (`.keel/GUARDRAILS.md`) â€” G-3 cross-story isolation and output caps documented as known mechanical limitations in new "Known Limitations" section.
 
 ---
 ## [3.16.7] - 2026-07-27 - FORENSIC ENGINE AUDIT: 14 SECURITY AND CORRECTNESS FIXES
 
 ### Security
-- **CRIT-01** (`keel-state.cjs`) — Handoff-log initialized eagerly in `cmdInit()` so it exists before any phase writes; eliminates divergence between handoff-log and audit-log on abnormal exits.
-- **CRIT-02** (`keel-state.cjs`) — `validateStoryId()` added at CLI entry point: rejects any `story_id` not matching `^[A-Za-z0-9_-]+$` (exit 64), closing path-traversal vector via `path.join()`.
-- **CRIT-03** (`keel-state.cjs`) — `appendAudit()` called synchronously before `notifyHalt()` in `haltPipeline()`; audit record is guaranteed even if the Slack webhook call fails or times out.
-- **HIGH-02** (`keel-state.cjs`) — Slack webhook hostname validated against `hooks.slack.com` before HTTPS request; rejects SSRF via attacker-controlled webhook URLs.
-- **HIGH-03** (`keel-state.cjs`) — Gate budget check (`>= maxGates`) now runs before incrementing `gate_events`; fixes off-by-one that allowed one extra gate call beyond the configured limit.
+- **CRIT-01** (`keel-state.cjs`) â€” Handoff-log initialized eagerly in `cmdInit()` so it exists before any phase writes; eliminates divergence between handoff-log and audit-log on abnormal exits.
+- **CRIT-02** (`keel-state.cjs`) â€” `validateStoryId()` added at CLI entry point: rejects any `story_id` not matching `^[A-Za-z0-9_-]+$` (exit 64), closing path-traversal vector via `path.join()`.
+- **CRIT-03** (`keel-state.cjs`) â€” `appendAudit()` called synchronously before `notifyHalt()` in `haltPipeline()`; audit record is guaranteed even if the Slack webhook call fails or times out.
+- **HIGH-02** (`keel-state.cjs`) â€” Slack webhook hostname validated against `hooks.slack.com` before HTTPS request; rejects SSRF via attacker-controlled webhook URLs.
+- **HIGH-03** (`keel-state.cjs`) â€” Gate budget check (`>= maxGates`) now runs before incrementing `gate_events`; fixes off-by-one that allowed one extra gate call beyond the configured limit.
 
 ### Fixed
-- **HIGH-01** (`.keel/state/TEST-AUDIT-1/README.md`) — Regression fixture `injected_field: "pwned"` documented; resolves unexplained schema-violation entry in `TEST-AUDIT-1` state directory.
-- **HIGH-04** (`keel-state.cjs`) — Prescan exit codes clarified: `0` = clean, `1` = internal error, `2` = violations found; eliminates ambiguity that caused silent false-negatives.
-- **MED-01** (`keel-state.cjs`) — Artifact validation hardened: rejects symlinks, files > 50 MB, and blocked extensions (`.exe`, `.bat`, `.cmd`, `.sh`, `.dll`, `.bin`, `.ps1`).
-- **MED-02** (`keel-state.cjs`) — Restore cross-check compares snapshot manifest fields against current manifest before applying; prevents silent divergence on partial restores.
-- **MED-03** (`keel-state.cjs` + `.keel/economy.yml`) — Lock stale timeout made configurable via `state_engine.lock_stale_seconds` in `economy.yml` (default 30s); was hardcoded at 30 000 ms.
-- **MED-04** (`skills/implement-feature/SKILL.md`) — Skill doc rewritten to be scope-aware: feature stories run 10 phases, defect stories run 4 (PO→SE→QA→Security). Eliminates "always 10 phases" false claim.
-- **LOW-01** (`keel-classify-gate.cjs`) — CJIS coverage-gap warning expanded to multi-line actionable message with `KEEL_CJIS_STRICT=1` guidance and Forseti filing instruction.
-- **LOW-02** (`keel-state.cjs`) — `selfInvocation()` detects call path and emits correct resume command (`~/.keel/bin/` vs `scripts/`) rather than hardcoded guess.
-- **LOW-03** (`keel-state.cjs`) — Legacy agent names now emit a `DEPRECATION` warning on `console.warn` instead of silently proceeding.
+- **HIGH-01** (`.keel/state/TEST-AUDIT-1/README.md`) â€” Regression fixture `injected_field: "pwned"` documented; resolves unexplained schema-violation entry in `TEST-AUDIT-1` state directory.
+- **HIGH-04** (`keel-state.cjs`) â€” Prescan exit codes clarified: `0` = clean, `1` = internal error, `2` = violations found; eliminates ambiguity that caused silent false-negatives.
+- **MED-01** (`keel-state.cjs`) â€” Artifact validation hardened: rejects symlinks, files > 50 MB, and blocked extensions (`.exe`, `.bat`, `.cmd`, `.sh`, `.dll`, `.bin`, `.ps1`).
+- **MED-02** (`keel-state.cjs`) â€” Restore cross-check compares snapshot manifest fields against current manifest before applying; prevents silent divergence on partial restores.
+- **MED-03** (`keel-state.cjs` + `.keel/economy.yml`) â€” Lock stale timeout made configurable via `state_engine.lock_stale_seconds` in `economy.yml` (default 30s); was hardcoded at 30 000 ms.
+- **MED-04** (`skills/implement-feature/SKILL.md`) â€” Skill doc rewritten to be scope-aware: feature stories run 10 phases, defect stories run 4 (POâ†’SEâ†’QAâ†’Security). Eliminates "always 10 phases" false claim.
+- **LOW-01** (`keel-classify-gate.cjs`) â€” CJIS coverage-gap warning expanded to multi-line actionable message with `KEEL_CJIS_STRICT=1` guidance and Forseti filing instruction.
+- **LOW-02** (`keel-state.cjs`) â€” `selfInvocation()` detects call path and emits correct resume command (`~/.keel/bin/` vs `scripts/`) rather than hardcoded guess.
+- **LOW-03** (`keel-state.cjs`) â€” Legacy agent names now emit a `DEPRECATION` warning on `console.warn` instead of silently proceeding.
 
 ---
 
 ## [3.16.6] - 2026-07-27 - KARPATHY PROTOCOL G-15; TOKEN ECONOMY OBSERVABILITY; PROMPT CACHE
 
 ### Added
-- **G-15 Karpathy Protocol** (`GUARDRAILS.md`) — Four binding rules enforceable at every handshake gate: K-1 surface assumptions, K-2 ask-don't-guess (HALT on ambiguity), K-3 minimum code zero speculation, K-4 surgical diff verification.
-- **Pre-spawn clarity gate** (`agents/orchestrator.md`) — K-2 gate before phase 1: story type, bounded scope, and at least one testable AC required.
-- **Token economy observability** — `confirm_before_spawn: true` (default): orchestrator halts + shows `[token-estimate:]` before every spawn, waits for human OK. `token_summary: true` (default): cumulative token table with cache savings appended to final delivery output.
-- **Prompt cache breakpoints** — `prompt_caching: true` (default): 3 canonical `cache_control: {type: "ephemeral"}` breakpoints (BP-1 system prompt, BP-2 tools, BP-3 static context). `[cache-estimate:]` line emitted per spawn. ~90% savings on BP-1+BP-2 prefix (~100–150k tokens saved per full pipeline).
-- **`/keel:tokens` command** (`commands/tokens.md`) — live token ledger + cache savings column; `/keel:tokens confirm on|off` and `/keel:tokens cache on|off` mid-session toggles.
-- **Economy wizard in `/keel:init`** (`commands/init.md`) — step 3 seeds all economy settings; AskUserQuestion: keep defaults / tune / skip.
-- **Economy wizard in `/keel:setup`** (`commands/setup.md`) — new step 7 "Token Economy" (`/keel:setup economy`); steps renumbered 1-7.
+- **G-15 Karpathy Protocol** (`GUARDRAILS.md`) â€” Four binding rules enforceable at every handshake gate: K-1 surface assumptions, K-2 ask-don't-guess (HALT on ambiguity), K-3 minimum code zero speculation, K-4 surgical diff verification.
+- **Pre-spawn clarity gate** (`agents/orchestrator.md`) â€” K-2 gate before phase 1: story type, bounded scope, and at least one testable AC required.
+- **Token economy observability** â€” `confirm_before_spawn: true` (default): orchestrator halts + shows `[token-estimate:]` before every spawn, waits for human OK. `token_summary: true` (default): cumulative token table with cache savings appended to final delivery output.
+- **Prompt cache breakpoints** â€” `prompt_caching: true` (default): 3 canonical `cache_control: {type: "ephemeral"}` breakpoints (BP-1 system prompt, BP-2 tools, BP-3 static context). `[cache-estimate:]` line emitted per spawn. ~90% savings on BP-1+BP-2 prefix (~100â€“150k tokens saved per full pipeline).
+- **`/keel:tokens` command** (`commands/tokens.md`) â€” live token ledger + cache savings column; `/keel:tokens confirm on|off` and `/keel:tokens cache on|off` mid-session toggles.
+- **Economy wizard in `/keel:init`** (`commands/init.md`) â€” step 3 seeds all economy settings; AskUserQuestion: keep defaults / tune / skip.
+- **Economy wizard in `/keel:setup`** (`commands/setup.md`) â€” new step 7 "Token Economy" (`/keel:setup economy`); steps renumbered 1-7.
 
 ### Changed
-- **`agents/software-engineer.md`** — Phase 0 reordered: K-1 (step 3) + K-2 (step 4) before plan-writing (step 5); K-4 scope-creep diff check added as self-audit step 7.
-- **`agents/solution-architect.md`** — "Before designing" gains K-1 (assumptions, step 4) + K-3 (simplest-design check, step 5).
-- **`agents/business-analyst.md`** — K-2 ask-don't-assume rule added to Rules section.
-- **`.keel/economy.yml`** — four new settings: `confirm_before_spawn: true`, `token_summary: true`, `prompt_caching: true`, `cache_ttl_minutes: 5`.
+- **`agents/software-engineer.md`** â€” Phase 0 reordered: K-1 (step 3) + K-2 (step 4) before plan-writing (step 5); K-4 scope-creep diff check added as self-audit step 7.
+- **`agents/solution-architect.md`** â€” "Before designing" gains K-1 (assumptions, step 4) + K-3 (simplest-design check, step 5).
+- **`agents/business-analyst.md`** â€” K-2 ask-don't-assume rule added to Rules section.
+- **`.keel/economy.yml`** â€” four new settings: `confirm_before_spawn: true`, `token_summary: true`, `prompt_caching: true`, `cache_ttl_minutes: 5`.
 
 ---
 
 ## [3.16.5] - 2026-07-23 - DEVELOPER AUTOMATION: keel:start-work + keel:finish-work MCP SKILLS; ADVISORY TICKET TRACEABILITY
 
 ### Added
-- **`skills/start-work/SKILL.md`** — `keel:start-work` Claude Code skill: fetches Jira ticket via Atlassian Rovo MCP (no separate token), creates branch with type-derived prefix + ticket slug, pushes to remote, transitions Jira to "In Progress". Works in description-only mode when no ticket exists.
-- **`skills/finish-work/SKILL.md`** — `keel:finish-work` Claude Code skill: reads commits ahead of dev, fetches Jira context via MCP, creates industry-standard PR to dev via GitHub REST API (`~/.keel/secrets/github.token`), transitions Jira to "In Review". Handles 422 (PR already exists) gracefully.
-- **Token economy observability** (`economy.yml`, `agents/orchestrator.md`, `commands/tokens.md`) — three features shipped together:
+- **`skills/start-work/SKILL.md`** â€” `keel:start-work` Claude Code skill: fetches Jira ticket via Atlassian Rovo MCP (no separate token), creates branch with type-derived prefix + ticket slug, pushes to remote, transitions Jira to "In Progress". Works in description-only mode when no ticket exists.
+- **`skills/finish-work/SKILL.md`** â€” `keel:finish-work` Claude Code skill: reads commits ahead of dev, fetches Jira context via MCP, creates industry-standard PR to dev via GitHub REST API (`~/.keel/secrets/github.token`), transitions Jira to "In Review". Handles 422 (PR already exists) gracefully.
+- **Token economy observability** (`economy.yml`, `agents/orchestrator.md`, `commands/tokens.md`) â€” three features shipped together:
   - Pre-spawn `[token-estimate:]` line before every agent spawn (always on)
-  - `confirm_before_spawn: true` (default) — orchestrator halts and shows estimate before spawning, waits for human OK
-  - `token_summary: true` (default) — cumulative token table with cache savings column appended to final delivery output
-- **Prompt cache breakpoints** (`economy.yml`, `agents/orchestrator.md`) — `prompt_caching: true` (default); 3 canonical `cache_control: {type: "ephemeral"}` breakpoints (BP-1 system prompt, BP-2 tool definitions, BP-3 static context); `[cache-estimate:]` line emitted alongside token estimate; ~90% savings on BP-1+BP-2 prefix per spawn (~100–150k tokens saved per full pipeline).
-- **`/keel:tokens` command** (`commands/tokens.md`) — live token ledger + cache savings column; `/keel:tokens confirm on|off` and `/keel:tokens cache on|off` mid-session toggles.
-- **Economy wizard in `/keel:init`** (`commands/init.md`) — step 3 seeds all economy settings and asks: keep defaults / tune interactively / skip.
-- **Economy wizard in `/keel:setup`** (`commands/setup.md`) — new step 7 "Token Economy" (`/keel:setup economy`); steps renumbered 1-7, status table = step 8.
+  - `confirm_before_spawn: true` (default) â€” orchestrator halts and shows estimate before spawning, waits for human OK
+  - `token_summary: true` (default) â€” cumulative token table with cache savings column appended to final delivery output
+- **Prompt cache breakpoints** (`economy.yml`, `agents/orchestrator.md`) â€” `prompt_caching: true` (default); 3 canonical `cache_control: {type: "ephemeral"}` breakpoints (BP-1 system prompt, BP-2 tool definitions, BP-3 static context); `[cache-estimate:]` line emitted alongside token estimate; ~90% savings on BP-1+BP-2 prefix per spawn (~100â€“150k tokens saved per full pipeline).
+- **`/keel:tokens` command** (`commands/tokens.md`) â€” live token ledger + cache savings column; `/keel:tokens confirm on|off` and `/keel:tokens cache on|off` mid-session toggles.
+- **Economy wizard in `/keel:init`** (`commands/init.md`) â€” step 3 seeds all economy settings and asks: keep defaults / tune interactively / skip.
+- **Economy wizard in `/keel:setup`** (`commands/setup.md`) â€” new step 7 "Token Economy" (`/keel:setup economy`); steps renumbered 1-7, status table = step 8.
 
 ### Changed
-- **`agents/software-engineer.md`** — Phase 0 reordered: K-1 (surface assumptions, step 3) + K-2 (ambiguity halt, step 4) now precede plan-writing (step 5). Self-audit gains K-4 scope-creep diff check (step 7).
-- **`agents/solution-architect.md`** — "Before designing" gains K-1 (assumptions section in design doc, step 4) + K-3 (simplest-design check, step 5).
-- **`agents/business-analyst.md`** — Rules section gains K-2 ask-don't-assume rule before "Never invent business rules".
-- **G-12 (`scripts/keel-bug-lifecycle.cjs`)** — Ticket traceability downgraded from blocking to advisory-only across all commit types. Flexible ticket ID pattern (`/[A-Z]{2,}-\d+/i`) replaces hardcoded project-key format. Removed dead `JIRA_PATTERN` constant.
-- **G-13 (`scripts/keel-push-guard.cjs`)** — Added `feat/` and `epic/` to `ALLOWED_PREFIXES`. After a successful feature branch push, prints a next-step reminder: "Ask Claude Code: finish work on BRANCH" with a direct GitHub compare URL.
-- **`.keel/GUARDRAILS.md`** — G-12 table updated to advisory; G-13 rule 4 PR ticket reference changed to advisory (G-14); G-14 completely rewritten to document MCP-skill invocation, flexible branch naming convention, and push-guard advisory behaviour.
-- **`docs/BRANCH-PROTECTION.md`** — Full rewrite: removed deleted `keel-start-work.cjs` CLI references and Jira token credential setup (MCP handles auth); replaced manual PR steps with complete 6-step MCP-skill workflow diagram; updated branch naming to advisory; added guardrail and skills reference tables.
+- **`agents/software-engineer.md`** â€” Phase 0 reordered: K-1 (surface assumptions, step 3) + K-2 (ambiguity halt, step 4) now precede plan-writing (step 5). Self-audit gains K-4 scope-creep diff check (step 7).
+- **`agents/solution-architect.md`** â€” "Before designing" gains K-1 (assumptions section in design doc, step 4) + K-3 (simplest-design check, step 5).
+- **`agents/business-analyst.md`** â€” Rules section gains K-2 ask-don't-assume rule before "Never invent business rules".
+- **G-12 (`scripts/keel-bug-lifecycle.cjs`)** â€” Ticket traceability downgraded from blocking to advisory-only across all commit types. Flexible ticket ID pattern (`/[A-Z]{2,}-\d+/i`) replaces hardcoded project-key format. Removed dead `JIRA_PATTERN` constant.
+- **G-13 (`scripts/keel-push-guard.cjs`)** â€” Added `feat/` and `epic/` to `ALLOWED_PREFIXES`. After a successful feature branch push, prints a next-step reminder: "Ask Claude Code: finish work on BRANCH" with a direct GitHub compare URL.
+- **`.keel/GUARDRAILS.md`** â€” G-12 table updated to advisory; G-13 rule 4 PR ticket reference changed to advisory (G-14); G-14 completely rewritten to document MCP-skill invocation, flexible branch naming convention, and push-guard advisory behaviour.
+- **`docs/BRANCH-PROTECTION.md`** â€” Full rewrite: removed deleted `keel-start-work.cjs` CLI references and Jira token credential setup (MCP handles auth); replaced manual PR steps with complete 6-step MCP-skill workflow diagram; updated branch naming to advisory; added guardrail and skills reference tables.
 
 ---
 
@@ -718,3 +749,5 @@ MIT - See [LICENSE](LICENSE) for details
 Last Updated: 2026-07-29
 Version: 3.16.9
 Status: Production Ready
+
+
