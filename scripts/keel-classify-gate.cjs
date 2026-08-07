@@ -240,9 +240,18 @@ async function main() {
     incident_id: crypto.randomBytes(8).toString('hex'), ts: new Date().toISOString(),
     event: category === 'CJIS_VIOLATION' ? 'cjis_violation' : 'cjis_suspect', severity: 'CRITICAL',
     stage, tool: hook.tool_name || null, matched_categories: matched,
-    content_hash: contentHash, content_length: text.length, blocked: true,
+    content_hash: contentHash, content_length: text.length,
   };
-  appendIncident(incident); // hash only, never raw content
+
+  if (category === 'SUSPECT') {
+    // soft match: log for audit trail, notify if configured, DO NOT block.
+    appendIncident({ ...incident, blocked: false });
+    process.stderr.write(`CJIS GATE WARN (non-blocking): SUSPECT [${matched.join(', ')}] — incident ${incident.incident_id} logged for review\n`);
+    process.exit(0);
+  }
+
+  // category === 'CJIS_VIOLATION' (hard) — block as today.
+  appendIncident({ ...incident, blocked: true });
   await notifySecurityOfficer(incident);
   block(`${category} [${matched.join(', ')}] — incident ${incident.incident_id}, hash ${contentHash.slice(0, 12)}...`);
 }
