@@ -1383,11 +1383,18 @@ const checkRegistry = {
   // C-0014 (Compliance Scope Declaration): Ensure compliance-scoped stories declare their data paths.
   // FAIL if story is marked compliance-scoped (CJIS, HIPAA, SOC2, NIBRS) but the required
   // application profile is missing. The profile defines which paths contain compliance data.
-  // Status: SKIP if not compliance-scoped, FAIL if scoped but profile missing, PASS if profile found.
-  // Applies: all phases for compliance-scoped stories; SKIP for non-compliance-scoped.
+  // Status: SKIP if phase ≠ 1 or not compliance-scoped; FAIL if scoped but profile missing; PASS if profile found.
+  // Applies: Phase 1 (product-owner) only — compliance scope is declared upfront by PO.
+  // Defect lane: Phase 1 included ✓
   compliance_scope_declared: (storyId, phase, manifest) => {
+    // Single-phase check: only block phase 1 (product owner decision)
+    if (phase !== 1) {
+      return { id: 'C-0014', status: 'SKIP', detail: 'compliance scope validation only required at phase 1 (product owner)' };
+    }
+
+    // If phase is 1 but story is not compliance-scoped, SKIP
     if (!manifest.compliance_scopes || manifest.compliance_scopes.length === 0) {
-      return { id: 'C-0014', status: 'SKIP', detail: 'story is not compliance-scoped' };
+      return { id: 'C-0014', status: 'SKIP', detail: 'story is not compliance-scoped (at phase 1)' };
     }
 
     // For CJIS scope, require cjis-application-profile.json
@@ -1427,15 +1434,18 @@ const checkRegistry = {
   // FAIL if story is compliance-scoped and reaches phase 8 (security engineer) without prescan.json evidence.
   // prescan.json should be created by pre-phase-8 scanning (phase 7 E2E or earlier compliance check).
   // ENHANCED: Validates prescan.json content (not just existence) to prevent evidence fabrication.
-  // Status: SKIP if not compliance-scoped or phase < 8, FAIL if phase >= 8 and prescan missing/invalid, PASS if valid.
+  // Status: SKIP if phase < 8 or not compliance-scoped; FAIL if phase >= 8 and prescan missing/invalid; PASS if valid.
+  // Applies: Phases 8+ (security-engineer, technical-writer, release-manager).
+  // Defect lane gap: Defects skip phase 7 (E2E testing), so prescan.json never created → SKIP for defect phases 1,5,6,8.
+  //   Documented in docs/compliance/phase-mapping-audit.md; mitigation: add phase 7 to defect scope or parallel prescan path.
   compliance_evidence_present: (storyId, phase, manifest) => {
     if (!manifest.compliance_scopes || manifest.compliance_scopes.length === 0) {
       return { id: 'C-0015', status: 'SKIP', detail: 'story is not compliance-scoped' };
     }
 
-    // Only check at phase 8 (security engineer) and later
+    // Multi-phase check: apply to phase 8 and later only
     if (phase < 8) {
-      return { id: 'C-0015', status: 'SKIP', detail: 'compliance evidence check required at phase 8+ only' };
+      return { id: 'C-0015', status: 'SKIP', detail: `compliance evidence check required at phase 8+ (security engineer); phase ${phase} is earlier` };
     }
 
     const prescannedFile = path.join(stateDir(storyId), 'prescan.json');
@@ -1540,15 +1550,18 @@ const checkRegistry = {
   // C-0016 (Compliance Evidence Fresh): Ensure compliance evidence is not stale.
   // FAIL if evidence backing a compliance control predates the current story's last commit SHA or
   // exceeds the policy-pack-configured evidence expiry. Prevents relying on months-old scanning.
-  // Status: SKIP if not compliance-scoped, FAIL if stale, PASS if fresh.
-  // Applies: phase 8+ (security engineer and later).
+  // Status: SKIP if phase < 8 or not compliance-scoped; FAIL if stale; PASS if fresh.
+  // Applies: Phases 8+ (security-engineer, technical-writer, release-manager).
+  // Defect lane gap: Same as C-0015 — defects skip phase 7, prescan.json never created → SKIP for defect phases 1,5,6,8.
+  //   Documented in docs/compliance/phase-mapping-audit.md; mitigation: add phase 7 to defect scope or parallel prescan path.
   compliance_evidence_fresh: (storyId, phase, manifest) => {
     if (!manifest.compliance_scopes || manifest.compliance_scopes.length === 0) {
       return { id: 'C-0016', status: 'SKIP', detail: 'story is not compliance-scoped' };
     }
 
+    // Multi-phase check: apply to phase 8 and later only
     if (phase < 8) {
-      return { id: 'C-0016', status: 'SKIP', detail: 'evidence freshness check required at phase 8+ only' };
+      return { id: 'C-0016', status: 'SKIP', detail: `evidence freshness check required at phase 8+ (security engineer); phase ${phase} is earlier` };
     }
 
     // For now, check prescan.json mtime against a default 7-day threshold
@@ -1586,9 +1599,12 @@ const checkRegistry = {
   // C-0017 (Compliance Pattern Provenance): Enforce governance on pattern definitions.
   // FAIL if any ACTIVE pattern in config/cjis-data-element-registry.json lacks a source citation or named approver.
   // This ensures no engineer-guessed patterns are hard-blocking in production.
-  // Status: SKIP if CJIS not in scope, FAIL if governance violation, PASS if all ACTIVE patterns verified.
-  // Applies: all phases (can be checked early to gate further work).
+  // Status: SKIP if CJIS not in scope; FAIL if governance violation; PASS if all ACTIVE patterns verified.
+  // Applies: All phases where CJIS-scoped (scope-based check, not phase-based).
+  // Pattern: Check manifest.compliance_scopes, not phase number. Can be called early for fast-fail governance.
+  // Defect lane: Applies if defect is CJIS-scoped (phases 1,5,6,8 all can run this check).
   compliance_pattern_provenance: (storyId, phase, manifest) => {
+    // Scope-based check (like C-0006, C-0010): applies to all phases if CJIS-scoped
     if (!manifest.compliance_scopes || !manifest.compliance_scopes.includes('cjis')) {
       return { id: 'C-0017', status: 'SKIP', detail: 'CJIS pattern provenance required for CJIS-scoped stories only' };
     }
@@ -1643,15 +1659,17 @@ const checkRegistry = {
   // C-0018 (Compliance Control Terminal State): Ensure compliance controls reach a terminal state.
   // FAIL if any compliance control for this story is in FAIL or NOT_PROVEN state without an approved,
   // unexpired exception. Model on C-0005 (findings_terminal_state).
-  // Status: SKIP if not compliance-scoped, FAIL if blocking controls without exception, PASS if all terminal.
-  // Applies: phase 8+ (security engineer and later, after controls are evaluated).
+  // Status: SKIP if phase < 8 or not compliance-scoped; FAIL if blocking controls without exception; PASS if all terminal.
+  // Applies: Phases 8+ (security-engineer, technical-writer, release-manager).
+  // Defect lane: Phase 8 included ✓ (defects have phase 8 where controls are evaluated).
   compliance_control_terminal_state: (storyId, phase, manifest) => {
     if (!manifest.compliance_scopes || manifest.compliance_scopes.length === 0) {
       return { id: 'C-0018', status: 'SKIP', detail: 'story is not compliance-scoped' };
     }
 
+    // Multi-phase check: apply to phase 8 and later only
     if (phase < 8) {
-      return { id: 'C-0018', status: 'SKIP', detail: 'compliance control terminal state check required at phase 8+ only' };
+      return { id: 'C-0018', status: 'SKIP', detail: `compliance control terminal state check required at phase 8+ (security engineer); phase ${phase} is earlier` };
     }
 
     // Check for compliance-control.json (created by security engineer agent after control mapping)
