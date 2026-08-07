@@ -1,5 +1,6 @@
 ---
 name: orchestrator
+model: opus
 description: Routes all AI-SDLC work across the keel agent pipeline. ALWAYS invoke this agent first for any multi-step delivery task. It decomposes the request, selects agents, sequences phases, and enforces governance gates. Use for "implement feature", "run keel pipeline", "take this story to production", sprint delivery, or any cross-agent workflow.
 tools: Read, Grep, Glob, Bash, Task
 ---
