@@ -1,0 +1,71 @@
+{
+  "description": "Configurable compliance framework definitions. Add your custom frameworks here.",
+  "default_scopes": ["cjis"],
+  "available_frameworks": {
+    "cjis": {
+      "name": "CJIS (Criminal Justice Information Services)",
+      "registry": "config/cjis-data-element-registry.json",
+      "profile": "config/cjis-application-profile.json",
+      "description": "Criminal Justice Information Services compliance model",
+      "enabled": true
+    },
+    "hipaa": {
+      "name": "HIPAA (Health Insurance Portability and Accountability Act)",
+      "registry": "config/hipaa-data-element-registry.json",
+      "profile": "config/hipaa-application-profile.json",
+      "description": "Healthcare privacy and security compliance model",
+      "enabled": false
+    },
+    "soc2": {
+      "name": "SOC 2 (Service Organization Control)",
+      "registry": "config/soc2-control-registry.json",
+      "profile": "config/soc2-application-profile.json",
+      "description": "Security, availability, processing integrity, confidentiality, privacy",
+      "enabled": false
+    },
+    "nibrs": {
+      "name": "NIBRS (National Incident-Based Reporting System)",
+      "registry": "config/nibrs-pattern-registry.json",
+      "profile": "config/nibrs-application-profile.json",
+      "description": "Incident reporting and crime classification model",
+      "enabled": false
+    }
+  },
+  "phase_definitions": {
+    "feature": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "defect": [1, 5, 6, 8]
+  },
+  "custom_examples": {
+    "healthcare": {
+      "default_scopes": ["hipaa"],
+      "available_frameworks": {
+        "hipaa": { "enabled": true },
+        "soc2": { "enabled": true }
+      }
+    },
+    "fintech": {
+      "default_scopes": ["soc2"],
+      "available_frameworks": {
+        "soc2": { "enabled": true }
+      }
+    },
+    "law_enforcement": {
+      "default_scopes": ["cjis", "nibrs"],
+      "available_frameworks": {
+        "cjis": { "enabled": true },
+        "nibrs": { "enabled": true }
+      }
+    },
+    "custom_framework": {
+      "available_frameworks": {
+        "my_custom_framework": {
+          "name": "My Custom Compliance Framework",
+          "registry": "config/my-custom-registry.json",
+          "profile": "config/my-custom-profile.json",
+          "description": "Organization-specific compliance requirements",
+          "enabled": true
+        }
+      }
+    }
+  }
+}

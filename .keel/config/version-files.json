@@ -1,0 +1,96 @@
+{
+  "description": "Configurable version file list. Customize for your project's file structure.",
+  "critical_files": [
+    {
+      "path": "package.json",
+      "version_field": "version",
+      "description": "Node.js package version"
+    },
+    {
+      "path": "package-lock.json",
+      "version_field": "version",
+      "optional": false,
+      "description": "Dependency lock file version"
+    },
+    {
+      "path": "README.md",
+      "patterns": ["# v", "Version:", "version:"],
+      "description": "Documentation version references"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "patterns": ["## ["],
+      "description": "Changelog version entry"
+    }
+  ],
+  "project_specific_files": [
+    {
+      "path": "bin/keel.js",
+      "optional": true,
+      "version_field": "VERSION",
+      "description": "Keel CLI version constant"
+    },
+    {
+      "path": ".claude-plugin/plugin.json",
+      "optional": true,
+      "version_field": "version",
+      "description": "Claude plugin manifest"
+    },
+    {
+      "path": ".claude-plugin/marketplace.json",
+      "optional": true,
+      "version_field": "version",
+      "description": "Claude marketplace manifest"
+    },
+    {
+      "path": "action.yml",
+      "optional": true,
+      "patterns": ["version:"],
+      "description": "GitHub Actions version"
+    },
+    {
+      "path": "INSTALL.md",
+      "optional": true,
+      "patterns": ["v"],
+      "description": "Installation guide version"
+    },
+    {
+      "path": "TECHNICAL-SPECIFICATIONS.md",
+      "optional": true,
+      "patterns": ["Version", "## v"],
+      "description": "Technical specs version history"
+    },
+    {
+      "path": "QUICK-START-CLAUDE-CODE.md",
+      "optional": true,
+      "patterns": ["# v", "version:"],
+      "description": "Quick start guide version"
+    }
+  ],
+  "custom_examples": {
+    "generic_node_project": {
+      "critical_files": [
+        { "path": "package.json", "version_field": "version" },
+        { "path": "package-lock.json", "version_field": "version" },
+        { "path": "README.md", "patterns": ["# v", "Version:"] }
+      ],
+      "project_specific_files": []
+    },
+    "python_project": {
+      "critical_files": [
+        { "path": "pyproject.toml", "patterns": ["version = "] },
+        { "path": "setup.py", "patterns": ["version="] },
+        { "path": "README.md", "patterns": ["# v"] }
+      ],
+      "project_specific_files": []
+    },
+    "go_project": {
+      "critical_files": [
+        { "path": "go.mod", "patterns": ["module"] },
+        { "path": "README.md", "patterns": ["# v"] },
+        { "path": "main.go", "patterns": ["Version ="] }
+      ],
+      "project_specific_files": []
+    }
+  }
+}
