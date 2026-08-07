@@ -31,6 +31,7 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const https = require('https');
+const classifySeverity = require('../lib/classify-severity.js');
 
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
 const KEEL_HOME = process.env.KEEL_HOME || path.join(os.homedir(), '.keel');
@@ -176,8 +177,7 @@ function classify(text, patterns, allowlist = []) {
   const matched = new Set();
   for (const v of decodedVariants(scrubbed)) for (const p of patterns) { p.re.lastIndex = 0; if (p.re.test(v)) matched.add(p.category); }
   if (!matched.size) return { category: 'CLEAR', matched: [] };
-  const hard = [...matched].some((c) => patterns.find((p) => p.category === c)?.severity === 'hard');
-  return { category: hard ? 'CJIS_VIOLATION' : 'SUSPECT', matched: [...matched] };
+  return classifySeverity(matched, patterns);
 }
 
 function appendIncident(incident) {
