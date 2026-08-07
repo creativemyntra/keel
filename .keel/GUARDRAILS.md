@@ -505,57 +505,76 @@ Every feature-scope story must prove tests FAIL before implementation begins (ph
 
 ## G-19 - Compliance gate contract (mechanical enforcement)
 
-Compliance enforcement is implemented as mechanical checks in the checkRegistry
-(`scripts/keel-state.cjs`, checks C-0014 through C-0018), NOT as agent prompts
-or human reviews. This ensures compliance is enforced uniformly across all
-stories and all phases, without relying on agent adherence to instructions.
+Compliance enforcement is implemented as a single, reusable compliance evaluation
+module (`lib/compliance-evaluator.cjs`) invoked from THREE entry points:
+
+1. **GitHub Actions (AUTHORITATIVE)** — `.github/workflows/compliance-check.yml`
+   - Runs on every push and PR
+   - **Cannot be bypassed** (no --no-verify override, applies to web-UI PRs)
+   - Must be configured as a required status check in branch protection settings
+   - **LIMITATION (manual setup required):** Code cannot configure branch protection.
+     Repository admins must manually enable "Require status checks to pass before
+     merging" and select "Compliance Check" as required. Without this, the workflow
+     runs but does not block merges.
+
+2. **Git pre-push hook (COURTESY)** — `.git/hooks/pre-push-compliance`
+   - Runs locally before push (fast feedback)
+   - Can be bypassed with `git push --no-verify` (logs bypass in audit)
+   - Provides immediate developer feedback without GitHub API delay
+
+3. **Keel pipeline gate (IN-PIPELINE)** — `scripts/keel-state.cjs` checkRegistry
+   - Runs during `gate --phase N --verdict PASS` check
+   - Confirms compliance within the orchestration pipeline
+   - Blocks story advancement if compliance fails
+
+**All three write to the same audit trail:**
+Each check result includes `entry_point` tag ('github-actions', 'git-pre-push', or 'keel')
+and timestamp, enabling audit trail correlation across all three enforcement layers.
 
 **Scope:** Applies ONLY to stories marked compliance-scoped at init time
 (`--cjis-scope`, `--hipaa-scope`, `--soc2-scope`, `--nibrs-scope`).
 Non-compliance-scoped stories SKIP all compliance checks.
 
-**Checks:**
+**Checks (C-0014 through C-0018):**
 
 - **C-0014 (compliance_scope_declared)** — FAIL if story is compliance-scoped but
-  required application profile missing. Application profile (e.g.
-  `cjis-application-profile.json`) defines which paths contain compliance data.
-  Applies: all phases. SKIP if not scoped.
+  required application profile missing.
 
-- **C-0015 (compliance_evidence_present)** — FAIL if story is compliance-scoped
-  and reaches phase 8 (security engineer) without `prescan.json` evidence.
-  Pre-phase-8 scanning (phase 7 or earlier) must create prescan with code and
-  dependency scan results.
-  Applies: phase 8+. SKIP if not scoped or phase < 8.
+- **C-0015 (compliance_evidence_present)** — FAIL if phase 8+ without prescan.json.
 
-- **C-0016 (compliance_evidence_fresh)** — FAIL if evidence predates policy-pack
-  expiry or is older than 7 days (default threshold). Prevents relying on
-  months-old scanning artifacts.
-  Applies: phase 8+. SKIP if not scoped.
+- **C-0016 (compliance_evidence_fresh)** — FAIL if evidence older than 7 days.
 
-- **C-0017 (compliance_pattern_provenance)** — FAIL if any ACTIVE pattern in
-  `config/cjis-data-element-registry.json` lacks source citation and named
-  approver. No engineer-guessed patterns allowed in hard-blocking mode.
-  Applies: all phases (can be checked early). SKIP if CJIS not in scope.
+- **C-0017 (compliance_pattern_provenance)** — FAIL if ACTIVE pattern lacks
+  source citation and approver.
 
-- **C-0018 (compliance_control_terminal_state)** — FAIL if any compliance control
-  is in FAIL or NOT_PROVEN state without an approved, unexpired exception.
-  Requires `compliance-control.json` file created by security engineer.
-  Applies: phase 8+ (after controls are evaluated). SKIP if not scoped.
+- **C-0018 (compliance_control_terminal_state)** — FAIL if controls not terminal
+  without approved exception.
 
-**Governance metadata in manifest:**
-Stories are initialized with a `compliance_scopes` array (built from --cjis-scope,
---hipaa-scope, etc. flags). The array gates which checks apply to that story.
+**Branch protection configuration (MANUAL — CODE CANNOT DO THIS):**
+Repository admins must enable branch protection rules. Example for `dev` branch:
+
+```
+Settings → Branches → Add rule
+- Pattern: "dev"
+- ☑ Require a pull request before merging
+- ☑ Require status checks to pass before merging
+  - Select "Compliance Check" as required status check
+- ☑ Dismiss stale pull request approvals when new commits are pushed
+```
+
+**Without manual branch protection setup, the GitHub Actions workflow runs but
+does NOT block merges.** A developer can still merge a PR with failing compliance
+checks if branch protection is not enabled. This is a code-level limitation, not
+a code-level fix.
 
 **Failing a compliance check:**
-If any compliance check returns FAIL, the story cannot advance (`gate --verdict PASS`
-is rejected). The check detail message explains the failure. Human owner must either
-fix the underlying issue or explicitly waive the check (which requires a `gate --waive`
-command with human approval, per G-2).
+If any compliance check returns FAIL:
+- GitHub Actions: PR cannot merge (if branch protection is configured)
+- Git pre-push: push is rejected locally (can be bypassed with --no-verify)
+- Keel gate: story cannot advance to next phase
 
-**PENDING patterns and exceptions:**
-PENDING_CONFIRMATION patterns (in registry) do not block hard (C-0017 does not FAIL
-for them). Compliance controls with approved exceptions (C-0018) do not block if
-exception_expiry_date is in the future.
+The check detail message explains the failure. Fix the issue or request a waiver
+(which requires human approval per G-2).
 
 ---
 
