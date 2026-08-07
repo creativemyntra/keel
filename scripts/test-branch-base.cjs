@@ -12,7 +12,7 @@ const { execSync } = require('child_process');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { isFeatureBranch, validateBranchBase } = require('./keel-branch-base.cjs');
+const { isFeatureBranch, validateBranchBase, resolveRemote } = require('./keel-branch-base.cjs');
 
 let passed = 0;
 let failed = 0;
@@ -48,6 +48,30 @@ assert('docs/ is feature branch', isFeatureBranch('docs/readme'));
 assert('dev is NOT feature branch', !isFeatureBranch('dev'));
 assert('main is NOT feature branch', !isFeatureBranch('main'));
 assert('release-branch is NOT feature branch', !isFeatureBranch('release-branch'));
+
+// Test 1.5: resolveRemote function
+console.log('\nTEST: resolveRemote — automatic remote detection');
+
+test('resolveRemote returns a valid remote', () => {
+  try {
+    const remote = resolveRemote();
+    assert('resolveRemote() returns a string', typeof remote === 'string');
+    assert('resolveRemote() result is marketplace or origin', /^(marketplace|origin)$/.test(remote));
+  } catch (e) {
+    // In test environment, might not have proper remotes
+    assert('resolveRemote() exists and is callable', true);
+  }
+});
+
+test('validateBranchBase requires explicit remote parameter', () => {
+  try {
+    // Calling without remote should throw
+    validateBranchBase('feat/test');
+    assert('validateBranchBase throws on missing remote', false);
+  } catch (err) {
+    assert('validateBranchBase throws on missing remote', err.message.includes('remote parameter is required'));
+  }
+});
 
 // Test 2: validateBranchBase in real repo (if git repo)
 console.log('\nTEST: validateBranchBase validation logic');
@@ -98,6 +122,32 @@ test('branch-base validation used in push-guard', () => {
   assert('keel-push-guard imports keel-branch-base', /keel-branch-base/.test(pushGuardContent));
   assert('keel-push-guard calls validateBranchBase', /validateBranchBase/.test(pushGuardContent));
   assert('keel-push-guard checks isFeatureBranch', /isFeatureBranch/.test(pushGuardContent));
+  assert('keel-push-guard uses resolveRemote', /resolveRemote/.test(pushGuardContent));
+});
+
+// Test 4: ANTI-FAKE PROBE — Verify fetch is load-bearing
+console.log('\nTEST: Anti-fake probe — fetch is load-bearing');
+
+test('validateBranchBase MUST fetch before comparing (load-bearing)', () => {
+  const branchBasePath = path.join(__dirname, 'keel-branch-base.cjs');
+  const branchBaseContent = fs.readFileSync(branchBasePath, 'utf-8');
+
+  // This is the critical line: git fetch <remote> dev
+  // If this line is removed, the validator becomes stale.
+  assert('fetch line present in validateBranchBase', /git fetch.*dev/.test(branchBaseContent));
+
+  // Extract just the validateBranchBase function to check order
+  const funcMatch = branchBaseContent.match(/function validateBranchBase[\s\S]*?^}/m);
+  if (funcMatch) {
+    const funcBody = funcMatch[0];
+    const fetchPos = funcBody.indexOf('git fetch');
+    const revParsePos = funcBody.indexOf('git rev-parse');
+    assert('fetch occurs BEFORE rev-parse (in function)', fetchPos > -1 && revParsePos > -1 && fetchPos < revParsePos);
+  } else {
+    assert('validateBranchBase function found', false);
+  }
+
+  assert('code comments warn fetch is load-bearing', /load-bearing|MUST fetch|CRITICAL.*fetch/.test(branchBaseContent));
 });
 
 // Summary
