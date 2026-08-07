@@ -208,7 +208,7 @@
           },
           "approver": {
             "type": "string",
-            "description": "Name, email, or role of approver (e.g., 'amar.singh@matellio.com' or 'Product Manager')"
+            "description": "Name, role, or team of approver (e.g., 'Product Manager', 'Security Team', 'Engineering Lead')"
           },
           "reason": {
             "type": "string",
