@@ -505,42 +505,134 @@ Every feature-scope story must prove tests FAIL before implementation begins (ph
 
 ## G-19 - Compliance gate contract (mechanical enforcement)
 
+⚠️ **CRITICAL ARCHITECTURAL DEPENDENCY:**
+Compliance enforcement uses a **three-layer defense architecture**. However, **only Layer 1 (GitHub Actions) is non-bypassable**. 
+Layers 2 and 3 are courtesy enforcement that can be skipped. **The system is ONLY SECURE if Layer 1 is properly configured.**
+
+If GitHub Actions is NOT set as a required status check, **ALL enforcement can be bypassed**.
+
+---
+
+### Three-Layer Enforcement Architecture
+
 Compliance enforcement is implemented as a single, reusable compliance evaluation
 module (`lib/compliance-evaluator.cjs`) invoked from THREE entry points:
 
-1. **GitHub Actions (AUTHORITATIVE)** — `.github/workflows/compliance-check.yml`
-   - Runs on every push and PR
-   - **Cannot be bypassed** (no --no-verify override, applies to web-UI PRs)
-   - Must be configured as a required status check in branch protection settings
-   - **LIMITATION (manual setup required):** Code cannot configure branch protection.
-     Repository admins must manually enable "Require status checks to pass before
-     merging" and select "Compliance Check" as required. Without this, the workflow
-     runs but does not block merges.
+**Layer 1: GitHub Actions (AUTHORITATIVE — CANNOT BE BYPASSED)**
+---
+- **Location:** `.github/workflows/compliance-check.yml`
+- **When:** Runs on every push and PR
+- **Bypass Resistance:** Cannot be bypassed by `--no-verify`, git CLI, web-UI PRs, or forks
+- **Mandatory Configuration:** Must be set as REQUIRED status check in branch protection
+  - Go to: GitHub Settings → Branches → Branch protection rules
+  - Select branch: `prod`, `preprod` (or your critical branches)
+  - Enable: "Require status checks to pass before merging"
+  - Select: "compliance-check" as required
+  - This step is MANUAL and CANNOT be done by code
 
-2. **Git pre-push hook (COURTESY)** — `.git/hooks/pre-push-compliance`
-   - Runs locally before push (fast feedback)
-   - Can be bypassed with `git push --no-verify` (logs bypass in audit)
-   - Provides immediate developer feedback without GitHub API delay
+**⚠️ CRITICAL LIMITATION:** If GitHub branch protection is NOT configured, this workflow
+  runs but does NOT block merges. A developer can still merge a PR with failing compliance
+  checks. This is a code-level limitation, not a code-level fix.
 
-3. **Keel pipeline gate (IN-PIPELINE)** — `scripts/keel-state.cjs` checkRegistry
-   - Runs during `gate --phase N --verdict PASS` check
-   - Confirms compliance within the orchestration pipeline
-   - Blocks story advancement if compliance fails
+**Layer 2: Git pre-push hook (COURTESY — CAN BE BYPASSED)**
+---
+- **Location:** `.git/hooks/pre-push-compliance`
+- **When:** Runs locally before push (fast feedback)
+- **Bypass Methods:**
+  - `git push --no-verify` (skips pre-push hook)
+  - `git push` from environment without hooks configured
+  - GitHub web-UI PR creation (no local hooks run)
+- **Purpose:** Fast local feedback without GitHub API delay
+- **Audit:** All bypasses logged to `.keel/PUSH_AUDIT.log`
+- **Mitigation:** Layer 1 (GitHub Actions) must catch violations
+
+**Layer 3: Keel pipeline gate (COURTESY — CAN BE BYPASSED)**
+---
+- **Location:** `scripts/keel-state.cjs` checkRegistry (C-0014 through C-0018)
+- **When:** Runs during `gate --phase N --verdict PASS` check
+- **Bypass Methods:**
+  - Plain editor + git (Keel pipeline never runs)
+  - Fork without Keel pipeline configuration
+  - Developer skips Keel and commits directly
+- **Purpose:** In-pipeline confirmation within orchestration workflow
+- **Blocks:** Story advancement if compliance fails (only if pipeline is used)
+- **Mitigation:** Layer 1 (GitHub Actions) must catch violations
 
 **All three write to the same audit trail:**
 Each check result includes `entry_point` tag ('github-actions', 'git-pre-push', or 'keel')
 and timestamp, enabling audit trail correlation across all three enforcement layers.
 
-**Scope:** Applies ONLY to stories marked compliance-scoped at init time
+---
+
+### Bypass Scenarios & Security Implications
+
+| Scenario | Layer 1 | Layer 2 | Layer 3 | Result | Notes |
+|----------|---------|---------|---------|--------|-------|
+| Configured correctly | ✅ ENFORCES | ✅ Courtesy | ✅ Courtesy | 🔒 SECURE | All three active, L1 is authoritative |
+| L1 NOT enabled | ❌ RUNS ONLY | ✅ Courtesy | ✅ Courtesy | 🚨 **BYPASS** | Developer can merge failing checks |
+| git --no-verify | ✅ ENFORCES | ❌ SKIPPED | ✅ Courtesy | 🔒 CAUGHT | L1 catches local bypass |
+| Plain editor + git | ✅ ENFORCES | ❌ N/A | ❌ SKIPPED | 🔒 CAUGHT | L1 catches (no Keel/hooks) |
+| GitHub web-UI PR | ✅ ENFORCES | ❌ N/A | ❌ SKIPPED | 🔒 CAUGHT | L1 catches (no local hooks) |
+| Fork without L1 setup | ✅ ENFORCES | ❌ N/A | ❌ SKIPPED | 🔒 CAUGHT | Fork inherits L1 config |
+
+**TL;DR:** If GitHub Actions is NOT required, compliance can be bypassed by any of:
+- `git push --no-verify`
+- Plain text editor + git (no Keel)
+- GitHub web-UI PR creation
+- Contributor with fork
+
+---
+
+### Critical Configuration Checklist
+
+**BEFORE considering compliance enforcement active, verify:**
+
+```
+LAYER 1 (GitHub Actions Required Status Check):
+  [ ] Go to: https://github.com/YOUR-REPO/settings/branches
+  [ ] For branch "prod":
+      [ ] Branch protection rule exists?
+      [ ] "Require status checks to pass" = ENABLED?
+      [ ] "compliance-check" is in required checks list?
+      [ ] "Allow force pushes" = DISABLED?
+  [ ] For branch "preprod":
+      [ ] Same checks as prod
+
+  If ANY of above is unchecked: ⚠️ ENFORCEMENT IS BYPASSED
+
+LAYER 2 (Git Pre-Push Hook):
+  [ ] Repository has `.git/hooks/pre-push-compliance`?
+  [ ] Hook is executable? (`chmod +x .git/hooks/pre-push-compliance`)
+  [ ] Audit trail `.keel/PUSH_AUDIT.log` exists?
+  
+  If ANY of above is unchecked: Layer 2 will not run locally
+  (L1 still catches violations on GitHub)
+
+LAYER 3 (Keel Pipeline Gate):
+  [ ] `scripts/keel-state.cjs` contains checkRegistry with C-0014..C-0018?
+  [ ] Developers run `keel` command in their workflow?
+  
+  If ANY of above is unchecked: Layer 3 will not run in pipeline
+  (L1 still catches violations on GitHub)
+```
+
+---
+
+### Scope
+
+Applies ONLY to stories marked compliance-scoped at init time
 (`--cjis-scope`, `--hipaa-scope`, `--soc2-scope`, `--nibrs-scope`).
 Non-compliance-scoped stories SKIP all compliance checks.
 
-**Checks (C-0014 through C-0018):**
+---
+
+### Checks (C-0014 through C-0018)
 
 - **C-0014 (compliance_scope_declared)** — FAIL if story is compliance-scoped but
   required application profile missing.
 
-- **C-0015 (compliance_evidence_present)** — FAIL if phase 8+ without prescan.json.
+- **C-0015 (compliance_evidence_present)** — FAIL if phase 8+ without valid prescan.json
+  (enhanced: validates content, timestamp freshness, findings array, control mappings).
 
 - **C-0016 (compliance_evidence_fresh)** — FAIL if evidence older than 7 days.
 
@@ -550,28 +642,14 @@ Non-compliance-scoped stories SKIP all compliance checks.
 - **C-0018 (compliance_control_terminal_state)** — FAIL if controls not terminal
   without approved exception.
 
-**Branch protection configuration (MANUAL — CODE CANNOT DO THIS):**
-Repository admins must enable branch protection rules. Example for `dev` branch:
+---
 
-```
-Settings → Branches → Add rule
-- Pattern: "dev"
-- ☑ Require a pull request before merging
-- ☑ Require status checks to pass before merging
-  - Select "Compliance Check" as required status check
-- ☑ Dismiss stale pull request approvals when new commits are pushed
-```
+### Failing a Compliance Check
 
-**Without manual branch protection setup, the GitHub Actions workflow runs but
-does NOT block merges.** A developer can still merge a PR with failing compliance
-checks if branch protection is not enabled. This is a code-level limitation, not
-a code-level fix.
-
-**Failing a compliance check:**
 If any compliance check returns FAIL:
-- GitHub Actions: PR cannot merge (if branch protection is configured)
-- Git pre-push: push is rejected locally (can be bypassed with --no-verify)
-- Keel gate: story cannot advance to next phase
+- **GitHub Actions:** PR cannot merge (if branch protection is configured as required status check)
+- **Git pre-push:** Push is rejected locally (can be bypassed with `git push --no-verify`)
+- **Keel gate:** Story cannot advance to next phase (if Keel pipeline is used)
 
 The check detail message explains the failure. Fix the issue or request a waiver
 (which requires human approval per G-2).
