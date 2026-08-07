@@ -67,7 +67,7 @@ function createPhaseFile(storyId, phase, customFindings) {
   const defaultFindings = [{ id: `FIND-${phase}`, text: 'Phase finding', severity: 'LOW', state: 'OPEN' }];
   const findings = customFindings || defaultFindings;
 
-  // For phase 3 (UI designer), add design_review_checklist
+  // For phase 3 (UI designer), add design_review_checklist + create task breakdown file
   const phaseData = {
     phase,
     agent,
@@ -88,6 +88,88 @@ function createPhaseFile(storyId, phase, customFindings) {
       design_tokens: true,
       palette_typography: true
     };
+    // Create task breakdown file for C-0009 check (at repo root, not in .keel/state)
+    const docsDir = path.join('docs', 'plans');
+    fs.mkdirSync(docsDir, { recursive: true });
+    const breakdownFile = path.join(docsDir, `${storyId}-task-breakdown.md`);
+    const breakdownContent = `# Task Breakdown for ${storyId}
+
+## Tasks
+
+| # | Task | Size | Depends on | AC |
+|---|------|------|-----------|-----|
+| 1 | Design screen layouts | M | - | AC-1 |
+| 2 | Create design tokens | S | 1 | AC-1 |
+| 3 | Document interactions | M | 1 | AC-1 |
+`;
+    fs.writeFileSync(breakdownFile, breakdownContent);
+  }
+
+  // For phase 5 (software-engineer), add Karpathy Protocol fields
+  if (phase === 5) {
+    // K-1: Assumptions required
+    phaseData.assumptions = [
+      { area: 'scope', assumption: 'Test assumption for implementation', risk: 'If invalid, design may not match code' }
+    ];
+
+    // K-2: Interpretations considered
+    phaseData.interpretations_considered = [
+      {
+        ac_id: 'AC-1',
+        options: [
+          'Option A: implement as described',
+          'Option B: implement with optimization'
+        ],
+        decision: 'Chose Option A: focus on correctness'
+      }
+    ];
+
+    // K-3: Implementation plan required (>= 300 words)
+    const docsDir = path.join('docs', 'plans');
+    fs.mkdirSync(docsDir, { recursive: true });
+    const planFile = path.join(docsDir, `${storyId}-implementation-plan.md`);
+    phaseData.implementation_plan_path = planFile;
+    const planContent = `# Implementation Plan for ${storyId}
+
+## Overview
+This is a comprehensive implementation plan for the software engineering phase. The plan details the approach, files to be modified, testing strategy, risk mitigation, and timelines required to deliver the acceptance criteria successfully. The implementation will follow SOLID principles and maintain backward compatibility where needed.
+
+## Files to change
+- File 1: impl.js - add core logic and business logic handlers
+- File 2: utils.js - add helper functions and utilities
+- File 3: index.js - export public API and main entry point
+- File 4: package.json - update version and dependencies
+- File 5: README.md - update documentation with new features
+
+## Acceptance Criteria Mapping
+- AC-1: Covered by unit test scenario 1 and integration tests
+- AC-1 verification: automated test suite validates correctness
+
+## Test scenarios
+1. Happy path: system behaves correctly with valid input and produces expected output
+2. Error case: system handles invalid input gracefully without crashing
+3. Edge case: system handles boundary conditions and extreme values
+4. Performance: system meets latency requirements under normal load
+5. Security: system validates and sanitizes all user input properly
+
+## Risks and Mitigations
+- Risk 1: Dependency changes - mitigation: use locked versions in package-lock.json
+- Risk 2: Database migration - mitigation: create reversible migrations with rollback plan
+- Risk 3: API changes - mitigation: maintain backward compatibility layer for clients
+- Risk 4: Integration issues - mitigation: comprehensive integration testing before merge
+- Risk 5: Performance degradation - mitigation: benchmark against baseline metrics
+
+## Timeline and Dependencies
+- Day 1: Core implementation with unit tests and documentation
+- Day 2: Integration testing and performance validation
+- Tasks are sequential with initial setup as foundation
+- Estimated duration: 2 days for implementation and testing
+- Dependencies: design approval must be complete before starting
+
+## Integration Points
+The implementation integrates with existing modules and maintains clean interfaces. Code review required before merging to dev branch. All tests must pass in CI/CD pipeline.
+`;
+    fs.writeFileSync(planFile, planContent);
   }
 
   fs.writeFileSync(phaseFile, JSON.stringify(phaseData, null, 2));
@@ -114,6 +196,117 @@ function runGate(storyId, phase, verdict, dryRun = false, skipApprovals = true) 
   } catch (err) {
     return { code: err.status, output: err.stdout + err.stderr };
   }
+}
+
+// Helper: Create valid phase 3 data with task breakdown file
+function createPhase3Data(storyId, customData = {}) {
+  const docsDir = path.join('docs', 'plans');
+  fs.mkdirSync(docsDir, { recursive: true });
+  const breakdownFile = path.join(docsDir, `${storyId}-task-breakdown.md`);
+  const breakdownContent = `# Task Breakdown for ${storyId}
+
+## Tasks
+
+| # | Task | Size | Depends on | AC |
+|---|------|------|-----------|-----|
+| 1 | Design screen layouts | M | - | AC-1 |
+| 2 | Create design tokens | S | 1 | AC-1 |
+| 3 | Document interactions | M | 1 | AC-1 |
+`;
+  fs.writeFileSync(breakdownFile, breakdownContent);
+
+  const baseData = {
+    phase: 3,
+    agent: 'ui-designer',
+    story_id: storyId,
+    confidence: 'high',
+    findings: [{ id: 'DESIGN-1', text: 'Design specification', severity: 'LOW', state: 'OPEN' }],
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    next_phase: 4,
+    design_review_checklist: {
+      story_alignment: true,
+      wcag_2_1_aa: true,
+      responsive_design: true,
+      design_tokens: true,
+      palette_typography: true
+    }
+  };
+
+  return Object.assign(baseData, customData);
+}
+
+// Helper: Create valid phase 5 data with K-fields
+function createPhase5Data(storyId, customData = {}) {
+  const docsDir = path.join('docs', 'plans');
+  fs.mkdirSync(docsDir, { recursive: true });
+  const planFile = path.join(docsDir, `${storyId}-implementation-plan.md`);
+  const planContent = `# Implementation Plan for ${storyId}
+
+This is a comprehensive implementation plan for software engineering phase validation in test suites. The plan outlines the approach to implementing the acceptance criteria with proper testing and validation to ensure quality delivery.
+
+## Files to change
+- impl.js: core logic implementation and feature development
+- utils.js: helper functions and utilities for shared functionality
+- index.js: public API exports and module interfaces
+- package.json: version bumps and dependency updates
+- test/impl.test.js: comprehensive unit tests for new functionality
+
+## Acceptance Criteria Mapping
+- AC-1: Covered in unit tests validating the implementation
+- AC-1: Integration tests verify end-to-end behavior
+- AC-1: Manual testing confirms user experience
+
+## Test scenarios
+1. Happy path: valid input produces expected output with correct side effects
+2. Error handling: invalid input is handled gracefully without crashes
+3. Edge cases: boundary conditions and extreme values are handled properly
+4. Performance: implementation meets latency requirements under load
+5. Security: input validation and sanitization applied throughout
+
+## Risks and Mitigations
+- Dependency changes: use locked versions in package-lock.json
+- Database migrations: reversible migrations with rollback procedure
+- API changes: backward compatibility layer maintained for clients
+- Performance: baseline metrics validated with load testing
+- Integration: comprehensive integration testing before merge to dev
+
+## Timeline and Dependencies
+- Phase 1: Implementation of core functionality (1 day)
+- Phase 2: Unit test development and integration (0.5 days)
+- Phase 3: Integration and performance testing (0.5 days)
+- Total: 2 days for implementation and validation phases
+- Dependencies: design approval must be complete before starting
+
+## Integration Points
+The implementation integrates with existing modules through well-defined interfaces. All code changes are backward compatible where possible. Code review is required before merging to the development branch. All tests must pass in the CI/CD pipeline before deployment.
+
+## Deployment and Rollout
+The implementation will be deployed following the standard deployment procedures with proper monitoring and rollback plans in place for production environments.
+`;
+  fs.writeFileSync(planFile, planContent);
+
+  const baseData = {
+    phase: 5,
+    agent: 'software-engineer',
+    story_id: storyId,
+    confidence: 'high',
+    acceptance_criteria_ids: ['AC-1'],
+    decisions: [],
+    artifacts: [],
+    findings: [],
+    next_phase: null,
+    assumptions: [
+      { area: 'scope', assumption: 'Test assumption', risk: 'If invalid, may not match design' }
+    ],
+    interpretations_considered: [
+      { ac_id: 'AC-1', options: ['Option A', 'Option B'], decision: 'Chose Option A' }
+    ],
+    implementation_plan_path: planFile
+  };
+
+  return Object.assign(baseData, customData);
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -491,19 +684,9 @@ test('T4-AC1: Directive restatement triggers auto-added HIGH finding', () => {
     throw new Error('directive add failed');
   }
 
-  // Create phase-5 file (directive applies to it)
+  // Create phase-5 file (directive applies to it) with K-fields
   const phaseFile = path.join('.keel/state', 'story-t4-ac1', '05-software-engineer.json');
-  fs.writeFileSync(phaseFile, JSON.stringify({
-    phase: 5,
-    agent: 'software-engineer',
-    story_id: 'story-t4-ac1',
-    confidence: 'high',
-    acceptance_criteria_ids: ['AC-1'],
-    decisions: [],
-    artifacts: [],
-    findings: [],
-    next_phase: null
-  }, null, 2));
+  fs.writeFileSync(phaseFile, JSON.stringify(createPhase5Data('story-t4-ac1'), null, 2));
 
   // Advance to phase 5
   const manifestPath = path.join('.keel/state', 'story-t4-ac1', 'manifest.json');
@@ -764,6 +947,12 @@ test('T5 AC-1: Phase 3 gate PASSES when checklist is missing (backward compatibi
   createPhaseFile('story-t5-ac1', 2);
   runGate('story-t5-ac1', 2, 'PASS', false);
 
+  // Create task breakdown file manually (required for C-0009, independent of checklist)
+  const docsDir = path.join('docs', 'plans');
+  fs.mkdirSync(docsDir, { recursive: true });
+  const breakdownFile = path.join(docsDir, 'story-t5-ac1-task-breakdown.md');
+  fs.writeFileSync(breakdownFile, `# Task Breakdown for story-t5-ac1\n\n| # | Task | Size | Depends on | AC |\n|---|------|------|-----------|-----|\n| 1 | Design | M | - | AC-1 |\n`);
+
   // Create phase 3 file WITHOUT design_review_checklist (backward compatible with pre-T5)
   const phase3File = '.keel/state/story-t5-ac1/03-ui-designer.json';
   fs.writeFileSync(phase3File, JSON.stringify({
@@ -835,26 +1024,9 @@ test('T5 AC-3: Phase 3 gate PASSES with complete checklist', () => {
   createPhaseFile('story-t5-ac3', 2);
   runGate('story-t5-ac3', 2, 'PASS', false);
 
-  // Create phase 3 with complete checklist (must have findings)
+  // Create phase 3 with complete checklist (with task breakdown file via helper)
   const phase3File = '.keel/state/story-t5-ac3/03-ui-designer.json';
-  fs.writeFileSync(phase3File, JSON.stringify({
-    phase: 3,
-    agent: 'ui-designer',
-    story_id: 'story-t5-ac3',
-    confidence: 'high',
-    findings: [{ id: 'DESIGN-1', text: 'Design specification', severity: 'LOW', state: 'OPEN' }],
-    acceptance_criteria_ids: ['AC-1'],
-    decisions: [],
-    artifacts: [],
-    next_phase: 4,
-    design_review_checklist: {
-      story_alignment: true,
-      wcag_2_1_aa: true,
-      responsive_design: true,
-      design_tokens: true,
-      palette_typography: true
-    }
-  }));
+  fs.writeFileSync(phase3File, JSON.stringify(createPhase3Data('story-t5-ac3')));
 
   const result = runGate('story-t5-ac3', 3, 'PASS', false);
   if (result.code !== 0) {
@@ -869,14 +1041,13 @@ test('FINDING-A AC-1: Phase FAILS with DEFERRED finding lacking approval', () =>
   cleanupStories();
   initStory('story-fa-ac1');
 
-  // Create phase 5 with DEFERRED finding (manually set without approval)
+  // Create phase 5 with DEFERRED finding (manually set without approval) with K-fields
   const phase5Path = '.keel/state/story-fa-ac1/05-software-engineer.json';
   fs.mkdirSync(path.dirname(phase5Path), { recursive: true });
-  fs.writeFileSync(phase5Path, JSON.stringify({
-    phase: 5, agent: 'software-engineer', story_id: 'story-fa-ac1', confidence: 'high',
+  fs.writeFileSync(phase5Path, JSON.stringify(createPhase5Data('story-fa-ac1', {
     findings: [{ id: 'BUG-1', text: 'Performance issue', severity: 'MEDIUM', state: 'DEFERRED' }],
-    acceptance_criteria_ids: ['AC-1'], decisions: [], artifacts: [], next_phase: 6
-  }));
+    next_phase: 6
+  })));
 
   // Manually advance manifest to phase 5 for testing
   const manifest = JSON.parse(fs.readFileSync('.keel/state/story-fa-ac1/manifest.json', 'utf8'));
@@ -901,17 +1072,17 @@ test('FINDING-A AC-2: Phase PASSES with DEFERRED finding having approval', () =>
     createPhaseFile('story-fa-ac2', p);
   }
 
-  // Create phase 5 with OPEN finding
+  // Create phase 5 with OPEN finding (with K-fields)
   const phase5Path = '.keel/state/story-fa-ac2/05-software-engineer.json';
-  fs.writeFileSync(phase5Path, JSON.stringify({
-    phase: 5, agent: 'software-engineer', story_id: 'story-fa-ac2', confidence: 'high',
+  fs.writeFileSync(phase5Path, JSON.stringify(createPhase5Data('story-fa-ac2', {
     findings: [{ id: 'BUG-1', text: 'Performance issue', severity: 'MEDIUM', state: 'OPEN' }],
-    acceptance_criteria_ids: ['AC-1'], decisions: [], artifacts: [], next_phase: 6
-  }));
+    next_phase: 6
+  })));
 
   // Manually advance manifest to phase 5 (skip gating phases 1-4 for test speed)
   const manifest = JSON.parse(fs.readFileSync('.keel/state/story-fa-ac2/manifest.json', 'utf8'));
   manifest.current_phase = 5;
+  manifest.scope = 'defect';  // Set to defect to skip C-0013 red-check (not a TDD test)
   fs.writeFileSync('.keel/state/story-fa-ac2/manifest.json', JSON.stringify(manifest, null, 2));
 
   // Approve the transition from OPEN → DEFERRED
@@ -984,6 +1155,7 @@ test('FINDING-A AC-4: Phase PASSES with DECLINED directive having approval', () 
   // Manually advance manifest to phase 5
   const manifest = JSON.parse(fs.readFileSync('.keel/state/story-fa-ac4/manifest.json', 'utf8'));
   manifest.current_phase = 5;
+  manifest.scope = 'defect';  // Set to defect to skip C-0013 red-check (not a TDD test)
   fs.writeFileSync('.keel/state/story-fa-ac4/manifest.json', JSON.stringify(manifest, null, 2));
 
   createPhaseFile('story-fa-ac4', 5);
