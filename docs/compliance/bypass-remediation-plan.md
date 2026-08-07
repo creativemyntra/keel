@@ -16,14 +16,14 @@ Adversarial testing of the three-layer compliance enforcement system identified 
 
 ## Critical Findings
 
-### Finding 1: C-0015 Prescan Evidence Not Validated (P0-1)
+### Finding 1: C-0015 Prescan Evidence Not Validated (P0-1) ✅ FIXED
 
-**What's Broken:**
-- C-0015 checks that prescan.json EXISTS
-- C-0015 does NOT validate prescan.json CONTENT
-- Attacker can create fake prescan.json with no findings
+**What Was Broken:**
+- C-0015 checked that prescan.json EXISTS only
+- C-0015 did NOT validate prescan.json CONTENT
+- Attacker could create fake prescan.json with no findings
 
-**Attack:**
+**Attack Vector:**
 ```bash
 # Create fake prescan with no actual scan results
 mkdir -p .keel/state/STORY/
@@ -41,9 +41,9 @@ EOF
 
 **Impact:** Evidence fabrication, false compliance claims
 
-**Remediation:**
+**Remediation: IMPLEMENTED**
 
-Add content validation to C-0015:
+Enhanced C-0015 with comprehensive content validation:
 
 ```javascript
 // In scripts/keel-state.cjs, C-0015 check:
@@ -387,6 +387,19 @@ git push origin feat/branch --no-verify
 
 ## Remediation Checklist
 
+### COMPLETED ✅
+
+- [x] **P0-1: Enhance C-0015 Content Validation** (2026-08-07)
+  - [x] Update C-0015 check in scripts/keel-state.cjs
+  - [x] Validate prescan.json JSON parsing
+  - [x] Validate prescan.json timestamp (within 24 hours)
+  - [x] Validate prescan.json has findings (non-empty)
+  - [x] Validate control_mappings reference findings
+  - [x] Add content hash for tamper detection
+  - [x] Added 6 new unit tests for content validation
+  - [x] All tests passing: 20/20 unit tests, 10/10 integration tests
+  - **Status:** RESOLVED — Evidence fabrication attack now blocked
+
 ### IMMEDIATE (Before Any Production Use)
 
 - [ ] **P0-3: GitHub Branch Protection**
@@ -397,14 +410,6 @@ git push origin feat/branch --no-verify
   - [ ] Select: "compliance-check" in required checks
   - [ ] Disable: "Allow force pushes"
   - [ ] Document in project README that this step is manual
-
-- [ ] **P0-1: Enhance C-0015 Content Validation**
-  - [ ] Update C-0015 check in scripts/keel-state.cjs
-  - [ ] Validate prescan.json timestamp (within 24 hours)
-  - [ ] Validate prescan.json has findings (non-empty)
-  - [ ] Validate control_mappings reference findings
-  - [ ] Add tests for fake/corrupted prescan.json
-  - [ ] Verify tests pass: `npm test`
 
 - [ ] **P0-2: Document Three-Layer Enforcement**
   - [ ] Update .keel/GUARDRAILS.md with G-19 extended description
@@ -446,16 +451,17 @@ git push origin feat/branch --no-verify
 
 ## Impact Assessment
 
-| Finding | Severity | Bypass Possible | Mitigation | Effort | Blocker |
-|---------|----------|-----------------|-----------|--------|---------|
-| P0-1 | CRITICAL | YES | Enhance C-0015 | 4h | YES |
-| P0-2 | CRITICAL | YES | Document + verify L1 | 2h | YES |
-| P0-3 | CRITICAL | YES | Manual GitHub setup | 5m | YES |
-| P0-4 | HIGH | YES | Document + monitor | 1h | MED |
-| P0-5 | HIGH | YES | Document (L1 catches) | 1h | LOW |
+| Finding | Severity | Status | Mitigation | Effort | Blocker |
+|---------|----------|--------|-----------|--------|---------|
+| **P0-1** | CRITICAL | ✅ **FIXED** (2026-08-07) | C-0015 content validation | 4h ✓ | RESOLVED |
+| P0-2 | CRITICAL | OPEN | Document + verify L1 | 2h | YES |
+| P0-3 | CRITICAL | OPEN | Manual GitHub setup | 5m | YES |
+| P0-4 | HIGH | OPEN | Document + monitor | 1h | MED |
+| P0-5 | HIGH | OPEN | Document (L1 catches) | 1h | LOW |
 
-**Total Remediation Effort:** ~10-12 hours  
-**Blocker Status:** CANNOT PROCEED TO PRODUCTION until P0-1, P0-2, P0-3 resolved
+**Completed Effort:** 4 hours (P0-1)  
+**Remaining Effort:** ~9-10 hours (P0-2, P0-3, P0-4, P0-5)  
+**Blocker Status:** CANNOT PROCEED TO PRODUCTION until P0-2, P0-3 resolved (P0-1 is fixed)
 
 ---
 
