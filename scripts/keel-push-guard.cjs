@@ -18,7 +18,7 @@
 
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { isFeatureBranch, validateBranchBase } = require('./keel-branch-base.cjs');
+const { isFeatureBranch, validateBranchBase, resolveRemote } = require('./keel-branch-base.cjs');
 
 const PREFLIGHT = path.join(__dirname, 'keel-preflight.cjs');
 const AUDIT_GUARD = path.join(__dirname, 'keel-audit-guard.cjs');
@@ -86,6 +86,18 @@ async function main() {
 
   if (!blocked.length) {
     // Check branch base for feature branches (STANDARD enforcement — no installer required)
+    // CRITICAL: resolveRemote() must be called to get the correct remote (marketplace or origin)
+    // The remote parameter to validateBranchBase is REQUIRED and must not be guessed.
+    let remote;
+    try {
+      remote = resolveRemote();
+    } catch (err) {
+      process.stderr.write('\n');
+      process.stderr.write(`❌ PUSH FAILED: Could not resolve git remote\n`);
+      process.stderr.write(`${err.message}\n`);
+      process.exit(1);
+    }
+
     const branchBaseErrors = [];
     for (const line of lines) {
       const parts = line.trim().split(/\s+/);
@@ -94,11 +106,18 @@ async function main() {
       const branchName = shortRef(remoteRef);
 
       if (isFeatureBranch(branchName)) {
-        // Determine remote (marketplace or origin)
-        const remote = remoteRef.includes('marketplace') ? 'marketplace' : 'origin';
-        const baseError = validateBranchBase(branchName, remote);
-        if (baseError) {
-          branchBaseErrors.push({ branch: branchName, ...baseError });
+        try {
+          const baseError = validateBranchBase(branchName, remote);
+          if (baseError) {
+            branchBaseErrors.push({ branch: branchName, ...baseError });
+          }
+        } catch (err) {
+          // validateBranchBase throws on explicit errors (fetch failure, etc.)
+          process.stderr.write('\n');
+          process.stderr.write(`❌ PUSH FAILED: Branch base validation error\n`);
+          process.stderr.write(`Branch: ${branchName}\n`);
+          process.stderr.write(`${err.message}\n`);
+          process.exit(1);
         }
       }
     }
