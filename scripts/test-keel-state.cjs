@@ -72,6 +72,23 @@ function writePhaseFile(cwd, story, phase, agent, findings, nextPhase) {
     next_phase: nextPhase !== undefined ? nextPhase : phase + 1,
   };
 
+  // Create task breakdown file for phase 3 (C-0009 requirement)
+  if (phase === 3 && agent === 'ui-designer') {
+    fs.mkdirSync(docsDir, { recursive: true });
+    const breakdownPath = path.join(docsDir, `${story}-task-breakdown.md`);
+    const breakdownContent = `# Task Breakdown for ${story}
+
+## Tasks
+
+| # | Task | Size | Depends on | AC |
+|---|------|------|-----------|-----|
+| 1 | Design screen layouts | M | - | AC-1 |
+| 2 | Create design tokens | S | 1 | AC-1 |
+| 3 | Document interactions | M | 1 | AC-1 |
+`;
+    fs.writeFileSync(breakdownPath, breakdownContent);
+  }
+
   // Add Karpathy Protocol fields for phase 5 (software-engineer)
   if (phase === 5 && agent === 'software-engineer') {
     // K-1: Assumptions required
