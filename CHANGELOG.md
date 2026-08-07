@@ -1,4 +1,22 @@
-﻿## [.18.2] - 2026-08-07 - CJIS GATE FIX: SCOPE-AWARE SEVERITY ESCALATION
+﻿## [.18.3] - 2026-08-07 - CJIS GOVERNANCE: ENGINEER-GUESSED PATTERNS REPLACED WITH SOURCED REGISTRY
+
+### Features
+- **CJIS Data Element Registry** — \config/cjis-data-element-registry.json\ centralizes all identifier specifications with mandatory governance source citations (public docs, client-supplied, or explicit PENDING_CONFIRMATION status)
+
+### Fixes
+- **Engineer-Guessed Patterns Eliminated** — NCIC_ID, LEID, HART_CASE_ID, HART_SUBJECT_ID removed from hard-block enforcement. Moved to PENDING_CONFIRMATION status (warn-only, logged, non-blocking) pending governance approval from Forseti and HART compliance team.
+- **Governance Enforcement** — Gate fails closed if pattern entries missing source or approved_by. ACTIVE patterns only enforce if governance metadata complete and valid.
+
+### Changed
+- **General PII Patterns Citeable** — SSN, EMAIL, PHONE, ADDRESS, DOB, NAME_NARRATIVE now include public source citations (RFC, NIST, FCC, USPS, FBI NIBRS) in registry
+- **Unverified Patterns Non-Blocking** — PENDING_CONFIRMATION patterns treated as WARN-level (exit 0) instead of hard-block, ensuring visibility without false-positive enforcement
+
+### Process
+- Outstanding requests filed with Forseti (NCIC_ID, LEID format confirmation) and HART compliance team (case/subject ID formats)
+- Registry documented in decision-log.md with governance request status and next steps
+
+---
+## [.18.2] - 2026-08-07 - CJIS GATE FIX: SCOPE-AWARE SEVERITY ESCALATION
 
 ### Features
 - **CJIS Application Profile** — \config/cjis-application-profile.json\ defines scope globs for context-aware severity escalation
@@ -731,4 +749,5 @@ MIT - See [LICENSE](LICENSE) for details
 Last Updated: 2026-07-29
 Version: 3.16.9
 Status: Production Ready
+
 
