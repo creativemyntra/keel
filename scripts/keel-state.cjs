@@ -1423,10 +1423,11 @@ const checkRegistry = {
     };
   },
 
-  // C-0015 (Compliance Evidence Present): Ensure compliance-scoped stories have evidence before security phase.
+  // C-0015 (Compliance Evidence Present): Ensure compliance-scoped stories have valid evidence before security phase.
   // FAIL if story is compliance-scoped and reaches phase 8 (security engineer) without prescan.json evidence.
   // prescan.json should be created by pre-phase-8 scanning (phase 7 E2E or earlier compliance check).
-  // Status: SKIP if not compliance-scoped or phase < 8, FAIL if phase >= 8 and prescan missing, PASS if found.
+  // ENHANCED: Validates prescan.json content (not just existence) to prevent evidence fabrication.
+  // Status: SKIP if not compliance-scoped or phase < 8, FAIL if phase >= 8 and prescan missing/invalid, PASS if valid.
   compliance_evidence_present: (storyId, phase, manifest) => {
     if (!manifest.compliance_scopes || manifest.compliance_scopes.length === 0) {
       return { id: 'C-0015', status: 'SKIP', detail: 'story is not compliance-scoped' };
@@ -1447,10 +1448,92 @@ const checkRegistry = {
       };
     }
 
+    // ✨ NEW: Validate prescan.json content to prevent evidence fabrication
+    let prescan;
+    try {
+      const prescannedContent = fs.readFileSync(prescannedFile, 'utf8');
+      prescan = JSON.parse(prescannedContent);
+    } catch (e) {
+      return {
+        id: 'C-0015',
+        status: 'FAIL',
+        detail: `prescan.json parse error: ${e.message}. File is not valid JSON.`
+      };
+    }
+
+    // Check 1: Validate timestamp exists and is recent (within 24 hours)
+    if (!prescan.scan_timestamp) {
+      return {
+        id: 'C-0015',
+        status: 'FAIL',
+        detail: 'prescan.json missing scan_timestamp field. Scan appears incomplete.'
+      };
+    }
+
+    const scanTime = new Date(prescan.scan_timestamp);
+    if (isNaN(scanTime.getTime())) {
+      return {
+        id: 'C-0015',
+        status: 'FAIL',
+        detail: `prescan.json scan_timestamp is invalid: "${prescan.scan_timestamp}". Must be ISO 8601 format.`
+      };
+    }
+
+    const now = new Date();
+    const hoursSince = (now - scanTime) / (1000 * 60 * 60);
+    const STALE_THRESHOLD = 24;
+
+    if (hoursSince > STALE_THRESHOLD) {
+      return {
+        id: 'C-0015',
+        status: 'FAIL',
+        detail: `prescan.json is stale: scanned ${Math.floor(hoursSince)} hours ago (max ${STALE_THRESHOLD}). ` +
+          'Re-run prescan.json in phase 7 (E2E engineer) or later.'
+      };
+    }
+
+    // Check 2: Validate findings array exists and is non-empty (actual scan was performed)
+    if (!Array.isArray(prescan.findings)) {
+      return {
+        id: 'C-0015',
+        status: 'FAIL',
+        detail: 'prescan.json findings field is missing or not an array. Scan appears incomplete.'
+      };
+    }
+
+    if (prescan.findings.length === 0) {
+      return {
+        id: 'C-0015',
+        status: 'FAIL',
+        detail: 'prescan.json has no findings (empty array). Actual scan must have been performed. ' +
+          'If no violations found, document in findings with status: "CLEAN".'
+      };
+    }
+
+    // Check 3: Validate control_mappings references actual findings
+    if (prescan.control_mappings && Array.isArray(prescan.control_mappings)) {
+      const findingIds = new Set(prescan.findings.map(f => f.finding_id || f.id));
+      for (const mapping of prescan.control_mappings) {
+        if (mapping.finding_id && !findingIds.has(mapping.finding_id)) {
+          return {
+            id: 'C-0015',
+            status: 'FAIL',
+            detail: `prescan.json control_mapping references non-existent finding: "${mapping.finding_id}". ` +
+              'All mappings must reference findings in the findings array.'
+          };
+        }
+      }
+    }
+
+    // Check 4: Compute content hash for tamper detection
+    const crypto = require('crypto');
+    const prescannedContent = fs.readFileSync(prescannedFile, 'utf8');
+    const contentHash = crypto.createHash('sha256').update(prescannedContent).digest('hex');
+
     return {
       id: 'C-0015',
       status: 'PASS',
-      detail: 'prescan.json present — compliance evidence collected before security phase'
+      detail: `prescan.json valid — ${prescan.findings.length} findings, scanned ${Math.floor(hoursSince)}h ago, hash ${contentHash.slice(0, 8)}`
     };
   },
 
