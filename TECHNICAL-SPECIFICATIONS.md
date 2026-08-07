@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.18.2 - Technical Specifications
+# Keel AI-SDLC Framework v3.19.0 - Technical Specifications
 
 **Document Version:** 2.0  
 **Last Updated:** 2026-08-03  
@@ -145,7 +145,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - Data flows and domain rules
 - Edge cases and error paths
 
-#### Phase 3: UI Designer Agent (v3.14.0)
+#### Phase 3: UI Designer Agent (v3.19.0)
 - Scans existing UI patterns in the project
 - Produces Markdown design spec + self-contained HTML mockup
 - No-UI determination for non-visual stories
@@ -160,7 +160,7 @@ Keel AI-SDLC Framework is an enterprise-grade, AI-powered software development l
 - Coverage >= 80% on changed lines gated before QA
 - PSR-12 / ESLint compliance, CodeGraph impact-scoped implementation
 
-#### Phase 6: QA Engineer Agent (v3.15.0)
+#### Phase 6: QA Engineer Agent (v3.19.0)
 - Maps every AC to a passing test
 - Runs integration tests against live endpoints
 - Full suite gate (once per story)
@@ -355,7 +355,7 @@ Record in Audit Trail
 #### 1. Claude Code Plugin
 - Direct installation via marketplace
 - Command: `/plugin add marketplace keel`
-- Version: v3.18.2
+- Version: v3.19.0
 - Status: LIVE
 
 #### 2. npm Package
@@ -372,9 +372,9 @@ Record in Audit Trail
 
 #### 4. GitHub Action
 - Name: `creativemyntra/keel`
-- Version: `v3.18.2`
+- Version: `v3.19.0`
 - Marketplace: LIVE (auto-discovering)
-- Usage: `uses: creativemyntra/keel@v3.18.2`
+- Usage: `uses: creativemyntra/keel@v3.19.0`
 
 ---
 
@@ -402,7 +402,7 @@ Record in Audit Trail
 - **DAST:** N/A (CLI tool, no web endpoints)
 - **Secrets Scanning:** git-secrets pre-commit hook
 
-### Infrastructure Scripts (v3.18.2)
+### Infrastructure Scripts (v3.19.0)
 
 | Script | Purpose | Hook Stage(s) |
 |--------|---------|---------------|
@@ -431,6 +431,91 @@ Hook wiring: `hooks/hooks.json` registers `keel-classify-gate.cjs` on all three 
 - **Concurrent Agents:** Up to 10 (one per phase)
 - **Project Size:** No limit (tested on 50K+ LOC)
 - **Output Size:** No limit (streaming writes)
+
+---
+
+## VCS Provider-Agnostic Approval Gate (T19)
+
+### Overview
+Keel's design approval gate (C-0007 / T6) now supports multiple Version Control Systems
+through a provider-agnostic abstraction layer. Eliminates hardcoded GitHub references;
+supports GitHub (Cloud / Enterprise), Bitbucket (Cloud / Server/Data Center), GitLab (future).
+
+### Configuration
+**File:** `.keel/vcs.yml` (auto-detected from git remote, never committed)
+**Populated by:** `keel setup-vcs [--confirm]` (proposal-based, human approval required)
+
+```yaml
+provider: github | bitbucket | github-enterprise | bitbucket-server
+owner: <org/workspace/username>
+repo: <repo_slug>
+base_url: "" | https://self-hosted.example.com  # for self-hosted only
+token_file: ~/.keel/secrets/<provider>.token   # gitignored
+```
+
+### Providers Supported
+
+**GitHub Cloud/Enterprise:**
+- Queries GitHub REST API for PR reviews
+- Requires: GitHub personal access token (repo + pull_request scopes)
+
+**Bitbucket Cloud:**
+- Queries Bitbucket v2.0 REST API for PR reviewers
+- Requires: Bitbucket app password or PAT with repository read scope
+
+**Bitbucket Server/Data Center:**
+- Queries Bitbucket v1.0 REST API (self-hosted)
+- Requires: Bitbucket PAT with repository read scope
+- Configurable base_url for internal instances
+
+### Approval Logic (C-0007)
+1. Load .keel/vcs.yml (fail-closed if missing)
+2. Query configured provider for PR approvals
+3. Require ≥1 approval from configured repository
+4. Hash phase output to detect post-approval changes
+5. Record: PR#, approval count, provider, content hash, timestamp
+
+### Fail-Closed Design
+- ✅ No hardcoded VCS targets (all from config)
+- ✅ Configuration required at setup (never auto-accepted)
+- ✅ Missing .keel/vcs.yml → HALT with diagnostic
+- ✅ Malformed config → HALT with diagnostic
+- ✅ API failures → explicit error, no silent fallback
+- ✅ Token stored in ~/.keel/secrets/ (gitignored, never committed)
+
+### Setup Workflow
+```bash
+# 1. Initialize (auto-detects from git remote, displays proposal)
+keel setup-vcs
+
+# 2. Review proposal, then confirm
+keel setup-vcs --confirm --provider github --owner acme --repo my-app
+
+# 3. Provision auth token (stored locally, gitignored)
+echo "YOUR_GITHUB_TOKEN" > ~/.keel/secrets/github.token
+chmod 600 ~/.keel/secrets/github.token
+
+# 4. Test approval gate
+keel approve-phase STORY-123 3 --via-pr 456
+```
+
+### Implementation
+
+**T19 (Initial):** `scripts/lib/vcs-provider-interface.cjs` (monolithic, all providers in one file)
+
+**T19.2 (Refactored):** Modular structure under `scripts/vcs/`:
+- `provider.cjs` — VCSProvider base class
+- `index.cjs` — Factory: createVCSProvider(config)
+- `resolve.cjs` — Config loader, fail-closed validation
+- `providers/github.cjs` — GitHub Cloud/Enterprise
+- `providers/bitbucket-cloud.cjs` — Bitbucket Cloud (MCP-ready)
+- `providers/bitbucket-server.cjs` — Bitbucket Server (stub)
+
+**Commands:**
+- `keel setup-vcs` — Auto-detect + proposal (calls provider.testConnection() before writing config)
+- `keel approve-phase <story> <phase> --via-pr <PR#>` — Uses resolved provider
+
+**For existing installs:** Backward compatible. No migration required.
 
 ---
 

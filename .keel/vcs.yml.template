@@ -1,0 +1,32 @@
+# Keel VCS Provider Configuration (T19)
+#
+# Defines the Version Control System where approval evidence (PRs) is sourced.
+# This configuration is required for the approve-phase gate (C-0007).
+#
+# Auto-detected from git remote URL at setup time; human confirmation required
+# before writing to .keel/vcs.yml (fail-closed: no auto-accept).
+#
+# Once written, this file is the single source of truth for all VCS operations.
+
+# VCS Provider: github | bitbucket | gitlab (others on request)
+provider: github
+
+# GitHub: owner (org/username)
+# Bitbucket Cloud: workspace
+# Bitbucket Server/Data Center: ignored (uses base_url)
+owner: creativemyntra
+
+# GitHub: repo name
+# Bitbucket: repo_slug
+repo: keel
+
+# For self-hosted Bitbucket Server/Data Center or GitHub Enterprise.
+# Leave blank for GitHub Cloud or Bitbucket Cloud.
+# Example: https://bitbucket.example.com or https://github.example.com
+base_url: ""
+
+# Auth token stored in ~/.keel/secrets/<provider>.token (gitignored, never committed).
+# For GitHub: Personal Access Token with repo/pull_request read scope.
+# For Bitbucket: App Password or Personal Access Token with repository read scope.
+# Optional: if unset, uses `gh` CLI or `git credential` fallback.
+token_file: ~/.keel/secrets/github.token

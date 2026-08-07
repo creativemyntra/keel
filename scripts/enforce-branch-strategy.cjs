@@ -125,9 +125,46 @@ function enforce(hookType) {
   return 0;
 }
 
+/**
+ * Validate if headBranch is allowed as a source for baseBranch
+ * @param {string} baseBranch - target branch (qa, stage, preprod, prod, dev)
+ * @param {string} headBranch - source branch (feat/x, dev, qa, etc.)
+ * @returns {object} { allowed: boolean, message: string }
+ */
+function validateSource(baseBranch, headBranch) {
+  if (!PROMOTION_RULES[baseBranch]) {
+    return { allowed: false, message: `Unknown base branch: ${baseBranch}` };
+  }
+
+  const rule = PROMOTION_RULES[baseBranch];
+  const sources = rule.sources;
+
+  for (const pattern of sources) {
+    if (pattern === '*') continue;
+    if (pattern.includes('*')) {
+      // Glob pattern: feat/*, fix/*, etc.
+      const regex = new RegExp(`^${pattern.replace(/\*/g, '[^/]+')}$`);
+      if (regex.test(headBranch)) {
+        return { allowed: true, message: `${headBranch} → ${baseBranch}: OK` };
+      }
+    } else {
+      // Exact match: dev, qa, stage, etc.
+      if (headBranch === pattern) {
+        return { allowed: true, message: `${headBranch} → ${baseBranch}: OK` };
+      }
+    }
+  }
+
+  return {
+    allowed: false,
+    message: `${headBranch} → ${baseBranch}: NOT ALLOWED\n${rule.message}`
+  };
+}
+
 // Export for use in hooks
 module.exports = {
   enforce,
+  validateSource,
   getCurrentBranch,
   isFeatureBranch,
   isPromotionBranch,

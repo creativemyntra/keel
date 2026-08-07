@@ -1,4 +1,4 @@
-# Keel AI-SDLC Framework v3.18.2
+# Keel AI-SDLC Framework v3.19.0
 
 **Production-Ready AI-SDLC Plugin for Claude Code**
 
@@ -80,7 +80,7 @@ The plugin registers `/keel:*` commands, 15 agents, and 9 skills. `~/.keel` conf
 **Verify:**
 ```bash
 claude plugin list
-# -> keel v3.18.2 [x]
+# -> keel v3.19.0 [x]
 ```
 
 **Quick start — run this immediately after install:**
@@ -124,27 +124,27 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Initialize with Keel
-        uses: creativemyntra/keel@v3.18.2
+        uses: creativemyntra/keel@v3.19.0
         with:
           phase: 'init'
           mode: 'new'
           stack: 'cakephp'
 
       - name: Create Requirements
-        uses: creativemyntra/keel@v3.18.2
+        uses: creativemyntra/keel@v3.19.0
         with:
           phase: 'req'
           story-id: ${{ github.event.pull_request.number }}
 
       - name: Run Tests
-        uses: creativemyntra/keel@v3.18.2
+        uses: creativemyntra/keel@v3.19.0
         with:
           phase: 'test'
           story-id: ${{ github.event.pull_request.number }}
           coverage-target: '85'
 
       - name: Security Scan
-        uses: creativemyntra/keel@v3.18.2
+        uses: creativemyntra/keel@v3.19.0
         with:
           phase: 'sec'
           story-id: ${{ github.event.pull_request.number }}
@@ -514,7 +514,7 @@ Standardize workflows with shared conventions and governance.
 Automate governed development in GitHub Actions.
 
 ```yaml
-- uses: creativemyntra/keel@v3.18.2
+- uses: creativemyntra/keel@v3.19.0
   with:
     phase: 'all'   # Run complete pipeline
 ```
@@ -641,7 +641,7 @@ node bin/keel.js --help
 
 **[View Full Changelog →](CHANGELOG.md)**
 
-### What's New in v3.18.2
+### What's New in v3.19.0
 
 - **Audit release (31 findings)** — Full-spectrum hardening: Part A (21 static findings) + Part B (10 distribution/dynamic findings).
 - **action.yml hardened** — Shell injection closed (env-var quoting), `claude-api-key` wired to `ANTHROPIC_API_KEY`, `collect-outputs` now reports actual pass/fail.
@@ -649,7 +649,7 @@ node bin/keel.js --help
 - **npm package ships docs** — `INSTALL.md`, `QUICK-START-CLAUDE-CODE.md`, `ALL-AGENTS-COMPLETE-GUIDE.md`, `TECHNICAL-SPECIFICATIONS.md`, `CHANGELOG.md`, `docs/` now included.
 - **Schema enforced** — `decisions` added to `agent-output-schema.json` `required[]`.
 
-### What's New in v3.16.8
+### What's New in v3.19.0
 
 - **CJIS gate project-independence (CRIT-4)** — Universal NCIC_ID and LEID patterns now block at the framework level; project-specific identifiers moved to overlay (`cjis-project-patterns.json`). Overlay parse failure is fail-closed.
 - **Prompt injection guard (CRIT-1)** — OWASP LLM01 defense: 6 regex patterns (ignore/override, act-as, new-instructions, `<system>` tags, `###OVERRIDE`, `[system]` brackets) always-blocking at ALL hook stages including PostToolUse (exit 2).
@@ -661,7 +661,7 @@ node bin/keel.js --help
 - **Resume phase guard (HIGH-2)** — `resume --phase N` now rejects if phase N-1 output file is absent.
 - **Defect scope-creep detection (HIGH-4)** — Handshake agent blocks new endpoints, DB columns, non-test dependencies, or UI flows outside the RCA without human acknowledgment.
 
-### What's New in v3.16.7
+### What's New in v3.19.0
 
 - **Forensic engine audit: 14 fixes** — Comprehensive self-audit of `keel-state.cjs` and `keel-classify-gate.cjs` resolved 3 CRITICAL, 4 HIGH, 4 MEDIUM, and 3 LOW findings.
 - **Path traversal closed (CRIT-02)** — `story_id` validated with strict `^[A-Za-z0-9_-]+$` regex; arbitrary filesystem access via crafted story IDs blocked (exit 64).
@@ -671,32 +671,32 @@ node bin/keel.js --help
 - **Artifact validation hardened (MED-01)** — Rejects symlinks, files > 50 MB, dangerous extensions (`.exe`, `.bat`, `.sh`, `.dll`, `.ps1`).
 - **Configurable lock timeout (MED-03)** — `state_engine.lock_stale_seconds` in `.keel/economy.yml`; no longer hardcoded.
 
-### What's New in v3.16.6
+### What's New in v3.19.0
 
 - **G-15 Karpathy Protocol** — Four binding rules at every handshake gate: K-1 surface assumptions, K-2 ask-don't-guess (HALT on ambiguity), K-3 minimum code zero speculation, K-4 surgical diff verification.
 - **Token economy observability** — `confirm_before_spawn: true` (default): orchestrator shows `[token-estimate:]` before every spawn. `token_summary: true`: cumulative token table (estimates). Measured cache savings reported in telemetry when session usage is imported.
 - **Prompt cache breakpoints** — 3 canonical `cache_control: {type: "ephemeral"}` breakpoints; `[cache-estimate:]` line emitted per spawn.
 - **`/keel:tokens` command** — Live token ledger + cache savings; mid-session `confirm on|off` and `cache on|off` toggles.
 
-### What's New in v3.16.5
+### What's New in v3.19.0
 
 - **`keel:start-work` skill** — Fetches a Jira ticket via Atlassian Rovo MCP, creates a typed branch, pushes to remote, transitions Jira to "In Progress". Works in description-only mode when no ticket exists.
 - **`keel:finish-work` skill** — Creates an industry-standard PR to `dev` via GitHub REST API (`~/.keel/secrets/github.token`), transitions Jira to "In Review". Handles 422 (PR already exists) gracefully.
 - **Advisory ticket traceability (G-12)** — Ticket reference in commits is advisory-only (warns, never blocks).
 
-### What's New in v3.16.4
+### What's New in v3.19.0
 
 - **CakePHP-only packaging** — Removed all Node/Django/Rails/Laravel references; `keel-detect-stack` blocks non-PHP manifests. `package.json` `files` array includes `config/` and `stack-profiles/`.
 - **CJIS gate deadlock fix** — Rewrote `config/cjis-patterns.json` to eliminate description string that matched the EMAIL regex, causing the gate to block reads/writes of its own config file.
 - **Explicit model tiers** — Orchestrator pipeline phases table has a `Model` column; haiku for TRIVIAL-tier handshakes + jira-import, sonnet for all other phase agents and NORMAL/FULL gates.
 - **`/keel:preview` command** — Dry-run: stack detection, story state, economy settings, pipeline map with model tiers, CJIS gate status, CodeGraph freshness.
 
-### What's New in v3.16.0
+### What's New in v3.19.0
 
 - **CJIS Data Classification Gate** — `scripts/keel-classify-gate.cjs` + `config/cjis-patterns.json`; runs via `hooks/hooks.json` (UserPromptSubmit, PreToolUse, PostToolUse); blocks stories touching CJIS-adjacent data without required classification annotation.
 - **`keel-state.cjs security-status` command** — Human-readable CJIS gate status for a story.
 
-### What's New in v3.15.0
+### What's New in v3.19.0
 
 - **10-phase pipeline** — `tdd-red` and `tdd-green` removed as separate phases. `software-engineer` (phase 5) now writes production code and unit tests in one phase; coverage ≥ 80% is a hard gate. Phase renumbering: qa-engineer→6, e2e-engineer→7, security-engineer→8, technical-writer→9, release-manager→10.
 - **Backward-compatible engine** — `keel-state.cjs` retains `LEGACY_AGENTS` so stories initialized under the old 12-phase schema continue to validate correctly.
@@ -709,4 +709,4 @@ node bin/keel.js --help
 **Agents:** 15 (10 pipeline phase + 2 meta/support + 3 infrastructure)  
 **License:** MIT  
 **Author:** Amar Singh  
-**Tag:** v3.18.2 (https://github.com/creativemyntra/keel/releases/tag/v3.18.2)
+**Tag:** v3.19.0 (https://github.com/creativemyntra/keel/releases/tag/v3.19.0)

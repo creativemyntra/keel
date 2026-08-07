@@ -1,44 +1,6 @@
 {
-  "generated_at": "2026-07-31T11:04:49.943Z",
-  "nodes": {
-    "App\\Controller\\HealthController": {
-      "file": "src/Controller/HealthController.php",
-      "kind": "class"
-    },
-    "FixtureApp\\Controller\\HealthController": {
-      "file": "tests/fixture-app/src/Controller/HealthController.php",
-      "kind": "class"
-    },
-    "FixtureApp\\Tests\\Unit\\HealthControllerTest": {
-      "file": "tests/fixture-app/tests/Unit/HealthControllerTest.php",
-      "kind": "class"
-    }
-  },
-  "edges": [
-    {
-      "from": "App\\Controller\\HealthController",
-      "to": "Cake\\Controller\\Controller",
-      "type": "extends"
-    },
-    {
-      "from": "App\\Controller\\HealthController",
-      "to": "Cake\\Datasource\\ConnectionManager",
-      "type": "references"
-    },
-    {
-      "from": "FixtureApp\\Tests\\Unit\\HealthControllerTest",
-      "to": "FixtureApp\\Controller\\HealthController",
-      "type": "use"
-    },
-    {
-      "from": "FixtureApp\\Tests\\Unit\\HealthControllerTest",
-      "to": "PHPUnit\\Framework\\TestCase",
-      "type": "extends"
-    },
-    {
-      "from": "FixtureApp\\Tests\\Unit\\HealthControllerTest",
-      "to": "FixtureApp\\Controller\\HealthController",
-      "type": "references"
-    }
-  ]
+  "generated_at": "2026-08-07T05:19:12.052Z",
+  "head_commit": "a2ad4e97d3cf7108265e25dd072dc99136d2f81b",
+  "nodes": {},
+  "edges": []
 }

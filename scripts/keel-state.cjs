@@ -243,6 +243,7 @@ function phaseFileHash(storyId, phase) {
 }
 
 const { chainHash, verifyChain } = require('./lib/audit-chain.cjs');
+const { detectVcsFromRemote } = require('./lib/vcs-providers.cjs');
 
 function sha256line(text) {
   return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
@@ -2075,7 +2076,7 @@ function cmdPrescan(storyId) {
     catch { return false; }
   };
 
-  run('composer-audit', 'composer audit --no-interaction',
+  run('composer-audit', 'composer audit --no-interaction --locked',
     exists('composer.json') && onPath('composer'),
     exists('composer.json') ? 'not applicable — composer not on PATH' : 'not applicable — no composer.json');
   run('phpstan', 'vendor/bin/phpstan analyse --no-progress --error-format=raw',
@@ -2637,18 +2638,122 @@ function cmdTokenLedger(args) {
   die(64, `unknown token-ledger subcommand: ${sub} (expected append or summary)`);
 }
 
-// ------------------------------------------------------------------- approve-phase (T6)
-// Record GitHub PR approval for a phase (e.g., design review for phase 3).
-// Approval is verified against GitHub (server-side), not manifest-editable.
-// Usage: approve-phase <story-id> <phase-number> --via-github-pr <PR-number>
+// ------------------------------------------------------------------- setup-vcs (T19)
+// Initialize .keel/vcs.yml with auto-detected provider from git remote.
+// Proposal-based: detects provider, displays proposal, requires explicit confirmation.
+// Fail-closed: never auto-accepts; human must review and approve.
+// Usage: setup-vcs [--provider github|bitbucket|...] [--owner <org>] [--repo <name>]
+
+function cmdSetupVcs(args) {
+  const vcsYmlPath = path.join('.keel', 'vcs.yml');
+
+  // Load existing config if present (allows re-init)
+  let existing = null;
+  if (fs.existsSync(vcsYmlPath)) {
+    console.warn(`VCS config already exists at ${vcsYmlPath}`);
+    existing = fs.readFileSync(vcsYmlPath, 'utf8');
+    console.warn('To re-initialize, delete it first: rm .keel/vcs.yml');
+    return console.log('No action taken.');
+  }
+
+  // Auto-detect from git remote
+  let detected = null;
+  try {
+    const remoteUrl = require('child_process').execSync('git remote get-url origin', { encoding: 'utf8' }).trim();
+    detected = detectVcsFromRemote(remoteUrl);
+    console.log(`\n✓ Detected from git remote: ${remoteUrl}`);
+  } catch (err) {
+    console.warn(`\n⚠ Could not detect VCS from git remote: ${err.message}`);
+    console.log('Falling back to manual configuration...');
+    detected = {
+      provider: flag(args, '--provider') || 'github',
+      owner: flag(args, '--owner') || '',
+      repo: flag(args, '--repo') || '',
+      base_url: flag(args, '--base-url') || '',
+    };
+  }
+
+  // Allow CLI flag overrides
+  detected.provider = flag(args, '--provider') || detected.provider;
+  detected.owner = flag(args, '--owner') || detected.owner;
+  detected.repo = flag(args, '--repo') || detected.repo;
+  detected.base_url = flag(args, '--base-url') || detected.base_url;
+
+  // Proposal display (human review required)
+  console.log('\n=== VCS Configuration Proposal ===\n');
+  console.log(`Provider:     ${detected.provider}`);
+  console.log(`Owner:        ${detected.owner}`);
+  console.log(`Repo:         ${detected.repo}`);
+  if (detected.base_url) console.log(`Base URL:     ${detected.base_url}`);
+  console.log(`\nToken file:   ~/.keel/secrets/${detected.provider}.token`);
+  console.log('              (create this file with your VCS access token, gitignored)\n');
+
+  // Validate detected config
+  if (!detected.provider || !detected.owner || !detected.repo) {
+    die(1, `FAIL: incomplete VCS configuration — provide all of: --provider, --owner, --repo\nUsage: setup-vcs --provider github --owner acme --repo my-app`);
+  }
+
+  // Require human confirmation (no auto-accept)
+  if (!args.includes('--confirm')) {
+    console.log('To accept this configuration and write .keel/vcs.yml, re-run with:');
+    console.log(`  keel setup-vcs --confirm --provider ${detected.provider} --owner ${detected.owner} --repo ${detected.repo}${detected.base_url ? ` --base-url ${detected.base_url}` : ''}\n`);
+    return;
+  }
+
+  // Test connection before writing config
+  try {
+    const { createVCSProvider } = require('./vcs/index.cjs');
+    const testProvider = createVCSProvider(detected);
+    console.log(`\nTesting connection to ${detected.provider}...`);
+
+    // Note: testConnection is async but execSync makes it sync under the hood
+    const testResult = testProvider.testConnection();
+    if (!testResult.ok) {
+      die(1, `FAIL: VCS connection test failed: ${testResult.message}\n\nCreate auth token file:\n  mkdir -p ~/.keel/secrets\n  echo "YOUR_TOKEN" > ~/.keel/secrets/${detected.provider}.token\n  chmod 600 ~/.keel/secrets/${detected.provider}.token`);
+    }
+    console.log(`✓ ${testResult.message}`);
+  } catch (err) {
+    die(1, `FAIL: VCS connection test failed: ${err.message}`);
+  }
+
+  // Write vcs.yml
+  const content = `# Keel VCS Provider Configuration (T19.2)
+# Auto-generated by: setup-vcs
+# DO NOT COMMIT — if git-tracked, sensitive tokens may be exposed
+
+provider: ${detected.provider}
+owner: ${detected.owner}
+repo: ${detected.repo}
+${detected.base_url ? `base_url: ${detected.base_url}` : '# base_url: ""'}
+token_file: ~/.keel/secrets/${detected.provider}.token
+`;
+
+  fs.mkdirSync(path.dirname(vcsYmlPath), { recursive: true });
+  fs.writeFileSync(vcsYmlPath, content, 'utf8');
+  console.log(`✓ VCS configuration written: ${vcsYmlPath}`);
+
+  // Emit next steps
+  console.log(`\nNext steps:`);
+  console.log(`1. Create auth token file:`);
+  console.log(`   mkdir -p ~/.keel/secrets`);
+  console.log(`   echo "YOUR_${detected.provider.toUpperCase()}_TOKEN" > ~/.keel/secrets/${detected.provider}.token`);
+  console.log(`   chmod 600 ~/.keel/secrets/${detected.provider}.token`);
+  console.log(`\n2. Verify approval gate: keel approve-phase <story> <phase> --via-pr <PR#>\n`);
+}
+
+// ------------------------------------------------------------------- approve-phase (T6 + T19 + VCSProvider OOP)
+// Record VCS PR approval for a phase (T19: provider-agnostic, T6: design review).
+// Uses class-based VCSProvider interface (clean separation, testable, extensible).
+// Approval verified server-side; repo/provider resolved exclusively from .keel/vcs.yml (fail-closed if missing).
+// Usage: approve-phase <story-id> <phase-number> --via-pr <PR-number>
 
 function cmdApprovePhase(args) {
   const storyId = args[0];
   const phaseStr = args[1];
-  const prNumber = flag(args, '--via-github-pr') || '';
+  const prNumber = flag(args, '--via-pr') || flag(args, '--via-github-pr') || '';
 
   if (!storyId || !phaseStr || !prNumber) {
-    die(64, 'usage: approve-phase <story-id> <phase-number> --via-github-pr <PR-number>');
+    die(64, 'usage: approve-phase <story-id> <phase-number> --via-pr <PR-number>');
   }
 
   validateStoryId(storyId);
@@ -2662,63 +2767,108 @@ function cmdApprovePhase(args) {
 
   const manifest = readManifest(storyId);
 
-  // Query GitHub API to verify PR exists and has approvals
+  // T19.2: Resolve VCS provider (fail-closed if config missing)
+  let provider;
   try {
-    const { execSync } = require('child_process');
-    const prData = execSync(`gh api repos/creativemyntra/keel/pulls/${prNumber} --jq '.{title, state, reviews: .requested_reviewers}'`, { stdio: 'pipe', encoding: 'utf8' });
-    // Just verify PR exists; actual approval count comes from reviews
-    const reviewData = execSync(`gh api repos/creativemyntra/keel/pulls/${prNumber}/reviews --jq '[.[] | select(.state == "APPROVED")] | length'`, { stdio: 'pipe', encoding: 'utf8' });
-    const approvalCount = parseInt(reviewData.trim(), 10) || 0;
-
-    if (approvalCount === 0) {
-      die(1, `PR #${prNumber} has no approvals. Request review from a team member.`);
-    }
-
-    // Hash the phase file to detect future changes
-    const prefix = String(phase).padStart(2, '0') + '-';
-    const phaseFiles = fs.readdirSync(stateDir(storyId))
-      .filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
-
-    if (phaseFiles.length === 0) {
-      die(1, `phase ${phase} output file not found`);
-    }
-
-    const phaseFilePath = path.join(stateDir(storyId), phaseFiles[0]);
-    const content = fs.readFileSync(phaseFilePath, 'utf8');
-    const contentHash = crypto.createHash('sha256').update(content).digest('hex');
-
-    // Record approval in manifest
-    if (!manifest.approved_phases) manifest.approved_phases = {};
-    manifest.approved_phases[String(phase)] = {
-      phase,
-      pr_number: parseInt(prNumber, 10),
-      approved_at: nowIso(),
-      approver_count: approvalCount,
-      content_hash: contentHash
-    };
-
-    writeManifest(storyId, manifest);
-    appendAudit(storyId, {
-      action: 'phase_approved_via_github',
-      phase,
-      pr_number: parseInt(prNumber, 10),
-      approver_count: approvalCount,
-      content_hash: contentHash
-    });
-
-    console.log(`OK: phase ${phase} approved via PR #${prNumber} (${approvalCount} approval(s))`);
-
-    // Emit review checklist for phase 3 (design)
-    if (phase === 3) {
-      console.log(`\n=== Design Review Checklist (Phase 3) ===\n`);
-      console.log('□ Story alignment: design matches acceptance criteria');
-      console.log('□ WCAG 2.1 AA: colors, contrast, keyboard navigation');
-      console.log('□ Responsive: tested on mobile, tablet, desktop');
-      console.log('□ Design tokens: using variables, not hardcoded values');
-      console.log('□ Specifications: colors, typography, spacing defined\n');
-    }
+    const vcsResolve = require('./vcs/resolve.cjs');
+    provider = vcsResolve.resolveVcsProvider();
   } catch (err) {
-    die(1, `failed to verify GitHub PR #${prNumber}: ${err.message}`);
+    die(err.exitCode || 2, err.message);
+  }
+
+  // Query PR status + validate branch matches story
+  try {
+    const status = provider.getPullRequestStatus(parseInt(prNumber, 10));
+
+    if (status.approvals === 0) {
+      const ctx = provider.resolveRepoContext();
+      die(1, `${ctx.provider} PR #${prNumber} has no approvals. Request review from a team member.`);
+    }
+
+    // T20: PR branch matching (prevent unrelated PRs from approving)
+    const ctx = provider.resolveRepoContext();
+    const branchName = status.branch || '';
+    if (branchName) {
+      verifyPrBelongsToStory(storyId, branchName);
+    }
+
+    // Record approval with vcs context
+    recordPhaseApproval(storyId, phase, parseInt(prNumber, 10), status.approvals, provider, branchName);
+  } catch (err) {
+    die(1, `VCS approval failed: ${err.message}`);
+  }
+}
+
+// RH-4 FIX: Detect story branch to enable PR matching (early T20 implementation)
+// Story branch convention: feat/<story-id>, fix/<story-id>, or any branch containing story-id
+// Returns: branch pattern to match PR head branch against
+function detectStoryBranchPattern(storyId) {
+  // Conservative: match branches that contain the story ID (case-insensitive)
+  // Covers: feat/STORY-123, fix/STORY-123, STORY-123-my-feature, etc.
+  return new RegExp(storyId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+}
+
+// RH-4 FIX: Verify PR head branch matches story branch before accepting approval
+// This prevents unrelated PRs from satisfying the approval gate
+function verifyPrBelongsToStory(storyId, prHeadBranch) {
+  const pattern = detectStoryBranchPattern(storyId);
+  if (!pattern.test(prHeadBranch)) {
+    throw new Error(`PR head branch "${prHeadBranch}" does not match story ID "${storyId}" — PR is unrelated to this story`);
+  }
+}
+
+// Helper: record phase approval in manifest + audit (extracted for code reuse)
+function recordPhaseApproval(storyId, phase, prNumber, approvalCount, provider, prHeadBranch = null) {
+  const manifest = readManifest(storyId);
+  const ctx = provider.resolveRepoContext();
+
+  // Hash the phase file to detect future changes (T6)
+  const prefix = String(phase).padStart(2, '0') + '-';
+  const phaseFiles = fs.readdirSync(stateDir(storyId))
+    .filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
+
+  if (phaseFiles.length === 0) {
+    die(1, `phase ${phase} output file not found`);
+  }
+
+  const phaseFilePath = path.join(stateDir(storyId), phaseFiles[0]);
+  const content = fs.readFileSync(phaseFilePath, 'utf8');
+  const contentHash = crypto.createHash('sha256').update(content).digest('hex');
+
+  // Record approval in manifest
+  if (!manifest.approved_phases) manifest.approved_phases = {};
+  manifest.approved_phases[String(phase)] = {
+    phase,
+    pr_number: parseInt(prNumber, 10),
+    approved_at: nowIso(),
+    approver_count: approvalCount,
+    content_hash: contentHash,
+    vcs_provider: ctx.provider,
+    pr_head_branch: prHeadBranch || null,
+  };
+
+  writeManifest(storyId, manifest);
+  appendAudit(storyId, {
+    action: 'phase_approved_via_vcs',
+    phase,
+    pr_number: parseInt(prNumber, 10),
+    approver_count: approvalCount,
+    content_hash: contentHash,
+    vcs_provider: ctx.provider,
+    pr_head_branch: prHeadBranch || null,
+    vcs_config: { provider: ctx.provider, owner: ctx.owner, repo: ctx.repo }
+  });
+
+  console.log(`OK: phase ${phase} approved via ${ctx.provider} PR #${prNumber} (${approvalCount} approval(s))`);
+
+  // Emit review checklist for phase 3 (design, T6)
+  if (phase === 3) {
+    console.log(`\n=== Design Review Checklist (Phase 3) ===\n`);
+    console.log('□ Story alignment: design matches acceptance criteria');
+    console.log('□ WCAG 2.1 AA: colors, contrast, keyboard navigation');
+    console.log('□ Responsive: tested on mobile, tablet, desktop');
+    console.log('□ Design tokens: using variables, not hardcoded values');
+    console.log('□ Specifications: colors, typography, spacing defined\n');
   }
 }
 
@@ -3165,11 +3315,12 @@ function cmdVerifyTests(args) {
 
 // ------------------------------------------------------------------- main
 
-const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding|directive|approve-phase|approve-state-transition|verify-tests> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs security-status [--since <ISO-8601>]';
+const USAGE = 'usage: keel-state.cjs <init|validate|gate|audit|status|describe|report|snapshot|restore|verify|resume|revert-check|phase-mode|token-ledger|finding|directive|approve-phase|approve-state-transition|verify-tests> <story-id> [args] | keel-state.cjs status --all | keel-state.cjs memory-check | keel-state.cjs setup-vcs [--provider <github|bitbucket>] [--owner <org>] [--repo <name>] [--confirm] | keel-state.cjs security-status [--since <ISO-8601>]';
 const [, , cmd, storyId, ...rest] = process.argv;
 if (!cmd) die(64, USAGE);
 if (cmd === 'memory-check') { cmdMemoryCheck(); process.exit(0); }
 if (cmd === 'security-status') { cmdSecurityStatus(process.argv.slice(3)); process.exit(0); }
+if (cmd === 'setup-vcs') { cmdSetupVcs(process.argv.slice(3)); process.exit(0); }
 if (!storyId) die(64, USAGE);
 if (cmd === 'status' && storyId === '--all') { cmdStatusAll(); process.exit(0); }
 validateStoryId(storyId); // CRIT-02: enforce safe story_id before any path.join

@@ -313,6 +313,50 @@ console.log('\nCHECK E: Schema & Engine');
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// CHECK F: CodeGraph Freshness
+// ────────────────────────────────────────────────────────────────────────────
+
+console.log('\nCHECK F: CodeGraph Freshness');
+{
+  const graphPath = path.join(ROOT, '.keel', 'graph', 'codegraph.json');
+
+  if (!fs.existsSync(graphPath)) {
+    error('CodeGraph exists', `Not found at ${graphPath}`,
+      `Run: node scripts/keel-preflight.cjs to rebuild`);
+  } else {
+    let graph;
+    try {
+      graph = JSON.parse(fs.readFileSync(graphPath, 'utf8'));
+    } catch (e) {
+      fail('CodeGraph parses', `Syntax error: ${e.message}`,
+        `Delete and rebuild: rm ${graphPath} && node scripts/keel-preflight.cjs`);
+      graph = null;
+    }
+
+    if (graph) {
+      let currentHead;
+      try {
+        currentHead = execSync('git rev-parse HEAD', { encoding: 'utf-8', cwd: ROOT }).trim();
+      } catch (e) {
+        error('Current HEAD determinable', 'Not in a git repository');
+        currentHead = null;
+      }
+
+      if (!currentHead) {
+        // Skip freshness check if not in git
+        pass('CodeGraph freshness checkable', 'Git repository present');
+      } else if (graph.head_commit === currentHead) {
+        pass('CodeGraph fresh', `Built at ${currentHead.substring(0, 7)}`);
+      } else {
+        fail('CodeGraph fresh',
+          `Built at ${graph.head_commit ? graph.head_commit.substring(0, 7) : 'unknown'}, but HEAD is now ${currentHead.substring(0, 7)}`,
+          `Rebuild: node scripts/keel-preflight.cjs`);
+      }
+    }
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // SUMMARY
 // ────────────────────────────────────────────────────────────────────────────
 

@@ -18,6 +18,7 @@
 
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { isFeatureBranch, validateBranchBase, resolveRemote } = require('./keel-branch-base.cjs');
 
 const PREFLIGHT = path.join(__dirname, 'keel-preflight.cjs');
 const AUDIT_GUARD = path.join(__dirname, 'keel-audit-guard.cjs');
@@ -26,6 +27,7 @@ function runPreflight() {
   process.stderr.write('\nPreflight:\n');
   const r = spawnSync(process.execPath, [PREFLIGHT], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   process.stderr.write(r.stderr || r.stdout || '');
+  return r.status === 0;
 }
 
 function runAuditGuard(stdinData) {
@@ -83,6 +85,55 @@ async function main() {
   }
 
   if (!blocked.length) {
+    // Check branch base for feature branches (STANDARD enforcement — no installer required)
+    // CRITICAL: resolveRemote() must be called to get the correct remote (marketplace or origin)
+    // The remote parameter to validateBranchBase is REQUIRED and must not be guessed.
+    let remote;
+    try {
+      remote = resolveRemote();
+    } catch (err) {
+      process.stderr.write('\n');
+      process.stderr.write(`❌ PUSH FAILED: Could not resolve git remote\n`);
+      process.stderr.write(`${err.message}\n`);
+      process.exit(1);
+    }
+
+    const branchBaseErrors = [];
+    for (const line of lines) {
+      const parts = line.trim().split(/\s+/);
+      const remoteRef = parts[2];
+      if (!remoteRef || remoteRef === '(delete)') continue;
+      const branchName = shortRef(remoteRef);
+
+      if (isFeatureBranch(branchName)) {
+        try {
+          const baseError = validateBranchBase(branchName, remote);
+          if (baseError) {
+            branchBaseErrors.push({ branch: branchName, ...baseError });
+          }
+        } catch (err) {
+          // validateBranchBase throws on explicit errors (fetch failure, etc.)
+          process.stderr.write('\n');
+          process.stderr.write(`❌ PUSH FAILED: Branch base validation error\n`);
+          process.stderr.write(`Branch: ${branchName}\n`);
+          process.stderr.write(`${err.message}\n`);
+          process.exit(1);
+        }
+      }
+    }
+
+    if (branchBaseErrors.length > 0) {
+      process.stderr.write('\n');
+      process.stderr.write('❌ PUSH BLOCKED: Feature branch not based on current remote dev\n');
+      process.stderr.write('\n');
+      for (const err of branchBaseErrors) {
+        process.stderr.write(`Branch: ${err.branch}\n`);
+        process.stderr.write(`${err.reason}\n`);
+        process.stderr.write(`\n✅ Fix:\n${err.guidance}\n\n`);
+      }
+      process.exit(1);
+    }
+
     for (const line of lines) {
       const parts = line.trim().split(/\s+/);
       const remoteRef = parts[2];
@@ -106,7 +157,12 @@ async function main() {
         process.stderr.write('\n');
       }
     }
-    runPreflight();
+    const preflight_ok = runPreflight();
+    if (!preflight_ok) {
+      process.stderr.write('\n❌ PUSH BLOCKED: CodeGraph freshness check failed\n');
+      process.stderr.write('   The code graph is stale and must be rebuilt before pushing.\n');
+      process.exit(1);
+    }
     process.exit(0);
   }
 
