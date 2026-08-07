@@ -31,7 +31,7 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const https = require('https');
-const classifySeverity = require('../lib/classify-severity.js');
+const classifySeverity = require('../lib/classify-severity.cjs');
 
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
 const KEEL_HOME = process.env.KEEL_HOME || path.join(os.homedir(), '.keel');
@@ -87,7 +87,28 @@ function resolveProjectOverlayFile() {
   return candidates.find((c) => fs.existsSync(c)) || null;
 }
 
+// CJIS application profile — defines which paths contain CJI data vs out-of-scope paths.
+// Used for scope-aware severity escalation: soft matches in cjis_data_paths → hard block.
+function resolveApplicationProfileFile() {
+  const candidates = [
+    path.join(PLUGIN_ROOT, 'config', 'cjis-application-profile.json'),
+    path.join(KEEL_HOME, 'config', 'cjis-application-profile.json'),
+  ];
+  return candidates.find((c) => fs.existsSync(c)) || null;
+}
+
 function block(reason) { process.stderr.write(`CJIS GATE BLOCK: ${reason}\n`); process.exit(2); }
+
+// Check if a file path matches globs in cjis_data_paths (indicates CJI-handling scope).
+// Returns true if path is in scope, false if out-of-scope or not specified.
+function isPathInCJISScope(filePath, profile) {
+  if (!filePath || !profile || !Array.isArray(profile.cjis_data_paths)) return false;
+  const minimatch = (str, pattern) => {
+    const p = pattern.replace(/\*/g, '.*').replace(/\?/g, '.');
+    return new RegExp(`^${p}$`).test(str);
+  };
+  return profile.cjis_data_paths.some((pattern) => minimatch(filePath, pattern));
+}
 
 function loadPatterns() {
   const parsed = JSON.parse(fs.readFileSync(PATTERNS_FILE, 'utf8')); // throws -> fail-closed
@@ -232,8 +253,22 @@ async function main() {
   } catch (e) { block(`injection patterns load error (fail-closed): ${e.message}`); }
 
   const { patterns, allowlist } = loadPatterns();
-  const { category, matched } = classify(text, patterns, allowlist);
+  let { category, matched } = classify(text, patterns, allowlist);
   if (category === 'CLEAR') process.exit(0);
+
+  // Load application profile for scope-aware escalation of soft matches.
+  let profile = null;
+  const profilePath = resolveApplicationProfileFile();
+  if (profilePath) {
+    try { profile = JSON.parse(fs.readFileSync(profilePath, 'utf8')); }
+    catch (e) { /* profile optional — ignore load errors */ }
+  }
+
+  // Scope-aware escalation: soft matches (SUSPECT) in CJI-data paths escalate to hard blocks.
+  // Hard matches (CJIS_VIOLATION) always block, regardless of path.
+  if (category === 'SUSPECT' && profile && hook.path && isPathInCJISScope(hook.path, profile)) {
+    category = 'CJIS_VIOLATION'; // escalate soft → hard due to in-scope path
+  }
 
   const contentHash = crypto.createHash('sha256').update(text).digest('hex');
   const incident = {
@@ -244,13 +279,13 @@ async function main() {
   };
 
   if (category === 'SUSPECT') {
-    // soft match: log for audit trail, notify if configured, DO NOT block.
+    // soft match, out-of-scope path: log for audit trail, DO NOT block.
     appendIncident({ ...incident, blocked: false });
     process.stderr.write(`CJIS GATE WARN (non-blocking): SUSPECT [${matched.join(', ')}] — incident ${incident.incident_id} logged for review\n`);
     process.exit(0);
   }
 
-  // category === 'CJIS_VIOLATION' (hard) — block as today.
+  // category === 'CJIS_VIOLATION' (hard) — block (also includes escalated soft matches in-scope).
   appendIncident({ ...incident, blocked: true });
   await notifySecurityOfficer(incident);
   block(`${category} [${matched.join(', ')}] — incident ${incident.incident_id}, hash ${contentHash.slice(0, 12)}...`);

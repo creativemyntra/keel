@@ -1,0 +1,5 @@
+﻿{
+    "tool_name":  null,
+    "prompt":  "// src/ncic-integration/lookup.ts\nconst query = { ssn: \u0027987-65-4321\u0027, email: \u0027witness@domain.com\u0027 };\n// Hard + soft together",
+    "stage":  "prompt"
+}

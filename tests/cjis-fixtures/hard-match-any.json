@@ -1,0 +1,5 @@
+﻿{
+    "tool_name":  null,
+    "prompt":  "// src/case-records/warrant.ts - warrant data\nconst warrant = {\n  ssn: \u0027123-45-6789\u0027,\n  issued_date: \u00272024-01-15\u0027\n};\n// SSN = hard match, CJIS violation",
+    "stage":  "prompt"
+}
