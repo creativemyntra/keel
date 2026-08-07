@@ -1,0 +1,60 @@
+{
+  "description": "Configurable branch promotion pipeline. Customize for your project's workflow.",
+  "promotion_pipeline": [
+    {
+      "name": "dev",
+      "description": "Development integration branch",
+      "sources": ["feat/*", "fix/*", "chore/*", "docs/*", "test/*", "audit/*"],
+      "requires_pull_request": false,
+      "requires_approval": 0
+    },
+    {
+      "name": "qa",
+      "description": "Quality assurance testing branch",
+      "sources": ["dev"],
+      "requires_pull_request": true,
+      "requires_approval": 0
+    },
+    {
+      "name": "stage",
+      "description": "Staging environment branch",
+      "sources": ["qa"],
+      "requires_pull_request": true,
+      "requires_approval": 0
+    },
+    {
+      "name": "preprod",
+      "description": "Pre-production environment branch",
+      "sources": ["stage"],
+      "requires_pull_request": true,
+      "requires_approval": 0
+    },
+    {
+      "name": "prod",
+      "description": "Production release branch",
+      "sources": ["preprod"],
+      "requires_pull_request": true,
+      "requires_approval": 2
+    }
+  ],
+  "compliance_required_branches": ["prod", "preprod", "dev"],
+  "custom_examples": {
+    "main_only": {
+      "promotion_pipeline": [
+        { "name": "main", "sources": ["feat/*", "fix/*"], "requires_pull_request": true, "requires_approval": 2 }
+      ]
+    },
+    "github_flow": {
+      "promotion_pipeline": [
+        { "name": "main", "sources": ["feat/*", "fix/*", "hotfix/*"], "requires_pull_request": true, "requires_approval": 1 }
+      ]
+    },
+    "gitflow": {
+      "promotion_pipeline": [
+        { "name": "develop", "sources": ["feature/*", "bugfix/*"], "requires_pull_request": false, "requires_approval": 0 },
+        { "name": "release", "sources": ["develop"], "requires_pull_request": true, "requires_approval": 1 },
+        { "name": "main", "sources": ["release"], "requires_pull_request": true, "requires_approval": 2 }
+      ]
+    }
+  }
+}

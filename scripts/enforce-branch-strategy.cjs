@@ -18,7 +18,33 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const PROMOTION_BRANCHES = ['dev', 'qa', 'stage', 'preprod', 'prod'];
+// Load branch strategy from config file (with defaults for backward compatibility)
+function loadBranchStrategy() {
+  const configPath = path.join(process.cwd(), '.keel', 'config', 'branch-strategy.json');
+  const defaultStrategy = {
+    promotion_pipeline: [
+      { name: 'dev', sources: ['feat/*', 'fix/*', 'chore/*', 'docs/*', 'test/*', 'audit/*'] },
+      { name: 'qa', sources: ['dev'] },
+      { name: 'stage', sources: ['qa'] },
+      { name: 'preprod', sources: ['stage'] },
+      { name: 'prod', sources: ['preprod'] }
+    ]
+  };
+
+  try {
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      return config.promotion_pipeline || defaultStrategy.promotion_pipeline;
+    }
+  } catch (e) {
+    console.warn(`[WARN] Failed to load branch strategy config: ${e.message}. Using defaults.`);
+  }
+
+  return defaultStrategy.promotion_pipeline;
+}
+
+const BRANCH_PIPELINE = loadBranchStrategy();
+const PROMOTION_BRANCHES = BRANCH_PIPELINE.map(b => b.name);
 const FEATURE_PATTERNS = [
   /^feat\//,
   /^fix\//,
@@ -28,28 +54,14 @@ const FEATURE_PATTERNS = [
   /^audit\//,
 ];
 
-const PROMOTION_RULES = {
-  'dev': {
-    sources: ['feat/*', 'fix/*', 'chore/*', 'docs/*', 'test/*', 'audit/*'],
-    message: 'dev accepts only feature branches (feat/*, fix/*, chore/*, docs/*, test/*, audit/*)'
-  },
-  'qa': {
-    sources: ['dev'],
-    message: 'qa accepts PRs from dev only'
-  },
-  'stage': {
-    sources: ['qa'],
-    message: 'stage accepts PRs from qa only'
-  },
-  'preprod': {
-    sources: ['stage'],
-    message: 'preprod accepts PRs from stage only'
-  },
-  'prod': {
-    sources: ['preprod'],
-    message: 'prod accepts PRs from preprod only (requires 2 approvals)'
-  }
-};
+// Build PROMOTION_RULES from pipeline config
+const PROMOTION_RULES = {};
+BRANCH_PIPELINE.forEach(branch => {
+  PROMOTION_RULES[branch.name] = {
+    sources: branch.sources,
+    message: `${branch.name} accepts PRs from: ${branch.sources.join(', ')}`
+  };
+});
 
 function getCurrentBranch() {
   try {

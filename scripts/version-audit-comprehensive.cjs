@@ -32,29 +32,53 @@ try {
 console.log(`${YELLOW}🔍 COMPREHENSIVE VERSION AUDIT${RESET}`);
 console.log(`   Target version: ${GREEN}${targetVersion}${RESET}\n`);
 
-// ALL files that must have matching versions (CRITICAL - MUST match package.json exactly)
-const CRITICAL_FILES = [
-  // Core metadata
-  { path: 'package.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'json', skipCheck: false },
-  { path: '.claude-plugin/plugin.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'json' },
-  { path: '.claude-plugin/marketplace.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'json' },
+// Load version files from config (with defaults for backward compatibility)
+function loadVersionFiles() {
+  const configPath = path.join(process.cwd(), '.keel', 'config', 'version-files.json');
+  const defaultFiles = [
+    // Core metadata
+    { path: 'package.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'json', skipCheck: false },
+    { path: '.claude-plugin/plugin.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'json' },
+    { path: '.claude-plugin/marketplace.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'json' },
 
-  // Documentation & specs
-  { path: 'README.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'doc' },
-  { path: 'INSTALL.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'doc' },
-  { path: 'TECHNICAL-SPECIFICATIONS.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'doc' },
-  { path: 'QUICK-START-CLAUDE-CODE.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'doc' },
-  { path: 'CHANGELOG.md', pattern: /##\s+\[?v?(\d+\.\d+\.\d+)/, type: 'changelog' },
+    // Documentation & specs
+    { path: 'README.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'doc' },
+    { path: 'INSTALL.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'doc' },
+    { path: 'TECHNICAL-SPECIFICATIONS.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'doc' },
+    { path: 'QUICK-START-CLAUDE-CODE.md', pattern: /v(\d+\.\d+\.\d+)/, type: 'doc' },
+    { path: 'CHANGELOG.md', pattern: /##\s+\[?v?(\d+\.\d+\.\d+)/, type: 'changelog' },
 
-  // CLI & scripts
-  { path: 'bin/keel.js', pattern: /VERSION\s*=\s*['"]([^'"]+)['"]/, type: 'code' },
+    // CLI & scripts
+    { path: 'bin/keel.js', pattern: /VERSION\s*=\s*['"]([^'"]+)['"]/, type: 'code' },
 
-  // Lock files & package metadata
-  { path: 'package-lock.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'lock' },
+    // Lock files & package metadata
+    { path: 'package-lock.json', pattern: /"version"\s*:\s*"([^"]+)"/, type: 'lock' },
 
-  // GitHub Actions
-  { path: 'action.yml', pattern: /Release:\s*v(\d+\.\d+\.\d+)/, type: 'action' },
-];
+    // GitHub Actions
+    { path: 'action.yml', pattern: /Release:\s*v(\d+\.\d+\.\d+)/, type: 'action' },
+  ];
+
+  try {
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      // Combine critical + project-specific files
+      const allFiles = [...(config.critical_files || []), ...(config.project_specific_files || [])];
+      // Convert from config format to pattern-based format
+      return allFiles.map(f => ({
+        path: f.path,
+        pattern: f.patterns ? new RegExp(f.patterns[0]) : f.pattern || /v(\d+\.\d+\.\d+)/,
+        type: f.type || 'generic',
+        optional: f.optional || false
+      }));
+    }
+  } catch (e) {
+    console.warn(`[WARN] Failed to load version files config: ${e.message}. Using defaults.`);
+  }
+
+  return defaultFiles;
+}
+
+const CRITICAL_FILES = loadVersionFiles();
 
 // AUDIT: Additional files to check (warnings only, not blocking)
 const SECONDARY_FILES = [];
@@ -69,7 +93,12 @@ for (const file of CRITICAL_FILES) {
   const filePath = path.join(process.cwd(), file.path);
 
   if (!fs.existsSync(filePath)) {
-    console.log(`${YELLOW}⚠️  MISSING${RESET}: ${file.path}`);
+    if (file.optional) {
+      console.log(`${YELLOW}⊘${RESET} ${file.path} (optional, not found)`);
+    } else {
+      console.log(`${YELLOW}⚠️  MISSING${RESET}: ${file.path}`);
+      criticalMismatches.push({ file: file.path, expected: targetVersion, found: 'NOT FOUND' });
+    }
     continue;
   }
 
