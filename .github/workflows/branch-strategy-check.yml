@@ -1,0 +1,80 @@
+name: Branch Strategy Check
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - qa
+      - stage
+      - preprod
+      - prod
+    types: [opened, synchronize, reopened]
+
+jobs:
+  branch-strategy-validation:
+    name: Validate PR Source Branch
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate PR source branch matches promotion rules
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+        run: |
+          node scripts/check-pr-source.cjs
+          if [ $? -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Comment on PR - Branch Strategy Passed
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ **Branch Strategy Check PASSED**\n\nThis PR follows the correct promotion path and can be merged.'
+            })
+
+      - name: Comment on PR - Branch Strategy Failed
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `❌ **Branch Strategy Check FAILED**
+
+This PR violates the branch promotion pipeline.
+
+**Correct promotion path:**
+\`\`\`
+feat/your-feature → dev (merge)
+       ↓
+  dev → qa (merge)
+       ↓
+  qa → stage (merge)
+       ↓
+  stage → preprod (merge)
+       ↓
+  preprod → prod (merge, requires 2 approvals)
+\`\`\`
+
+**Action Required:**
+Close this PR and create a new one targeting the correct branch.
+
+See [Branch Strategy Enforcement](../docs/BRANCH_STRATEGY.md) for details.`
+            })
