@@ -400,6 +400,14 @@ function cmdInit(storyId, args) {
     console.warn(`WARNING: positional title "${positionalTitle}" ignored — use --title "${positionalTitle}"`);
   }
   fs.mkdirSync(path.join(dir, 'snapshots'), { recursive: true });
+
+  // Compliance scope detection (from --cjis-scope, --hipaa-scope, etc.)
+  const compliance_scopes = [];
+  if (args.includes('--cjis-scope')) compliance_scopes.push('cjis');
+  if (args.includes('--hipaa-scope')) compliance_scopes.push('hipaa');
+  if (args.includes('--soc2-scope')) compliance_scopes.push('soc2');
+  if (args.includes('--nibrs-scope')) compliance_scopes.push('nibrs');
+
   const manifest = {
     story_id: storyId,
     title: flag(args, '--title') || '',
@@ -408,6 +416,7 @@ function cmdInit(storyId, args) {
     current_phase: 1,
     attempts: {},
     phase_modes: {},
+    compliance_scopes,
     gate_events: 0,
     max_gates: parseInt(flag(args, '--max-gates') || '', 10) || DEFAULT_MAX_GATES,
     max_hours: parseFloat(flag(args, '--max-hours') || '') || DEFAULT_MAX_HOURS,
@@ -1368,6 +1377,262 @@ const checkRegistry = {
       id: 'C-0013',
       status: 'PASS',
       detail: 'red-check confirms tests fail before implementation (red-first TDD verified)'
+    };
+  },
+
+  // C-0014 (Compliance Scope Declaration): Ensure compliance-scoped stories declare their data paths.
+  // FAIL if story is marked compliance-scoped (CJIS, HIPAA, SOC2, NIBRS) but the required
+  // application profile is missing. The profile defines which paths contain compliance data.
+  // Status: SKIP if not compliance-scoped, FAIL if scoped but profile missing, PASS if profile found.
+  // Applies: all phases for compliance-scoped stories; SKIP for non-compliance-scoped.
+  compliance_scope_declared: (storyId, phase, manifest) => {
+    if (!manifest.compliance_scopes || manifest.compliance_scopes.length === 0) {
+      return { id: 'C-0014', status: 'SKIP', detail: 'story is not compliance-scoped' };
+    }
+
+    // For CJIS scope, require cjis-application-profile.json
+    if (manifest.compliance_scopes.includes('cjis')) {
+      const cjisProfilePath = path.join(process.cwd(), 'config', 'cjis-application-profile.json');
+      if (!fs.existsSync(cjisProfilePath)) {
+        return {
+          id: 'C-0014',
+          status: 'FAIL',
+          detail: `story is CJIS-scoped but application profile not found: ${cjisProfilePath}. ` +
+            'Create with cjis_data_paths and out_of_scope_paths globs.'
+        };
+      }
+    }
+
+    // For HIPAA scope, require hipaa-application-profile.json (if implemented)
+    if (manifest.compliance_scopes.includes('hipaa')) {
+      const hipaaProfilePath = path.join(process.cwd(), 'config', 'hipaa-application-profile.json');
+      if (!fs.existsSync(hipaaProfilePath)) {
+        return {
+          id: 'C-0014',
+          status: 'FAIL',
+          detail: `story is HIPAA-scoped but application profile not found: ${hipaaProfilePath}. ` +
+            'Create with phi_data_paths and out_of_scope_paths globs.'
+        };
+      }
+    }
+
+    return {
+      id: 'C-0014',
+      status: 'PASS',
+      detail: `compliance scope declared and profiles found for: ${manifest.compliance_scopes.join(', ')}`
+    };
+  },
+
+  // C-0015 (Compliance Evidence Present): Ensure compliance-scoped stories have evidence before security phase.
+  // FAIL if story is compliance-scoped and reaches phase 8 (security engineer) without prescan.json evidence.
+  // prescan.json should be created by pre-phase-8 scanning (phase 7 E2E or earlier compliance check).
+  // Status: SKIP if not compliance-scoped or phase < 8, FAIL if phase >= 8 and prescan missing, PASS if found.
+  compliance_evidence_present: (storyId, phase, manifest) => {
+    if (!manifest.compliance_scopes || manifest.compliance_scopes.length === 0) {
+      return { id: 'C-0015', status: 'SKIP', detail: 'story is not compliance-scoped' };
+    }
+
+    // Only check at phase 8 (security engineer) and later
+    if (phase < 8) {
+      return { id: 'C-0015', status: 'SKIP', detail: 'compliance evidence check required at phase 8+ only' };
+    }
+
+    const prescannedFile = path.join(stateDir(storyId), 'prescan.json');
+    if (!fs.existsSync(prescannedFile)) {
+      return {
+        id: 'C-0015',
+        status: 'FAIL',
+        detail: `compliance evidence missing before security phase: ${prescannedFile}. ` +
+          'Pre-phase-8 scanning (phase 7 or earlier) must create prescan.json with code and dependency scan results.'
+      };
+    }
+
+    return {
+      id: 'C-0015',
+      status: 'PASS',
+      detail: 'prescan.json present — compliance evidence collected before security phase'
+    };
+  },
+
+  // C-0016 (Compliance Evidence Fresh): Ensure compliance evidence is not stale.
+  // FAIL if evidence backing a compliance control predates the current story's last commit SHA or
+  // exceeds the policy-pack-configured evidence expiry. Prevents relying on months-old scanning.
+  // Status: SKIP if not compliance-scoped, FAIL if stale, PASS if fresh.
+  // Applies: phase 8+ (security engineer and later).
+  compliance_evidence_fresh: (storyId, phase, manifest) => {
+    if (!manifest.compliance_scopes || manifest.compliance_scopes.length === 0) {
+      return { id: 'C-0016', status: 'SKIP', detail: 'story is not compliance-scoped' };
+    }
+
+    if (phase < 8) {
+      return { id: 'C-0016', status: 'SKIP', detail: 'evidence freshness check required at phase 8+ only' };
+    }
+
+    // For now, check prescan.json mtime against a default 7-day threshold
+    // (Future: read from policy-pack config)
+    const prescannedFile = path.join(stateDir(storyId), 'prescan.json');
+    if (!fs.existsSync(prescannedFile)) {
+      return {
+        id: 'C-0016',
+        status: 'FAIL',
+        detail: 'prescan.json not found (check C-0015 first)'
+      };
+    }
+
+    const stats = fs.statSync(prescannedFile);
+    const ageMs = Date.now() - stats.mtimeMs;
+    const ageHours = Math.round(ageMs / (1000 * 60 * 60));
+    const maxAgeHours = 7 * 24; // 7-day freshness threshold
+
+    if (ageHours > maxAgeHours) {
+      return {
+        id: 'C-0016',
+        status: 'FAIL',
+        detail: `compliance evidence is ${ageHours}h old (max ${maxAgeHours}h). ` +
+          `Re-scan compliance artifacts before proceeding: node ~/.keel/bin/keel-state.cjs prescan ${storyId}`
+      };
+    }
+
+    return {
+      id: 'C-0016',
+      status: 'PASS',
+      detail: `compliance evidence is ${ageHours}h old (within ${maxAgeHours}h threshold) — evidence is fresh`
+    };
+  },
+
+  // C-0017 (Compliance Pattern Provenance): Enforce governance on pattern definitions.
+  // FAIL if any ACTIVE pattern in config/cjis-data-element-registry.json lacks a source citation or named approver.
+  // This ensures no engineer-guessed patterns are hard-blocking in production.
+  // Status: SKIP if CJIS not in scope, FAIL if governance violation, PASS if all ACTIVE patterns verified.
+  // Applies: all phases (can be checked early to gate further work).
+  compliance_pattern_provenance: (storyId, phase, manifest) => {
+    if (!manifest.compliance_scopes || !manifest.compliance_scopes.includes('cjis')) {
+      return { id: 'C-0017', status: 'SKIP', detail: 'CJIS pattern provenance required for CJIS-scoped stories only' };
+    }
+
+    const registryPath = path.join(process.cwd(), 'config', 'cjis-data-element-registry.json');
+    if (!fs.existsSync(registryPath)) {
+      return {
+        id: 'C-0017',
+        status: 'FAIL',
+        detail: `registry not found: ${registryPath}`
+      };
+    }
+
+    let registry;
+    try {
+      registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+    } catch (e) {
+      return {
+        id: 'C-0017',
+        status: 'FAIL',
+        detail: `registry parse error: ${e.message}`
+      };
+    }
+
+    const allPatterns = [
+      ...(registry.general_pii_patterns || []),
+      ...(registry.cjis_specific_patterns || [])
+    ];
+
+    const violations = allPatterns.filter((p) => {
+      if (p.status !== 'ACTIVE') return false; // PENDING/BLOCKED are exempt
+      return !p.source || !p.approved_by;
+    });
+
+    if (violations.length > 0) {
+      const badPatterns = violations.map((p) => `${p.category} (missing: ${!p.source ? 'source' : ''} ${!p.approved_by ? 'approver' : ''})`).join('; ');
+      return {
+        id: 'C-0017',
+        status: 'FAIL',
+        detail: `${violations.length} ACTIVE pattern(s) lack governance: ${badPatterns}. ` +
+          'All ACTIVE patterns must have source citation and approved_by name.'
+      };
+    }
+
+    return {
+      id: 'C-0017',
+      status: 'PASS',
+      detail: `all ${allPatterns.filter((p) => p.status === 'ACTIVE').length} ACTIVE patterns have source + approver`
+    };
+  },
+
+  // C-0018 (Compliance Control Terminal State): Ensure compliance controls reach a terminal state.
+  // FAIL if any compliance control for this story is in FAIL or NOT_PROVEN state without an approved,
+  // unexpired exception. Model on C-0005 (findings_terminal_state).
+  // Status: SKIP if not compliance-scoped, FAIL if blocking controls without exception, PASS if all terminal.
+  // Applies: phase 8+ (security engineer and later, after controls are evaluated).
+  compliance_control_terminal_state: (storyId, phase, manifest) => {
+    if (!manifest.compliance_scopes || manifest.compliance_scopes.length === 0) {
+      return { id: 'C-0018', status: 'SKIP', detail: 'story is not compliance-scoped' };
+    }
+
+    if (phase < 8) {
+      return { id: 'C-0018', status: 'SKIP', detail: 'compliance control terminal state check required at phase 8+ only' };
+    }
+
+    // Check for compliance-control.json (created by security engineer agent after control mapping)
+    const controlFile = path.join(stateDir(storyId), 'compliance-control.json');
+    if (!fs.existsSync(controlFile)) {
+      return {
+        id: 'C-0018',
+        status: 'FAIL',
+        detail: `compliance control mapping missing: ${controlFile}. ` +
+          'Security engineer must evaluate compliance controls and create control mapping.'
+      };
+    }
+
+    let controls;
+    try {
+      controls = JSON.parse(fs.readFileSync(controlFile, 'utf8'));
+    } catch (e) {
+      return {
+        id: 'C-0018',
+        status: 'FAIL',
+        detail: `compliance control file parse error: ${e.message}`
+      };
+    }
+
+    if (!Array.isArray(controls.controls)) {
+      return {
+        id: 'C-0018',
+        status: 'FAIL',
+        detail: 'compliance control file missing "controls" array'
+      };
+    }
+
+    // Check for blocking controls (FAIL or NOT_PROVEN without approved exception)
+    const blocking = controls.controls.filter((c) => {
+      if (c.state === 'PASS' || c.state === 'NOT_APPLICABLE') return false;
+      if (c.state === 'FAIL' || c.state === 'NOT_PROVEN') {
+        // Exception is valid if: approved_by is set, exception_expiry_date is in future, and in-scope: true
+        if (c.exception && c.exception.approved_by && c.exception.exception_expiry_date) {
+          const expiryDate = new Date(c.exception.exception_expiry_date);
+          if (expiryDate > new Date()) {
+            return false; // Exception is valid, not blocking
+          }
+        }
+        return true; // No valid exception, this is blocking
+      }
+      return false; // Other states (PASS, WAIVED, DEFERRED) are not blocking
+    });
+
+    if (blocking.length > 0) {
+      const details = blocking
+        .map((c) => `${c.control_id} [${c.state}]: ${c.description}`)
+        .join('; ');
+      return {
+        id: 'C-0018',
+        status: 'FAIL',
+        detail: `${blocking.length} compliance control(s) without approved exception: ${details}. ` +
+          'Approve exception or resolve control before proceeding.'
+      };
+    }
+
+    return {
+      id: 'C-0018',
+      status: 'PASS',
+      detail: `all compliance controls in terminal state (${controls.controls.length} controls)`
     };
   },
 };

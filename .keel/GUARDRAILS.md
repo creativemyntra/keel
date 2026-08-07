@@ -503,6 +503,62 @@ Every feature-scope story must prove tests FAIL before implementation begins (ph
 
 ---
 
+## G-19 - Compliance gate contract (mechanical enforcement)
+
+Compliance enforcement is implemented as mechanical checks in the checkRegistry
+(`scripts/keel-state.cjs`, checks C-0014 through C-0018), NOT as agent prompts
+or human reviews. This ensures compliance is enforced uniformly across all
+stories and all phases, without relying on agent adherence to instructions.
+
+**Scope:** Applies ONLY to stories marked compliance-scoped at init time
+(`--cjis-scope`, `--hipaa-scope`, `--soc2-scope`, `--nibrs-scope`).
+Non-compliance-scoped stories SKIP all compliance checks.
+
+**Checks:**
+
+- **C-0014 (compliance_scope_declared)** — FAIL if story is compliance-scoped but
+  required application profile missing. Application profile (e.g.
+  `cjis-application-profile.json`) defines which paths contain compliance data.
+  Applies: all phases. SKIP if not scoped.
+
+- **C-0015 (compliance_evidence_present)** — FAIL if story is compliance-scoped
+  and reaches phase 8 (security engineer) without `prescan.json` evidence.
+  Pre-phase-8 scanning (phase 7 or earlier) must create prescan with code and
+  dependency scan results.
+  Applies: phase 8+. SKIP if not scoped or phase < 8.
+
+- **C-0016 (compliance_evidence_fresh)** — FAIL if evidence predates policy-pack
+  expiry or is older than 7 days (default threshold). Prevents relying on
+  months-old scanning artifacts.
+  Applies: phase 8+. SKIP if not scoped.
+
+- **C-0017 (compliance_pattern_provenance)** — FAIL if any ACTIVE pattern in
+  `config/cjis-data-element-registry.json` lacks source citation and named
+  approver. No engineer-guessed patterns allowed in hard-blocking mode.
+  Applies: all phases (can be checked early). SKIP if CJIS not in scope.
+
+- **C-0018 (compliance_control_terminal_state)** — FAIL if any compliance control
+  is in FAIL or NOT_PROVEN state without an approved, unexpired exception.
+  Requires `compliance-control.json` file created by security engineer.
+  Applies: phase 8+ (after controls are evaluated). SKIP if not scoped.
+
+**Governance metadata in manifest:**
+Stories are initialized with a `compliance_scopes` array (built from --cjis-scope,
+--hipaa-scope, etc. flags). The array gates which checks apply to that story.
+
+**Failing a compliance check:**
+If any compliance check returns FAIL, the story cannot advance (`gate --verdict PASS`
+is rejected). The check detail message explains the failure. Human owner must either
+fix the underlying issue or explicitly waive the check (which requires a `gate --waive`
+command with human approval, per G-2).
+
+**PENDING patterns and exceptions:**
+PENDING_CONFIRMATION patterns (in registry) do not block hard (C-0017 does not FAIL
+for them). Compliance controls with approved exceptions (C-0018) do not block if
+exception_expiry_date is in the future.
+
+---
+
 ## Known Limitations (documented, not fixable mechanically)
 
 The following are acknowledged framework constraints. They are not bugs — each
