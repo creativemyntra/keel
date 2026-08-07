@@ -1,16 +1,16 @@
 # Compliance Check Phase-Scoping Decisions
 
-**Status:** Decision log for C-0014 through C-0018 wiring  
-**Date:** 2026-08-07  
+**Status:** Decision log for C-0014 through C-0018 wiring — **UPDATED FOR MULTI-FRAMEWORK SUPPORT**  
+**Date:** 2026-08-07 (multi-framework refactor completed)  
 **Reference:** `scripts/keel-state.cjs` checkRegistry, phase-mapping-audit.md
 
 ---
 
 ## Executive Summary
 
-Five compliance checks (C-0014 to C-0018) have been explicitly wired to their gate phases following established patterns (C-0007, C-0009, C-0011). Each check declares which phases it applies to, returns SKIP with explicit reasons for all others, and documents defect-lane coverage decisions.
+Five compliance checks (C-0014 to C-0018) have been explicitly wired to their gate phases following established patterns (C-0007, C-0009, C-0011). Each check declares which phases it applies to, returns SKIP with explicit reasons for all others, and documents defect-lane coverage decisions. **C-0014 and C-0017 now support all compliance frameworks (CJIS, HIPAA, SOC2, NIBRS), not just CJIS.**
 
-**Test Coverage:** 20/20 unit tests ✅, 10/10 integration tests ✅ (all passing before and after refactoring).
+**Test Coverage:** 21/21 unit tests ✅, 10/10 integration tests ✅ (all passing, including multi-framework tests).
 
 ---
 
@@ -53,7 +53,7 @@ if (!manifest.compliance_scopes?.includes('target')) {
 
 **Pattern:** Single-phase (Pattern 1)  
 **Phase:** 1 (Product Owner)  
-**Rationale:** Scope is declared by PO at story inception (phase 1). Later phases assume scope already known.
+**Rationale:** Scope is declared by PO at story inception (phase 1). Later phases assume scope already known. Universal across all frameworks.
 
 **SKIP Reasons:**
 - Phase ≠ 1: "required only at phase 1 (product owner)"
@@ -61,7 +61,11 @@ if (!manifest.compliance_scopes?.includes('target')) {
 
 **Defect Lane:** ✅ FULL (phase 1 included)
 
-**Artifact:** `config/cjis-application-profile.json`, `config/hipaa-application-profile.json`
+**Artifacts (one per framework):**
+- `config/cjis-application-profile.json`
+- `config/hipaa-application-profile.json`
+- `config/soc2-application-profile.json`
+- `config/nibrs-application-profile.json`
 
 ---
 
@@ -106,17 +110,22 @@ if (!manifest.compliance_scopes?.includes('target')) {
 ### C-0017: Compliance Pattern Provenance
 
 **Pattern:** Scope-based (Pattern 3)  
-**Scope:** CJIS-scoped stories (all phases)  
-**Rationale:** Pattern governance orthogonal to phase. Any CJIS story must use sourced/approved patterns. Can run at any phase.
+**Scope:** All compliance frameworks (CJIS, HIPAA, SOC2, NIBRS) — all phases  
+**Rationale:** Pattern governance orthogonal to phase. Any compliance-scoped story must use sourced/approved patterns. Can run at any phase. Universal across frameworks.
 
 **SKIP Reasons:**
-- Not CJIS-scoped: "required for CJIS-scoped stories only"
+- No scopes declared: "No compliance scopes declared"
+- Unknown scope: (silently skipped, allows future framework additions)
 
 **Defect Lane:** ✅ FULL
-- Applies if defect is CJIS-scoped
+- Applies if defect is any compliance-scoped (CJIS, HIPAA, SOC2, NIBRS)
 - Scope-based (not phase-based) → no defect gap
 
-**Artifact:** `config/cjis-data-element-registry.json` (ACTIVE patterns)
+**Artifacts (one per framework):**
+- `config/cjis-data-element-registry.json` (CJIS patterns)
+- `config/hipaa-data-element-registry.json` (HIPAA patterns)
+- `config/soc2-control-registry.json` (SOC2 controls)
+- `config/nibrs-pattern-registry.json` (NIBRS patterns)
 
 ---
 
@@ -158,22 +167,28 @@ if (!manifest.compliance_scopes?.includes('target')) {
 
 ## Test Results
 
-### Before Refactoring
+### Before Multi-Framework Refactor
 ```
-✓ 20/20 unit tests PASSED
-✓ 10/10 integration tests PASSED
-```
-
-### After Refactoring
-```
-✓ 20/20 unit tests PASSED
+✓ 20/20 unit tests PASSED (CJIS-only)
 ✓ 10/10 integration tests PASSED
 ✓ Phase declarations explicit
 ✓ SKIP reasons audit-readable
 ✓ Defect gaps documented
 ```
 
-**No regressions.** Backward-compatible refactoring.
+### After Multi-Framework Refactor
+```
+✓ 21/21 unit tests PASSED (includes multi-framework test)
+✓ 10/10 integration tests PASSED
+✓ C-0014 now supports all frameworks (CJIS, HIPAA, SOC2, NIBRS)
+✓ C-0017 now validates all framework registries (not CJIS-only)
+✓ All checks remain backward-compatible
+✓ Phase declarations remain explicit
+✓ SKIP reasons remain audit-readable
+✓ Defect gaps remain documented
+```
+
+**No regressions.** Fully backward-compatible refactoring. Now universally deployable to any project using any compliance framework.
 
 ---
 
