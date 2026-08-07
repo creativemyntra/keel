@@ -127,8 +127,12 @@ if (!rebuildGraph()) {
   // Step 2: Verify freshness
   if (!isGraphFresh()) {
     const head = getCurrentHeadCommit();
-    process.stderr.write(`[ERROR] CodeGraph stale after rebuild — HEAD is ${head ? head.substring(0, 7) : '?'}\n`);
-    failed = true;
+    if (head === null) {
+      process.stderr.write('[WARNING] CodeGraph freshness unverifiable (not in a git repo — graph was rebuilt)\n');
+    } else {
+      process.stderr.write(`[ERROR] CodeGraph stale after rebuild — HEAD is ${head.substring(0, 7)}\n`);
+      failed = true;
+    }
   }
 }
 
